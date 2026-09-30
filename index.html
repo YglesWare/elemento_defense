@@ -346,6 +346,14 @@ button:disabled{cursor:default}
 .goldchip{position:relative;cursor:pointer}
 .bankb{position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);background:var(--ink);color:var(--sun);border-radius:99px;font-size:10.5px;font-weight:800;line-height:1;padding:2px 6px;white-space:nowrap;font-variant-numeric:tabular-nums;pointer-events:none}
 
+.tbtn .bio{position:absolute;top:2px;right:2px;z-index:2;font-size:9.5px;font-weight:800;line-height:1.1;padding:1px 4px;border:1.5px solid var(--ink);border-radius:99px;font-variant-numeric:tabular-nums}
+.tbtn .bio.good{background:var(--okbg)}
+.tbtn .bio.bad{background:var(--nobg)}
+.mapc .bio-l{font-size:11.5px;font-weight:700;color:var(--muted);line-height:1.2}
+
+.mapc .req{font-size:11.5px;font-weight:800;line-height:1.25;color:var(--ink);background:var(--sun2);border:2px solid var(--ink);border-radius:8px;padding:3px 6px}
+.mapc .req.ok{background:var(--okbg)}
+
 @media (max-width:370px){
   #hud{gap:4px}
   .chip{font-size:15px;padding:0 7px 0 3px;height:36px}
@@ -444,6 +452,7 @@ button:disabled{cursor:default}
       <p class="fine panedesc">Certaines cases changent la puissance (dégâts et brûlures) des tours posées dessus. Les fusions prennent la moyenne de leurs deux éléments.</p>
       <div class="tscroll" id="hTerr"></div>
       <ul class="terrnotes">
+        <li><b>Biome</b> : chaque carte a aussi un biome (aride, polaire, tropical…) qui renforce ou affaiblit certains éléments sur toute la carte, de 10 à 20 %. Il s’ajoute à l’effet de la case. Les boutons des tours affichent l’effet du biome (+15, −20…).</li>
         <li><b>Colline</b> : +0,6 de portée pour toutes les tours.</li>
         <li><b>Obstacle</b> (arbre, rocher, sapin…) : impossible de construire.</li>
         <li>Quand tu choisis une tour à poser, les cases s’affichent en vert (bonus) ou en rouge (malus).</li>
@@ -457,7 +466,8 @@ button:disabled{cursor:default}
         <li>Pour fusionner deux tours compatibles (toutes deux au niveau 2 ou plus), fais glisser l’une sur l’autre. La fusion prend la place de la tour sur laquelle tu la lâches. Chaque fusion se débloque une par une dans l’Atelier.</li>
         <li>Lancer la vague suivante pendant qu'il reste des ennemis rapporte un bonus d'audace.</li>
         <li>Chaque vague gagnée rapporte des éclats, et la fin de partie aussi. Dépense-les dans l’Atelier : à tout moment avec le bouton violet en haut (la partie se met en pause), ou depuis le menu.</li>
-        <li>L’or qu’il te reste à la fin d’une partie rejoint la cagnotte. Elle sert uniquement à acheter de nouvelles cartes (bouton Jouer du menu). Chaque carte propose 4 difficultés.</li>
+        <li>L’or qu’il te reste à la fin d’une partie rejoint la cagnotte. Elle sert uniquement à acheter de nouvelles cartes (bouton Jouer du menu). Chaque carte propose 4 difficultés. Pour acheter une carte, il faut aussi avoir réussi la précédente en Moyen (ou en Difficile).</li>
+        <li>Les tours ont des PV : les Crachou et le Kaiju les abîment, les Grésillons les paralysent un moment. À 0 PV, une tour est assommée 8 s. Toutes les tours sont soignées à la fin de chaque vague. Remparts, Bouclier et Paratonnerre (Atelier, onglet Camp) les protègent.</li>
         <li>Au clavier : 1 à 6 pour les tours, Espace pour la vague, U pour améliorer, A pour l’Atelier, Échap pour le menu pause, puis Q pour revenir au menu principal.</li>
       </ul>
     </div>
@@ -562,7 +572,7 @@ button:disabled{cursor:default}
   <div class="inner">
     <div class="bigword calm head">LES CARTES</div>
     <div class="purse"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#ffd23f" stroke="#2a1b3d" stroke-width="2.2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#e0a800" stroke-width="2"/></svg><b id="mBank">0</b><span>or en cagnotte</span></div>
-    <p class="fine" style="font-size:14px;opacity:1">L’or qu’il te reste à la fin d’une partie rejoint la cagnotte. Elle sert uniquement à acheter de nouvelles cartes.</p>
+    <p class="fine" style="font-size:14px;opacity:1">L’or qu’il te reste à la fin d’une partie rejoint la cagnotte. Elle sert uniquement à acheter de nouvelles cartes. Pour en acheter une, réussis d’abord la carte précédente en Moyen (ou en Difficile).</p>
     <div id="tMaps"></div>
     <button class="btn stickyb" id="mBack" type="button">Retour</button>
   </div>
@@ -683,6 +693,28 @@ function diffTerrain(mi, diff) {
   }
   return (terrCache[key] = rows.map(r => r.join('')));
 }
+const BIOMES = {
+  prairie: { name: 'Tempéré', mods: {} },
+  plage: { name: 'Côtier', mods: { eau: 0.1, vent: 0.1, feu: -0.1 } },
+  marais: { name: 'Humide', mods: { eau: 0.15, terre: 0.1, feu: -0.15 } },
+  foret: { name: 'Forestier', mods: { terre: 0.15, feu: 0.1, vent: -0.15 } },
+  desert: { name: 'Aride', mods: { feu: 0.15, vent: 0.1, eau: -0.15, glace: -0.15 } },
+  ile: { name: 'Tropical', mods: { eau: 0.15, foudre: 0.1, feu: -0.1 } },
+  canyon: { name: 'Rocheux', mods: { terre: 0.15, vent: 0.15, eau: -0.1 } },
+  volcan: { name: 'Volcanique', mods: { feu: 0.15, terre: 0.1, eau: -0.1, glace: -0.2 } },
+  pic: { name: 'Alpin', mods: { glace: 0.15, vent: 0.1, feu: -0.15 } },
+  toundra: { name: 'Polaire', mods: { glace: 0.2, foudre: 0.1, feu: -0.2 } },
+};
+MAPS.forEach(m => { m.biome = BIOMES[m.id]; });
+function biomeText(B) {
+  const e = Object.entries(B.mods).sort((a, b) => b[1] - a[1]);
+  return e.length ? e.map(([k, v]) => ELNAME[k] + ' ' + fmtAff(v)).join(', ') : 'aucun effet sur les tours';
+}
+const mapReqOk = i => {
+  if (i === 0) return true;
+  const rec = (store.get(BEST2) || {})[MAPS[i - 1].id] || {};
+  return !!((rec.moyen && rec.moyen.won) || (rec.difficile && rec.difficile.won));
+};
 const mapOwned = i => !MAPS[i].price || M('map_' + MAPS[i].id) > 0;
 function saveMapIndex(sv) {
   if (!sv) return -1;
@@ -775,7 +807,7 @@ const FUSIONS = {
   tornade: { name: 'Tornade de feu', elem: 'Feu + Vent', parents: ['feu', 'vent'], unlock: 25, fee: 100, cost: 170, snd: 'vent',
     range: 3.0, rate: 0.5, dmg: 18, air: true, kind: 'chemin', color: '#ff7a3d', knock: 0.3,
     desc: 'Lâche des tornades enflammées qui remontent le chemin et brûlent tout sur leur passage.',
-    lv: [{ burn: 10 }, { burn: 16 }, { burn: 26 }], fx: s => 'Brûlure ' + s.burn + '/s' },
+    lv: [{ burn: 10 }, { burn: 16 }, { burn: 26 }], fx: s => 'Brûlure ' + Math.round(s.burn) + '/s' },
   orage: { name: 'Orage', elem: 'Eau + Éclair', parents: ['eau', 'foudre'], unlock: 30, fee: 130, cost: 200, snd: 'foudre',
     range: 2.8, rate: 1.0, dmg: 14, air: true, kind: 'onde', color: '#8a8fd6',
     desc: 'Un nuage noir qui mouille tout dans son cercle et y fait tomber la foudre, deux fois plus forte sur les mouillés.',
@@ -783,7 +815,7 @@ const FUSIONS = {
   volcan: { name: 'Volcan', elem: 'Feu + Terre', parents: ['feu', 'terre'], unlock: 30, fee: 130, cost: 200, snd: 'terre',
     range: 3.4, rate: 0.4, dmg: 40, air: false, kind: 'zone', color: '#e0553a', splash: 1.1,
     desc: 'Crache des bombes de lave qui explosent en zone et laissent une flaque brûlante sur le chemin.',
-    lv: [{ lava: 14 }, { lava: 22 }, { lava: 35 }], fx: s => 'Lave ' + s.lava + '/s' },
+    lv: [{ lava: 14 }, { lava: 22 }, { lava: 35 }], fx: s => 'Lave ' + Math.round(s.lava) + '/s' },
   geyser: { name: 'Geyser', elem: 'Eau + Feu', parents: ['eau', 'feu'], unlock: 25, fee: 110, cost: 180, snd: 'eau',
     range: 2.6, rate: 0.6, dmg: 22, air: true, kind: 'zone', color: '#9fe6ff', splash: 0.9,
     desc: 'Fait jaillir de la vapeur sous les ennemis : dégâts de zone, ennemis mouillés et projetés en l’air.',
@@ -791,7 +823,7 @@ const FUSIONS = {
   marais: { name: 'Marais', elem: 'Eau + Terre', parents: ['eau', 'terre'], unlock: 25, fee: 100, cost: 170, snd: 'eau',
     range: 2.8, rate: 0.5, dmg: 10, air: false, kind: 'flaque', color: '#9aa35a',
     desc: 'Lance des boules de boue qui laissent une flaque collante : ralentit fort et empoisonne.',
-    lv: [{ poison: 8, slow: 0.55 }, { poison: 13, slow: 0.62 }, { poison: 20, slow: 0.7 }], fx: s => 'Boue −' + Math.round(s.slow * 100) + ' %, poison ' + s.poison + '/s' },
+    lv: [{ poison: 8, slow: 0.55 }, { poison: 13, slow: 0.62 }, { poison: 20, slow: 0.7 }], fx: s => 'Boue −' + Math.round(s.slow * 100) + ' %, poison ' + Math.round(s.poison) + '/s' },
   blizzard: { name: 'Blizzard', elem: 'Vent + Glace', parents: ['vent', 'glace'], unlock: 35, fee: 140, cost: 210, snd: 'glace',
     range: 2.6, rate: 0.8, dmg: 10, air: true, kind: 'onde', color: '#bfeeff', airBonus: 2,
     desc: 'Une grande onde de neige : ralentit tout, gèle souvent et frappe fort les volants.',
@@ -819,7 +851,9 @@ const ETYPES = {
   flappy: { name: 'Flappy', hp: 24, speed: 1.3, reward: 3, size: 0.2, color: '#7a69e0', light: '#b9adff', mood: 'fang', flying: true, desc: 'Vole : Rocaille ne l’atteint pas.' },
   tonk: { name: 'Tonk', hp: 110, speed: 0.6, reward: 6, size: 0.31, color: '#7fa4c9', light: '#cfe0f2', mood: 'grr', angry: true, armor: 3, lifeCost: 2, desc: 'Casqué : encaisse chaque coup.' },
   magma: { name: 'Magmo', hp: 60, speed: 0.9, reward: 5, size: 0.26, color: '#ff6a3d', light: '#ffc08a', mood: 'grr', angry: true, immune: 'feu', desc: 'Immunisé au feu.' },
-  boss: { name: 'Kaiju', hp: 650, speed: 0.42, reward: 45, size: 0.42, color: '#ff4f6e', light: '#ffa3b3', mood: 'grr', angry: true, armor: 5, lifeCost: 10, boss: true, desc: 'Boss des vagues 10, 20, 30.' },
+  gresil: { name: 'Grésillon', hp: 40, speed: 1.1, reward: 4, size: 0.22, color: '#c6e84a', light: '#eeffa8', mood: 'open', desc: 'Paralyse les tours proches quelques secondes.' },
+  crachou: { name: 'Crachou', hp: 70, speed: 0.8, reward: 6, size: 0.27, color: '#ff8a5c', light: '#ffc6a8', mood: 'grr', angry: true, armor: 1, desc: 'Crache sur les tours et leur fait perdre des PV.' },
+  boss: { name: 'Kaiju', hp: 650, speed: 0.42, reward: 45, size: 0.42, color: '#ff4f6e', light: '#ffa3b3', mood: 'grr', angry: true, armor: 5, lifeCost: 10, boss: true, desc: 'Boss des vagues 10, 20, 30. Ses coups de patte abîment les tours.' },
 };
 const hpMul = w => 1 + (w - 1) * 0.16 + (w - 1) * (w - 1) * 0.011;
 
@@ -846,6 +880,9 @@ const UPGRADES = [
   { id: 'bonus', name: 'Prime de vague', max: 5, base: 8, fx: l => '+' + l * 20 + ' % de prime de fin de vague' },
   { id: 'cheap', name: 'Rabais', max: 5, base: 15, fx: l => 'Tours et améliorations ' + l * 4 + ' % moins chères' },
   { id: 'resell', name: 'Revente', max: 4, base: 8, fx: l => 'Tours revendues à ' + (70 + l * 5) + ' %' },
+  { id: 'remparts', name: 'Remparts', max: 5, base: 10, fx: l => 'Tours +' + l * 20 + ' % de PV' },
+  { id: 'bouclier', name: 'Bouclier', max: 3, base: 15, fx: l => 'Chaque tour commence la vague avec un bouclier de ' + l * 15 + ' % de ses PV' },
+  { id: 'paratonnerre', name: 'Paratonnerre', max: 3, base: 12, fx: l => 'Paralysie des Grésillons −' + l * 25 + ' %' },
   { id: 'revive', name: 'Seconde chance', max: 1, base: 60, fx: () => 'Une fois par partie, la maison repart avec 5 vies' },
   ...TORDER.map(t => ({ id: 'm_' + t, tower: t, name: 'Maîtrise ' + MASTERY[t], max: 5, base: 10,
     fx: l => TOWERS[t].name + ' : +' + l * 10 + ' % de dégâts' + (l >= 5 ? ', +0,3 de portée' : '') })),
@@ -910,6 +947,7 @@ const Snd = {
         case 'ko': [440, 370, 311, 220].forEach((f, i) => this.tone('square', f, f * 0.97, 0.22, 0.2, i * 0.18)); break;
         case 'win': [523, 659, 784, 1046, 1318].forEach((f, i) => this.tone('triangle', f, f, 0.2, 0.28, i * 0.1)); break;
         case 'plasma': this.tone('sawtooth', 240, 300, 0.12, 0.07); break;
+        case 'thit': this.tone('square', 220, 110, 0.09, 0.12); break;
         case 'clear': [659, 784, 988].forEach((f, i) => this.tone('sine', f, f, 0.14, 0.25, i * 0.08)); break;
       }
     } catch (e) {}
@@ -1165,6 +1203,10 @@ function drawEnemy(c, type, x, y, s, t, e) {
     }
   } else if (type === 'boss') {
     for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(sg * r * 0.25, -r * 0.9); c.quadraticCurveTo(sg * r * 0.55, -r * 1.35, sg * r * 0.85, -r * 1.55); c.quadraticCurveTo(sg * r * 0.75, -r * 1.05, sg * r * 0.7, -r * 0.7); c.closePath(); fs(c, '#fff1d0', lw); }
+  } else if (type === 'gresil') {
+    for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(sg * r * 0.3, -r * 0.9); c.quadraticCurveTo(sg * r * 0.5, -r * 1.5, sg * r * 0.8, -r * 1.55); c.lineWidth = lw; c.strokeStyle = INK; c.stroke(); c.beginPath(); c.arc(sg * r * 0.8, -r * 1.55, r * 0.14, 0, TAU); fs(c, '#ffe34d', lw * 0.7); }
+  } else if (type === 'crachou') {
+    for (const sg of [-1, 1]) { c.beginPath(); c.arc(sg * r * 1.15, -r * 0.05, r * 0.3, 0, TAU); fs(c, D.color, lw); c.beginPath(); c.moveTo(sg * r * 1.15, -r * 0.05); c.lineTo(sg * r * 1.45, -r * 0.1); c.lineWidth = lw; c.strokeStyle = INK; c.stroke(); }
   } else if (type === 'zip' && !still) {
     const px = -sdy, py = sdx; c.lineWidth = lw; c.strokeStyle = INK;
     for (const k of [-0.45, 0, 0.45]) { const x0 = -sdx * r * 1.25 + px * k * r, y0 = -sdy * r * 1.25 + py * k * r; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x0 - sdx * r * (0.7 + Math.abs(k)), y0 - sdy * r * (0.7 + Math.abs(k))); c.stroke(); }
@@ -1483,7 +1525,7 @@ function baseState(mi, save, diff) {
   return { map: mi, diff, maxw: Df.waves, hpd: Df.hp, spd: Df.speed, bm: Df.bonus, mm: Df.malus, banked: save ? save.banked || 0 : 0,
     terrain: m.terrain ? diffTerrain(mi, diff) : null, gold: save ? save.gold : Df.gold + M('gold') * 25, lives: save ? save.lives : Df.lives + M('lives') * 2, wave: save ? save.wave : 0, score: save ? save.score : 0,
     bossKills: save ? save.bossKills || 0 : 0, shardsPaid: save ? save.shardsPaid || 0 : 0, won: save ? !!save.won : false, reviveUsed: save ? !!save.reviveUsed : false,
-    endless: save ? !!save.endless : diff === 'infini', towers: [], enemies: [], projs: [], fx: [], parts: [], texts: [], zones: [], tors: [], spawnQ: [], spawnT: 0,
+    endless: save ? !!save.endless : diff === 'infini', towers: [], enemies: [], projs: [], fx: [], parts: [], texts: [], zones: [], tors: [], eprojs: [], spawnQ: [], spawnT: 0,
     waveActive: false, speed: 1, paused: false, over: false, time: 0, shake: 0, speedLines: 0, hurtT: 0, baseHit: 0, eid: 0, onoCd: {},
     selType: null, selTower: null, hover: null, ghost: null, bad: null, autoT: 0, checkpoint: null };
 }
@@ -1532,17 +1574,16 @@ function terrainAt(q, r) {
   return TERRAINS[G.terrain[r][q]] || null;
 }
 function towerStats(t) {
-  const st = statsOf(t.type, t.lvl, t.br), T = terrainAt(t.c, t.r);
-  if (T && !T.block) {
-    const a = affinity(t.type, T); st.terr = T; st.aff = a;
-    if (a) { const m = 1 + a; st.dmg *= m; for (const k of ['burn', 'lava', 'poison']) if (st[k]) st[k] *= m; }
-    if (T.range) st.range += T.range;
-  }
+  const st = statsOf(t.type, t.lvl, t.br), T = terrainAt(t.c, t.r), B = G && !G.demo ? MAPS[G.map].biome : null;
+  let a = 0;
+  if (T && !T.block) { st.terr = T; st.aff = affinity(t.type, T); a += st.aff; if (T.range) st.range += T.range; }
+  if (B) { st.bio = affinity(t.type, B); a += st.bio; }
+  if (a) { const m = Math.max(0.1, 1 + a); st.dmg *= m; for (const k of ['burn', 'lava', 'poison']) if (st[k]) st[k] *= m; }
   return st;
 }
 function addTower(type, q, r, lvl = 1, mode = 'premier', inv, br) {
   const t = { type, c: q, r, lvl, mode, br: br || null, inv: inv || costOf(type), cd: 0.3, recoil: 0, blink: rand(1, 4), lx: 0, ly: 0.3, pulses: 0 };
-  t.s = towerStats(t); G.towers.push(t);
+  t.s = towerStats(t); healTower(t, true); refillShield(t); t.ko = 0; t.stun = 0; G.towers.push(t);
   const n = G.deco.length; G.deco = G.deco.filter(d => !(d.c === q && d.r === r)); if (n !== G.deco.length && L.w > 1) buildBg();
   return t;
 }
@@ -1559,7 +1600,7 @@ function upgrade(t, br) {
   if (t.lvl === 2 && !t.br && !br && !TOWERS[t.type].fusion) { openTree(t); return; }
   if (br && t.br && br !== t.br) return;
   if (G.gold < cost) { hint('Pas assez d’or pour améliorer'); Snd.play('no'); return; }
-  G.gold -= cost; t.lvl++; if (t.lvl >= 3 && !t.br) t.br = br; t.inv += cost; t.s = towerStats(t); t.recoil = 1;
+  G.gold -= cost; t.lvl++; if (t.lvl >= 3 && !t.br) t.br = br; t.inv += cost; t.s = towerStats(t); t.recoil = 1; if (!(t.ko > 0)) healTower(t, true);
   burst(t.c + 0.5, t.r + 0.5, 0.4, 16, ['#ffd23f', '#ffffff', t.br ? BRANCH[t.br].color : TOWERS[t.type].color], 2.6, 0.1, 2, 0.7, 'star');
   ono(t.br ? BRANCH[t.br].short.toUpperCase() + (t.lvl === 3 ? ' I !' : ' II !') : 'LEVEL UP!', t.c + 0.5, t.r + 0.5, '#ffd23f', 0.5, 0, 1.0);
   Snd.play('up'); refreshInfo();
@@ -1576,7 +1617,7 @@ function sell(t) {
 // ---------- Vagues ----------
 function makeWave(w) {
   const pool = ['gloop', 'gloop'];
-  if (w >= 3) pool.push('zip'); if (w >= 4) pool.push('flappy'); if (w >= 6) pool.push('tonk'); if (w >= 8) pool.push('magma');
+  if (w >= 3) pool.push('zip'); if (w >= 4) pool.push('flappy'); if (w >= 6) pool.push('tonk'); if (w >= 8) pool.push('magma'); if (w >= 7) pool.push('gresil'); if (w >= 9) pool.push('crachou');
   let theme = null, label = '';
   if (w % 10 === 0) label = 'Un Kaiju approche...';
   else if (w >= 4 && w % 5 === 4) { theme = 'flappy'; label = 'Nuée de Flappy !'; }
@@ -1599,6 +1640,7 @@ function startWave() {
   if (G.waveActive && G.enemies.length) { early = 5 + Math.floor(G.wave / 2); G.gold += early; }
   G.wave++;
   const { list, label } = makeWave(G.wave);
+  for (const t of G.towers) if (!(t.ko > 0)) t.shield = Math.max(t.shield || 0, Math.round(t.maxHp * 0.15 * M('bouclier')));
   G.spawnQ.push(...list); G.spawnT = 0.5; G.waveActive = true; G.autoT = 0;
   const last = G.wave === G.maxw && !G.endless;
   banner('VAGUE ' + G.wave, early ? 'Bonus d’audace +' + early : (last ? 'Dernière vague !' : label), false);
@@ -1606,6 +1648,7 @@ function startWave() {
 }
 function waveDone() {
   G.waveActive = false;
+  for (const t of G.towers) { healTower(t, true); t.ko = 0; t.stun = 0; refillShield(t); }
   const bonus = Math.round((10 + G.wave) * (1 + 0.2 * M('bonus'))); G.gold += bonus; G.score += G.wave * 50;
   const aw = awardShards();
   hint('Vague ' + G.wave + ' : +' + bonus + ' or' + (aw.gain ? ', +' + aw.gain + ' éclats' : '') + (canBuyAnything() ? ' · achat possible dans l’Atelier' : ''), 3200);
@@ -1639,7 +1682,7 @@ function spawn(type) {
   const D = ETYPES[type], w = G.wave, m = hpMul(w) * MAPS[G.map].hpMul * (G.hpd || 1);
   const e = { id: ++G.eid, type, hp: D.hp * m, maxHp: D.hp * m, speed: D.speed * rand(0.95, 1.05) * (G.spd || 1),
     armor: D.armor ? D.armor + Math.floor(w / 10) : 0, flying: !!D.flying, d: 1, x: 0, y: 0, sdx: 1, sdy: 0,
-    slowA: 0, slowT: 0, wet: 0, burn: 0, burnT: 0, frozen: 0, stun: 0, flash: 0, phase: rand(TAU), dead: false, lifeCost: D.lifeCost || 1 };
+    slowA: 0, slowT: 0, wet: 0, burn: 0, burnT: 0, frozen: 0, stun: 0, flash: 0, phase: rand(TAU), dead: false, lifeCost: D.lifeCost || 1, abT: 1.2 };
   setPos(e); G.enemies.push(e);
   if (D.boss) {
     G.speedLines = 1.5; G.shake = Math.max(G.shake, 0.5);
@@ -1650,7 +1693,58 @@ function setPos(e) {
   const [x, y, dx, dy] = pathAt(e.d); e.x = x; e.y = y;
   if (L.portrait) { e.sdx = dy; e.sdy = dx; } else { e.sdx = dx; e.sdy = dy; }
 }
+const THP = { feu: 100, eau: 100, terre: 160, vent: 90, foudre: 110, glace: 120 };
+const towerMaxHp = t => Math.round((THP[t.type] || 180) * (1 + 0.25 * (t.lvl - 1)) * (1 + 0.2 * M('remparts')));
+function refillShield(t) { t.shield = Math.round(t.maxHp * 0.15 * M('bouclier')); }
+function healTower(t, full) { t.maxHp = towerMaxHp(t); if (full || t.hp == null) t.hp = t.maxHp; else t.hp = Math.min(t.hp, t.maxHp); }
+function damageTower(t, dmg) {
+  if (t.ko > 0 || G.demo) return;
+  if (t.shield > 0) { const a = Math.min(t.shield, dmg); t.shield -= a; dmg -= a; }
+  t.hp -= dmg; t.hitT = 0.25;
+  if (t.hp <= 0) {
+    t.hp = 0; t.ko = 8; t.stun = 0;
+    ono('K.O. !', t.c + 0.5, t.r + 0.5, '#ff4f6e', 0.5, 0, 0.9); Snd.play('hurt');
+    burst(t.c + 0.5, t.r + 0.5, 0.3, 10, ['#cdbfe0', '#ffffff', '#ff4f6e'], 2.2, 0.08, 3, 0.5);
+  }
+}
+const nearTowers = (e, R) => G.towers.filter(t => !(t.ko > 0) && (t.c + 0.5 - e.x) ** 2 + (t.r + 0.5 - e.y) ** 2 <= R * R);
+function enemyAbility(e, dt) {
+  const D = ETYPES[e.type];
+  if (!(e.type === 'gresil' || e.type === 'crachou' || D.boss) || e.frozen > 0 || e.stun > 0 || G.demo) return;
+  e.abT -= dt; if (e.abT > 0) return;
+  const pw = 1 + G.wave * 0.04;
+  if (e.type === 'gresil') {
+    const ts = nearTowers(e, 1.5); if (!ts.length) { e.abT = 0.3; return; }
+    const dur = 1.8 * (1 - 0.25 * M('paratonnerre'));
+    for (const t of ts) t.stun = Math.max(t.stun || 0, dur);
+    G.fx.push({ kind: 'ring', gx: e.x, gy: e.y, r0: 0.2, r1: 1.5, t: 0, dur: 0.4, color: '#e6ff5a' });
+    ono('BZZT!', e.x, e.y, '#e6ff5a', 0.45, 0.4, 0.8); Snd.play('foudre');
+    e.abT = 3.5;
+  } else if (e.type === 'crachou') {
+    const ts = nearTowers(e, 2.0); if (!ts.length) { e.abT = 0.3; return; }
+    let tg = ts[0], bd = Infinity; for (const t of ts) { const d2 = (t.c + 0.5 - e.x) ** 2 + (t.r + 0.5 - e.y) ** 2; if (d2 < bd) { bd = d2; tg = t; } }
+    G.eprojs.push({ sx: e.x, sy: e.y, t: tg, p: 0, dur: 0.45, dmg: 12 * pw });
+    e.abT = 1.8;
+  } else {
+    const ts = nearTowers(e, 1.6); if (!ts.length) { e.abT = 0.5; return; }
+    for (const t of ts) damageTower(t, 30 * pw);
+    G.fx.push({ kind: 'ring', gx: e.x, gy: e.y, r0: 0.3, r1: 1.6, t: 0, dur: 0.5, color: '#ff4f6e' });
+    G.shake = Math.max(G.shake, 0.35); ono('STOMP!', e.x, e.y, '#ff4f6e', 0.6, 0.5, 1.0); Snd.play('terre');
+    e.abT = 6;
+  }
+}
+function updateEProjs(dt) {
+  for (const p of G.eprojs) {
+    p.p += dt / p.dur;
+    if (p.p >= 1) {
+      p.done = true;
+      if (G.towers.includes(p.t)) { damageTower(p.t, p.dmg); burst(p.t.c + 0.5, p.t.r + 0.5, 0.35, 6, ['#b57bff', '#e2caff'], 2, 0.07, 3, 0.4); Snd.play('thit'); }
+    }
+  }
+  G.eprojs = G.eprojs.filter(p => !p.done);
+}
 function updateEnemy(e, dt) {
+  enemyAbility(e, dt);
   if (e.flash > 0) e.flash -= dt;
   if (e.wet > 0) e.wet -= dt;
   if (e.slowT > 0) { e.slowT -= dt; if (e.slowT <= 0) e.slowA = 0; }
@@ -1727,6 +1821,9 @@ function knock(e, k, s) {
 function updateTower(t, dt) {
   if (t.recoil > 0) t.recoil = Math.max(0, t.recoil - dt * 5);
   t.blink -= dt; if (t.blink < -0.13) t.blink = rand(2, 5);
+  if (t.hitT > 0) t.hitT -= dt;
+  if (t.ko > 0) { t.ko -= dt; t.beam = null; if (t.ko <= 0) { t.ko = 0; t.hp = Math.round(t.maxHp * 0.5); ono('DEBOUT !', t.c + 0.5, t.r + 0.5, '#5cd86a', 0.45, 0, 0.9); } return; }
+  if (t.stun > 0) { t.stun -= dt; t.beam = null; return; }
   if (t.type === 'plasma') { beamTower(t, dt); return; }
   t.cd -= dt; if (t.cd > 0) return;
   const s = t.s, cx = t.c + 0.5, cy = t.r + 0.5, R2 = s.range * s.range, list = [];
@@ -1951,7 +2048,7 @@ function update(dt) {
   for (const e of G.enemies) if (!e.dead) updateEnemy(e, dt);
   if (G.over) { G.enemies = G.enemies.filter(e => !e.dead); updateFx(dt); return; }
   for (const t of G.towers) updateTower(t, dt);
-  updateProjs(dt); updateZones(dt); updateTors(dt);
+  updateProjs(dt); updateZones(dt); updateTors(dt); updateEProjs(dt);
   G.enemies = G.enemies.filter(e => !e.dead);
   updateFx(dt);
   if (G.waveActive && !G.spawnQ.length && !G.enemies.length) waveDone();
@@ -2038,7 +2135,22 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
   for (const [, k, o, x, y] of dl) {
     if (k === 0) {
       const dg = G.drag && G.drag.t === o; if (dg) { c.save(); c.globalAlpha = 0.35; }
+      const ko = o.ko > 0; if (ko) { c.save(); c.globalAlpha *= 0.45; }
       drawTower(c, o.type, x, y, cs, o.lvl, T, o.lx, o.ly, o.recoil, o.blink < 0, o.br);
+      if (ko) { c.restore(); for (let i = 0; i < 3; i++) { const a = T * 4 + i * TAU / 3; star(c, x + Math.cos(a) * cs * 0.28, y - cs * 0.45 + Math.sin(a) * cs * 0.08, cs * 0.08, cs * 0.035); fs(c, '#ffd23f', 1.2); } }
+      if (o.stun > 0 && !ko) {
+        c.save(); c.strokeStyle = '#e6ff5a'; c.lineWidth = Math.max(1.5, cs * 0.04); c.lineCap = 'round';
+        for (let i = 0; i < 3; i++) { const a = rand(TAU), rx = x + Math.cos(a) * cs * 0.3, ry = y - cs * 0.15 + Math.sin(a) * cs * 0.3; c.beginPath(); c.moveTo(rx, ry); c.lineTo(rx + rand(-1, 1) * cs * 0.12, ry + rand(-1, 1) * cs * 0.12); c.stroke(); }
+        c.font = Math.round(cs * 0.28) + 'px Bangers, Impact, sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = INK; c.strokeText('ZZZ', x + cs * 0.28, y - cs * 0.5); c.fillStyle = '#e6ff5a'; c.fillText('ZZZ', x + cs * 0.28, y - cs * 0.5);
+        c.restore();
+      }
+      if (o.shield > 0 && !ko) { c.save(); c.globalAlpha *= 0.35 + 0.1 * Math.sin(T * 4); c.beginPath(); c.arc(x, y - cs * 0.08, cs * 0.46, 0, TAU); c.fillStyle = '#9fdcff'; c.fill(); c.globalAlpha = 0.8; c.lineWidth = 2; c.strokeStyle = '#ffffff'; c.stroke(); c.restore(); }
+      if (o.hitT > 0) { c.save(); c.globalAlpha = Math.min(0.6, o.hitT * 3); c.beginPath(); c.arc(x, y - cs * 0.1, cs * 0.4, 0, TAU); c.fillStyle = '#ff4f6e'; c.fill(); c.restore(); }
+      if ((o.hp < o.maxHp || ko) && !G.demo) {
+        const bw = cs * 0.62, bh = Math.max(4, cs * 0.075), bx0 = x - bw / 2, by0 = y + cs * 0.37, k = clamp(o.hp / o.maxHp, 0, 1);
+        rr(c, bx0, by0, bw, bh, bh / 2); c.fillStyle = INK; c.fill();
+        if (k > 0) { rr(c, bx0 + 1.5, by0 + 1.5, Math.max(bh - 3, (bw - 3) * k), bh - 3, (bh - 3) / 2); c.fillStyle = k > 0.5 ? '#5cd86a' : k > 0.25 ? '#ffd23f' : '#ff4f6e'; c.fill(); }
+      }
       if (o.s.aff) { const up = o.s.aff > 0, mx = x - cs * 0.33, my = y + cs * 0.14, k2 = cs * 0.09; c.beginPath(); if (up) { c.moveTo(mx - k2, my + k2 * 0.6); c.lineTo(mx + k2, my + k2 * 0.6); c.lineTo(mx, my - k2); } else { c.moveTo(mx - k2, my - k2 * 0.6); c.lineTo(mx + k2, my - k2 * 0.6); c.lineTo(mx, my + k2); } c.closePath(); fs(c, up ? '#5cd86a' : '#ff4f6e', 1.5); }
       if (dg) c.restore();
     }
@@ -2092,6 +2204,11 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
       for (const o of [0, -cs * 0.12]) { c.beginPath(); c.arc(o, 0, cs * 0.2, -1.1, 1.1); c.lineWidth = lw * 2.4; c.strokeStyle = INK; c.stroke(); c.lineWidth = lw * 1.2; c.strokeStyle = '#e6fff8'; c.stroke(); }
     }
     c.restore();
+  }
+  for (const p of G.eprojs) {
+    if (!G.towers.includes(p.t)) continue;
+    const k = Math.min(1, p.p), gx = lerp(p.sx, p.t.c + 0.5, k), gy = lerp(p.sy, p.t.r + 0.5, k), [x, y] = toScreen(gx, gy), yy = y - cs * (0.25 + Math.sin(k * Math.PI) * 0.6);
+    c.beginPath(); c.arc(x, yy, cs * 0.1, 0, TAU); fs(c, '#b57bff', Math.max(1.4, cs * 0.04));
   }
   // Anneaux et éclairs
   for (const f of G.fx) {
@@ -2196,7 +2313,7 @@ const palBtns = {};
 TORDER.forEach((type, i) => {
   const D = TOWERS[type], b = document.createElement('button');
   b.type = 'button'; b.className = 'tbtn'; b.dataset.aria = D.name + ' (' + D.elem + ')';
-  b.innerHTML = '<span class="lock">' + LOCK + '</span><canvas></canvas><span class="nm">' + D.name + '</span><span class="cost" data-cost="' + type + '">' + COIN + D.cost + '</span>';
+  b.innerHTML = '<span class="lock">' + LOCK + '</span><span class="bio" hidden></span><canvas></canvas><span class="nm">' + D.name + '</span><span class="cost" data-cost="' + type + '">' + COIN + D.cost + '</span>';
   $('#palette').appendChild(b);
   const c = prepMini(b.querySelector('canvas'), 42, 42);
   drawTower(c, type, 21, 24, 35, 1, 0.4 + i, 0, 0.3, 0, false);
@@ -2230,13 +2347,16 @@ const iCtx = prepMini($('#iCv'), 44, 48);
 function statChips(t) {
   const s = t.s, D = TOWERS[t.type];
   const extra = {
-    feu: 'Brûlure ' + s.burn + '/s', eau: 'Ralentit ' + Math.round(s.slow * 100) + ' %', terre: s.stun ? 'Étourdit ' + Math.round(s.stun * 100) + ' %' : 'Zone',
+    feu: 'Brûlure ' + Math.round(s.burn) + '/s', eau: 'Ralentit ' + Math.round(s.slow * 100) + ' %', terre: s.stun ? 'Étourdit ' + Math.round(s.stun * 100) + ' %' : 'Zone',
     vent: 'Recul ' + fr(s.knock), foudre: s.chain + ' cibles', glace: 'Gèle 1 onde / ' + s.every,
   }[t.type] || D.fx(s);
   const ch = [['', '<i>Dégâts</i>' + Math.round(s.dmg)], ['', '<i>Portée</i>' + fr(s.range.toFixed(1))], ['', '<i>Cadence</i>' + fr(s.rate.toFixed(2)) + '/s'], ['', extra]];
   if (s.brMul) ch.push(['good', '×' + fr(s.brMul) + ' ' + BRANCH[s.br].vs]);
   if (s.terr && s.aff) ch.push([s.aff > 0 ? 'good' : 'bad', s.terr.name + ' ' + fmtAff(s.aff)]);
   if (s.terr && s.terr.range) ch.push(['good', s.terr.name + ' +0,6 portée']);
+  if (s.bio) ch.push([s.bio > 0 ? 'good' : 'bad', 'Biome ' + fmtAff(s.bio)]);
+  ch.unshift([t.ko > 0 ? 'bad' : t.hp < t.maxHp * 0.5 ? 'bad' : '', t.ko > 0 ? 'Assommée ' + Math.ceil(t.ko) + ' s' : '<i>PV</i>' + Math.ceil(t.hp) + '/' + t.maxHp + (t.shield > 0 ? ' +' + Math.ceil(t.shield) + ' 🛡' : '')]);
+  if (t.stun > 0) ch.unshift(['bad', 'Paralysée']);
   return ch.map(([c, v]) => '<span class="ichip ' + c + '">' + v + '</span>').join('');
 }
 function selectTower(t) {
@@ -2247,7 +2367,7 @@ function selectTower(t) {
 function refreshInfo() {
   const t = G && G.selTower; if (!t) return;
   const D = TOWERS[t.type], cost = upCost(t);
-  const key = [t.type, t.lvl, t.br, t.mode, G.gold >= cost].join('|');
+  const key = [t.type, t.lvl, t.br, t.mode, G.gold >= cost, Math.ceil(t.hp), Math.ceil(t.shield || 0), Math.ceil(t.ko || 0), t.stun > 0].join('|');
   if (hudCache.info === key) return;
   hudCache.info = key;
   $('#iName').textContent = D.name;
@@ -2389,6 +2509,7 @@ function pause() {
   if (!G || G.over || screen !== 'game') return;
   G.paused = true; show('pause');
   $('#pSave').textContent = MAPS[G.map].name + ' · ' + DIFFS[G.diff].name + '. ' + (G.checkpoint && G.checkpoint.wave ? 'Partie sauvegardée à la fin de la vague ' + G.checkpoint.wave + '.' : 'La partie se sauvegarde à chaque fin de vague.')
+    + ' Biome ' + MAPS[G.map].biome.name.toLowerCase() + ' : ' + biomeText(MAPS[G.map].biome) + '.'
     + ' Cagnotte : ' + (meta.bank || 0) + ' or. Elle ne reçoit l’or restant qu’en fin de partie (victoire, K.O. ou abandon).';
   cashArm = false; refreshCash();
   refreshOptBtns();
@@ -2431,7 +2552,7 @@ function showOver(win, best, award, bank, quit) {
   const bk = bank || { gain: 0, total: meta.bank || 0 };
   $('#oBank').textContent = '+' + bk.gain;
   const nextMap = MAPS.findIndex((mm, i) => !mapOwned(i));
-  $('#oBankDetail').textContent = 'L’or restant rejoint la cagnotte (' + bk.total + ' or), qui sert à acheter des cartes.' + (nextMap >= 0 ? ' Prochaine carte : ' + MAPS[nextMap].name + ', ' + MAPS[nextMap].price + ' or.' : '');
+  $('#oBankDetail').textContent = 'L’or restant rejoint la cagnotte (' + bk.total + ' or), qui sert à acheter des cartes.' + (nextMap >= 0 ? ' Prochaine carte : ' + MAPS[nextMap].name + ', ' + MAPS[nextMap].price + ' or' + (mapReqOk(nextMap) ? (win && !quit && G.diff !== 'facile' && G.diff !== 'infini' && nextMap === G.map + 1 ? '. Elle est maintenant achetable !' : '.') : ', après avoir réussi ' + MAPS[nextMap - 1].name + ' en Moyen.') : '');
   $('#oWord').textContent = quit ? 'ABANDON' : win ? 'VICTOIRE !!' : 'K.O. !';
   $('#oWord').classList.toggle('win', win);
   $('#oText').textContent = quit ? 'Partie terminée. Ton or restant rejoint la cagnotte pour acheter des cartes.' : win ? 'Les ' + G.maxw + ' vagues sont repoussées. La petite maison est sauve !' : 'Les slimes ont envahi la petite maison. Retente ta chance !';
@@ -2456,6 +2577,8 @@ function refreshCosts() {
     const b = palBtns[type], lk = !unlocked(type);
     b.classList.toggle('locked', lk);
     b.setAttribute('aria-label', b.dataset.aria + (lk ? ', à débloquer dans l’Atelier' : ', ' + costOf(type) + ' or'));
+    const bs = b.querySelector('.bio'), a = G && !G.demo ? affinity(type, MAPS[G.map].biome) : 0;
+    bs.hidden = !a; if (a) { bs.textContent = (a > 0 ? '+' : '−') + Math.round(Math.abs(a) * 100); bs.className = 'bio ' + (a > 0 ? 'good' : 'bad'); bs.title = 'Biome ' + MAPS[G.map].biome.name + ' : ' + fmtAff(a); }
   }
 }
 function drawUpIcon(c, id, x, y, s) {
@@ -2489,6 +2612,17 @@ function drawUpIcon(c, id, x, y, s) {
         const ax = Math.cos(a0 + 2.4) * r * 1.05, ay = Math.sin(a0 + 2.4) * r * 1.05, tx = -Math.sin(a0 + 2.4), ty = Math.cos(a0 + 2.4);
         c.beginPath(); c.moveTo(ax + tx * r * 0.3, ay + ty * r * 0.3); c.lineTo(ax - ty * r * 0.25, ay + tx * r * 0.25); c.lineTo(ax + ty * r * 0.25, ay - tx * r * 0.25); c.closePath(); c.fillStyle = INK; c.fill();
       } break;
+    case 'remparts':
+      rr(c, -r * 0.9, -r * 0.4, r * 1.8, r * 1.3, r * 0.15); fs(c, '#cdbfe0', lw);
+      for (const k of [-0.9, -0.3, 0.3]) { c.beginPath(); c.rect(k * r, -r * 0.8, r * 0.6, r * 0.45); fs(c, '#cdbfe0', lw); }
+      c.beginPath(); c.moveTo(-r * 0.2, r * 0.9); c.lineTo(-r * 0.2, r * 0.4); c.arc(0, r * 0.4, r * 0.2, Math.PI, TAU); c.lineTo(r * 0.2, r * 0.9); c.closePath(); fs(c, '#8a5a3c', lw * 0.8); break;
+    case 'bouclier':
+      c.beginPath(); c.moveTo(0, -r * 1.05); c.quadraticCurveTo(r * 0.95, -r * 0.8, r * 0.9, -r * 0.2); c.quadraticCurveTo(r * 0.75, r * 0.7, 0, r * 1.05); c.quadraticCurveTo(-r * 0.75, r * 0.7, -r * 0.9, -r * 0.2); c.quadraticCurveTo(-r * 0.95, -r * 0.8, 0, -r * 1.05); c.closePath(); fs(c, '#7fd3ff', lw);
+      c.beginPath(); c.moveTo(0, -r * 0.7); c.lineTo(0, r * 0.7); c.moveTo(-r * 0.55, -r * 0.1); c.lineTo(r * 0.55, -r * 0.1); c.lineWidth = lw; c.strokeStyle = '#ffffff'; c.stroke(); break;
+    case 'paratonnerre':
+      c.beginPath(); c.moveTo(0, -r * 1.1); c.lineTo(0, r * 0.9); c.lineWidth = lw * 1.6; c.strokeStyle = INK; c.stroke();
+      c.beginPath(); c.moveTo(r * 0.55, -r * 0.9); c.lineTo(r * 0.15, -r * 0.2); c.lineTo(r * 0.45, -r * 0.2); c.lineTo(r * 0.05, r * 0.5); c.lineTo(r * 0.75, -r * 0.35); c.lineTo(r * 0.45, -r * 0.35); c.closePath(); fs(c, '#ffd23f', lw * 0.8);
+      c.beginPath(); c.arc(0, -r * 1.1, r * 0.14, 0, TAU); fs(c, '#ffd23f', lw * 0.7); break;
     case 'revive':
       for (const sg of [-1, 1]) {
         c.save(); c.scale(sg, 1); c.beginPath(); c.moveTo(r * 0.3, -r * 0.1);
@@ -2578,7 +2712,7 @@ function buyUp(u) {
   if (G && shopFrom === 'game') {
     if (u.id === 'gold') G.gold += 25;
     if (u.id === 'lives') G.lives += 2;
-    for (const t of G.towers) t.s = towerStats(t);
+    for (const t of G.towers) { t.s = towerStats(t); const f = t.hp / (t.maxHp || 1); t.maxHp = towerMaxHp(t); t.hp = Math.round(t.maxHp * f); if (u.id === 'bouclier') refillShield(t); }
     if (!G.waveActive) saveCheckpoint();
     else if (G.checkpoint) { if (u.id === 'gold') G.checkpoint.gold += 25; if (u.id === 'lives') G.checkpoint.lives += 2; store.set(SAVE, G.checkpoint); }
   }
@@ -2636,9 +2770,10 @@ function renderMaps(boughtId) {
     const own = mapOwned(i), rec = best[m.id] || {}, d = document.createElement('div');
     d.className = 'mapc' + (own ? '' : ' locked') + (boughtId === m.id ? ' bought' : '');
     const med = DORDER.map(k => { const r = rec[k], on = k === 'infini' ? r && r.wave : r && r.won; return '<span class="medal' + (on ? ' on' : '') + '" title="' + DIFFS[k].name + '">' + (k === 'infini' ? '∞' + (r && r.wave ? ' ' + r.wave : '') : DIFFS[k].name[0]) + '</span>'; }).join('');
-    d.innerHTML = '<canvas></canvas><span class="nm">' + (i + 1) + '. ' + m.name + '</span><span class="medals">' + med + '</span>'
+    d.innerHTML = '<canvas></canvas><span class="nm">' + (i + 1) + '. ' + m.name + '</span><span class="bio-l">Biome ' + m.biome.name.toLowerCase() + '</span><span class="medals">' + med + '</span>'
+      + (own ? '' : mapReqOk(i) ? '<span class="req ok">✓ ' + MAPS[i - 1].name + ' réussie en Moyen</span>' : '<span class="req">Réussis d’abord ' + MAPS[i - 1].name + ' en Moyen</span>')
       + (own ? '<button class="sbtn" type="button">Jouer ▸</button>'
-        : '<button class="sbtn" type="button"' + ((meta.bank || 0) < m.price ? ' disabled' : '') + '>' + LOCK + 'Acheter · ' + m.price + ' or</button>');
+        : '<button class="sbtn" type="button"' + ((meta.bank || 0) < m.price || !mapReqOk(i) ? ' disabled' : '') + '>' + LOCK + 'Acheter · ' + m.price + ' or</button>');
     box.appendChild(d);
     const cv2 = d.querySelector('canvas'); drawMapMini(prepMini(cv2, 140, 90), i, 140, 90, 'moyen');
     d.querySelector('button').addEventListener('click', () => own ? openDiff(i) : buyMap(i));
@@ -2647,7 +2782,7 @@ function renderMaps(boughtId) {
 }
 function buyMap(i) {
   const m = MAPS[i];
-  if (mapOwned(i)) return;
+  if (mapOwned(i) || !mapReqOk(i)) return;
   if ((meta.bank || 0) < m.price) { Snd.play('no'); return; }
   meta.bank -= m.price; meta.lv['map_' + m.id] = 1; saveMeta();
   Snd.init(); Snd.play('win'); renderMaps(m.id);
@@ -2657,7 +2792,7 @@ function openDiff(i) {
   diffMap = i; Snd.init(); show('diff'); screens.diff.scrollTop = 0;
   const m = MAPS[i], rec = (store.get(BEST2) || {})[m.id] || {};
   $('#dfName').textContent = (i + 1) + '. ' + m.name;
-  $('#dfSub').textContent = m.blurb;
+  $('#dfSub').textContent = m.blurb + ' Biome ' + m.biome.name.toLowerCase() + ' : ' + biomeText(m.biome) + ', sur toute la carte.';
   const box = $('#dfList'); box.innerHTML = '';
   for (const k of DORDER) {
     const Df = DIFFS[k], r = rec[k], d = document.createElement('div'); d.className = 'df';
@@ -2829,7 +2964,7 @@ const TUTO = [
     tips: ['Idéal contre les longues files de Gloop', 'Magmo, lui, ne brûle jamais'] },
   { kind: 'spec', title: 'Spécialisations', tag: 'Niveaux 3 et 4', html: '<p style="margin:0">Au niveau 2, chaque tour posée peut se spécialiser contre les ennemis au sol, les volants ou les Kaiju. Le choix vaut pour <b>cette tour uniquement</b>, et il est définitif : les deux autres branches se ferment. Deux Braise peuvent donc avoir des spécialisations différentes.</p>' },
   { kind: 'fusion', demo: 'fus', title: 'Fusions', tag: 'Deux éléments, une tour', html: '<p style="margin:0">Fais glisser une tour sur une autre tour d’élément compatible, toutes deux au niveau 2 ou plus : elles deviennent une seule tour, plus puissante, avec son propre effet, à la place de celle sur laquelle tu l’as lâchée. Chaque fusion se débloque une par une dans l’Atelier. Ici, une Tornade de feu.</p>' },
-  { kind: 'terrain', title: 'Terrains', tag: 'Bonus et malus', html: '<p style="margin:0">Certaines cases changent la puissance des tours posées dessus. Une Ondine sur l’eau frappe 40 % plus fort, mais perd 40 % sur le sable. L’eau et la lave ont les effets les plus forts, le marécage des effets plus doux. Une fusion prend la moyenne de ses deux éléments : un Volcan sur l’eau a donc un malus. Quand tu choisis une tour, les cases s’affichent en vert (bonus) ou en rouge (malus). Le tableau complet est dans l’Aide.</p>' },
+  { kind: 'terrain', title: 'Terrains', tag: 'Bonus et malus', html: '<p style="margin:0">Certaines cases changent la puissance des tours posées dessus. Une Ondine sur l’eau frappe 40 % plus fort, mais perd 40 % sur le sable. L’eau et la lave ont les effets les plus forts, le marécage des effets plus doux. Une fusion prend la moyenne de ses deux éléments : un Volcan sur l’eau a donc un malus. Quand tu choisis une tour, les cases s’affichent en vert (bonus) ou en rouge (malus). Chaque carte a aussi un biome qui renforce ou affaiblit certains éléments sur toute la carte. Le tableau complet est dans l’Aide.</p>' },
   { kind: 'end', title: 'À toi de jouer !', tag: 'Récap', html: '<ul>'
     + '<li>Commence avec Ondine et Braise près d’un virage : les ennemis y restent plus longtemps à portée.</li>'
     + '<li>Débloque vite Zéphyr (contre les Flappy volants, dès la vague 4) et Rocaille (contre les Tonk casqués, dès la vague 6).</li>'
