@@ -42,7 +42,7 @@ button:disabled{cursor:default}
   background:var(--sky) radial-gradient(rgba(42,27,61,.10) 1.2px,transparent 1.7px) 0 0/9px 9px}
 
 /* HUD */
-#hud{flex:none;display:flex;align-items:center;gap:5px;padding:8px 16px}
+#hud{flex:none;position:relative;z-index:4;display:flex;align-items:center;gap:5px;padding:8px 16px}
 .chip{display:flex;align-items:center;gap:4px;height:38px;padding:0 9px 0 4px;min-width:0;flex:none;background:var(--paper);
   border:2.5px solid var(--ink);border-radius:99px;box-shadow:0 3px 0 var(--ink);font-weight:800;font-size:17px;
   font-variant-numeric:tabular-nums;line-height:1}
@@ -68,7 +68,7 @@ button:disabled{cursor:default}
 #cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
 #hint{position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:5;pointer-events:none;background:var(--paper);
   border:2.5px solid var(--ink);border-radius:99px;padding:3px 14px;font-weight:800;font-size:14px;box-shadow:2px 3px 0 var(--ink);
-  white-space:nowrap;max-width:calc(100% - 32px);overflow:hidden;text-overflow:ellipsis}
+  width:max-content;max-width:calc(100% - 32px);text-align:center;text-wrap:balance;line-height:1.3}
 #banner{position:absolute;left:50%;top:42%;z-index:6;pointer-events:none;text-align:center;width:max-content;max-width:calc(100% - 32px);
   transform:translate(-50%,-50%) rotate(-3deg);animation:bnr 2.2s ease-out forwards}
 #banner .big{display:inline-block;font-family:var(--display);font-size:clamp(44px,12vw,76px);line-height:1.05;letter-spacing:2px;
@@ -343,6 +343,9 @@ button:disabled{cursor:default}
 @media (max-width:520px){.df{grid-template-columns:96px minmax(0,1fr)}.df canvas{width:96px;height:62px}.df .btn{grid-column:1/-1}}
 .gain.bank b{color:var(--sun)}
 
+.goldchip{position:relative;cursor:pointer}
+.bankb{position:absolute;left:50%;bottom:-10px;transform:translateX(-50%);background:var(--ink);color:var(--sun);border-radius:99px;font-size:10.5px;font-weight:800;line-height:1;padding:2px 6px;white-space:nowrap;font-variant-numeric:tabular-nums;pointer-events:none}
+
 @media (max-width:370px){
   #hud{gap:4px}
   .chip{font-size:15px;padding:0 7px 0 3px;height:36px}
@@ -363,7 +366,7 @@ button:disabled{cursor:default}
 <div id="app">
   <header id="hud">
     <div class="chip" title="Vies"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.3-9.2C1.4 8.4 3.6 4.5 7.3 4.5c2 0 3.5 1.1 4.7 2.7 1.2-1.6 2.7-2.7 4.7-2.7 3.7 0 5.9 3.9 4.6 7.3C19.5 16.4 12 21 12 21z" fill="#ff4f6e" stroke="#2a1b3d" stroke-width="2.2" stroke-linejoin="round"/><ellipse cx="7.6" cy="9" rx="1.8" ry="1.2" fill="#fff" opacity=".8"/></svg><b id="hLives">20</b></div>
-    <div class="chip" title="Or"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#ffd23f" stroke="#2a1b3d" stroke-width="2.2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#e0a800" stroke-width="2"/><path d="M9 8.5l1.5-1" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg><b id="hGold">200</b></div>
+    <div class="chip goldchip" id="hGoldChip" title="Or de la partie" role="button" tabindex="0"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#ffd23f" stroke="#2a1b3d" stroke-width="2.2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#e0a800" stroke-width="2"/><path d="M9 8.5l1.5-1" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg><b id="hGold">200</b><span class="bankb" id="hBank">🐷 0</span></div>
     <button id="bWave" type="button"><span class="wi">▶</span><span class="wt"><small>Vague</small><b>1</b></span></button>
     <button class="ibtn" id="bSpeed" type="button" aria-label="Vitesse du jeu">x1</button>
     <button class="ibtn gembtn" id="bShop" type="button" aria-label="Ouvrir l’Atelier" title="Atelier (A)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l7 7-7 13L5 9z" fill="#c59bff" stroke="#2a1b3d" stroke-width="2.2" stroke-linejoin="round"/><path d="M5 9h14M12 2L9 9l3 13 3-13z" fill="none" stroke="#2a1b3d" stroke-width="1.3" stroke-linejoin="round"/></svg><span class="cnt" id="bShopN">0</span></button>
@@ -475,7 +478,8 @@ button:disabled{cursor:default}
         <button class="btn alt" id="pTuto" type="button">Tutoriel</button>
         <button class="btn alt" id="pHelp" type="button">Aide</button>
       </div>
-      <button class="btn pink" id="pQuit" type="button">Retour au menu<span class="kbd">Q</span></button>
+      <button class="btn alt" id="pQuit" type="button">Retour au menu · partie gardée<span class="kbd">Q</span></button>
+      <button class="btn pink" id="pCash" type="button">Abandonner et encaisser</button>
       <p class="fine" id="pSave"></p>
     </div>
   </div>
@@ -608,47 +612,47 @@ const MAPS = [
     deco: ['fleur', 'buisson', 'herbe', 'herbe', 'champi', 'fleur'], obstacle: 'arbre',
     pts: [[-1, 1], [3, 1], [3, 6], [7, 6], [7, 2], [11, 2], [11, 7], [14, 7]],
     terrain: ['..CC....LLL...', '............X.', '..M..X........', 'LL......M.C...', 'LL..CC...XC...', '......LL......', '........LL..XX', '..MM..........', 'XX....CC..LL..'] },
-  { id: 'plage', name: 'Plage Ramune', price: 300, hpMul: 1.1, shards: 1.1, blurb: 'Du sable partout (mauvais pour l’eau et la glace) et la mer tout en bas.',
+  { id: 'plage', name: 'Plage Ramune', price: 200, hpMul: 1.1, shards: 1.1, blurb: 'Du sable partout (mauvais pour l’eau et la glace) et la mer tout en bas.',
     ground: '#cfe8a0', ground2: '#c5e194', path: '#cf9660', pathEdge: '#a06a3c', frame: '#4cc3f2', dot: 'rgba(255,255,255,.35)',
     deco: ['coquillage', 'herbe', 'etoile', 'coquillage'], obstacle: 'palmier',
     pts: [[-1, 4], [2, 4], [2, 1], [5, 1], [5, 7], [9, 7], [9, 1], [12, 1], [12, 5], [14, 5]],
     terrain: ['SSSS..CC..SSSS', 'SS......S....S', 'SS.X..SS.....S', 'S...SS....W...', '...S..S..S....', 'SS..C...SS.X..', 'LL...S.......S', 'LLLL...LL...LL', 'LLLLLLLLLLLLLL'] },
-  { id: 'marais', name: 'Marais Matcha', price: 500, hpMul: 1.15, shards: 1.2, blurb: 'Boue et étangs : le royaume de l’eau et de la terre, le feu y est mal à l’aise.',
+  { id: 'marais', name: 'Marais Matcha', price: 350, hpMul: 1.15, shards: 1.2, blurb: 'Boue et étangs : le royaume de l’eau et de la terre, le feu y est mal à l’aise.',
     ground: '#9ccf7e', ground2: '#92c574', path: '#c9b27a', pathEdge: '#8f7a48', frame: '#5f8f4a', dot: 'rgba(42,27,61,.16)',
     deco: ['herbe', 'champi', 'buisson'], obstacle: 'arbre',
     pts: [[-1, 2], [3, 2], [3, 6], [6, 6], [6, 2], [10, 2], [10, 6], [14, 6]],
     terrain: ['MMLL..MMLLM.MM', 'M..M.MM...M.LL', 'LL...M....M.LL', '..M.LL.MM.X.M.', 'MM..LL.LL..MM.', '.M.X..MLL.X..M', 'LLL....MM.....', 'MMLLM..X.MMLLM', 'LLLLMMLLLLMMLL'] },
-  { id: 'foret', name: 'Forêt Dango', price: 800, hpMul: 1.2, shards: 1.3, blurb: 'Une forêt dense : peu de places pour construire, mais de belles collines.',
+  { id: 'foret', name: 'Forêt Dango', price: 500, hpMul: 1.2, shards: 1.3, blurb: 'Une forêt dense : peu de places pour construire, mais de belles collines.',
     ground: '#7fcf6a', ground2: '#76c661', path: '#e8c890', pathEdge: '#b8905a', frame: '#3f8a45', dot: 'rgba(42,27,61,.16)',
     deco: ['champi', 'fleur', 'buisson', 'herbe'], obstacle: 'arbre',
     pts: [[-1, 1], [12, 1], [12, 4], [1, 4], [1, 7], [14, 7]],
     terrain: ['XX.XX..XXX.XXX', '.............X', 'X.C..X..M..X.X', 'XX..MM.C..X..X', 'X............X', 'X.X..C..XX.M.X', 'X..XX..M..X..C', '..............', 'XXX..XXX..XXXX'] },
-  { id: 'desert', name: 'Désert Dorayaki', price: 1100, hpMul: 1.25, shards: 1.4, blurb: 'Dunes brûlantes : le feu, la terre et le vent adorent, l’eau souffre.',
+  { id: 'desert', name: 'Désert Dorayaki', price: 700, hpMul: 1.25, shards: 1.4, blurb: 'Dunes brûlantes : le feu, la terre et le vent adorent, l’eau souffre.',
     ground: '#dcb884', ground2: '#d4ae78', path: '#b98a5a', pathEdge: '#8a5f38', frame: '#e0a060', dot: 'rgba(255,255,255,.3)',
     deco: ['roche', 'herbe'], obstacle: 'cactus',
     pts: [[-1, 4], [5, 4], [5, 1], [9, 1], [9, 7], [14, 7]],
     terrain: ['SSSSRRSSSSSSSS', 'SS.SS.....SXSS', 'S.X.S.RR.S..SS', 'SS..SS.LL.S.RS', '......SLL.S..S', 'SRRSS.SSS.WS.S', 'SS.X.SS.S.S.XS', 'SSSS.SSS......', 'SSSSSSXSSSSSSS'] },
-  { id: 'ile', name: 'Île Takoyaki', price: 1500, hpMul: 1.3, shards: 1.5, blurb: 'Une île entourée d’eau : parfait pour Ondine, terrible pour Braise.',
+  { id: 'ile', name: 'Île Takoyaki', price: 950, hpMul: 1.3, shards: 1.5, blurb: 'Une île entourée d’eau : parfait pour Ondine, terrible pour Braise.',
     ground: '#bfe79a', ground2: '#b5de8e', path: '#d7a86e', pathEdge: '#a0703c', frame: '#3fb6ea', dot: 'rgba(255,255,255,.35)',
     deco: ['coquillage', 'etoile', 'herbe'], obstacle: 'palmier',
     pts: [[-1, 4], [3, 4], [3, 1], [7, 1], [7, 7], [11, 7], [11, 3], [14, 3]],
     terrain: ['LLLLLLLLLLLLLL', 'LLS.......SLLL', 'LS.X.CS..SS.LL', 'LSS..S.S.S....', '....SS..C.S..L', 'LSS.X..SS...SL', 'LLS..S..X.S.LL', 'LLLS.......SLL', 'LLLLLLLLLLLLLL'] },
-  { id: 'canyon', name: 'Canyon Taiyaki', price: 1900, hpMul: 1.35, shards: 1.6, blurb: 'Roche et plateaux : la terre et l’éclair y brillent, le chemin serpente.',
+  { id: 'canyon', name: 'Canyon Taiyaki', price: 1200, hpMul: 1.35, shards: 1.6, blurb: 'Roche et plateaux : la terre et l’éclair y brillent, le chemin serpente.',
     ground: '#d9a27a', ground2: '#cf986f', path: '#f0d3a0', pathEdge: '#b88a58', frame: '#a0583a', dot: 'rgba(255,255,255,.2)',
     deco: ['roche'], obstacle: 'rocher',
     pts: [[-1, 6], [2, 6], [2, 2], [6, 2], [6, 6], [9, 6], [9, 2], [12, 2], [12, 6], [14, 6]],
     terrain: ['RRWWRRXXRRCCRR', 'RX.RR.C.R..XRR', 'RR.........R.R', 'C.X.RC.RX.C..C', 'RR.CR..RR.RR.R', 'X.X.RX.C..RC.X', '...X......R...', 'RRCRRXRRCRRXRR', 'XXRRXXRRXXRRXX'] },
-  { id: 'volcan', name: 'Volcan Wasabi', price: 2400, hpMul: 1.4, shards: 1.7, blurb: 'De la lave partout : le feu est roi, l’eau et la glace fondent.',
+  { id: 'volcan', name: 'Volcan Wasabi', price: 1500, hpMul: 1.4, shards: 1.7, blurb: 'De la lave partout : le feu est roi, l’eau et la glace fondent.',
     ground: '#6e5673', ground2: '#665069', path: '#e3a36f', pathEdge: '#b8744a', frame: '#3b2944', dot: 'rgba(255,120,80,.22)',
     deco: ['roche', 'roche', 'cristal'], obstacle: 'basalte',
     pts: [[-1, 7], [5, 7], [5, 1], [10, 1], [10, 5], [14, 5]],
     terrain: ['VVXX..RR..XXVV', 'VV..R.....R..V', 'X..VV..KK...VV', '..V..R..V..X..', 'RR..X..VV..R..', '..VV...X..R...', 'V...RR..V..XVV', '......L.RR....', 'XXVV..LL..VVXX'] },
-  { id: 'pic', name: 'Pic Kakigori', price: 2900, hpMul: 1.5, shards: 1.8, blurb: 'Neige et sapins : la glace domine, le feu grelotte, le chemin est long.',
+  { id: 'pic', name: 'Pic Kakigori', price: 1850, hpMul: 1.5, shards: 1.8, blurb: 'Neige et sapins : la glace domine, le feu grelotte, le chemin est long.',
     ground: '#d9efe3', ground2: '#cfe8da', path: '#cdb9a3', pathEdge: '#9a8470', frame: '#7fb6e6', dot: 'rgba(255,255,255,.35)',
     deco: ['flocon', 'herbe', 'sapinet'], obstacle: 'sapin',
     pts: [[-1, 1], [4, 1], [4, 4], [1, 4], [1, 7], [8, 7], [8, 2], [12, 2], [12, 6], [14, 6]],
     terrain: ['NNXXN..NNXXNNN', '.....N..XX..NN', 'NNCX..NN......', '.X...WW...LX.N', '......L..NN..N', 'N..X..LL..X..X', 'XN.NN..L..CN..', '..........NN.X', 'XXNNXXN..XXNNX'] },
-  { id: 'toundra', name: 'Toundra Yuzu', price: 3500, hpMul: 1.6, shards: 1.9, blurb: 'Le chemin le plus court du jeu, au milieu du froid : chaque case compte.',
+  { id: 'toundra', name: 'Toundra Yuzu', price: 2200, hpMul: 1.6, shards: 1.9, blurb: 'Le chemin le plus court du jeu, au milieu du froid : chaque case compte.',
     ground: '#d4e6ec', ground2: '#cadde4', path: '#b8a58f', pathEdge: '#7f6c58', frame: '#5f8fb8', dot: 'rgba(255,255,255,.35)',
     deco: ['flocon', 'herbe'], obstacle: 'sapin',
     pts: [[-1, 3], [6, 3], [6, 6], [14, 6]],
@@ -810,12 +814,12 @@ function fusionKey(a, b) {
 const MODES = ['premier', 'fort', 'proche'], MODE_LABEL = { premier: 'Cible : 1er', fort: 'Cible : costaud', proche: 'Cible : proche' };
 
 const ETYPES = {
-  gloop: { name: 'Gloop', hp: 30, speed: 1.0, reward: 4, size: 0.24, color: '#b57bff', light: '#e2caff', mood: 'happy', desc: 'Le slime de base.' },
-  zip: { name: 'Zippy', hp: 16, speed: 2.0, reward: 3, size: 0.18, color: '#ff7eb6', light: '#ffd0e5', mood: 'open', desc: 'Minuscule et très rapide.' },
-  flappy: { name: 'Flappy', hp: 24, speed: 1.3, reward: 5, size: 0.2, color: '#7a69e0', light: '#b9adff', mood: 'fang', flying: true, desc: 'Vole : Rocaille ne l’atteint pas.' },
-  tonk: { name: 'Tonk', hp: 110, speed: 0.6, reward: 10, size: 0.31, color: '#7fa4c9', light: '#cfe0f2', mood: 'grr', angry: true, armor: 3, lifeCost: 2, desc: 'Casqué : encaisse chaque coup.' },
-  magma: { name: 'Magmo', hp: 60, speed: 0.9, reward: 8, size: 0.26, color: '#ff6a3d', light: '#ffc08a', mood: 'grr', angry: true, immune: 'feu', desc: 'Immunisé au feu.' },
-  boss: { name: 'Kaiju', hp: 650, speed: 0.42, reward: 80, size: 0.42, color: '#ff4f6e', light: '#ffa3b3', mood: 'grr', angry: true, armor: 5, lifeCost: 10, boss: true, desc: 'Boss des vagues 10, 20, 30.' },
+  gloop: { name: 'Gloop', hp: 30, speed: 1.0, reward: 3, size: 0.24, color: '#b57bff', light: '#e2caff', mood: 'happy', desc: 'Le slime de base.' },
+  zip: { name: 'Zippy', hp: 16, speed: 2.0, reward: 2, size: 0.18, color: '#ff7eb6', light: '#ffd0e5', mood: 'open', desc: 'Minuscule et très rapide.' },
+  flappy: { name: 'Flappy', hp: 24, speed: 1.3, reward: 3, size: 0.2, color: '#7a69e0', light: '#b9adff', mood: 'fang', flying: true, desc: 'Vole : Rocaille ne l’atteint pas.' },
+  tonk: { name: 'Tonk', hp: 110, speed: 0.6, reward: 6, size: 0.31, color: '#7fa4c9', light: '#cfe0f2', mood: 'grr', angry: true, armor: 3, lifeCost: 2, desc: 'Casqué : encaisse chaque coup.' },
+  magma: { name: 'Magmo', hp: 60, speed: 0.9, reward: 5, size: 0.26, color: '#ff6a3d', light: '#ffc08a', mood: 'grr', angry: true, immune: 'feu', desc: 'Immunisé au feu.' },
+  boss: { name: 'Kaiju', hp: 650, speed: 0.42, reward: 45, size: 0.42, color: '#ff4f6e', light: '#ffa3b3', mood: 'grr', angry: true, armor: 5, lifeCost: 10, boss: true, desc: 'Boss des vagues 10, 20, 30.' },
 };
 const hpMul = w => 1 + (w - 1) * 0.16 + (w - 1) * (w - 1) * 0.011;
 
@@ -1378,6 +1382,20 @@ function drawBase(c, x, y, s, t, hit) {
 const stage = $('#stage'), cv = $('#cv'), ctx = cv.getContext('2d'), bgCv = document.createElement('canvas');
 const L = { w: 1, h: 1, dpr: 1, cs: 40, ox: 0, oy: 0, portrait: false };
 function toScreen(gx, gy) { return L.portrait ? [L.ox + gy * L.cs, L.oy + gx * L.cs] : [L.ox + gx * L.cs, L.oy + gy * L.cs]; }
+function toGridF(px, py) { let gx = (px - L.ox) / L.cs, gy = (py - L.oy) / L.cs; if (L.portrait) [gx, gy] = [gy, gx]; return [gx, gy]; }
+// Cible d'un glisser-déposer : visée depuis la tour flottante (au-dessus du doigt), avec un effet aimant
+function dragTarget(d) {
+  const [gx, gy] = toGridF(d.px, d.py - (d.mouse ? 0 : L.cs * 0.75));
+  let best = null, bd = Infinity, weak = null, wd = Infinity;
+  for (const o of G.towers) {
+    if (o === d.t) continue;
+    const dist = Math.hypot(o.c + 0.5 - gx, o.r + 0.5 - gy);
+    const compat = !TOWERS[d.t.type].fusion && !TOWERS[o.type].fusion && fusionKey(d.t.type, o.type);
+    if (compat && dist < (d.mouse ? 0.75 : 1.25) && dist < bd) { bd = dist; best = o; }
+    else if (!compat && dist < 0.55 && dist < wd) { wd = dist; weak = o; }
+  }
+  return best || weak;
+}
 function toGrid(px, py) { let gx = (px - L.ox) / L.cs, gy = (py - L.oy) / L.cs; if (L.portrait) [gx, gy] = [gy, gx]; return [Math.floor(gx), Math.floor(gy)]; }
 function resize() {
   const b = stage.getBoundingClientRect();
@@ -1480,7 +1498,11 @@ function newGame(mi, save, diff) {
   $('#bSpeed').textContent = 'x1';
   show('game'); keepAwake();
   if (save) banner('REPRISE', 'Vague ' + (G.wave + 1) + ' prête');
-  else banner('PRÊT ?', MAPS[mi].name + ' · ' + DIFFS[G.diff].name + (G.endless ? ' · vagues infinies' : ' · ' + G.maxw + ' vagues'));
+  else {
+    banner('PRÊT ?', MAPS[mi].name + ' · ' + DIFFS[G.diff].name + (G.endless ? ' · vagues infinies' : ' · ' + G.maxw + ' vagues'));
+    const seen = store.get('elemento.bankhint') || 0;
+    if (seen < 3) { store.set('elemento.bankhint', seen + 1); setTimeout(() => { if (G && G.map === mi && !G.over) bankHint(5000); }, 2400); }
+  }
 }
 function saveCheckpoint() {
   G.checkpoint = { map: G.map, mapId: MAPS[G.map].id, diff: G.diff, banked: G.banked, gold: G.gold, lives: G.lives, wave: G.wave, score: G.score, endless: G.endless,
@@ -1574,7 +1596,7 @@ function makeWave(w) {
 function startWave() {
   if (!G || G.over || G.spawnQ.length) return;
   let early = 0;
-  if (G.waveActive && G.enemies.length) { early = 10 + G.wave; G.gold += early; }
+  if (G.waveActive && G.enemies.length) { early = 5 + Math.floor(G.wave / 2); G.gold += early; }
   G.wave++;
   const { list, label } = makeWave(G.wave);
   G.spawnQ.push(...list); G.spawnT = 0.5; G.waveActive = true; G.autoT = 0;
@@ -1584,7 +1606,7 @@ function startWave() {
 }
 function waveDone() {
   G.waveActive = false;
-  const bonus = Math.round((15 + G.wave * 2) * (1 + 0.2 * M('bonus'))); G.gold += bonus; G.score += G.wave * 50;
+  const bonus = Math.round((10 + G.wave) * (1 + 0.2 * M('bonus'))); G.gold += bonus; G.score += G.wave * 50;
   const aw = awardShards();
   hint('Vague ' + G.wave + ' : +' + bonus + ' or' + (aw.gain ? ', +' + aw.gain + ' éclats' : '') + (canBuyAnything() ? ' · achat possible dans l’Atelier' : ''), 3200);
   Snd.play('clear');
@@ -1687,7 +1709,7 @@ function hurt(e, dmg, elem, s) {
 function kill(e) {
   if (e.dead) return;
   e.dead = true;
-  const D = ETYPES[e.type], rw = Math.round(D.reward * (1 + G.wave * 0.02) * (1 + 0.06 * M('loot'))), up = (e.flying ? FLY : 0) + 0.25;
+  const D = ETYPES[e.type], rw = Math.round(D.reward * (1 + G.wave * 0.01) * (1 + 0.06 * M('loot'))), up = (e.flying ? FLY : 0) + 0.25;
   G.gold += rw; G.score += rw * 10;
   burst(e.x, e.y, up, D.boss ? 40 : 10, [D.color, D.light, '#ffffff'], D.boss ? 4 : 2.4, D.boss ? 0.14 : 0.09, 4, 0.6);
   G.texts.push({ txt: '+' + rw, gx: e.x, gy: e.y, oy: -up - 0.3, t: 0, dur: 0.8, color: '#ffd23f', size: 0.32, rot: 0 });
@@ -2118,10 +2140,17 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
   c.restore();
   if (G.drag) {
     const d = G.drag;
-    c.save(); c.globalAlpha = 0.9; drawTower(c, d.t.type, d.px, d.py - cs * 0.75, cs * 1.1, d.t.lvl, T, 0, 0.3, 0.3, false, d.t.br); c.restore();
+    let gx = d.px, gy = d.py - (d.mouse ? 0 : cs * 0.75), tx = 0, ty = 0;
+    if (d.over) {
+      [tx, ty] = toScreen(d.over.c + 0.5, d.over.r + 0.5); gx = tx; gy = ty - cs * 0.78 + Math.sin(T * 8) * cs * 0.03;
+      c.save(); c.setLineDash([cs * 0.1, cs * 0.08]); c.lineDashOffset = -T * 30; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(d.px, d.py); c.lineTo(gx, gy + cs * 0.2); c.lineWidth = 5; c.strokeStyle = INK; c.stroke(); c.lineWidth = 3; c.strokeStyle = '#ff6ad5'; c.stroke();
+      c.restore();
+    }
+    c.save(); c.globalAlpha = d.over ? 0.85 : 0.9; drawTower(c, d.t.type, gx, gy, cs * (d.over ? 0.8 : 1.1), d.t.lvl, T, 0, 0.3, 0.3, false, d.t.br); c.restore();
     if (d.over) {
       const r = fuseCheck(d.t, d.over), Tt = terrainAt(d.over.c, d.over.r), a = r.ok && Tt ? affinity(r.k, Tt) : 0;
-      pill(c, r.ok ? '= ' + TOWERS[r.k].name + ' · ' + TOWERS[r.k].fee + ' or' + (a ? ' · ' + Tt.name + ' ' + fmtAff(a) : '') : r.why, d.px, d.py - cs * 1.45, r.ok);
+      pill(c, r.ok ? '= ' + TOWERS[r.k].name + ' · ' + TOWERS[r.k].fee + ' or' + (a ? ' · ' + Tt.name + ' ' + fmtAff(a) : '') : r.why, tx, ty - cs * 1.3, r.ok);
     }
   }
   if (G.tpill && !G.drag) { const [txt, x, y, bg] = G.tpill; pill(c, txt, x, y, false, bg, INK); }
@@ -2244,17 +2273,20 @@ $('#iMode').addEventListener('click', () => {
 });
 
 // HUD
+const fmtK = n => n >= 100000 ? Math.round(n / 1000) + 'k' : n >= 10000 ? fr((n / 1000).toFixed(1)) + 'k' : String(n);
+function bankHint(ms) { if (G) hint('Or de la partie : ' + G.gold + '. Ce qu’il en reste à la fin (victoire, K.O. ou abandon) rejoint la cagnotte 🐷 (' + (meta.bank || 0) + ' or), qui sert à acheter des cartes.', ms || 4200); }
+$('#hGoldChip').addEventListener('click', () => bankHint());
 const elLives = $('#hLives'), elGold = $('#hGold'), bWave = $('#bWave');
 function refreshHUD() {
   setText(elLives, 'l', String(Math.max(0, G.lives)));
-  const gd = G.gold >= 100000 ? Math.round(G.gold / 1000) + 'k' : G.gold >= 10000 ? fr((G.gold / 1000).toFixed(1)) + 'k' : String(G.gold);
-  setText(elGold, 'g', gd);
+  setText(elGold, 'g', fmtK(G.gold));
+  setText($('#hBank'), 'bk', '🐷 ' + fmtK(meta.bank || 0));
   let ic = '▶', sm = 'Vague', big, cls, bonus = 0;
   const cap = G.endless ? '' : '/' + G.maxw;
   if (G.over || G.spawnQ.length) { ic = ''; big = G.wave + cap; cls = 'idle'; }
   else if (!G.waveActive && G.autoT > 0) { ic = '⏱'; sm = 'Vague ' + (G.wave + 1); big = Math.ceil(G.autoT) + ' s'; cls = ''; }
   else if (!G.waveActive) { big = String(G.wave + 1); cls = 'go'; }
-  else { big = String(G.wave + 1); cls = ''; bonus = 10 + G.wave; }
+  else { big = String(G.wave + 1); cls = ''; bonus = 5 + Math.floor(G.wave / 2); }
   setHTML(bWave, 'wv', (ic ? '<span class="wi">' + ic + '</span>' : '') + '<span class="wt"><small>' + sm + '</small><b>' + big + '</b></span>' + (bonus ? '<span class="bonus">+' + bonus + '</span>' : ''));
   if (hudCache.wc !== cls) { hudCache.wc = cls; bWave.className = cls; bWave.disabled = cls === 'idle'; }
   const sk = String(meta.shards);
@@ -2301,11 +2333,11 @@ cv.addEventListener('pointermove', ev => {
   if (!G) return;
   const [px, py] = cvPos(ev);
   if (press && ev.pointerId === press.id) {
-    if (!G.drag && Math.hypot(px - press.px, py - press.py) > 10) { selectTower(press.t); G.drag = { t: press.t, px, py, over: null }; }
+    if (!G.drag && Math.hypot(px - press.px, py - press.py) > 10) { selectTower(press.t); G.drag = { t: press.t, px, py, over: null, mouse: press.mouse }; }
     if (G.drag) {
-      G.drag.px = px; G.drag.py = py;
-      const [q, r] = toGrid(px, py), o = inside(q, r) ? towerAt(q, r) : null;
-      G.drag.over = o && o !== G.drag.t ? o : null;
+      const d = G.drag; d.px = px; d.py = py;
+      const prev = d.over; d.over = dragTarget(d);
+      if (d.over && d.over !== prev) { try { navigator.vibrate && navigator.vibrate(12); } catch (e) {} }
     }
     return;
   }
@@ -2356,9 +2388,25 @@ document.addEventListener('keydown', ev => {
 function pause() {
   if (!G || G.over || screen !== 'game') return;
   G.paused = true; show('pause');
-  $('#pSave').textContent = MAPS[G.map].name + ' · ' + DIFFS[G.diff].name + '. ' + (G.checkpoint && G.checkpoint.wave ? 'Partie sauvegardée à la fin de la vague ' + G.checkpoint.wave + '.' : 'La partie se sauvegarde à chaque fin de vague.');
+  $('#pSave').textContent = MAPS[G.map].name + ' · ' + DIFFS[G.diff].name + '. ' + (G.checkpoint && G.checkpoint.wave ? 'Partie sauvegardée à la fin de la vague ' + G.checkpoint.wave + '.' : 'La partie se sauvegarde à chaque fin de vague.')
+    + ' Cagnotte : ' + (meta.bank || 0) + ' or. Elle ne reçoit l’or restant qu’en fin de partie (victoire, K.O. ou abandon).';
+  cashArm = false; refreshCash();
   refreshOptBtns();
 }
+let cashArm = false;
+function refreshCash() {
+  if (!G) return;
+  const v = Math.max(0, G.gold - (G.banked || 0)), b = $('#pCash');
+  b.textContent = cashArm ? 'Sûr ? Touche encore : fin de la partie, +' + v + ' or dans la cagnotte' : 'Abandonner et encaisser ' + v + ' or';
+  b.classList.toggle('alt', cashArm); b.classList.toggle('pink', !cashArm);
+}
+function cashOut() {
+  if (!G || G.over) return;
+  G.over = true; G.paused = true; Snd.play('clear');
+  const best = recordBest(), award = awardShards(), bank = bankGold(); store.del(SAVE);
+  showOver(false, best, award, bank, true);
+}
+$('#pCash').addEventListener('click', () => { if (!G || G.over) return; if (!cashArm) { cashArm = true; refreshCash(); return; } cashArm = false; cashOut(); });
 function resume() { if (!G) return; G.paused = false; show('game'); keepAwake(); }
 function refreshOptBtns() {
   $('#pSound').textContent = 'Son : ' + (opts.sound ? 'oui' : 'non');
@@ -2379,14 +2427,14 @@ $('#oRetry').addEventListener('click', () => { if (G) newGame(G.map, null, G.dif
 $('#oEndless').addEventListener('click', () => { G.endless = true; G.paused = false; saveCheckpoint(); show('game'); banner('MODE INFINI', 'Jusqu’où iras-tu ?'); if (opts.auto) G.autoT = 3; });
 $('#tContinue').addEventListener('click', () => { const s = store.get(SAVE), i = saveMapIndex(s); if (i >= 0) newGame(i, s); });
 
-function showOver(win, best, award, bank) {
+function showOver(win, best, award, bank, quit) {
   const bk = bank || { gain: 0, total: meta.bank || 0 };
   $('#oBank').textContent = '+' + bk.gain;
   const nextMap = MAPS.findIndex((mm, i) => !mapOwned(i));
   $('#oBankDetail').textContent = 'L’or restant rejoint la cagnotte (' + bk.total + ' or), qui sert à acheter des cartes.' + (nextMap >= 0 ? ' Prochaine carte : ' + MAPS[nextMap].name + ', ' + MAPS[nextMap].price + ' or.' : '');
-  $('#oWord').textContent = win ? 'VICTOIRE !!' : 'K.O. !';
+  $('#oWord').textContent = quit ? 'ABANDON' : win ? 'VICTOIRE !!' : 'K.O. !';
   $('#oWord').classList.toggle('win', win);
-  $('#oText').textContent = win ? 'Les ' + G.maxw + ' vagues sont repoussées. La petite maison est sauve !' : 'Les slimes ont envahi la petite maison. Retente ta chance !';
+  $('#oText').textContent = quit ? 'Partie terminée. Ton or restant rejoint la cagnotte pour acheter des cartes.' : win ? 'Les ' + G.maxw + ' vagues sont repoussées. La petite maison est sauve !' : 'Les slimes ont envahi la petite maison. Retente ta chance !';
   $('#oWave').textContent = G.wave; $('#oScore').textContent = G.score;
   $('#oBest').textContent = best ? best.wave : G.wave;
   $('#oEndless').hidden = !win;
