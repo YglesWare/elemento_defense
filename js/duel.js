@@ -18,8 +18,15 @@ const DUEL = {
   cfg: { gap: 25000, prep: 15000, afk: 10000, hostAfk: 12000 },
   on: false, map: 0, lobbyMap: 0, ids: [], names: {}, alive: new Set(), elim: [], target: null,
   wave: 0, nextAt: 0, income: 0, sent: 0, dead: false, stats: {}, last: {}, hiddenAt: 0,
-  timers: [], incoming: {}, inTimer: 0, uiT: 0, forfeitArm: false, result: null,
+  timers: [], incoming: {}, inTimer: 0, uiT: 0, forfeitArm: false, result: null, all: false,
 };
+const ALL_DISCOUNT = 0.8;
+const foes = () => [...DUEL.alive].filter(id => id !== meId());
+// Prix et revenu d'un envoi, selon le mode : une cible, ou tous les adversaires encore en vie (20 % de réduction)
+function sendCost(S) {
+  const n = DUEL.all ? foes().length : 1, multi = DUEL.all && n > 1;
+  return { n, price: multi ? Math.round(S.price * n * ALL_DISCOUNT) : S.price, inc: S.inc * n, multi };
+}
 screens.duel = $('#sDuel');
 const dnow = () => performance.now();
 const hostId = () => { const h = Net.players.find(p => p.host); return h ? h.id : null; };
@@ -54,7 +61,7 @@ function beginDuel(msg) {
   stopScan && stopScan();
   enterDuelMeta();
   Object.assign(DUEL, { on: true, map: msg.map, ids: msg.ids, names: msg.names, alive: new Set(msg.ids), elim: [], wave: 0, income: 0, sent: 0, dead: false,
-    stats: {}, last: {}, incoming: {}, forfeitArm: false, result: null });
+    stats: {}, last: {}, incoming: {}, forfeitArm: false, result: null, all: false });
   DUEL.cfg.gap = msg.gap || DUEL.cfg.gap;
   const t0 = dnow(); for (const id of msg.ids) DUEL.last[id] = t0;
   DUEL.target = msg.ids.find(id => id !== meId()) || null;
@@ -124,6 +131,9 @@ function duelTick(dt) {
 function buildSendPanel() {
   const box = $('#sendPanel'); box.innerHTML = '<div class="sendrow" id="sendRow"></div>';
   const row = $('#sendRow');
+  const mode = document.createElement('button'); mode.type = 'button'; mode.className = 'sbt mode'; mode.id = 'sendMode';
+  mode.addEventListener('click', () => { if (foes().length < 2) return; DUEL.all = !DUEL.all; Snd.play('build'); refreshSendPanel(); hint(DUEL.all ? 'Mode « À tous » : chaque envoi part chez tous tes adversaires (−20 %)' : 'Mode cible : envoi à ' + dname(DUEL.target), 2000); });
+  row.appendChild(mode);
   for (const S of SENDS) {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'sbt'; b.dataset.mob = S.type;
     b.innerHTML = '<canvas></canvas><span class="sp">' + COIN + S.price + '</span><span class="si">+' + S.inc + '/v</span><span class="sl">V' + S.from + '</span>';
@@ -135,21 +145,32 @@ function buildSendPanel() {
 }
 function refreshSendPanel() {
   if (!G || !G.duel) return;
-  const tgt = DUEL.target && DUEL.alive.has(DUEL.target);
-  document.querySelectorAll('#sendRow .sbt').forEach(b => {
-    const S = SENDS.find(x => x.type === b.dataset.mob), locked = DUEL.wave < S.from;
-    b.classList.toggle('locked', locked); b.disabled = locked || G.gold < S.price || !tgt || G.over;
+  const tgt = DUEL.target && DUEL.alive.has(DUEL.target), nf = foes().length;
+  if (nf < 2) DUEL.all = false;
+  const mode = $('#sendMode');
+  if (mode) {
+    const html = DUEL.all ? '<span class="mi">👥</span><span class="mt">À tous</span><span class="ms">' + nf + ' joueurs</span>'
+      : '<span class="mi">🎯</span><span class="mt">' + esc(tgt ? dname(DUEL.target) : '—') + '</span><span class="ms">' + (nf > 1 ? 'toucher : à tous' : 'ta cible') + '</span>';
+    if (mode._h !== html) { mode._h = html; mode.innerHTML = html; }
+    mode.classList.toggle('on', DUEL.all); mode.disabled = nf < 2;
+  }
+  document.querySelectorAll('#sendRow .sbt[data-mob]').forEach(b => {
+    const S = SENDS.find(x => x.type === b.dataset.mob), locked = DUEL.wave < S.from, c = sendCost(S);
+    const key = c.price + '|' + c.inc;
+    if (b._k !== key) { b._k = key; b.querySelector('.sp').innerHTML = COIN + c.price; b.querySelector('.si').textContent = '+' + c.inc + '/v'; }
+    b.classList.toggle('locked', locked); b.disabled = locked || G.gold < c.price || !(DUEL.all ? nf : tgt) || G.over;
   });
 }
 function duelSend(S) {
   if (!G || G.over || !DUEL.on) return;
   if (DUEL.wave < S.from) { hint(ETYPES[S.type].name + ' : disponible dès la vague ' + S.from); return; }
-  if (!DUEL.target || !DUEL.alive.has(DUEL.target)) { hint('Aucun adversaire à viser'); return; }
-  if (G.gold < S.price) { Snd.play('no'); hint('Pas assez d’or pour envoyer ' + ETYPES[S.type].name); return; }
-  G.gold -= S.price; DUEL.income += S.inc; DUEL.sent++;
-  Net.send(DUEL.target, { k: 'send', mob: S.type });
+  const c = sendCost(S), targets = c.multi ? foes() : [DUEL.target];
+  if (!targets.length || !targets.every(id => id && DUEL.alive.has(id))) { hint('Aucun adversaire à viser'); return; }
+  if (G.gold < c.price) { Snd.play('no'); hint('Pas assez d’or : il faut ' + c.price + ' or'); return; }
+  G.gold -= c.price; DUEL.income += c.inc; DUEL.sent += targets.length;
+  for (const id of targets) Net.send(id, { k: 'send', mob: S.type });
   Snd.play('pop');
-  hint(ETYPES[S.type].name + ' envoyé à ' + dname(DUEL.target) + ' · revenu +' + S.inc + ' (total ' + DUEL.income + '/vague)', 1800);
+  hint(ETYPES[S.type].name + ' envoyé ' + (c.multi ? 'à tous (' + targets.length + ')' : 'à ' + dname(targets[0])) + ' · revenu +' + c.inc + ' (total ' + DUEL.income + '/vague)', 1800);
   refreshSendPanel();
 }
 function receiveSend(from, mob) {

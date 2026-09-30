@@ -89,7 +89,7 @@ function rulesHTML() {
   return '<details class="mp-manual"><summary>Règles du duel</summary><ul class="tips">'
     + '<li>Mode infini, tout le monde repart de zéro : Braise et Ondine, 200 or, 0 éclat. Ta progression solo n’est pas touchée.</li>'
     + '<li>Une vague part toutes les 25 s pour tout le monde. Pas de pause ni d’accélération.</li>'
-    + '<li>Onglet « Envoyer » : dépense de l’or pour envoyer des ennemis à ta cible. Chaque envoi augmente ton revenu, versé à chaque vague.</li>'
+    + '<li>Onglet « Envoyer » : dépense de l’or pour envoyer des ennemis à ta cible. Chaque envoi augmente ton revenu, versé à chaque vague. À 3 ou 4 joueurs, le mode « À tous » envoie l’ennemi à chaque adversaire, avec 20 % de réduction.</li>'
     + '<li>Les éclats gagnés à chaque vague servent dans l’Atelier (bouton violet), qui ne met pas le jeu en pause.</li>'
     + '<li>Le dernier survivant gagne. Quitter l’appli plus de 10 s élimine.</li></ul></details>';
 }

@@ -408,42 +408,120 @@ function drawObstacle(c, kind, x, y, cs) {
   }
   c.restore();
 }
-function drawTile(c, ch, x, y, cs, q, r) {
-  const T = TERRAINS[ch], rnd = mulberry(q * 131 + r * 7919 + 1), lw = Math.max(1, cs * 0.04);
-  c.fillStyle = (q + r) % 2 ? T.color : T.color2; c.fillRect(x, y, cs + 0.6, cs + 0.6);
-  const px = () => x + cs * (0.2 + rnd() * 0.6), py = () => y + cs * (0.2 + rnd() * 0.6);
-  c.save(); c.lineCap = 'round';
-  if (ch === 'L') { c.strokeStyle = 'rgba(255,255,255,.8)'; c.lineWidth = lw * 1.2; for (let i = 0; i < 2; i++) { c.beginPath(); c.arc(px(), py(), cs * 0.1, Math.PI * 1.15, Math.PI * 1.85); c.stroke(); } }
-  else if (ch === 'M') {
-    c.fillStyle = 'rgba(60,70,20,.22)'; for (let i = 0; i < 3; i++) { c.beginPath(); c.ellipse(px(), py(), cs * 0.1, cs * 0.05, 0, 0, TAU); c.fill(); }
-    const a = px(), b = py(); c.strokeStyle = '#4c6b2a'; c.lineWidth = lw; c.beginPath(); c.moveTo(a, b); c.lineTo(a + cs * 0.03, b - cs * 0.2); c.stroke();
-    c.fillStyle = '#8a5a3c'; c.beginPath(); c.ellipse(a + cs * 0.035, b - cs * 0.22, cs * 0.025, cs * 0.06, 0, 0, TAU); c.fill();
-  } else if (ch === 'S') {
-    c.fillStyle = 'rgba(160,110,40,.4)'; for (let i = 0; i < 6; i++) { c.beginPath(); c.arc(px(), py(), Math.max(0.8, cs * 0.02), 0, TAU); c.fill(); }
-    c.strokeStyle = 'rgba(160,110,40,.35)'; c.lineWidth = lw; c.beginPath(); c.arc(x + cs * 0.5, y + cs * 0.95, cs * 0.35, Math.PI * 1.2, Math.PI * 1.8); c.stroke();
-  } else if (ch === 'R') {
-    for (let i = 0; i < 2; i++) { c.beginPath(); c.ellipse(px(), py(), cs * 0.13, cs * 0.08, rnd(), 0, TAU); c.fillStyle = '#bdb1c6'; c.fill(); c.lineWidth = 1; c.strokeStyle = 'rgba(42,27,61,.35)'; c.stroke(); }
-  } else if (ch === 'V') {
-    c.strokeStyle = '#ffd23f'; c.lineWidth = lw * 1.2; c.beginPath(); let a = x + cs * 0.12, b = py(); c.moveTo(a, b);
-    for (let i = 0; i < 3; i++) { a += cs * 0.25; b = clamp(b + (rnd() - 0.5) * cs * 0.35, y + cs * 0.1, y + cs * 0.9); c.lineTo(a, b); } c.stroke();
-    c.fillStyle = 'rgba(120,30,20,.3)'; c.beginPath(); c.arc(px(), py(), cs * 0.07, 0, TAU); c.fill();
-  } else if (ch === 'N') {
-    c.fillStyle = 'rgba(120,170,230,.55)'; for (let i = 0; i < 4; i++) { c.beginPath(); c.arc(px(), py(), Math.max(0.8, cs * 0.02), 0, TAU); c.fill(); }
-    star(c, px(), py(), cs * 0.07, cs * 0.025, 4); c.fillStyle = '#9fd0ff'; c.fill();
-  } else if (ch === 'W') {
-    c.strokeStyle = 'rgba(255,255,255,.9)'; c.lineWidth = lw * 1.1;
-    for (let i = 0; i < 2; i++) { const a = x + cs * (0.15 + rnd() * 0.3), b = y + cs * (0.25 + i * 0.4); c.beginPath(); c.moveTo(a, b); c.quadraticCurveTo(a + cs * 0.25, b - cs * 0.12, a + cs * 0.45, b); c.arc(a + cs * 0.45, b - cs * 0.07, cs * 0.07, Math.PI / 2, -Math.PI * 0.8, true); c.stroke(); }
-  } else if (ch === 'K') {
-    for (let i = 0; i < 2; i++) {
-      const a = px(), b = py() + cs * 0.1, h = cs * (0.18 + rnd() * 0.12);
-      c.beginPath(); c.moveTo(a - cs * 0.05, b); c.lineTo(a - cs * 0.05, b - h * 0.6); c.lineTo(a, b - h); c.lineTo(a + cs * 0.05, b - h * 0.6); c.lineTo(a + cs * 0.05, b); c.closePath();
-      c.fillStyle = i ? '#9fe8ff' : '#a57bf0'; c.fill(); c.lineWidth = 1; c.strokeStyle = 'rgba(42,27,61,.5)'; c.stroke();
+// ---------- Terrains : zones arrondies, relief et décors ----------
+const TSTYLE = {
+  L: { fill: '#72c8f7', fill2: '#69c0f2', edge: '#3f8fc4', sunk: 1 },
+  M: { fill: '#a0aa5c', fill2: '#97a154', edge: '#687034', sunk: 1 },
+  S: { fill: '#f6dc9c', fill2: '#f1d48e', edge: '#d3a95e' },
+  R: { fill: '#b0a3ba', fill2: '#a79ab2', edge: '#6f607c', raise: '#877a95' },
+  V: { fill: '#ef7a3a', fill2: '#e97034', edge: '#8a2f1c', sunk: 1 },
+  N: { fill: '#f7fbff', fill2: '#eff6fd', edge: '#a9c6e2', raise: '#c9dcef' },
+  W: { fill: '#bfe6dc', fill2: '#b5dfd4', edge: '#6fae9d', raise: '#96cbbb' },
+  K: { fill: '#cdb8f2', fill2: '#c4adee', edge: '#8a6fc4', raise: '#a88fdb' },
+  C: { fill: '#b6ec8a', fill2: '#ade47f', edge: '#74b04e', raise: '#8cc663' },
+};
+// Contour d'une case, arrondi aux coins extérieurs de sa zone ; e = marge en pixels, dy = décalage vertical
+function cellPath(c, q, r, same, cs, e, dy) {
+  const R0 = cs * 0.3, E = e / cs;
+  const outer = (a, b) => !same(q + a, r) && !same(q, r + b);
+  const rad = [outer(-1, -1), outer(1, -1), outer(1, 1), outer(-1, 1)].map(o => o ? R0 + e : 0);
+  const P = [[q - E, r - E], [q + 1 + E, r - E], [q + 1 + E, r + 1 + E], [q - E, r + 1 + E]].map(([a, b]) => { const [x, y] = toScreen(a, b); return [x, y + dy]; });
+  c.moveTo((P[0][0] + P[1][0]) / 2, (P[0][1] + P[1][1]) / 2);
+  for (let i = 1; i <= 4; i++) { const A = P[i % 4], B = P[(i + 1) % 4]; c.arcTo(A[0], A[1], B[0], B[1], rad[i % 4]); }
+  c.closePath();
+}
+function drawTerrain(c, cs, tch) {
+  const by = {};
+  for (let r = 0; r < ROWS; r++) for (let q = 0; q < COLS; q++) { const ch = tch(q, r); if (ch && ch !== 'X' && TSTYLE[ch]) (by[ch] = by[ch] || []).push([q, r]); }
+  const upN = (q, r) => L.portrait ? [q - 1, r] : [q, r - 1];
+  for (const ch in by) {
+    const St = TSTYLE[ch], cells = by[ch], same = (a, b) => tch(a, b) === ch;
+    const path = (list, e, dy) => { c.beginPath(); for (const [q, r] of list) cellPath(c, q, r, same, cs, e, dy); };
+    if (St.raise) { path(cells, 1.5, cs * 0.09); c.fillStyle = St.edge; c.fill(); path(cells, 0, cs * 0.07); c.fillStyle = St.raise; c.fill(); }
+    path(cells, 2, 0); c.fillStyle = St.edge; c.fill();
+    path(cells, 0, 0); c.fillStyle = St.fill; c.fill();
+    path(cells.filter(([q, r]) => (q + r) % 2), 0, 0); c.fillStyle = St.fill2; c.fill();
+    c.save(); path(cells, 0, 0); c.clip();
+    for (const [q, r] of cells) {
+      const [uq, ur] = upN(q, r); if (same(uq, ur)) continue;
+      const [x, y] = toScreen(q, r);
+      c.fillStyle = St.sunk ? 'rgba(20,20,60,.16)' : 'rgba(255,255,255,.4)';
+      c.fillRect(x - 1, y, cs + 2, cs * (St.sunk ? 0.17 : 0.1));
     }
-    star(c, px(), py(), cs * 0.05, cs * 0.018, 4); c.fillStyle = '#ffffff'; c.fill();
+    c.restore();
+    for (const [q, r] of cells) { const [x, y] = toScreen(q, r); drawTile(c, ch, x, y, cs, q, r); }
+  }
+}
+function drawTile(c, ch, x, y, cs, q, r) {
+  const rnd = mulberry(q * 131 + r * 7919 + 1), lw = Math.max(1, cs * 0.035);
+  const px = (a = 0.22, b = 0.56) => x + cs * (a + rnd() * b), py = (a = 0.22, b = 0.56) => y + cs * (a + rnd() * b);
+  const spark = (sx, sy, k, col) => { star(c, sx, sy, cs * k, cs * k * 0.32, 4); c.fillStyle = col; c.fill(); };
+  c.save(); c.lineCap = 'round'; c.lineJoin = 'round';
+  if (ch === 'L') {
+    c.strokeStyle = 'rgba(255,255,255,.85)'; c.lineWidth = lw * 1.2;
+    for (let i = 0; i < 2; i++) { const a = px(), b = py(); c.beginPath(); c.arc(a, b, cs * 0.07, Math.PI * 1.1, Math.PI * 1.9); c.arc(a + cs * 0.14, b, cs * 0.07, Math.PI * 1.1, Math.PI * 1.9); c.stroke(); }
+    if (rnd() < 0.32) {
+      const a = px(0.25, 0.5), b = py(0.3, 0.45), rr2 = cs * 0.13;
+      c.beginPath(); c.moveTo(a, b); c.arc(a, b, rr2, 0.35, TAU - 0.35); c.closePath(); fs(c, '#6fcf6a', lw);
+      c.beginPath(); c.moveTo(a - rr2 * 0.45, b - rr2 * 0.1); c.lineTo(a + rr2 * 0.1, b + rr2 * 0.2); c.lineWidth = lw * 0.7; c.strokeStyle = 'rgba(42,27,61,.35)'; c.stroke();
+      if (rnd() < 0.4) { c.beginPath(); c.arc(a - rr2 * 0.3, b - rr2 * 0.35, cs * 0.045, 0, TAU); fs(c, '#ff9ad0', lw * 0.7); }
+    }
+    if (rnd() < 0.3) spark(px(), py(), 0.05, 'rgba(255,255,255,.9)');
+  } else if (ch === 'V') {
+    const g = c.createRadialGradient(px(), py(), 1, x + cs / 2, y + cs / 2, cs * 0.7); g.addColorStop(0, 'rgba(255,230,120,.55)'); g.addColorStop(1, 'rgba(255,230,120,0)');
+    c.fillStyle = g; c.fillRect(x, y, cs, cs);
+    let a = x + cs * 0.1, b = py(); c.beginPath(); c.moveTo(a, b);
+    for (let i = 0; i < 4; i++) { a += cs * 0.21; b = clamp(b + (rnd() - 0.5) * cs * 0.35, y + cs * 0.12, y + cs * 0.88); c.lineTo(a, b); }
+    c.lineWidth = lw * 2.6; c.strokeStyle = 'rgba(255,140,40,.55)'; c.stroke(); c.lineWidth = lw * 1.1; c.strokeStyle = '#ffe066'; c.stroke();
+    for (let i = 0; i < 2; i++) { const cx0 = px(), cy0 = py(); c.beginPath(); c.ellipse(cx0, cy0, cs * (0.08 + rnd() * 0.05), cs * 0.06, rnd() * 3, 0, TAU); fs(c, '#6a2e22', lw * 0.8); c.beginPath(); c.ellipse(cx0 - cs * 0.02, cy0 - cs * 0.02, cs * 0.03, cs * 0.015, 0, 0, TAU); c.fillStyle = 'rgba(255,255,255,.35)'; c.fill(); }
+    if (rnd() < 0.5) { c.beginPath(); c.arc(px(), py(), cs * 0.045, 0, TAU); fs(c, '#ffd23f', lw * 0.7); }
+  } else if (ch === 'M') {
+    c.fillStyle = 'rgba(190,210,110,.5)'; for (let i = 0; i < 3; i++) { c.beginPath(); c.ellipse(px(), py(), cs * (0.07 + rnd() * 0.06), cs * 0.04, rnd() * 3, 0, TAU); c.fill(); }
+    if (rnd() < 0.45) {
+      const a = px(0.3, 0.4), b = py(0.45, 0.3);
+      for (const k of [-1, 1]) { const tx = a + k * cs * 0.05, ty = b - cs * (0.26 + (k > 0 ? 0.04 : 0)); c.beginPath(); c.moveTo(a + k * cs * 0.02, b); c.quadraticCurveTo(tx, b - cs * 0.12, tx, ty); c.lineWidth = lw * 1.1; c.strokeStyle = '#3f6b28'; c.stroke(); c.beginPath(); c.ellipse(tx, ty, cs * 0.028, cs * 0.065, 0, 0, TAU); fs(c, '#8a5a3c', lw * 0.6); }
+    }
+    if (rnd() < 0.35) { c.beginPath(); c.arc(px(), py(), cs * 0.035, 0, TAU); c.lineWidth = lw * 0.8; c.strokeStyle = 'rgba(255,255,255,.75)'; c.stroke(); }
+  } else if (ch === 'S') {
+    for (let i = 0; i < 2; i++) {
+      const b = y + cs * (0.3 + i * 0.36 + rnd() * 0.08), a = x + cs * (0.1 + rnd() * 0.15);
+      c.beginPath(); c.moveTo(a, b); c.quadraticCurveTo(a + cs * 0.25, b - cs * 0.1, a + cs * 0.55, b); c.lineWidth = lw * 1.3; c.strokeStyle = '#d9b36b'; c.stroke();
+      c.beginPath(); c.moveTo(a + cs * 0.05, b - cs * 0.035); c.quadraticCurveTo(a + cs * 0.25, b - cs * 0.13, a + cs * 0.48, b - cs * 0.04); c.lineWidth = lw * 0.8; c.strokeStyle = 'rgba(255,255,255,.55)'; c.stroke();
+    }
+    c.fillStyle = '#c8995a'; for (let i = 0; i < 3; i++) { c.beginPath(); c.arc(px(), py(), Math.max(0.9, cs * 0.022), 0, TAU); c.fill(); }
+    if (rnd() < 0.18) { const a = px(), b = py(); c.beginPath(); c.moveTo(a, b); c.lineTo(a - cs * 0.05, b - cs * 0.09); c.moveTo(a, b); c.lineTo(a + cs * 0.01, b - cs * 0.11); c.moveTo(a, b); c.lineTo(a + cs * 0.06, b - cs * 0.08); c.lineWidth = lw; c.strokeStyle = '#b8894a'; c.stroke(); }
+  } else if (ch === 'R') {
+    const n = 1 + (rnd() < 0.6 ? 1 : 0);
+    for (let i = 0; i < n; i++) {
+      const a = px(0.2, 0.5), b = py(0.25, 0.5), w = cs * (0.14 + rnd() * 0.06), h = cs * (0.08 + rnd() * 0.04);
+      c.beginPath(); c.moveTo(a - w, b + h * 0.4); c.lineTo(a - w * 0.7, b - h); c.lineTo(a + w * 0.6, b - h * 0.9); c.lineTo(a + w, b + h * 0.2); c.lineTo(a + w * 0.4, b + h); c.lineTo(a - w * 0.6, b + h); c.closePath(); fs(c, '#cbc0d2', lw);
+      c.beginPath(); c.moveTo(a - w * 0.55, b - h * 0.55); c.lineTo(a + w * 0.3, b - h * 0.6); c.lineWidth = lw; c.strokeStyle = 'rgba(255,255,255,.8)'; c.stroke();
+    }
+    if (rnd() < 0.5) { const a = px(), b = py(); c.beginPath(); c.moveTo(a, b); c.lineTo(a + cs * 0.06, b + cs * 0.05); c.lineTo(a + cs * 0.04, b + cs * 0.12); c.lineWidth = lw * 0.9; c.strokeStyle = 'rgba(42,27,61,.35)'; c.stroke(); }
+  } else if (ch === 'N') {
+    if (rnd() < 0.55) { const a = px(0.25, 0.45), b = py(0.45, 0.3); c.beginPath(); c.ellipse(a, b, cs * 0.17, cs * 0.08, 0, Math.PI, TAU); c.closePath(); c.fillStyle = '#ffffff'; c.fill(); c.beginPath(); c.ellipse(a, b, cs * 0.17, cs * 0.035, 0, 0, Math.PI); c.fillStyle = 'rgba(150,185,225,.55)'; c.fill(); }
+    for (let i = 0; i < 2; i++) spark(px(), py(), 0.045, i ? '#ffffff' : '#9fc9ef');
+    c.fillStyle = 'rgba(140,180,225,.5)'; for (let i = 0; i < 3; i++) { c.beginPath(); c.arc(px(), py(), Math.max(0.8, cs * 0.016), 0, TAU); c.fill(); }
+  } else if (ch === 'W') {
+    for (let i = 0; i < 2; i++) {
+      const a = x + cs * (0.12 + rnd() * 0.2), b = y + cs * (0.28 + i * 0.4);
+      c.beginPath(); c.moveTo(a, b); c.quadraticCurveTo(a + cs * 0.22, b - cs * 0.1, a + cs * 0.42, b); c.arc(a + cs * 0.42, b - cs * 0.065, cs * 0.065, Math.PI / 2, -Math.PI * 0.85, true);
+      c.lineWidth = lw * 2.2; c.strokeStyle = '#6fae9d'; c.stroke(); c.lineWidth = lw * 1.1; c.strokeStyle = '#ffffff'; c.stroke();
+    }
+    if (rnd() < 0.5) { const a = px(), b = py(0.5, 0.35); c.beginPath(); for (const k of [-0.05, 0, 0.05]) { c.moveTo(a + k * cs, b); c.quadraticCurveTo(a + k * cs + cs * 0.03, b - cs * 0.07, a + k * cs + cs * 0.1, b - cs * 0.09); } c.lineWidth = lw; c.strokeStyle = '#3f9e6a'; c.stroke(); }
+  } else if (ch === 'K') {
+    const a = px(0.3, 0.4), b = py(0.5, 0.25), cols = ['#a57bf0', '#8fd8ff', '#ff9ad0'];
+    for (let i = 0; i < 3; i++) {
+      const cx0 = a + (i - 1) * cs * 0.1, h = cs * (0.16 + (i === 1 ? 0.12 : rnd() * 0.06)), w = cs * 0.045, col = cols[(q + r + i) % 3];
+      c.beginPath(); c.moveTo(cx0 - w, b); c.lineTo(cx0 - w, b - h * 0.7); c.lineTo(cx0, b - h); c.lineTo(cx0 + w, b - h * 0.7); c.lineTo(cx0 + w, b); c.closePath(); fs(c, col, lw * 0.9);
+      c.beginPath(); c.moveTo(cx0 - w * 0.6, b - h * 0.1); c.lineTo(cx0 - w * 0.6, b - h * 0.65); c.lineTo(cx0, b - h * 0.92); c.lineWidth = lw * 0.8; c.strokeStyle = 'rgba(255,255,255,.75)'; c.stroke();
+    }
+    spark(px(), py(0.15, 0.3), 0.05, '#ffffff');
   } else if (ch === 'C') {
-    const g = c.createRadialGradient(x + cs * 0.45, y + cs * 0.4, cs * 0.05, x + cs * 0.5, y + cs * 0.5, cs * 0.6);
-    g.addColorStop(0, 'rgba(255,255,255,.5)'); g.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = g; c.fillRect(x, y, cs, cs);
-    c.strokeStyle = 'rgba(42,27,61,.28)'; c.lineWidth = lw; c.beginPath(); c.arc(x + cs * 0.5, y + cs * 0.78, cs * 0.3, Math.PI * 1.15, Math.PI * 1.85); c.stroke();
+    const g = c.createRadialGradient(x + cs * 0.42, y + cs * 0.38, cs * 0.04, x + cs * 0.5, y + cs * 0.5, cs * 0.62);
+    g.addColorStop(0, 'rgba(255,255,255,.45)'); g.addColorStop(1, 'rgba(255,255,255,0)'); c.fillStyle = g; c.fillRect(x, y, cs, cs);
+    for (let i = 0; i < 2; i++) { const a = px(), b = py(0.4, 0.4); c.beginPath(); c.moveTo(a - cs * 0.05, b); c.lineTo(a - cs * 0.07, b - cs * 0.07); c.moveTo(a, b); c.lineTo(a, b - cs * 0.09); c.moveTo(a + cs * 0.05, b); c.lineTo(a + cs * 0.07, b - cs * 0.06); c.lineWidth = lw; c.strokeStyle = '#4fa344'; c.stroke(); }
+    if (rnd() < 0.25) { const a = px(), b = py(); for (let i = 0; i < 5; i++) { const an = i * TAU / 5; c.beginPath(); c.arc(a + Math.cos(an) * cs * 0.035, b + Math.sin(an) * cs * 0.035, cs * 0.028, 0, TAU); c.fillStyle = '#ffffff'; c.fill(); } c.beginPath(); c.arc(a, b, cs * 0.022, 0, TAU); c.fillStyle = '#ffd23f'; c.fill(); }
   }
   c.restore();
 }

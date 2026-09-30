@@ -70,15 +70,7 @@ function buildBg(target = (G && G.bg) || bgCv) {
   }
   c.fillStyle = dotPattern(c, 'rgba(42,27,61,.06)', 8); c.fillRect(L.ox, L.oy, vw, vh);
   const tch = (q, r) => { if (!G.terrain || !inside(q, r) || P.cells.has(q + ',' + r)) return null; const ch = G.terrain[r][q]; return ch === '.' ? null : ch; };
-  for (let r = 0; r < ROWS; r++) for (let q = 0; q < COLS; q++) { const ch = tch(q, r); if (ch && ch !== 'X') { const [x, y] = toScreen(q, r); drawTile(c, ch, x, y, cs, q, r); } }
-  c.strokeStyle = 'rgba(42,27,61,.3)'; c.lineWidth = 2; c.lineCap = 'round';
-  for (let r = 0; r < ROWS; r++) for (let q = 0; q < COLS; q++) {
-    const ch = tch(q, r); if (!ch || ch === 'X') continue;
-    for (const [dq, dr, a, b, e, f] of [[1, 0, 1, 0, 1, 1], [-1, 0, 0, 0, 0, 1], [0, 1, 0, 1, 1, 1], [0, -1, 0, 0, 1, 0]]) {
-      const n = tch(q + dq, r + dr); if (n === ch || !inside(q + dq, r + dr) || P.cells.has((q + dq) + ',' + (r + dr))) continue;
-      const [x0, y0] = toScreen(q + a, r + b), [x1, y1] = toScreen(q + e, r + f); c.beginPath(); c.moveTo(x0, y0); c.lineTo(x1, y1); c.stroke();
-    }
-  }
+  drawTerrain(c, cs, tch);
   const sp = P.pts.map(([x, y]) => toScreen(x, y));
   const line = (w, col, dash) => { c.beginPath(); sp.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.lineWidth = w; c.strokeStyle = col; c.setLineDash(dash || []); c.stroke(); };
   c.lineJoin = 'round'; c.lineCap = 'butt';
