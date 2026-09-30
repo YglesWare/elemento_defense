@@ -231,14 +231,21 @@ function makeWave(w) {
   if (w % 10 === 0) { list[list.length - 1].gap = 2.5; for (let i = 0; i < Math.floor(w / 10); i++) list.push({ type: 'boss', gap: 3 }); }
   return { list, label };
 }
-function startWave() {
+// Délai avant la vague suivante (compté à partir de la sortie du dernier ennemi), selon la difficulté ; null = pas de chrono
+function waveTimer() {
+  const t = DIFFS[G.diff] && DIFFS[G.diff].timer;
+  if (!t || G.duel || (!G.endless && G.wave >= G.maxw)) return null;
+  return typeof t === 'function' ? t(G.wave) : t;
+}
+function startWave(forced) {
   if (!G || G.over || G.spawnQ.length || G.duel) return;
   let early = 0;
-  if (G.waveActive && G.enemies.length) { early = 5 + Math.floor(G.wave / 2); G.gold += early; }
+  if (!forced && G.waveActive && G.enemies.length) { early = 5 + Math.floor(G.wave / 2); G.gold += early; }
   G.wave++;
   const { list, label } = makeWave(G.wave);
   for (const t of G.towers) if (!(t.ko > 0)) t.shield = Math.max(t.shield || 0, Math.round(t.maxHp * 0.15 * M('bouclier')));
   G.spawnQ.push(...list); G.spawnT = 0.5; G.waveActive = true; G.autoT = 0;
+  G.chronoT = null; G.chronoArmed = true;
   const last = G.wave === G.maxw && !G.endless;
   banner('VAGUE ' + G.wave, early ? 'Bonus d’audace +' + early : (last ? 'Dernière vague !' : label), false);
   Snd.play('wave');
@@ -664,6 +671,8 @@ function update(dt) {
     G.spawnT -= dt;
     while (G.spawnQ.length && G.spawnT <= 0) { const s = G.spawnQ.shift(); spawn(s.type); G.spawnT += s.gap; }
   } else if (!G.waveActive && G.autoT > 0) { G.autoT -= dt; if (G.autoT <= 0) startWave(); }
+  if (G.chronoArmed && !G.spawnQ.length) { G.chronoArmed = false; G.chronoT = waveTimer(); }
+  if (G.chronoT != null && !G.over) { G.chronoT -= dt; if (G.chronoT <= 0) { G.chronoT = null; startWave(true); } }
   for (const e of G.enemies) if (!e.dead) updateEnemy(e, dt);
   if (G.over) { G.enemies = G.enemies.filter(e => !e.dead); updateFx(dt); return; }
   for (const t of G.towers) updateTower(t, dt);

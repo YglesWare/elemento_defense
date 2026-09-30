@@ -83,12 +83,12 @@ const DORDER = ['facile', 'moyen', 'difficile', 'infini'];
 const DIFFS = {
   facile: { name: 'Facile', waves: 20, hp: 0.8, speed: 1, lives: 30, gold: 260, shards: 0.75, bonus: 1.25, malus: 0.5,
     desc: '20 vagues · ennemis −20 % de PV · 30 vies · moins d’obstacles et plus de collines · bonus de terrain renforcés, malus adoucis' },
-  moyen: { name: 'Moyen', waves: 30, hp: 1, speed: 1, lives: 20, gold: 200, shards: 1, bonus: 1, malus: 1,
-    desc: '30 vagues · 20 vies · la carte telle quelle' },
-  difficile: { name: 'Difficile', waves: 30, hp: 1.35, speed: 1.1, lives: 12, gold: 170, shards: 1.5, bonus: 0.75, malus: 1.5,
-    desc: '30 vagues · ennemis +35 % de PV et plus rapides · 12 vies · plus d’obstacles, aucune colline · malus de terrain renforcés' },
-  infini: { name: 'Infini', waves: Infinity, hp: 1, speed: 1, lives: 20, gold: 200, shards: 1.25, bonus: 1, malus: 1,
-    desc: 'Vagues sans fin, de plus en plus dures · 20 vies · bats ton record' },
+  moyen: { name: 'Moyen', waves: 30, hp: 1, speed: 1, lives: 20, gold: 200, shards: 1, bonus: 1, malus: 1, timer: 30,
+    desc: '30 vagues · 20 vies · la carte telle quelle · vague suivante automatique 30 s après la sortie du dernier ennemi' },
+  difficile: { name: 'Difficile', waves: 30, hp: 1.35, speed: 1.1, lives: 12, gold: 170, shards: 1.5, bonus: 0.75, malus: 1.5, timer: 15,
+    desc: '30 vagues · ennemis +35 % de PV et plus rapides · 12 vies · plus d’obstacles, aucune colline · malus de terrain renforcés · vague suivante automatique après 15 s' },
+  infini: { name: 'Infini', waves: Infinity, hp: 1, speed: 1, lives: 20, gold: 200, shards: 1.25, bonus: 1, malus: 1, timer: w => w < 10 ? null : Math.max(15, 30 - Math.floor((w - 10) / 5)),
+    desc: 'Vagues sans fin, de plus en plus dures · 20 vies · vagues 1 à 10 sans chrono, puis vague suivante automatique après 30 s, un délai qui raccourcit jusqu’à 15 s · bats ton record' },
 };
 const BEST2 = 'elemento.best2';
 const terrCache = {};

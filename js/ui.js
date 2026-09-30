@@ -126,6 +126,7 @@ function refreshHUD() {
   else if (!G.waveActive && G.autoT > 0) { ic = '⏱'; sm = 'Vague ' + (G.wave + 1); big = Math.ceil(G.autoT) + ' s'; cls = ''; }
   else if (!G.waveActive) { big = String(G.wave + 1); cls = 'go'; }
   else { big = String(G.wave + 1); cls = ''; bonus = 5 + Math.floor(G.wave / 2); }
+  if (G.chronoT != null && !G.over && !G.spawnQ.length && !(G.autoT > 0 && !G.waveActive)) { sm = 'Dans ' + Math.ceil(G.chronoT) + ' s'; if (G.chronoT <= 5) cls = (cls + ' urgent').trim(); }
   if (G.duel && typeof duelWaveLabel === 'function') [ic, sm, big, cls, bonus] = duelWaveLabel();
   setHTML(bWave, 'wv', (ic ? '<span class="wi">' + ic + '</span>' : '') + '<span class="wt"><small>' + sm + '</small><b>' + big + '</b></span>' + (bonus ? '<span class="bonus">+' + bonus + '</span>' : ''));
   if (hudCache.wc !== cls) { hudCache.wc = cls; bWave.className = cls; bWave.disabled = cls === 'idle'; }

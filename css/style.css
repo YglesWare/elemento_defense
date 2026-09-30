@@ -45,6 +45,7 @@ button:disabled{cursor:default}
   box-shadow:0 3px 0 var(--ink);font-family:var(--display);font-size:19px;letter-spacing:.6px;white-space:nowrap;flex:none}
 #bWave.idle{background:var(--mist);box-shadow:0 3px 0 var(--ink);color:var(--muted)}
 #bWave.go{animation:nudge 1.2s ease-in-out infinite}
+#bWave.urgent{background:var(--pop);color:var(--paper);animation:nudge .5s ease-in-out infinite}
 #bWave .wi{font-size:15px;line-height:1}
 #bWave .wt{display:flex;flex-direction:column;align-items:flex-start;line-height:1}
 #bWave small{font-family:var(--body);font-weight:800;font-size:10px;letter-spacing:.8px;text-transform:uppercase}
@@ -425,6 +426,6 @@ button:disabled{cursor:default}
 @media (max-width:420px){ .tbtn .nm{display:none} .tbtn canvas{width:42px;height:42px} }
 @media (prefers-reduced-motion:reduce){
   #banner{animation-name:fadeOnly}
-  #bWave.go{animation:none}
+  #bWave.go,#bWave.urgent{animation:none}
   .tbtn{transition:none}
 }
