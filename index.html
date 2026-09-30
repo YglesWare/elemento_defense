@@ -467,7 +467,7 @@ button:disabled{cursor:default}
         <li>Lancer la vague suivante pendant qu'il reste des ennemis rapporte un bonus d'audace.</li>
         <li>Chaque vague gagnée rapporte des éclats, et la fin de partie aussi. Dépense-les dans l’Atelier : à tout moment avec le bouton violet en haut (la partie se met en pause), ou depuis le menu.</li>
         <li>L’or qu’il te reste à la fin d’une partie rejoint la cagnotte. Elle sert uniquement à acheter de nouvelles cartes (bouton Jouer du menu). Chaque carte propose 4 difficultés. Pour acheter une carte, il faut aussi avoir réussi la précédente en Moyen (ou en Difficile).</li>
-        <li>Les tours ont des PV : les Crachou et le Kaiju les abîment, les Grésillons les paralysent un moment. À 0 PV, une tour est assommée 8 s. Toutes les tours sont soignées à la fin de chaque vague. Remparts, Bouclier et Paratonnerre (Atelier, onglet Camp) les protègent.</li>
+        <li>Les tours ont des PV : les Crachou et le Kaiju les abîment, les Grésillons les paralysent un moment. À 0 PV, une tour est assommée 8 s. Toutes les tours sont soignées à la fin de chaque vague. Les Maléfik (dès la vague 12) pervertissent une tour : elle tire sur ses voisines pendant quelques secondes, sauf si tu tues le Maléfik avant. Remparts, Bouclier, Paratonnerre et Talisman (Atelier, onglet Camp) les protègent.</li>
         <li>Au clavier : 1 à 6 pour les tours, Espace pour la vague, U pour améliorer, A pour l’Atelier, Échap pour le menu pause, puis Q pour revenir au menu principal.</li>
       </ul>
     </div>
@@ -853,6 +853,7 @@ const ETYPES = {
   magma: { name: 'Magmo', hp: 60, speed: 0.9, reward: 5, size: 0.26, color: '#ff6a3d', light: '#ffc08a', mood: 'grr', angry: true, immune: 'feu', desc: 'Immunisé au feu.' },
   gresil: { name: 'Grésillon', hp: 40, speed: 1.1, reward: 4, size: 0.22, color: '#c6e84a', light: '#eeffa8', mood: 'open', desc: 'Paralyse les tours proches quelques secondes.' },
   crachou: { name: 'Crachou', hp: 70, speed: 0.8, reward: 6, size: 0.27, color: '#ff8a5c', light: '#ffc6a8', mood: 'grr', angry: true, armor: 1, desc: 'Crache sur les tours et leur fait perdre des PV.' },
+  malefik: { name: 'Maléfik', hp: 150, speed: 0.7, reward: 12, size: 0.28, color: '#7a4fb8', light: '#c9a8f0', mood: 'grr', angry: true, armor: 2, desc: 'Pervertit une tour : elle attaque les autres tours un moment.' },
   boss: { name: 'Kaiju', hp: 650, speed: 0.42, reward: 45, size: 0.42, color: '#ff4f6e', light: '#ffa3b3', mood: 'grr', angry: true, armor: 5, lifeCost: 10, boss: true, desc: 'Boss des vagues 10, 20, 30. Ses coups de patte abîment les tours.' },
 };
 const hpMul = w => 1 + (w - 1) * 0.16 + (w - 1) * (w - 1) * 0.011;
@@ -883,6 +884,7 @@ const UPGRADES = [
   { id: 'remparts', name: 'Remparts', max: 5, base: 10, fx: l => 'Tours +' + l * 20 + ' % de PV' },
   { id: 'bouclier', name: 'Bouclier', max: 3, base: 15, fx: l => 'Chaque tour commence la vague avec un bouclier de ' + l * 15 + ' % de ses PV' },
   { id: 'paratonnerre', name: 'Paratonnerre', max: 3, base: 12, fx: l => 'Paralysie des Grésillons −' + l * 25 + ' %' },
+  { id: 'talisman', name: 'Talisman', max: 3, base: 14, fx: l => 'Perversion des Maléfik −' + l * 25 + ' % de durée' },
   { id: 'revive', name: 'Seconde chance', max: 1, base: 60, fx: () => 'Une fois par partie, la maison repart avec 5 vies' },
   ...TORDER.map(t => ({ id: 'm_' + t, tower: t, name: 'Maîtrise ' + MASTERY[t], max: 5, base: 10,
     fx: l => TOWERS[t].name + ' : +' + l * 10 + ' % de dégâts' + (l >= 5 ? ', +0,3 de portée' : '') })),
@@ -947,6 +949,7 @@ const Snd = {
         case 'ko': [440, 370, 311, 220].forEach((f, i) => this.tone('square', f, f * 0.97, 0.22, 0.2, i * 0.18)); break;
         case 'win': [523, 659, 784, 1046, 1318].forEach((f, i) => this.tone('triangle', f, f, 0.2, 0.28, i * 0.1)); break;
         case 'plasma': this.tone('sawtooth', 240, 300, 0.12, 0.07); break;
+        case 'evil': this.tone('sawtooth', 180, 80, 0.4, 0.14); this.tone('square', 260, 120, 0.3, 0.07, 0.05); break;
         case 'thit': this.tone('square', 220, 110, 0.09, 0.12); break;
         case 'clear': [659, 784, 988].forEach((f, i) => this.tone('sine', f, f, 0.14, 0.25, i * 0.08)); break;
       }
@@ -1223,6 +1226,10 @@ function drawEnemy(c, type, x, y, s, t, e) {
     c.beginPath(); c.ellipse(0, -r * 0.15, r * 0.98, r * 0.72, 0, Math.PI, TAU); c.closePath(); fs(c, '#9aa6b8', lw);
     c.beginPath(); c.moveTo(-r * 0.98, -r * 0.15); c.lineTo(r * 0.98, -r * 0.15); c.lineWidth = lw * 1.4; c.strokeStyle = INK; c.stroke();
     c.fillStyle = '#e8eef6'; for (const k of [-0.55, 0, 0.55]) { c.beginPath(); c.arc(k * r, -r * 0.45 - (k ? 0 : r * 0.12), r * 0.07, 0, TAU); c.fill(); }
+  } else if (type === 'malefik') {
+    c.beginPath(); c.moveTo(-r * 0.7, -r * 0.72); c.quadraticCurveTo(-r * 0.1, -r * 1.3, r * 0.35, -r * 1.95); c.quadraticCurveTo(r * 0.45, -r * 1.2, r * 0.72, -r * 0.72); c.closePath(); fs(c, '#3b2458', lw);
+    c.beginPath(); c.ellipse(0, -r * 0.72, r * 1.0, r * 0.2, 0, 0, TAU); fs(c, '#3b2458', lw);
+    c.beginPath(); c.moveTo(-r * 0.52, -r * 0.95); c.quadraticCurveTo(0, -r * 1.05, r * 0.56, -r * 0.95); c.lineWidth = lw * 1.4; c.strokeStyle = '#ffd23f'; c.stroke();
   } else if (type !== 'boss') {
     c.save(); c.translate(-r * 0.42, -r * 0.5); c.rotate(-0.6); c.beginPath(); c.ellipse(0, 0, r * 0.1, r * 0.2, 0, 0, TAU); c.fillStyle = 'rgba(255,255,255,.8)'; c.fill(); c.restore();
   }
@@ -1631,6 +1638,7 @@ function makeWave(w) {
     const type = theme && Math.random() < 0.75 ? theme : pick(pool);
     list.push({ type, gap: gap * (type === 'zip' ? 0.55 : type === 'tonk' ? 1.5 : 1) });
   }
+  if (w >= 12) { const k = 1 + Math.floor((w - 12) / 8); for (let i = 0; i < k; i++) list.splice(Math.floor(rand(list.length)), 0, { type: 'malefik', gap: 1.2 }); }
   if (w % 10 === 0) { list[list.length - 1].gap = 2.5; for (let i = 0; i < Math.floor(w / 10); i++) list.push({ type: 'boss', gap: 3 }); }
   return { list, label };
 }
@@ -1648,7 +1656,7 @@ function startWave() {
 }
 function waveDone() {
   G.waveActive = false;
-  for (const t of G.towers) { healTower(t, true); t.ko = 0; t.stun = 0; refillShield(t); }
+  for (const t of G.towers) { healTower(t, true); t.ko = 0; t.stun = 0; t.evil = 0; refillShield(t); }
   const bonus = Math.round((10 + G.wave) * (1 + 0.2 * M('bonus'))); G.gold += bonus; G.score += G.wave * 50;
   const aw = awardShards();
   hint('Vague ' + G.wave + ' : +' + bonus + ' or' + (aw.gain ? ', +' + aw.gain + ' éclats' : '') + (canBuyAnything() ? ' · achat possible dans l’Atelier' : ''), 3200);
@@ -1710,7 +1718,7 @@ function damageTower(t, dmg) {
 const nearTowers = (e, R) => G.towers.filter(t => !(t.ko > 0) && (t.c + 0.5 - e.x) ** 2 + (t.r + 0.5 - e.y) ** 2 <= R * R);
 function enemyAbility(e, dt) {
   const D = ETYPES[e.type];
-  if (!(e.type === 'gresil' || e.type === 'crachou' || D.boss) || e.frozen > 0 || e.stun > 0 || G.demo) return;
+  if (!(e.type === 'gresil' || e.type === 'crachou' || e.type === 'malefik' || D.boss) || e.frozen > 0 || e.stun > 0 || G.demo) return;
   e.abT -= dt; if (e.abT > 0) return;
   const pw = 1 + G.wave * 0.04;
   if (e.type === 'gresil') {
@@ -1725,6 +1733,13 @@ function enemyAbility(e, dt) {
     let tg = ts[0], bd = Infinity; for (const t of ts) { const d2 = (t.c + 0.5 - e.x) ** 2 + (t.r + 0.5 - e.y) ** 2; if (d2 < bd) { bd = d2; tg = t; } }
     G.eprojs.push({ sx: e.x, sy: e.y, t: tg, p: 0, dur: 0.45, dmg: 12 * pw });
     e.abT = 1.8;
+  } else if (e.type === 'malefik') {
+    const ts = nearTowers(e, 2.2).filter(t => !(t.evil > 0)); if (!ts.length) { e.abT = 0.4; return; }
+    let tg = ts[0]; for (const t of ts) if (t.lvl > tg.lvl || (t.lvl === tg.lvl && t.s.dmg * t.s.rate > tg.s.dmg * tg.s.rate)) tg = t;
+    tg.evil = 6 * (1 - 0.25 * M('talisman')); tg.evilBy = e.id; tg.beam = null; tg.cd = 0.5;
+    G.fx.push({ kind: 'bolt', pts: [{ gx: e.x, gy: e.y, up: 0.5 }, { gx: tg.c + 0.5, gy: tg.r + 0.5, up: 0.45 }], t: 0, dur: 0.4, color: '#c77dff' });
+    ono('MWAHAHA!', e.x, e.y, '#c77dff', 0.5, 0.5, 0.9); Snd.play('evil');
+    e.abT = 7;
   } else {
     const ts = nearTowers(e, 1.6); if (!ts.length) { e.abT = 0.5; return; }
     for (const t of ts) damageTower(t, 30 * pw);
@@ -1807,6 +1822,7 @@ function kill(e) {
   G.gold += rw; G.score += rw * 10;
   burst(e.x, e.y, up, D.boss ? 40 : 10, [D.color, D.light, '#ffffff'], D.boss ? 4 : 2.4, D.boss ? 0.14 : 0.09, 4, 0.6);
   G.texts.push({ txt: '+' + rw, gx: e.x, gy: e.y, oy: -up - 0.3, t: 0, dur: 0.8, color: '#ffd23f', size: 0.32, rot: 0 });
+  if (e.type === 'malefik') for (const t of G.towers) if (t.evil > 0 && t.evilBy === e.id) { t.evil = 0; ono('LIBÉRÉE !', t.c + 0.5, t.r + 0.5, '#5cd86a', 0.42, 0, 0.9); }
   if (D.boss) { G.bossKills++; ono('K.O. !!', e.x, e.y, '#ff4f81', 1.1, 0, 0.9); G.shake = 0.7; Snd.play('boom'); }
   else { if (Math.random() < 0.18) ono(pick(['POP!', 'PAF!', 'BLOP!', 'SPLOTCH!']), e.x, e.y, '#ffffff', 0.45, 0.35, up + 0.4); Snd.play('pop'); }
 }
@@ -1824,6 +1840,18 @@ function updateTower(t, dt) {
   if (t.hitT > 0) t.hitT -= dt;
   if (t.ko > 0) { t.ko -= dt; t.beam = null; if (t.ko <= 0) { t.ko = 0; t.hp = Math.round(t.maxHp * 0.5); ono('DEBOUT !', t.c + 0.5, t.r + 0.5, '#5cd86a', 0.45, 0, 0.9); } return; }
   if (t.stun > 0) { t.stun -= dt; t.beam = null; return; }
+  if (t.evil > 0) {
+    t.evil -= dt; t.beam = null;
+    if (t.evil <= 0) { t.evil = 0; ono('LIBÉRÉE !', t.c + 0.5, t.r + 0.5, '#5cd86a', 0.42, 0, 0.9); return; }
+    t.cd -= dt; if (t.cd > 0) return;
+    const cx = t.c + 0.5, cy = t.r + 0.5, R2 = t.s.range * t.s.range; let tg = null, bd = Infinity;
+    for (const o of G.towers) { if (o === t || o.ko > 0) continue; const d2 = (o.c + 0.5 - cx) ** 2 + (o.r + 0.5 - cy) ** 2; if (d2 <= R2 && d2 < bd) { bd = d2; tg = o; } }
+    if (!tg) { t.cd = 0.2; return; }
+    G.eprojs.push({ sx: cx, sy: cy, t: tg, p: 0, dur: 0.35, dmg: t.s.dmg * 0.6, evil: true });
+    t.cd = 1 / Math.max(0.4, t.s.rate); t.recoil = 1;
+    const ddx = tg.c + 0.5 - cx, ddy = tg.r + 0.5 - cy, [a, b] = L.portrait ? [ddy, ddx] : [ddx, ddy], l = Math.hypot(a, b) || 1; t.lx = a / l; t.ly = b / l;
+    return;
+  }
   if (t.type === 'plasma') { beamTower(t, dt); return; }
   t.cd -= dt; if (t.cd > 0) return;
   const s = t.s, cx = t.c + 0.5, cy = t.r + 0.5, R2 = s.range * s.range, list = [];
@@ -2138,6 +2166,10 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
       const ko = o.ko > 0; if (ko) { c.save(); c.globalAlpha *= 0.45; }
       drawTower(c, o.type, x, y, cs, o.lvl, T, o.lx, o.ly, o.recoil, o.blink < 0, o.br);
       if (ko) { c.restore(); for (let i = 0; i < 3; i++) { const a = T * 4 + i * TAU / 3; star(c, x + Math.cos(a) * cs * 0.28, y - cs * 0.45 + Math.sin(a) * cs * 0.08, cs * 0.08, cs * 0.035); fs(c, '#ffd23f', 1.2); } }
+      if (o.evil > 0 && !ko) {
+        c.save(); c.globalAlpha *= 0.3 + 0.12 * Math.sin(T * 7); c.beginPath(); c.arc(x, y - cs * 0.1, cs * 0.48, 0, TAU); c.fillStyle = '#6a2fb0'; c.fill(); c.restore();
+        const hy = y - cs * 0.52; for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(x + sg * cs * 0.1, hy + cs * 0.06); c.lineTo(x + sg * cs * 0.2, hy - cs * 0.14); c.lineTo(x + sg * cs * 0.24, hy + cs * 0.06); c.closePath(); fs(c, '#3b2458', 1.5); }
+      }
       if (o.stun > 0 && !ko) {
         c.save(); c.strokeStyle = '#e6ff5a'; c.lineWidth = Math.max(1.5, cs * 0.04); c.lineCap = 'round';
         for (let i = 0; i < 3; i++) { const a = rand(TAU), rx = x + Math.cos(a) * cs * 0.3, ry = y - cs * 0.15 + Math.sin(a) * cs * 0.3; c.beginPath(); c.moveTo(rx, ry); c.lineTo(rx + rand(-1, 1) * cs * 0.12, ry + rand(-1, 1) * cs * 0.12); c.stroke(); }
@@ -2208,7 +2240,8 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
   for (const p of G.eprojs) {
     if (!G.towers.includes(p.t)) continue;
     const k = Math.min(1, p.p), gx = lerp(p.sx, p.t.c + 0.5, k), gy = lerp(p.sy, p.t.r + 0.5, k), [x, y] = toScreen(gx, gy), yy = y - cs * (0.25 + Math.sin(k * Math.PI) * 0.6);
-    c.beginPath(); c.arc(x, yy, cs * 0.1, 0, TAU); fs(c, '#b57bff', Math.max(1.4, cs * 0.04));
+    c.beginPath(); c.arc(x, yy, cs * 0.1, 0, TAU); fs(c, p.evil ? '#4a1f7a' : '#b57bff', Math.max(1.4, cs * 0.04));
+    if (p.evil) { c.beginPath(); c.arc(x, yy, cs * 0.045, 0, TAU); c.fillStyle = '#ff6ad5'; c.fill(); }
   }
   // Anneaux et éclairs
   for (const f of G.fx) {
@@ -2228,7 +2261,7 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
         for (let j = 1; j <= n; j++) { const q = j / n, o = j === n ? 0 : (Math.random() - 0.5) * cs * 0.35; c.lineTo(lerp(x0, x1, q) + nx / nl * o, lerp(y0, y1, q) + ny / nl * o); }
       }
       c.lineWidth = cs * 0.16; c.strokeStyle = INK; c.stroke();
-      c.lineWidth = cs * 0.09; c.strokeStyle = '#ffe34d'; c.stroke();
+      c.lineWidth = cs * 0.09; c.strokeStyle = f.color || '#ffe34d'; c.stroke();
       c.lineWidth = cs * 0.03; c.strokeStyle = '#ffffff'; c.stroke();
       c.restore();
     }
@@ -2357,6 +2390,7 @@ function statChips(t) {
   if (s.bio) ch.push([s.bio > 0 ? 'good' : 'bad', 'Biome ' + fmtAff(s.bio)]);
   ch.unshift([t.ko > 0 ? 'bad' : t.hp < t.maxHp * 0.5 ? 'bad' : '', t.ko > 0 ? 'Assommée ' + Math.ceil(t.ko) + ' s' : '<i>PV</i>' + Math.ceil(t.hp) + '/' + t.maxHp + (t.shield > 0 ? ' +' + Math.ceil(t.shield) + ' 🛡' : '')]);
   if (t.stun > 0) ch.unshift(['bad', 'Paralysée']);
+  if (t.evil > 0) ch.unshift(['bad', 'Pervertie ' + Math.ceil(t.evil) + ' s']);
   return ch.map(([c, v]) => '<span class="ichip ' + c + '">' + v + '</span>').join('');
 }
 function selectTower(t) {
@@ -2367,7 +2401,7 @@ function selectTower(t) {
 function refreshInfo() {
   const t = G && G.selTower; if (!t) return;
   const D = TOWERS[t.type], cost = upCost(t);
-  const key = [t.type, t.lvl, t.br, t.mode, G.gold >= cost, Math.ceil(t.hp), Math.ceil(t.shield || 0), Math.ceil(t.ko || 0), t.stun > 0].join('|');
+  const key = [t.type, t.lvl, t.br, t.mode, G.gold >= cost, Math.ceil(t.hp), Math.ceil(t.shield || 0), Math.ceil(t.ko || 0), t.stun > 0, Math.ceil(t.evil || 0)].join('|');
   if (hudCache.info === key) return;
   hudCache.info = key;
   $('#iName').textContent = D.name;
@@ -2623,6 +2657,11 @@ function drawUpIcon(c, id, x, y, s) {
       c.beginPath(); c.moveTo(0, -r * 1.1); c.lineTo(0, r * 0.9); c.lineWidth = lw * 1.6; c.strokeStyle = INK; c.stroke();
       c.beginPath(); c.moveTo(r * 0.55, -r * 0.9); c.lineTo(r * 0.15, -r * 0.2); c.lineTo(r * 0.45, -r * 0.2); c.lineTo(r * 0.05, r * 0.5); c.lineTo(r * 0.75, -r * 0.35); c.lineTo(r * 0.45, -r * 0.35); c.closePath(); fs(c, '#ffd23f', lw * 0.8);
       c.beginPath(); c.arc(0, -r * 1.1, r * 0.14, 0, TAU); fs(c, '#ffd23f', lw * 0.7); break;
+    case 'talisman':
+      c.beginPath(); c.moveTo(-r * 0.5, -r * 1.1); c.lineTo(0, -r * 0.55); c.lineTo(r * 0.5, -r * 1.1); c.lineWidth = lw; c.strokeStyle = INK; c.stroke();
+      c.beginPath(); c.arc(0, r * 0.1, r * 0.72, 0, TAU); fs(c, '#c9a8f0', lw);
+      c.beginPath(); c.ellipse(0, r * 0.1, r * 0.42, r * 0.24, 0, 0, TAU); fs(c, '#ffffff', lw * 0.7);
+      c.beginPath(); c.arc(0, r * 0.1, r * 0.14, 0, TAU); c.fillStyle = INK; c.fill(); break;
     case 'revive':
       for (const sg of [-1, 1]) {
         c.save(); c.scale(sg, 1); c.beginPath(); c.moveTo(r * 0.3, -r * 0.1);
