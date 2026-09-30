@@ -42,19 +42,22 @@ button:disabled{cursor:default}
   background:var(--sky) radial-gradient(rgba(42,27,61,.10) 1.2px,transparent 1.7px) 0 0/9px 9px}
 
 /* HUD */
-#hud{flex:none;display:flex;align-items:center;gap:6px;padding:8px 16px}
-.chip{display:flex;align-items:center;gap:4px;height:36px;padding:0 10px 0 5px;background:var(--paper);
+#hud{flex:none;display:flex;align-items:center;gap:5px;padding:8px 16px}
+.chip{display:flex;align-items:center;gap:4px;height:38px;padding:0 9px 0 4px;min-width:0;flex:none;background:var(--paper);
   border:2.5px solid var(--ink);border-radius:99px;box-shadow:0 3px 0 var(--ink);font-weight:800;font-size:17px;
   font-variant-numeric:tabular-nums;line-height:1}
-.chip svg{width:24px;height:24px;flex:none}
-.spacer{flex:1;min-width:0}
-.ibtn{width:38px;height:38px;flex:none;display:grid;place-items:center;background:var(--paper);border:2.5px solid var(--ink);
+.chip svg{width:22px;height:22px;flex:none}
+.ibtn{width:36px;height:38px;flex:none;display:grid;place-items:center;background:var(--paper);border:2.5px solid var(--ink);
   border-radius:12px;box-shadow:0 3px 0 var(--ink);font-family:var(--display);font-size:18px;letter-spacing:.5px;padding:0}
 .ibtn svg{width:18px;height:18px}
-#bWave{position:relative;height:38px;padding:0 12px;border:2.5px solid var(--ink);border-radius:12px;background:var(--sun);
+#bWave{position:relative;height:40px;margin-left:auto;display:flex;align-items:center;gap:6px;padding:0 10px 0 9px;border:2.5px solid var(--ink);border-radius:12px;background:var(--sun);
   box-shadow:0 3px 0 var(--ink);font-family:var(--display);font-size:19px;letter-spacing:.6px;white-space:nowrap;flex:none}
 #bWave.idle{background:var(--mist);box-shadow:0 3px 0 var(--ink);color:var(--muted)}
 #bWave.go{animation:nudge 1.2s ease-in-out infinite}
+#bWave .wi{font-size:15px;line-height:1}
+#bWave .wt{display:flex;flex-direction:column;align-items:flex-start;line-height:1}
+#bWave small{font-family:var(--body);font-weight:800;font-size:10px;letter-spacing:.8px;text-transform:uppercase}
+#bWave b{font-weight:400;font-size:19px;letter-spacing:.5px;font-variant-numeric:tabular-nums}
 #bWave .bonus{position:absolute;top:-11px;right:-9px;background:var(--leaf);color:var(--ink);border:2px solid var(--ink);
   border-radius:99px;font-family:var(--body);font-weight:800;font-size:12px;line-height:1;padding:3px 6px}
 @keyframes nudge{0%,100%{transform:scale(1)}50%{transform:scale(1.07) rotate(-2deg)}}
@@ -83,7 +86,7 @@ button:disabled{cursor:default}
 @keyframes fadeOnly{0%{opacity:0}10%,80%{opacity:1}100%{opacity:0}}
 
 /* Panel */
-#panel{flex:none;height:106px;background:var(--paper);border-top:3px solid var(--ink);padding:8px 16px;display:flex;align-items:center}
+#panel{flex:none;height:134px;background:var(--paper);border-top:3px solid var(--ink);padding:8px 16px;display:flex;align-items:center}
 #palette{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;width:100%;max-width:580px;margin:0 auto}
 .tbtn{display:flex;flex-direction:column;align-items:center;padding:3px 2px 3px;background:var(--mist);border:2.5px solid var(--ink);
   border-radius:12px;box-shadow:0 3px 0 var(--ink);min-width:0;transition:transform .12s}
@@ -94,14 +97,24 @@ button:disabled{cursor:default}
 .tbtn.sel{background:var(--sun);transform:translateY(-4px);box-shadow:0 7px 0 var(--ink)}
 .tbtn.poor{opacity:.45}
 
-#info{width:100%;max-width:580px;margin:0 auto;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 10px;align-items:center}
-#iCv{grid-row:1/3;width:44px;height:48px}
-#iHead{display:flex;align-items:baseline;gap:8px;min-width:0}
-#iName{font-family:var(--display);font-size:22px;letter-spacing:.6px;line-height:1}
-#iStars{color:#e0a800;font-size:15px;letter-spacing:1px}
-#iStats{grid-column:2/4;font-size:12.5px;font-weight:600;color:var(--muted);line-height:1.2;min-width:0}
-#iClose{grid-column:3;grid-row:1;width:30px;height:30px;font-size:15px;border-radius:9px}
-#iActions{grid-column:1/4;display:flex;gap:6px;flex-wrap:nowrap;min-width:0}
+#info{width:100%;max-width:580px;margin:0 auto;display:flex;flex-direction:column;gap:7px;min-width:0}
+.ihead{display:flex;align-items:center;gap:9px;min-width:0}
+#iCv{width:36px;height:40px;flex:none}
+.ititle{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.irow{display:flex;align-items:center;gap:7px;min-width:0}
+#iName{font-family:var(--display);font-size:22px;letter-spacing:.6px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+#iStars{font-size:12.5px;font-weight:800;color:#c99700;letter-spacing:.5px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iclose{width:34px;height:34px;font-size:15px;border-radius:10px}
+.ichips{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;min-width:0;padding-bottom:1px}
+.ichips::-webkit-scrollbar{display:none}
+.ichips.more{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
+.ichip{flex:none;display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:800;line-height:1;padding:4px 8px;border:2px solid var(--ink);border-radius:99px;background:var(--mist);white-space:nowrap;font-variant-numeric:tabular-nums}
+.ichip i{font-style:normal;font-weight:700;color:var(--muted)}
+.ichip.kind{background:var(--sun2)}
+.ichip.good{background:var(--okbg)}
+.ichip.bad{background:var(--nobg)}
+#iActions{display:flex;gap:6px;min-width:0}
+#iActions .sbtn{height:38px;font-size:16px}
 .sbtn{flex:1 1 0;overflow:hidden;text-overflow:ellipsis;font-family:var(--display);font-size:16px;letter-spacing:.5px;line-height:1;padding:7px 6px;border:2.5px solid var(--ink);
   border-radius:10px;box-shadow:0 3px 0 var(--ink);background:var(--mist);white-space:nowrap;min-width:0}
 .sbtn.up{background:var(--leaf)}
@@ -287,8 +300,6 @@ button:disabled{cursor:default}
 @media (max-width:640px){.brs{grid-template-columns:minmax(0,1fr)}.rks{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 /* Fusions */
-#iHead{overflow:hidden}
-#iStars{font-size:13px;white-space:nowrap}
 
 .kbd{display:inline-block;font-family:var(--body);font-weight:800;font-size:12px;letter-spacing:0;line-height:1.3;border:2px solid var(--ink);border-radius:6px;padding:0 6px;margin-left:8px;vertical-align:middle;background:var(--paper);color:var(--ink)}
 @media (hover:none){.kbd{display:none}}
@@ -334,10 +345,11 @@ button:disabled{cursor:default}
 
 @media (max-width:370px){
   #hud{gap:4px}
-  .chip{font-size:15px;padding:0 8px 0 4px;height:34px}
-  .chip svg{width:20px;height:20px}
-  .ibtn{width:34px;height:34px}
-  #bWave{font-size:17px;padding:0 9px;height:34px}
+  .chip{font-size:15px;padding:0 7px 0 3px;height:36px}
+  .chip svg{width:19px;height:19px}
+  .ibtn{width:33px;height:36px}
+  #bWave{padding:0 8px;height:38px}
+  #bWave b{font-size:17px}
   .els{grid-template-columns:minmax(0,1fr)}
 }
 @media (max-width:420px){ .tbtn .nm{display:none} .tbtn canvas{width:42px;height:42px} }
@@ -352,10 +364,9 @@ button:disabled{cursor:default}
   <header id="hud">
     <div class="chip" title="Vies"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.3-9.2C1.4 8.4 3.6 4.5 7.3 4.5c2 0 3.5 1.1 4.7 2.7 1.2-1.6 2.7-2.7 4.7-2.7 3.7 0 5.9 3.9 4.6 7.3C19.5 16.4 12 21 12 21z" fill="#ff4f6e" stroke="#2a1b3d" stroke-width="2.2" stroke-linejoin="round"/><ellipse cx="7.6" cy="9" rx="1.8" ry="1.2" fill="#fff" opacity=".8"/></svg><b id="hLives">20</b></div>
     <div class="chip" title="Or"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#ffd23f" stroke="#2a1b3d" stroke-width="2.2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#e0a800" stroke-width="2"/><path d="M9 8.5l1.5-1" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg><b id="hGold">200</b></div>
-    <div class="spacer"></div>
-    <button id="bWave" type="button">▶ Vague 1</button>
+    <button id="bWave" type="button"><span class="wi">▶</span><span class="wt"><small>Vague</small><b>1</b></span></button>
     <button class="ibtn" id="bSpeed" type="button" aria-label="Vitesse du jeu">x1</button>
-    <button class="ibtn gembtn" id="bShop" type="button" aria-label="Ouvrir l’Atelier" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l7 7-7 13L5 9z" fill="#c59bff" stroke="#2a1b3d" stroke-width="2.2" stroke-linejoin="round"/><path d="M5 9h14M12 2L9 9l3 13 3-13z" fill="none" stroke="#2a1b3d" stroke-width="1.3" stroke-linejoin="round"/></svg><span class="cnt" id="bShopN">0</span></button>
+    <button class="ibtn gembtn" id="bShop" type="button" aria-label="Ouvrir l’Atelier" title="Atelier (A)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l7 7-7 13L5 9z" fill="#c59bff" stroke="#2a1b3d" stroke-width="2.2" stroke-linejoin="round"/><path d="M5 9h14M12 2L9 9l3 13 3-13z" fill="none" stroke="#2a1b3d" stroke-width="1.3" stroke-linejoin="round"/></svg><span class="cnt" id="bShopN">0</span></button>
     <button class="ibtn" id="bPause" type="button" aria-label="Pause" title="Pause (Échap)"><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="4" y="3" width="4.5" height="14" rx="1.5" fill="#2a1b3d"/><rect x="11.5" y="3" width="4.5" height="14" rx="1.5" fill="#2a1b3d"/></svg></button>
   </header>
   <main id="stage">
@@ -366,10 +377,12 @@ button:disabled{cursor:default}
   <footer id="panel">
     <div id="palette"></div>
     <div id="info" hidden>
-      <canvas id="iCv"></canvas>
-      <div id="iHead"><span id="iName">Braise</span><span id="iStars">★☆☆</span><button class="qbtn" id="iWhat" type="button" aria-label="Voir ce que fait cette tour">?</button></div>
-      <button class="ibtn" id="iClose" type="button" aria-label="Fermer">✕</button>
-      <div id="iStats"></div>
+      <div class="ihead">
+        <canvas id="iCv"></canvas>
+        <div class="ititle"><div class="irow"><span id="iName">Braise</span><button class="qbtn" id="iWhat" type="button" aria-label="Voir ce que fait cette tour">?</button></div><span id="iStars">★☆☆☆</span></div>
+        <button class="ibtn iclose" id="iClose" type="button" aria-label="Fermer">✕</button>
+      </div>
+      <div class="ichips" id="iStats"></div>
       <div id="iActions">
         <button class="sbtn up" id="iUp" type="button">Améliorer</button>
         <button class="sbtn sell" id="iSell" type="button">Vendre</button>
@@ -440,7 +453,7 @@ button:disabled{cursor:default}
         <li>Touche une tour posée pour l'améliorer, la vendre ou changer sa cible. Au niveau 2, elle choisit une spécialisation : Sol, Air ou Boss. Ce choix est définitif pour cette tour.</li>
         <li>Pour fusionner deux tours compatibles (toutes deux au niveau 2 ou plus), fais glisser l’une sur l’autre. La fusion prend la place de la tour sur laquelle tu la lâches. Chaque fusion se débloque une par une dans l’Atelier.</li>
         <li>Lancer la vague suivante pendant qu'il reste des ennemis rapporte un bonus d'audace.</li>
-        <li>Chaque vague gagnée rapporte des éclats, et la fin de partie aussi. Dépense-les dans l’Atelier : entre deux vagues avec le bouton violet en haut, ou depuis le menu.</li>
+        <li>Chaque vague gagnée rapporte des éclats, et la fin de partie aussi. Dépense-les dans l’Atelier : à tout moment avec le bouton violet en haut (la partie se met en pause), ou depuis le menu.</li>
         <li>L’or qu’il te reste à la fin d’une partie rejoint la cagnotte. Elle sert uniquement à acheter de nouvelles cartes (bouton Jouer du menu). Chaque carte propose 4 difficultés.</li>
         <li>Au clavier : 1 à 6 pour les tours, Espace pour la vague, U pour améliorer, A pour l’Atelier, Échap pour le menu pause, puis Q pour revenir au menu principal.</li>
       </ul>
@@ -1573,7 +1586,7 @@ function waveDone() {
   G.waveActive = false;
   const bonus = Math.round((15 + G.wave * 2) * (1 + 0.2 * M('bonus'))); G.gold += bonus; G.score += G.wave * 50;
   const aw = awardShards();
-  hint('Vague ' + G.wave + ' : +' + bonus + ' or' + (aw.gain ? ', +' + aw.gain + ' éclats' : '') + (canBuyAnything() ? ' · Atelier ouvert !' : ''), 3200);
+  hint('Vague ' + G.wave + ' : +' + bonus + ' or' + (aw.gain ? ', +' + aw.gain + ' éclats' : '') + (canBuyAnything() ? ' · achat possible dans l’Atelier' : ''), 3200);
   Snd.play('clear');
   saveCheckpoint(); recordBest();
   if (G.wave >= G.maxw && !G.endless) { setTimeout(() => victory(), 700); return; }
@@ -2185,13 +2198,17 @@ function showPanel(which) { $('#palette').hidden = which !== 'palette'; $('#info
 
 // Info tour
 const iCtx = prepMini($('#iCv'), 44, 48);
-function statsText(t) {
-  const s = t.s, base = KIND[TOWERS[t.type].kind] + ' · Dégâts ' + Math.round(s.dmg) + ' · Portée ' + fr(s.range.toFixed(1)) + ' · ' + fr(s.rate.toFixed(2)) + ' tirs/s';
+function statChips(t) {
+  const s = t.s, D = TOWERS[t.type];
   const extra = {
-    feu: 'Brûlure ' + s.burn + '/s', eau: 'Ralentit ' + Math.round(s.slow * 100) + ' %', terre: s.stun ? 'Étourdit ' + Math.round(s.stun * 100) + ' %' : 'Dégâts de zone',
-    vent: 'Recul ' + fr(s.knock), foudre: s.chain + ' cibles', glace: 'Gèle 1 onde sur ' + s.every,
-  }[t.type] || TOWERS[t.type].fx(s);
-  return base + ' · ' + extra + (s.brMul ? ' · ×' + fr(s.brMul) + ' ' + BRANCH[s.br].vs : '') + (s.terr ? ' · ' + s.terr.name + (s.aff ? ' ' + fmtAff(s.aff) : '') + (s.terr.range ? ' +0,6 portée' : '') : '');
+    feu: 'Brûlure ' + s.burn + '/s', eau: 'Ralentit ' + Math.round(s.slow * 100) + ' %', terre: s.stun ? 'Étourdit ' + Math.round(s.stun * 100) + ' %' : 'Zone',
+    vent: 'Recul ' + fr(s.knock), foudre: s.chain + ' cibles', glace: 'Gèle 1 onde / ' + s.every,
+  }[t.type] || D.fx(s);
+  const ch = [['', '<i>Dégâts</i>' + Math.round(s.dmg)], ['', '<i>Portée</i>' + fr(s.range.toFixed(1))], ['', '<i>Cadence</i>' + fr(s.rate.toFixed(2)) + '/s'], ['', extra]];
+  if (s.brMul) ch.push(['good', '×' + fr(s.brMul) + ' ' + BRANCH[s.br].vs]);
+  if (s.terr && s.aff) ch.push([s.aff > 0 ? 'good' : 'bad', s.terr.name + ' ' + fmtAff(s.aff)]);
+  if (s.terr && s.terr.range) ch.push(['good', s.terr.name + ' +0,6 portée']);
+  return ch.map(([c, v]) => '<span class="ichip ' + c + '">' + v + '</span>').join('');
 }
 function selectTower(t) {
   G.selTower = t; G.selType = null; G.ghost = null; refreshPalette();
@@ -2205,8 +2222,8 @@ function refreshInfo() {
   if (hudCache.info === key) return;
   hudCache.info = key;
   $('#iName').textContent = D.name;
-  $('#iStars').textContent = D.fusion ? '★'.repeat(t.lvl) + '☆'.repeat(3 - t.lvl) + ' · Fusion' : '★'.repeat(t.lvl) + '☆'.repeat(4 - t.lvl) + (t.br ? ' · ' + BRANCH[t.br].short : '');
-  $('#iStats').textContent = statsText(t);
+  $('#iStars').textContent = (D.fusion ? '★'.repeat(t.lvl) + '☆'.repeat(3 - t.lvl) + ' · Fusion' : '★'.repeat(t.lvl) + '☆'.repeat(4 - t.lvl) + (t.br ? ' · ' + BRANCH[t.br].short : '')) + ' · ' + KIND[D.kind];
+  const ic = $('#iStats'); ic.innerHTML = statChips(t); ic.scrollLeft = 0; ic.classList.toggle('more', ic.scrollWidth > ic.clientWidth + 2);
   const up = $('#iUp');
   if (D.fusion) { if (cost) { up.textContent = 'Améliorer ' + cost; up.disabled = G.gold < cost; } else { up.textContent = 'Niveau max'; up.disabled = true; } }
   else if (t.lvl === 2 && !t.br) { up.textContent = 'Spécialiser ▸'; up.disabled = false; }
@@ -2230,22 +2247,21 @@ $('#iMode').addEventListener('click', () => {
 const elLives = $('#hLives'), elGold = $('#hGold'), bWave = $('#bWave');
 function refreshHUD() {
   setText(elLives, 'l', String(Math.max(0, G.lives)));
-  setText(elGold, 'g', String(G.gold));
-  let label, cls, bonus = 0;
+  const gd = G.gold >= 100000 ? Math.round(G.gold / 1000) + 'k' : G.gold >= 10000 ? fr((G.gold / 1000).toFixed(1)) + 'k' : String(G.gold);
+  setText(elGold, 'g', gd);
+  let ic = '▶', sm = 'Vague', big, cls, bonus = 0;
   const cap = G.endless ? '' : '/' + G.maxw;
-  if (G.over) { label = 'Vague ' + G.wave + cap; cls = 'idle'; }
-  else if (G.spawnQ.length) { label = 'Vague ' + G.wave + cap; cls = 'idle'; }
-  else if (!G.waveActive && G.autoT > 0) { label = 'Vague ' + (G.wave + 1) + ' · ' + Math.ceil(G.autoT); cls = ''; }
-  else if (!G.waveActive) { label = '▶ Vague ' + (G.wave + 1); cls = 'go'; }
-  else { label = '▶ Vague ' + (G.wave + 1); cls = ''; bonus = 10 + G.wave; }
-  setHTML(bWave, 'wv', label + (bonus ? '<span class="bonus">+' + bonus + '</span>' : ''));
+  if (G.over || G.spawnQ.length) { ic = ''; big = G.wave + cap; cls = 'idle'; }
+  else if (!G.waveActive && G.autoT > 0) { ic = '⏱'; sm = 'Vague ' + (G.wave + 1); big = Math.ceil(G.autoT) + ' s'; cls = ''; }
+  else if (!G.waveActive) { big = String(G.wave + 1); cls = 'go'; }
+  else { big = String(G.wave + 1); cls = ''; bonus = 10 + G.wave; }
+  setHTML(bWave, 'wv', (ic ? '<span class="wi">' + ic + '</span>' : '') + '<span class="wt"><small>' + sm + '</small><b>' + big + '</b></span>' + (bonus ? '<span class="bonus">+' + bonus + '</span>' : ''));
   if (hudCache.wc !== cls) { hudCache.wc = cls; bWave.className = cls; bWave.disabled = cls === 'idle'; }
-  const btw = !!betweenWaves(), sk = btw + '|' + meta.shards;
+  const sk = String(meta.shards);
   if (hudCache.shop !== sk) {
     hudCache.shop = sk;
-    $('#bShop').hidden = !btw; $('#bSpeed').hidden = btw;
     $('#bShopN').textContent = meta.shards;
-    $('#bShop').classList.toggle('ping', btw && canBuyAnything());
+    $('#bShop').classList.toggle('ping', canBuyAnything());
   }
   refreshPalette(); refreshInfo();
 }
@@ -2454,12 +2470,11 @@ function openShop() {
   shopFrom = screen;
   const inRun = screen === 'game' && G;
   if (inRun) G.paused = true;
-  $('#sBubble').textContent = inRun ? 'Pause entre deux vagues ! Tes achats comptent tout de suite, même l’or et les vies bonus.'
+  $('#sBubble').textContent = inRun ? 'Partie en pause. Tes achats comptent tout de suite, même l’or et les vies bonus.'
     : 'Chaque vague gagnée rapporte des éclats. Les terrains difficiles paient mieux !';
   $('#sBack').textContent = inRun ? 'Retour au jeu' : 'Retour';
   show('shop'); screens.shop.scrollTop = 0; renderShop();
 }
-const betweenWaves = () => G && !G.over && !G.waveActive && !G.spawnQ.length;
 function renderShop(boughtId) {
   $('#sShards').textContent = meta.shards;
   const fb = $('#sFus'); fb.innerHTML = '';
@@ -2516,7 +2531,8 @@ function buyUp(u) {
     if (u.id === 'gold') G.gold += 25;
     if (u.id === 'lives') G.lives += 2;
     for (const t of G.towers) t.s = towerStats(t);
-    saveCheckpoint();
+    if (!G.waveActive) saveCheckpoint();
+    else if (G.checkpoint) { if (u.id === 'gold') G.checkpoint.gold += 25; if (u.id === 'lives') G.checkpoint.lives += 2; store.set(SAVE, G.checkpoint); }
   }
   Snd.init(); Snd.play('up');
   renderShop(u.id); refreshCosts();
@@ -2540,7 +2556,7 @@ function buyUnlock(t) {
 $('#tShop').addEventListener('click', () => { Snd.init(); openShop(); });
 $('#oShop').addEventListener('click', openShop);
 $('#sBack').addEventListener('click', () => { if (shopFrom === 'game') resume(); else show(shopFrom); });
-$('#bShop').addEventListener('click', () => { Snd.init(); if (betweenWaves() && screen === 'game') openShop(); });
+$('#bShop').addEventListener('click', () => { Snd.init(); if (G && !G.over && screen === 'game') openShop(); });
 
 // Titre
 const showCvs = [];
@@ -2771,7 +2787,7 @@ const TUTO = [
     + '<li>Débloque vite Zéphyr (contre les Flappy volants, dès la vague 4) et Rocaille (contre les Tonk casqués, dès la vague 6).</li>'
     + '<li>Garde de l’or pour la vague 10 : le Kaiju encaisse énormément.</li>'
     + '<li>Au niveau 2, spécialise chaque tour selon la menace : Sol, Air ou Boss.</li>'
-    + '<li>Entre deux vagues, ouvre l’Atelier (bouton violet en haut) pour débloquer des tours et les renforcer.</li></ul>' },
+    + '<li>À tout moment, ouvre l’Atelier (bouton violet en haut) pour débloquer des tours et les renforcer.</li></ul>' },
 ];
 const EFFECT = {
   feu: ['Brûlure', s => s.burn + '/s'], eau: ['Ralentit', s => Math.round(s.slow * 100) + ' %'],
