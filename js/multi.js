@@ -79,6 +79,20 @@ function manualHTML(copyCode) {
     + (copyCode ? '<p class="fine">Ton code, à transmettre :</p><textarea readonly id="mpCodeOut" rows="3">' + esc(copyCode) + '</textarea><button class="sbtn" type="button" id="mpCopy">Copier le code</button>' : '')
     + '<p class="fine">Code reçu :</p><textarea id="mpCodeIn" rows="3" placeholder="Colle le code ici"></textarea><button class="sbtn" type="button" id="mpPaste">Valider le code</button></details>';
 }
+function mapPickHTML(canPick) {
+  const m = MAPS[DUEL.lobbyMap] || MAPS[0];
+  return '<div class="mp-map">' + (canPick ? '<button class="ibtn" type="button" data-a="map-prev" aria-label="Carte précédente">◀</button>' : '')
+    + '<div class="mp-mapn"><small>Carte</small><b>' + esc(m.name) + '</b><span>biome ' + m.biome.name.toLowerCase() + '</span></div>'
+    + (canPick ? '<button class="ibtn" type="button" data-a="map-next" aria-label="Carte suivante">▶</button>' : '') + '</div>';
+}
+function rulesHTML() {
+  return '<details class="mp-manual"><summary>Règles du duel</summary><ul class="tips">'
+    + '<li>Mode infini, tout le monde repart de zéro : Braise et Ondine, 200 or, 0 éclat. Ta progression solo n’est pas touchée.</li>'
+    + '<li>Une vague part toutes les 25 s pour tout le monde. Pas de pause ni d’accélération.</li>'
+    + '<li>Onglet « Envoyer » : dépense de l’or pour envoyer des ennemis à ta cible. Chaque envoi augmente ton revenu, versé à chaque vague.</li>'
+    + '<li>Les éclats gagnés à chaque vague servent dans l’Atelier (bouton violet), qui ne met pas le jeu en pause.</li>'
+    + '<li>Le dernier survivant gagne. Quitter l’appli plus de 10 s élimine.</li></ul></details>';
+}
 function renderMP() {
   const b = $('#mpBody'), S = MP.state, name = mpName();
   let h = '';
@@ -100,8 +114,9 @@ function renderMP() {
     const full = Net.players.length >= NET_MAX;
     h += '<h3 class="mp-h">Salon · ' + Net.players.length + '/' + NET_MAX + ' joueurs</h3>' + rosterHTML()
       + (full ? '<p class="fine">La partie est complète.</p>' : '<button class="btn green" type="button" data-a="invite">Inviter un joueur</button>')
-      + '<button class="btn" type="button" disabled>Lancer la partie · bientôt</button>'
-      + '<p class="fine">Le lancement des parties arrive à l’étape 2. Pour l’instant, ce salon sert à vérifier que vos téléphones se connectent bien.</p>'
+      + mapPickHTML(true)
+      + '<button class="btn" type="button" data-a="launch"' + (Net.players.length < 2 ? ' disabled' : '') + '>' + (Net.players.length < 2 ? 'Invite au moins 1 joueur' : 'Lancer la partie !') + '</button>'
+      + rulesHTML()
       + '<button class="btn pink" type="button" data-a="leave">Fermer la partie</button>';
   } else if (S === 'invite') {
     h += '<h3 class="mp-h">1. Fais scanner ce QR code</h3><p class="fine" style="text-align:left">Ton ami touche « Rejoindre une partie » et vise ce QR avec sa caméra. Monte la luminosité de ton écran.</p>'
@@ -120,7 +135,8 @@ function renderMP() {
   } else if (S === 'lobby') {
     const hp = Net.players.find(p => p.host);
     h += '<h3 class="mp-h">Connecté ! · ' + Net.players.length + '/' + NET_MAX + ' joueurs</h3>' + rosterHTML()
-      + '<p class="fine">En attente que ' + esc(hp ? hp.name : 'l’hôte') + ' lance la partie. Le lancement arrive à l’étape 2.</p>'
+      + mapPickHTML(false)
+      + '<p class="mp-busy">En attente que ' + esc(hp ? hp.name : 'l’hôte') + ' lance la partie…</p>' + rulesHTML()
       + '<button class="btn pink" type="button" data-a="leave">Quitter la partie</button>';
   }
   b.innerHTML = h;
@@ -190,6 +206,8 @@ $('#mpBody').addEventListener('click', ev => {
   else if (a === 'scan-answer') mpGo('scan', { scanFor: 'answer', code: MP.code });
   else if (a === 'back-invite') mpGo('invite', { code: MP.code });
   else if (a === 'cancel' || a === 'leave') mpCancel();
+  else if (a === 'map-prev' || a === 'map-next') { DUEL.lobbyMap = (DUEL.lobbyMap + (a === 'map-next' ? 1 : MAPS.length - 1)) % MAPS.length; Net.send('all', { k: 'lobby', map: DUEL.lobbyMap }); renderMP(); }
+  else if (a === 'launch') duelHostStart();
 });
 // Garde le panneau de saisie manuelle ouvert d'un affichage à l'autre
 $('#mpBody').addEventListener('toggle', ev => { if (ev.target.classList && ev.target.classList.contains('mp-manual')) MP.manual = ev.target.open; }, true);

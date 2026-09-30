@@ -25,11 +25,14 @@
   </header>
   <main id="stage">
     <canvas id="cv"></canvas>
+    <div id="duelBar" hidden></div>
     <div id="hint" hidden></div>
     <div id="banner" hidden><div class="big"></div><div class="small"></div></div>
   </main>
   <footer id="panel">
+    <div id="duelTabs" hidden><button type="button" data-dt="tours" class="on">Tours</button><button type="button" data-dt="send">⚔ Envoyer</button></div>
     <div id="palette"></div>
+    <div id="sendPanel" hidden></div>
     <div id="info" hidden>
       <div class="ihead">
         <canvas id="iCv"></canvas>
@@ -134,6 +137,7 @@
       </div>
       <button class="btn alt" id="pQuit" type="button">Retour au menu · partie gardée<span class="kbd">Q</span></button>
       <button class="btn pink" id="pCash" type="button">Abandonner et encaisser</button>
+      <button class="btn pink" id="pForfeit" type="button" hidden>Abandonner le duel</button>
       <p class="fine" id="pSave"></p>
     </div>
   </div>
@@ -232,6 +236,25 @@
   </div>
 </section>
 
+<section class="screen veil" id="sDuel" hidden>
+  <div class="inner">
+    <div class="bigword" id="dWord">VICTOIRE !!</div>
+    <div class="panelbox col">
+      <p class="fine" id="dText" style="font-size:15px;opacity:1"></p>
+      <ol class="mp-rank" id="dRank"></ol>
+      <div class="stats">
+        <div><b id="dWave">0</b><span>Vague</span></div>
+        <div><b id="dSent">0</b><span>Envoyés</span></div>
+        <div><b id="dInc">0</b><span>Revenu</span></div>
+      </div>
+      <button class="btn green" id="dRematch" type="button">Revanche</button>
+      <p class="mp-busy" id="dWait" hidden>En attente de la revanche de l’hôte…</p>
+      <button class="btn alt" id="dWatch" type="button">Regarder la suite</button>
+      <button class="btn alt" id="dLobby" type="button">Retour au salon</button>
+    </div>
+  </div>
+</section>
+
 <section class="screen" id="sMulti" hidden>
   <div class="inner">
     <div class="bigword calm head">MULTIJOUEUR</div>
@@ -246,3 +269,4 @@
 <script src="js/vendor/qrcode.min.js"></script>
 <script src="js/net.js"></script>
 <script src="js/multi.js"></script>
+<script src="js/duel.js"></script>

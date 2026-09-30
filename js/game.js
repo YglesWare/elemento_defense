@@ -145,16 +145,18 @@ function newGame(mi, save, diff) {
   else {
     banner('PRÊT ?', MAPS[mi].name + ' · ' + DIFFS[G.diff].name + (G.endless ? ' · vagues infinies' : ' · ' + G.maxw + ' vagues'));
     const seen = store.get('elemento.bankhint') || 0;
-    if (seen < 3) { store.set('elemento.bankhint', seen + 1); setTimeout(() => { if (G && G.map === mi && !G.over) bankHint(5000); }, 2400); }
+    if (seen < 3) { store.set('elemento.bankhint', seen + 1); setTimeout(() => { if (G && G.map === mi && !G.over && !G.duel) bankHint(5000); }, 2400); }
   }
 }
 function saveCheckpoint() {
+  if (G.duel || duelOn) return;
   G.checkpoint = { map: G.map, mapId: MAPS[G.map].id, diff: G.diff, banked: G.banked, gold: G.gold, lives: G.lives, wave: G.wave, score: G.score, endless: G.endless,
     bossKills: G.bossKills, shardsPaid: G.shardsPaid, won: G.won, reviveUsed: G.reviveUsed,
     towers: G.towers.map(t => ({ type: t.type, c: t.c, r: t.r, lvl: t.lvl, mode: t.mode, inv: t.inv, br: t.br })) };
   store.set(SAVE, G.checkpoint);
 }
 function recordBest() {
+  if (G.duel || duelOn) return { wave: G.wave, score: G.score };
   const b = store.get(BEST2) || {}, id = MAPS[G.map].id, rec = (b[id] = b[id] || {}), cur = rec[G.diff] || { wave: 0, score: 0, won: false };
   if (G.wave > cur.wave || (G.wave === cur.wave && G.score > cur.score)) { cur.wave = G.wave; cur.score = G.score; }
   if (G.won) cur.won = true;
@@ -238,7 +240,7 @@ function makeWave(w) {
   return { list, label };
 }
 function startWave() {
-  if (!G || G.over || G.spawnQ.length) return;
+  if (!G || G.over || G.spawnQ.length || G.duel) return;
   let early = 0;
   if (G.waveActive && G.enemies.length) { early = 5 + Math.floor(G.wave / 2); G.gold += early; }
   G.wave++;
@@ -250,6 +252,7 @@ function startWave() {
   Snd.play('wave');
 }
 function waveDone() {
+  if (G.duel) { G.waveActive = false; return; }
   G.waveActive = false;
   for (const t of G.towers) { healTower(t, true); t.ko = 0; t.stun = 0; t.evil = 0; refillShield(t); }
   const bonus = Math.round((10 + G.wave) * (1 + 0.2 * M('bonus'))); G.gold += bonus; G.score += G.wave * 50;
@@ -275,6 +278,7 @@ function victory() {
   showOver(true, best, award, bank);
 }
 function gameOver() {
+  if (G.duel) { duelDead('ko'); return; }
   G.over = true; G.lives = 0; Snd.play('ko');
   const best = recordBest(), award = awardShards(), bank = bankGold(); store.del(SAVE);
   setTimeout(() => { if (G && G.over) showOver(false, best, award, bank); }, 1300);

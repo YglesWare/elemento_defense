@@ -53,7 +53,12 @@ function refreshPalette() {
     if (b._poor !== poor) { b._poor = poor; b.classList.toggle('poor', poor); }
   }
 }
-function showPanel(which) { $('#palette').hidden = which !== 'palette'; $('#info').hidden = which !== 'info'; }
+let duelTab = 'tours';
+function showPanel(which) {
+  const duel = !!(G && G.duel), send = duel && which === 'palette' && duelTab === 'send';
+  $('#palette').hidden = which !== 'palette' || send; $('#info').hidden = which !== 'info';
+  $('#sendPanel').hidden = !send; $('#duelTabs').hidden = !duel || which === 'info';
+}
 
 // Info tour
 const iCtx = prepMini($('#iCv'), 44, 48);
@@ -114,13 +119,14 @@ const elLives = $('#hLives'), elGold = $('#hGold'), bWave = $('#bWave');
 function refreshHUD() {
   setText(elLives, 'l', String(Math.max(0, G.lives)));
   setText(elGold, 'g', fmtK(G.gold));
-  setText($('#hBank'), 'bk', '🐷 ' + fmtK(meta.bank || 0));
+  setText($('#hBank'), 'bk', '🐷 ' + fmtK(meta.bank || 0)); $('#hBank').hidden = !!G.duel;
   let ic = '▶', sm = 'Vague', big, cls, bonus = 0;
   const cap = G.endless ? '' : '/' + G.maxw;
   if (G.over || G.spawnQ.length) { ic = ''; big = G.wave + cap; cls = 'idle'; }
   else if (!G.waveActive && G.autoT > 0) { ic = '⏱'; sm = 'Vague ' + (G.wave + 1); big = Math.ceil(G.autoT) + ' s'; cls = ''; }
   else if (!G.waveActive) { big = String(G.wave + 1); cls = 'go'; }
   else { big = String(G.wave + 1); cls = ''; bonus = 5 + Math.floor(G.wave / 2); }
+  if (G.duel && typeof duelWaveLabel === 'function') [ic, sm, big, cls, bonus] = duelWaveLabel();
   setHTML(bWave, 'wv', (ic ? '<span class="wi">' + ic + '</span>' : '') + '<span class="wt"><small>' + sm + '</small><b>' + big + '</b></span>' + (bonus ? '<span class="bonus">+' + bonus + '</span>' : ''));
   if (hudCache.wc !== cls) { hudCache.wc = cls; bWave.className = cls; bWave.disabled = cls === 'idle'; }
   const sk = String(meta.shards);
@@ -132,7 +138,7 @@ function refreshHUD() {
   refreshPalette(); refreshInfo();
 }
 bWave.addEventListener('click', () => { Snd.init(); if (G && !G.paused) startWave(); });
-$('#bSpeed').addEventListener('click', () => { if (!G) return; G.speed = G.speed % 3 + 1; $('#bSpeed').textContent = 'x' + G.speed; });
+$('#bSpeed').addEventListener('click', () => { if (!G || G.duel) return; G.speed = G.speed % 3 + 1; $('#bSpeed').textContent = 'x' + G.speed; });
 $('#bPause').addEventListener('click', () => pause());
 
 // Plateau
@@ -221,12 +227,14 @@ document.addEventListener('keydown', ev => {
 // Écrans
 function pause() {
   if (!G || G.over || curScreen !== 'game') return;
-  G.paused = true; show('pause');
+  if (!G.duel) G.paused = true;
+  show('pause');
   $('#pSave').textContent = MAPS[G.map].name + ' · ' + DIFFS[G.diff].name + '. ' + (G.checkpoint && G.checkpoint.wave ? 'Partie sauvegardée à la fin de la vague ' + G.checkpoint.wave + '.' : 'La partie se sauvegarde à chaque fin de vague.')
     + ' Biome ' + MAPS[G.map].biome.name.toLowerCase() + ' : ' + biomeText(MAPS[G.map].biome) + '.'
     + ' Cagnotte : ' + (meta.bank || 0) + ' or. Elle ne reçoit l’or restant qu’en fin de partie (victoire, K.O. ou abandon).';
   cashArm = false; refreshCash();
   refreshOptBtns();
+  if (typeof duelPauseUI === 'function') duelPauseUI(!!G.duel);
 }
 let cashArm = false;
 function refreshCash() {
@@ -370,8 +378,8 @@ const shopTabs = setupTabs($('#sTabs'), 'elemento.tab.shop'), helpTabs = setupTa
 function openShop() {
   shopFrom = curScreen;
   const inRun = curScreen === 'game' && G;
-  if (inRun) G.paused = true;
-  $('#sBubble').textContent = inRun ? 'Partie en pause. Tes achats comptent tout de suite, même l’or et les vies bonus.'
+  if (inRun && !G.duel) G.paused = true;
+  $('#sBubble').textContent = inRun && G.duel ? 'Le duel continue pendant tes achats : fais vite !' : inRun ? 'Partie en pause. Tes achats comptent tout de suite, même l’or et les vies bonus.'
     : 'Chaque vague gagnée rapporte des éclats. Les terrains difficiles paient mieux !';
   $('#sBack').textContent = inRun ? 'Retour au jeu' : 'Retour';
   show('shop'); screens.shop.scrollTop = 0; renderShop();
@@ -845,8 +853,9 @@ let lastT = performance.now();
 function frame(now) {
   const dt = Math.min(0.05, Math.max(0, (now - lastT) / 1000)); lastT = now;
   if (G) {
-    if (curScreen === 'game' && !G.paused && !G.over) for (let i = 0; i < G.speed; i++) update(dt);
+    if (G.duel ? !G.over : curScreen === 'game' && !G.paused && !G.over) for (let i = 0; i < G.speed; i++) update(dt);
     else if (G.over) update(dt);
+    if (G.duel && typeof duelTick === 'function') duelTick(dt);
     render(); refreshHUD();
   }
   if (curScreen === 'title') drawShowcase(now / 1000);

@@ -21,7 +21,9 @@ const META = 'elemento.meta';
 const meta = Object.assign({ shards: 0, earned: 0, lv: {} }, store.get(META) || {});
 if (!meta.lv) meta.lv = {};
 const M = id => meta.lv[id] || 0;
-const saveMeta = () => store.set(META, meta);
+// Pendant un duel, la progression est temporaire : on n'écrit jamais dans la sauvegarde solo
+let duelOn = false;
+const saveMeta = () => { if (!duelOn) store.set(META, meta); };
 const fr = n => String(n).replace('.', ',');
 
 // ================= Données =================
