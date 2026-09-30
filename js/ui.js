@@ -252,12 +252,19 @@ function cashOut() {
 }
 $('#pCash').addEventListener('click', () => { if (!G || G.over) return; if (!cashArm) { cashArm = true; refreshCash(); return; } cashArm = false; cashOut(); });
 function resume() { if (!G) return; G.paused = false; show('game'); keepAwake(); }
+const soundLabel = () => 'Son : ' + (opts.sound && opts.music !== false ? 'tout' : opts.sound ? 'effets' : 'coupé');
 function refreshOptBtns() {
-  $('#pSound').textContent = 'Son : ' + (opts.sound ? 'oui' : 'non');
-  $('#tSound').textContent = 'Son : ' + (opts.sound ? 'oui' : 'non');
+  $('#pSound').textContent = soundLabel();
+  $('#tSound').textContent = soundLabel();
   $('#pAuto').textContent = 'Vagues auto : ' + (opts.auto ? 'oui' : 'non');
 }
-function toggleSound() { opts.sound = !opts.sound; store.set(OPTS, opts); Snd.init(); refreshOptBtns(); }
+// Trois réglages : tout (effets + musique) → effets seuls → coupé → tout
+function toggleSound() {
+  if (opts.sound && opts.music !== false) opts.music = false;
+  else if (opts.sound) opts.sound = false;
+  else { opts.sound = true; opts.music = true; }
+  store.set(OPTS, opts); Snd.init(); if (typeof Music !== 'undefined') Music.start(); refreshOptBtns();
+}
 $('#pResume').addEventListener('click', resume);
 $('#pSound').addEventListener('click', toggleSound);
 $('#tSound').addEventListener('click', toggleSound);

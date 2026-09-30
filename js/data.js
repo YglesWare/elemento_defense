@@ -16,7 +16,7 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
   del(k) { try { localStorage.removeItem(k); } catch (e) {} },
 };
-const opts = Object.assign({ sound: true, auto: false }, store.get(OPTS) || {});
+const opts = Object.assign({ sound: true, music: true, auto: false }, store.get(OPTS) || {});
 const META = 'elemento.meta';
 const meta = Object.assign({ shards: 0, earned: 0, lv: {} }, store.get(META) || {});
 if (!meta.lv) meta.lv = {};
