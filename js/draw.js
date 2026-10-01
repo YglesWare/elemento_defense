@@ -603,7 +603,7 @@ function drawEnemy(c, type, x, y, s, t, e) {
 
 // ---------- Décor, portail, maison ----------
 function drawDeco(c, d, cs) {
-  const [x0, y0] = toScreen(d.c + 0.5 + d.ox, d.r + 0.5 + d.oy), s = cs * d.s, lw = Math.max(1, cs * 0.035);
+  const [x0, y0] = cellXY(d.c + 0.5 + d.ox, d.r + 0.5 + d.oy), s = cs * d.s, lw = Math.max(1, cs * 0.035);
   c.save(); c.translate(x0, y0); c.lineJoin = 'round'; c.lineCap = 'round'; c.strokeStyle = INK; c.lineWidth = lw;
   switch (d.type) {
     case 'fleur': {
@@ -839,7 +839,7 @@ function cellPath(c, q, r, same, cs, e, dy) {
   const R0 = cs * 0.3, E = e / cs;
   const outer = (a, b) => !same(q + a, r) && !same(q, r + b);
   const rad = [outer(-1, -1), outer(1, -1), outer(1, 1), outer(-1, 1)].map(o => o ? R0 + e : 0);
-  const P = [[q - E, r - E], [q + 1 + E, r - E], [q + 1 + E, r + 1 + E], [q - E, r + 1 + E]].map(([a, b]) => { const [x, y] = toScreen(a, b); return [x, y + dy]; });
+  const P = [[q - E, r - E], [q + 1 + E, r - E], [q + 1 + E, r + 1 + E], [q - E, r + 1 + E]].map(([a, b]) => { const [x, y] = cellXY(a, b); return [x, y + dy]; });
   c.moveTo((P[0][0] + P[1][0]) / 2, (P[0][1] + P[1][1]) / 2);
   for (let i = 1; i <= 4; i++) { const A = P[i % 4], B = P[(i + 1) % 4]; c.arcTo(A[0], A[1], B[0], B[1], rad[i % 4]); }
   c.closePath();
@@ -858,12 +858,12 @@ function drawTerrain(c, cs, tch) {
     c.save(); path(cells, 0, 0); c.clip();
     for (const [q, r] of cells) {
       const [uq, ur] = upN(q, r); if (same(uq, ur)) continue;
-      const [x, y] = toScreen(q, r);
+      const [x, y] = cellXY(q, r);
       c.fillStyle = St.sunk ? 'rgba(20,20,60,.16)' : 'rgba(255,255,255,.4)';
       c.fillRect(x - 1, y, cs + 2, cs * (St.sunk ? 0.17 : 0.1));
     }
     c.restore();
-    for (const [q, r] of cells) { const [x, y] = toScreen(q, r); drawTile(c, ch, x, y, cs, q, r); }
+    for (const [q, r] of cells) { const [x, y] = cellXY(q, r); drawTile(c, ch, x, y, cs, q, r); }
   }
 }
 function drawTile(c, ch, x, y, cs, q, r) {

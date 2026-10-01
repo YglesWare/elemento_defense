@@ -116,7 +116,7 @@ $('#iMode').addEventListener('click', () => {
 
 // HUD
 const fmtK = n => n >= 100000 ? Math.round(n / 1000) + 'k' : n >= 10000 ? fr((n / 1000).toFixed(1)) + 'k' : String(n);
-function bankHint(ms) { if (G) hint('Or de la partie : ' + G.gold + '. Ce qu’il en reste à la fin (victoire, K.O. ou abandon) rejoint la cagnotte 🐷 (' + (meta.bank || 0) + ' or), qui sert à acheter des cartes.', ms || 4200); }
+function bankHint(ms) { if (G) hint('Or de la partie : ' + G.gold + '. À la fin, il rejoint la cagnotte 🐷 (' + (meta.bank || 0) + ' or), qui sert à acheter des cartes : tout en cas de victoire, la moitié en cas de K.O., rien si tu abandonnes.', ms || 5000); }
 $('#hGoldChip').addEventListener('click', () => bankHint());
 const elLives = $('#hLives'), elGold = $('#hGold'), bWave = $('#bWave');
 function refreshHUD() {
@@ -154,7 +154,8 @@ function renderNextWave() {
   const cnt = {}; for (const it of nw.list) cnt[it.type] = (cnt[it.type] || 0) + 1;
   const order = Object.keys(ETYPES).filter(k => cnt[k]);
   const Wc = WEATHERS[G.weather] || WEATHERS.clear, Wn = nw.weather && WEATHERS[nw.weather];
-  box.innerHTML = '<span class="nww" title="Météo : ' + Wc.name + '">' + Wc.icon + '</span><span class="nwl">Vague ' + nw.n + '</span>' + order.map(k => '<span class="nwi' + (ETYPES[k].boss ? ' boss' : '') + '" title="' + eName(k) + '"><canvas data-t="' + k + '"></canvas>×' + cnt[k] + '</span>').join('')
+  box.innerHTML = '<span class="nww" title="Météo : ' + Wc.name + '">' + Wc.icon + '</span><span class="nwl">Vague ' + nw.n + '</span>'
+    + (nw.portals && P && P.portals.length > 1 ? '<span class="nwt" title="Portails actifs à la prochaine vague">🌀 ' + nw.portals.length + '/' + P.portals.length + '</span>' : '') + order.map(k => '<span class="nwi' + (ETYPES[k].boss ? ' boss' : '') + '" title="' + eName(k) + '"><canvas data-t="' + k + '"></canvas>×' + cnt[k] + '</span>').join('')
     + (Wn ? '<span class="nwt">→ ' + Wn.icon + ' ' + Wn.name + '</span>' : '') + (nw.label ? '<span class="nwt">' + nw.label + '</span>' : '');
   box.querySelectorAll('canvas').forEach(cv2 => { const k = cv2.dataset.t, c = prepMini(cv2, 24, 24); drawEnemy(c, k, 12, 22, k === 'boss' ? 19 : 26, 0.6, null); });
   box.hidden = false;
@@ -250,7 +251,7 @@ function pause() {
   $('#pSave').textContent = MAPS[G.map].name + ' · ' + DIFFS[G.diff].name + '. ' + (G.checkpoint && G.checkpoint.wave ? 'Partie sauvegardée à la fin de la vague ' + G.checkpoint.wave + '.' : 'La partie se sauvegarde à chaque fin de vague.')
     + ' Biome ' + MAPS[G.map].biome.name.toLowerCase() + ' : ' + biomeText(MAPS[G.map].biome) + '.'
     + ' Météo : ' + (WEATHERS[G.weather] || WEATHERS.clear).name.toLowerCase() + ((WEATHERS[G.weather] || WEATHERS.clear).desc !== 'aucun effet' ? ' (' + WEATHERS[G.weather].desc + ')' : '') + '.'
-    + ' Cagnotte : ' + (meta.bank || 0) + ' or. Elle ne reçoit l’or restant qu’en fin de partie (victoire, K.O. ou abandon).';
+    + ' Cagnotte : ' + (meta.bank || 0) + ' or. En fin de partie, elle reçoit tout l’or restant en cas de victoire, la moitié en cas de K.O., et rien si tu abandonnes.';
   cashArm = false; refreshCash();
   refreshOptBtns();
   if (typeof duelPauseUI === 'function') duelPauseUI(!!G.duel);
@@ -259,13 +260,13 @@ let cashArm = false;
 function refreshCash() {
   if (!G) return;
   const v = Math.max(0, G.gold - (G.banked || 0)), b = $('#pCash');
-  b.textContent = cashArm ? 'Sûr ? Touche encore : fin de la partie, +' + v + ' or dans la cagnotte' : 'Abandonner et encaisser ' + v + ' or';
+  b.textContent = cashArm ? 'Sûr ? Touche encore : fin de la partie, tes ' + v + ' or sont perdus' : 'Abandonner la partie';
   b.classList.toggle('alt', cashArm); b.classList.toggle('pink', !cashArm);
 }
 function cashOut() {
   if (!G || G.over) return;
   G.over = true; G.paused = true; Snd.play('clear');
-  const best = recordBest(), award = awardShards(), bank = bankGold(); store.del(SAVE);
+  const best = recordBest(), award = awardShards(), bank = bankGold(0); store.del(SAVE);
   showOver(false, best, award, bank, true);
 }
 $('#pCash').addEventListener('click', () => { if (!G || G.over) return; if (!cashArm) { cashArm = true; refreshCash(); return; } cashArm = false; cashOut(); });
@@ -300,10 +301,11 @@ function showOver(win, best, award, bank, quit) {
   const bk = bank || { gain: 0, total: meta.bank || 0 };
   $('#oBank').textContent = '+' + bk.gain;
   const nextMap = MAPS.findIndex((mm, i) => !mapOwned(i));
-  $('#oBankDetail').textContent = 'L’or restant rejoint la cagnotte (' + bk.total + ' or), qui sert à acheter des cartes.' + (nextMap >= 0 ? ' Prochaine carte : ' + MAPS[nextMap].name + ', ' + MAPS[nextMap].price + ' or' + (mapReqOk(nextMap) ? (win && !quit && G.diff !== 'facile' && G.diff !== 'infini' && nextMap === G.map + 1 ? '. Elle est maintenant achetable !' : '.') : ', après avoir réussi ' + MAPS[nextMap - 1].name + ' en Moyen.') : '');
+  const why = quit ? 'Abandon : ton or restant (' + (bk.lost || 0) + ') est perdu.' : bk.rate < 1 ? 'K.O. : seule la moitié de ton or restant rejoint la cagnotte (' + (bk.lost || 0) + ' or perdus).' : 'Victoire : tout ton or restant rejoint la cagnotte.';
+  $('#oBankDetail').textContent = why + ' Cagnotte : ' + bk.total + ' or, pour acheter des cartes.' + (nextMap >= 0 ? ' Prochaine carte : ' + MAPS[nextMap].name + ', ' + MAPS[nextMap].price + ' or' + (mapReqOk(nextMap) ? (win && !quit && G.diff !== 'facile' && G.diff !== 'infini' && nextMap === G.map + 1 ? '. Elle est maintenant achetable !' : '.') : ', après avoir réussi ' + MAPS[nextMap - 1].name + ' en Moyen.') : '');
   $('#oWord').textContent = quit ? 'ABANDON' : win ? 'VICTOIRE !!' : 'K.O. !';
   $('#oWord').classList.toggle('win', win);
-  $('#oText').textContent = quit ? 'Partie terminée. Ton or restant rejoint la cagnotte pour acheter des cartes.' : win ? 'Les ' + G.maxw + ' vagues sont repoussées. La petite maison est sauve !' : 'Les slimes ont envahi la petite maison. Retente ta chance !';
+  $('#oText').textContent = quit ? 'Partie abandonnée. Tu gardes tes éclats, mais pas ton or.' : win ? 'Les ' + G.maxw + ' vagues sont repoussées. La petite maison est sauve !' : 'Les slimes ont envahi la petite maison. Retente ta chance !';
   $('#oWave').textContent = G.wave; $('#oScore').textContent = G.score;
   $('#oBest').textContent = best ? best.wave : G.wave;
   $('#oEndless').hidden = !win;
@@ -510,12 +512,17 @@ function drawMapMini(c, mi, w, h, diff) {
   for (let r = 0; r < ROWS; r++) for (let q = 0; q < COLS; q++) { c.fillStyle = (q + r) % 2 ? m.ground : m.ground2; c.fillRect(ox + q * cs, oy + r * cs, cs + 0.5, cs + 0.5); }
   const terr = m.terrain ? (diff ? diffTerrain(mi, diff) : m.terrain) : null;
   if (terr) for (let r = 0; r < ROWS; r++) for (let q = 0; q < COLS; q++) { const Tt = TERRAINS[terr[r][q]]; if (!Tt) continue; c.fillStyle = Tt.block ? '#2a1b3d' : Tt.color; c.globalAlpha = Tt.block ? 0.55 : 1; c.fillRect(ox + q * cs, oy + r * cs, cs + 0.5, cs + 0.5); c.globalAlpha = 1; }
-  const pts = m.pts.map(([q, r]) => [ox + (q + 0.5) * cs, oy + (r + 0.5) * cs]);
-  const line = (lw, col) => { c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.lineWidth = lw; c.strokeStyle = col; c.lineJoin = 'round'; c.stroke(); };
-  line(cs * 0.85, INK); line(cs * 0.62, m.path);
-  const a = pts[1], z = pts[pts.length - 2];
-  c.beginPath(); c.arc(ox + (m.pts[0][0] + 1.5) * cs, a[1], cs * 0.38, 0, TAU); fs(c, '#b57bff', 1.5);
-  heart(c, ox + (m.pts[m.pts.length - 1][0] - 0.5) * cs, z[1], cs * 0.34); fs(c, '#ff4f6e', 1.5);
+  const routes = m.paths || [m.pts], at = ([q, r]) => [ox + (q + 0.5) * cs, oy + (r + 0.5) * cs];
+  const line = (lw, col) => { c.beginPath(); for (const rt of routes) rt.map(at).forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.lineWidth = lw; c.strokeStyle = col; c.lineJoin = 'round'; c.stroke(); };
+  line(cs * 1.1, INK); line(cs * 0.8, m.path);
+  // Portails (premier point dans la grille) et maisons (dernier point dans la grille)
+  const inG = ([q, r]) => q >= 0 && q < COLS && r >= 0 && r < ROWS;
+  const step = (a, b) => [a[0] + Math.sign(b[0] - a[0]), a[1] + Math.sign(b[1] - a[1])];
+  for (const rt of routes) {
+    const s0 = inG(rt[0]) ? rt[0] : step(rt[0], rt[1]), n = rt.length, e0 = inG(rt[n - 1]) ? rt[n - 1] : step(rt[n - 1], rt[n - 2]);
+    const [px, py] = at(s0); c.beginPath(); c.arc(px, py, cs * 0.7, 0, TAU); fs(c, '#b57bff', 1.5);
+    const [hx, hy] = at(e0); heart(c, hx, hy, cs * 0.7); fs(c, '#ff4f6e', 1.5);
+  }
 }
 function renderMaps(boughtId) {
   $('#mBank').textContent = meta.bank || 0;
@@ -632,9 +639,9 @@ function doFuse(src, dst, k) {
   G.gold -= F.fee;
   G.towers = G.towers.filter(x => x !== src && x !== dst);
   const nt = addTower(k, dst.c, dst.r, 1, dst.mode, src.inv + dst.inv + F.fee); nt.recoil = 1;
-  for (const o of [src, dst]) burst(o.c + 0.5, o.r + 0.5, 0.4, 18, [TOWERS[o.type].color, '#ffffff', '#ff6ad5'], 3, 0.1, 1, 0.8, 'star');
-  G.fx.push({ kind: 'ring', gx: dst.c + 0.5, gy: dst.r + 0.5, r0: 0.2, r1: 2.2, t: 0, dur: 0.6, color: '#ff6ad5' });
-  ono('FUSION !', dst.c + 0.5, dst.r + 0.5, '#ff6ad5', 0.8, 0, 1.1);
+  for (const o of [src, dst]) burst(o.x, o.y, 0.4, 18, [TOWERS[o.type].color, '#ffffff', '#ff6ad5'], 3, 0.1, 1, 0.8, 'star');
+  G.fx.push({ kind: 'ring', gx: dst.x, gy: dst.y, r0: 0.2, r1: 2.2, t: 0, dur: 0.6, color: '#ff6ad5' });
+  ono('FUSION !', dst.x, dst.y, '#ff6ad5', 0.8, 0, 1.1);
   Snd.play('win');
   selectTower(nt);
   banner(F.name.toUpperCase(), F.elem);
@@ -775,8 +782,8 @@ function sizeDemo(d) {
   buildBg(d.bg);
 }
 function makeDemo(key, el) {
-  const cfg = DEMOS[key], d = { key, cfg, el, ctx: el.getContext('2d'), bg: document.createElement('canvas'), L: { w: 1, h: 1, dpr: 1, cs: 40, ox: 0, oy: 0, portrait: false }, G: null, P: null, lvl: cfg.lvl };
-  d.P = buildPath({ pts: [[-1, 4], [14, 4]] });
+  const cfg = DEMOS[key], d = { key, cfg, el, ctx: el.getContext('2d'), bg: document.createElement('canvas'), L: { w: 1, h: 1, dpr: 1, cs: 40, cw: 1, ox: 0, oy: 0, portrait: false }, G: null, P: null, lvl: cfg.lvl };
+  d.P = buildPath({ pts: [[-1, 4], [14, 4]] }, 1);
   withWorld(d, () => {
     G = baseState(0, null); G.bg = d.bg; G.demo = true; G.terrain = null; G.lives = 1e9; G.wave = 3; G.spawnT = -1.2;
     G.deco = genDeco(0);

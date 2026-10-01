@@ -2,7 +2,9 @@
 'use strict';
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
-const COLS = 14, ROWS = 9, FLY = 0.42, MAXW = 30;
+const COLS = 21, ROWS = 13, FLY = 0.42, MAXW = 30;
+// Taille d'une case en unités du monde (portées, vitesses) : la grille est 1/3 plus fine que ces distances
+const CW = 2 / 3;
 const SAVE = 'elemento.save', BEST = 'elemento.best', OPTS = 'elemento.opts';
 const $ = s => document.querySelector(s);
 const rand = (a, b) => b === undefined ? Math.random() * a : a + Math.random() * (b - a);
@@ -31,83 +33,83 @@ const MAPS = [
   { id: 'prairie', name: 'Prairie Mochi', price: 0, hpMul: 1, shards: 1, blurb: 'Lacs, marécages et collines : la carte idéale pour débuter.',
     ground: '#93dd6c', ground2: '#88d563', path: '#f6d99b', pathEdge: '#d9ad63', frame: '#5fb84a', dot: 'rgba(42,27,61,.16)',
     deco: ['fleur', 'buisson', 'herbe', 'herbe', 'champi', 'fleur'], obstacle: 'arbre',
-    pts: [[-1, 1], [3, 1], [3, 6], [7, 6], [7, 2], [11, 2], [11, 7], [14, 7]],
+    paths: [[[-1, 2], [5, 2], [5, 9], [11, 9], [11, 3], [16, 3], [16, 10], [21, 10]]],
     terrain: ['..CC....LLL...', '............X.', '..M..X........', 'LL......M.C...', 'LL..CC...XC...', '......LL......', '........LL..XX', '..MM..........', 'XX....CC..LL..'] },
   { id: 'plage', name: 'Plage Ramune', price: 200, hpMul: 1.1, shards: 1.1, blurb: 'Du sable partout (mauvais pour l’eau et la glace) et la mer tout en bas.',
     ground: '#cfe8a0', ground2: '#c5e194', path: '#cf9660', pathEdge: '#a06a3c', frame: '#4cc3f2', dot: 'rgba(255,255,255,.35)',
     deco: ['coquillage', 'herbe', 'etoile', 'coquillage'], obstacle: 'palmier',
-    pts: [[-1, 4], [2, 4], [2, 1], [5, 1], [5, 7], [9, 7], [9, 1], [12, 1], [12, 5], [14, 5]],
+    paths: [[[-1, 2], [7, 2], [7, 6], [13, 6], [13, 2], [18, 2], [18, 9], [21, 9]], [[-1, 10], [7, 10], [7, 6], [13, 6], [13, 2], [18, 2], [18, 9], [21, 9]]],
     terrain: ['SSSS..CC..SSSS', 'SS......S....S', 'SS.X..SS.....S', 'S...SS....W...', '...S..S..S....', 'SS..C...SS.X..', 'LL...S.......S', 'LLLL...LL...LL', 'LLLLLLLLLLLLLL'] },
   { id: 'marais', name: 'Marais Matcha', price: 350, hpMul: 1.15, shards: 1.2, blurb: 'Boue et étangs : le royaume de l’eau et de la terre, le feu y est mal à l’aise.',
     ground: '#9ccf7e', ground2: '#92c574', path: '#c9b27a', pathEdge: '#8f7a48', frame: '#5f8f4a', dot: 'rgba(42,27,61,.16)',
     deco: ['herbe', 'champi', 'buisson'], obstacle: 'arbre',
-    pts: [[-1, 2], [3, 2], [3, 6], [6, 6], [6, 2], [10, 2], [10, 6], [14, 6]],
+    paths: [[[-1, 6], [4, 6], [4, 3], [9, 3], [9, 6], [13, 6], [13, 3], [18, 3], [18, 6], [21, 6]], [[-1, 6], [4, 6], [4, 9], [9, 9], [9, 6], [13, 6], [13, 9], [18, 9], [18, 6], [21, 6]], [[-1, 6], [4, 6], [4, 3], [9, 3], [9, 6], [13, 6], [13, 9], [18, 9], [18, 6], [21, 6]], [[-1, 6], [4, 6], [4, 9], [9, 9], [9, 6], [13, 6], [13, 3], [18, 3], [18, 6], [21, 6]]],
     terrain: ['MMLL..MMLLM.MM', 'M..M.MM...M.LL', 'LL...M....M.LL', '..M.LL.MM.X.M.', 'MM..LL.LL..MM.', '.M.X..MLL.X..M', 'LLL....MM.....', 'MMLLM..X.MMLLM', 'LLLLMMLLLLMMLL'] },
   { id: 'foret', name: 'Forêt Dango', price: 500, hpMul: 1.2, shards: 1.3, blurb: 'Une forêt dense : peu de places pour construire, mais de belles collines.',
     ground: '#7fcf6a', ground2: '#76c661', path: '#e8c890', pathEdge: '#b8905a', frame: '#3f8a45', dot: 'rgba(42,27,61,.16)',
     deco: ['champi', 'fleur', 'buisson', 'herbe'], obstacle: 'arbre',
-    pts: [[-1, 1], [12, 1], [12, 4], [1, 4], [1, 7], [14, 7]],
+    paths: [[[-1, 6], [6, 6], [6, 2], [14, 2], [14, 4], [21, 4]], [[-1, 6], [6, 6], [6, 10], [14, 10], [14, 8], [21, 8]]],
     terrain: ['XX.XX..XXX.XXX', '.............X', 'X.C..X..M..X.X', 'XX..MM.C..X..X', 'X............X', 'X.X..C..XX.M.X', 'X..XX..M..X..C', '..............', 'XXX..XXX..XXXX'] },
   { id: 'desert', name: 'Désert Dorayaki', price: 700, hpMul: 1.25, shards: 1.4, blurb: 'Dunes brûlantes : le feu, la terre et le vent adorent, l’eau souffre.',
     ground: '#dcb884', ground2: '#d4ae78', path: '#b98a5a', pathEdge: '#8a5f38', frame: '#e0a060', dot: 'rgba(255,255,255,.3)',
     deco: ['roche', 'herbe'], obstacle: 'cactus',
-    pts: [[-1, 4], [5, 4], [5, 1], [9, 1], [9, 7], [14, 7]],
+    paths: [[[16, -1], [16, 4], [10, 4], [10, 6], [4, 6], [4, 10], [-1, 10]], [[16, 13], [16, 8], [10, 8], [10, 6], [4, 6], [4, 10], [-1, 10]]],
     terrain: ['SSSSRRSSSSSSSS', 'SS.SS.....SXSS', 'S.X.S.RR.S..SS', 'SS..SS.LL.S.RS', '......SLL.S..S', 'SRRSS.SSS.WS.S', 'SS.X.SS.S.S.XS', 'SSSS.SSS......', 'SSSSSSXSSSSSSS'] },
   { id: 'ile', name: 'Île Takoyaki', price: 950, hpMul: 1.3, shards: 1.5, blurb: 'Une île entourée d’eau : parfait pour Ondine, terrible pour Braise.',
     ground: '#bfe79a', ground2: '#b5de8e', path: '#d7a86e', pathEdge: '#a0703c', frame: '#3fb6ea', dot: 'rgba(255,255,255,.35)',
     deco: ['coquillage', 'etoile', 'herbe'], obstacle: 'palmier',
-    pts: [[-1, 4], [3, 4], [3, 1], [7, 1], [7, 7], [11, 7], [11, 3], [14, 3]],
+    paths: [[[-1, 1], [8, 1], [8, 3], [2, 3], [2, 6], [10, 6]], [[21, 1], [12, 1], [12, 3], [18, 3], [18, 6], [10, 6]], [[-1, 12], [8, 12], [8, 10], [4, 10], [4, 8], [10, 8], [10, 6]], [[21, 12], [12, 12], [12, 10], [16, 10], [16, 8], [10, 8], [10, 6]]],
     terrain: ['LLLLLLLLLLLLLL', 'LLS.......SLLL', 'LS.X.CS..SS.LL', 'LSS..S.S.S....', '....SS..C.S..L', 'LSS.X..SS...SL', 'LLS..S..X.S.LL', 'LLLS.......SLL', 'LLLLLLLLLLLLLL'] },
   { id: 'canyon', name: 'Canyon Taiyaki', price: 1200, hpMul: 1.35, shards: 1.6, blurb: 'Roche et plateaux : la terre et l’éclair y brillent, le chemin serpente.',
     ground: '#d9a27a', ground2: '#cf986f', path: '#f0d3a0', pathEdge: '#b88a58', frame: '#a0583a', dot: 'rgba(255,255,255,.2)',
     deco: ['roche'], obstacle: 'rocher',
-    pts: [[-1, 6], [2, 6], [2, 2], [6, 2], [6, 6], [9, 6], [9, 2], [12, 2], [12, 6], [14, 6]],
+    paths: [[[2, -1], [2, 10], [6, 10], [6, 2], [10, 2], [10, 10], [14, 10], [14, 2], [18, 2], [18, 13]]],
     terrain: ['RRWWRRXXRRCCRR', 'RX.RR.C.R..XRR', 'RR.........R.R', 'C.X.RC.RX.C..C', 'RR.CR..RR.RR.R', 'X.X.RX.C..RC.X', '...X......R...', 'RRCRRXRRCRRXRR', 'XXRRXXRRXXRRXX'] },
   { id: 'volcan', name: 'Volcan Wasabi', price: 1500, hpMul: 1.4, shards: 1.7, blurb: 'De la lave partout : le feu est roi, l’eau et la glace fondent.',
     ground: '#6e5673', ground2: '#665069', path: '#e3a36f', pathEdge: '#b8744a', frame: '#3b2944', dot: 'rgba(255,120,80,.22)',
     deco: ['roche', 'roche', 'cristal'], obstacle: 'basalte',
-    pts: [[-1, 7], [5, 7], [5, 1], [10, 1], [10, 5], [14, 5]],
+    paths: [[[-1, 1], [19, 1], [19, 11], [2, 11], [2, 4], [16, 4], [16, 8], [6, 8], [6, 6], [11, 6]]],
     terrain: ['VVXX..RR..XXVV', 'VV..R.....R..V', 'X..VV..KK...VV', '..V..R..V..X..', 'RR..X..VV..R..', '..VV...X..R...', 'V...RR..V..XVV', '......L.RR....', 'XXVV..LL..VVXX'] },
   { id: 'pic', name: 'Pic Kakigori', price: 1850, hpMul: 1.5, shards: 1.8, blurb: 'Neige et sapins : la glace domine, le feu grelotte, le chemin est long.',
     ground: '#d9efe3', ground2: '#cfe8da', path: '#cdb9a3', pathEdge: '#9a8470', frame: '#7fb6e6', dot: 'rgba(255,255,255,.35)',
     deco: ['flocon', 'herbe', 'sapinet'], obstacle: 'sapin',
-    pts: [[-1, 1], [4, 1], [4, 4], [1, 4], [1, 7], [8, 7], [8, 2], [12, 2], [12, 6], [14, 6]],
+    paths: [[[-1, 2], [16, 2], [16, 6], [12, 6], [12, 13]], [[4, -1], [4, 10], [21, 10]]],
     terrain: ['NNXXN..NNXXNNN', '.....N..XX..NN', 'NNCX..NN......', '.X...WW...LX.N', '......L..NN..N', 'N..X..LL..X..X', 'XN.NN..L..CN..', '..........NN.X', 'XXNNXXN..XXNNX'] },
   { id: 'toundra', name: 'Toundra Yuzu', price: 2200, hpMul: 1.6, shards: 1.9, blurb: 'Le chemin le plus court du jeu, au milieu du froid : chaque case compte.',
     ground: '#d4e6ec', ground2: '#cadde4', path: '#b8a58f', pathEdge: '#7f6c58', frame: '#5f8fb8', dot: 'rgba(255,255,255,.35)',
     deco: ['flocon', 'herbe'], obstacle: 'sapin',
-    pts: [[-1, 3], [6, 3], [6, 6], [14, 6]],
+    paths: [[[-1, 3], [8, 3], [8, 6], [21, 6]], [[12, -1], [12, 6], [21, 6]], [[4, 13], [4, 9], [16, 9], [16, 6], [21, 6]]],
     terrain: ['NNXXNNLLNNXXNN', 'N.RN..LL.KK.XN', 'XN.NLL..N.R.NN', '.......N.X.RNN', 'NRN.X.....N..X', 'N.LL.N.RXN.LLN', 'XN.NN.........', 'NNX.W.RLL.N.XN', 'XXNNXXNNNNXXNN'] },
   // Cartes d'événement : gratuites, jouables seulement pendant leur saison (toujours en fin de liste)
   { id: 'halloween', name: 'Manoir Citrouille', price: 0, hpMul: 1.25, shards: 1.5, season: 'halloween', blurb: 'Événement Halloween : citrouilles, brume hantée et potions. Fantômes, chats noirs, spectres et le Roi Citrouille rôdent, et tes tours se déguisent !',
     ground: '#6f5d91', ground2: '#68568a', path: '#d4b089', pathEdge: '#8f6a4c', frame: '#2b1f40', dot: 'rgba(255,170,60,.2)',
     deco: ['citrouille', 'bougie', 'champinuit', 'os', 'citrouille'], obstacle: 'tombe',
     best: { feu: 'P', terre: 'P', foudre: 'H', vent: 'H', eau: 'B', glace: 'B' },
-    pts: [[-1, 4], [2, 4], [2, 1], [6, 1], [6, 7], [9, 7], [9, 2], [12, 2], [12, 5], [14, 5]],
+    paths: [[[-1, 2], [14, 2], [14, 10], [21, 10]], [[-1, 10], [6, 10], [6, 6], [18, 6], [18, 10], [21, 10]]],
     terrain: ['XXPPP.HHH..XXX', 'XP.....P.HH..X', 'PP..BB.PP.....', '...BBB..X.HH.X', '....X..PP.HH..', 'HH.C..B......X', 'HHX..BB..CPP..', 'X.......X..PPX', 'XXBBXX.HHXXPPX'] },
   { id: 'noel', name: 'Village Sucre d’Orge', price: 0, hpMul: 1.3, shards: 1.5, season: 'noel', blurb: 'Événement Noël : lac gelé, pain d’épices et guirlandes. Bonshommes de neige, lutins, cadeaux surprises et le Yéti débarquent, et tes tours mettent leur bonnet !',
     ground: '#e4eef6', ground2: '#dae6f0', path: '#d9b98f', pathEdge: '#9a7652', frame: '#1f4a3a', dot: 'rgba(255,255,255,.4)',
     deco: ['sucredorge', 'boule', 'bonhomme', 'flocon', 'cadeaumini'], obstacle: 'sapinnoel',
     best: { feu: 'G', terre: 'G', glace: 'J', eau: 'J', foudre: 'E', vent: 'E' },
-    pts: [[-1, 1], [4, 1], [4, 7], [8, 7], [8, 3], [11, 3], [11, 6], [14, 6]],
+    paths: [[[10, -1], [10, 3], [3, 3], [3, 8], [7, 8], [7, 13]], [[10, -1], [10, 3], [17, 3], [17, 8], [13, 8], [13, 13]]],
     terrain: ['XXJJJ....GG.XX', 'X....EE..GG..X', 'JJ...EE.....JJ', 'J..GG..X.....J', '..GGG...C..EE.', 'EE..X.JJ...EE.', 'EE...JJJ.GG...', 'X..C......GGXX', 'XXEEXXJJXXGGXX'] },
   { id: 'paques', name: 'Jardin Chocolat', price: 0, hpMul: 1.2, shards: 1.5, season: 'paques', blurb: 'Événement Pâques : fontaines de chocolat, ruisseaux pastel et prés fleuris. Poussins, abeilles, lapins sauteurs et le Lapin en chocolat géant envahissent le jardin !',
     ground: '#a6e27f', ground2: '#9dda76', path: '#f7e3b5', pathEdge: '#d4b077', frame: '#f2a7cf', dot: 'rgba(255,255,255,.4)',
     deco: ['tulipe', 'oeufmini', 'carotte', 'fleur', 'tulipe'], obstacle: 'oeufgeant',
     best: { feu: 'O', terre: 'O', eau: 'Y', glace: 'Y', vent: 'Z', foudre: 'Z' },
-    pts: [[-1, 6], [3, 6], [3, 2], [7, 2], [7, 6], [10, 6], [10, 1], [14, 1]],
+    paths: [[[-1, 2], [17, 2], [17, 10], [-1, 10]], [[8, -1], [8, 6], [13, 6], [13, 10], [-1, 10]]],
     terrain: ['ZZOO..YYY..XXZ', 'Z..OO.YY.....X', 'YY.......ZZ..Z', 'YY..ZZ.....OO.', '...ZZZ..X..OO.', 'X..C....OO...Y', '....YY.......Y', 'ZZ..YY..XC..ZZ', 'XXOOXXZZXXYYXX'] },
   { id: 'valentin', name: 'Vallée Guimauve', price: 0, hpMul: 1.2, shards: 1.5, season: 'valentin', blurb: 'Événement Saint-Valentin : roseraies, fontaines des vœux et nuages de barbe à papa. Guimauves, Cupidons, Câlinous et la Reine des Cœurs arrivent, et tes tours sont amoureuses !',
     ground: '#f7cfe0', ground2: '#f2c6d9', path: '#fff1e2', pathEdge: '#dda0b8', frame: '#b93d72', dot: 'rgba(255,255,255,.4)',
     deco: ['coeurmini', 'rose', 'fleur', 'coeurmini', 'rose'], obstacle: 'coeurbuisson',
     best: { feu: 'A', terre: 'A', eau: 'I', glace: 'I', vent: 'Q', foudre: 'Q' },
-    pts: [[-1, 3], [3, 3], [3, 7], [7, 7], [7, 1], [10, 1], [10, 5], [14, 5]],
+    paths: [[[10, -1], [10, 4], [7, 4], [7, 1], [2, 1], [2, 7], [6, 7], [6, 10], [10, 10], [10, 13]], [[10, -1], [10, 4], [13, 4], [13, 1], [18, 1], [18, 7], [14, 7], [14, 10], [10, 10], [10, 13]]],
     terrain: ['AAII..QQQ..XXA', 'A..II.......XA', 'II.....QQ....A', 'I..AA.....QQ..', '...AAA.....QQ.', 'X..C.QQ.......', '....II.....AAA', 'QQ..II..XC..AA', 'XXAAXXQQXXIIXX'] },
   { id: 'nouvelan', name: 'Quartier Dim Sum', price: 0, hpMul: 1.25, shards: 1.5, season: 'nouvelan', blurb: 'Événement Nouvel An chinois : lanternes, jardins de thé et pics de jade. Raviolis, lions dansants, enveloppes rouges pleines d’or et le Dragon défilent dans les rues !',
     ground: '#ecd3a0', ground2: '#e6cb96', path: '#f8e6bf', pathEdge: '#b8864a', frame: '#a31e2e', dot: 'rgba(255,210,63,.3)',
     deco: ['lanternemini', 'petard', 'bambou', 'mandarine', 'lanternemini'], obstacle: 'pagode',
     best: { feu: 'D', foudre: 'D', terre: 'T', eau: 'T', vent: 'U', glace: 'U' },
-    pts: [[-1, 7], [2, 7], [2, 2], [5, 2], [5, 6], [9, 6], [9, 1], [12, 1], [12, 7], [14, 7]],
+    paths: [[[21, 2], [2, 2], [2, 6], [18, 6], [18, 10], [-1, 10]], [[10, -1], [10, 2], [2, 2], [2, 6], [18, 6], [18, 10], [-1, 10]]],
     terrain: ['DDTT..UUU..XXD', 'D..TT.UU.....X', 'UU.......DD..D', 'UU..DD.....TT.', '...DDD..X..TT.', 'X..C....TT...U', '....UU.......U', 'TT..UU..XC..TT', 'XXDDXXTTXXUUXX'] },
 ];
 const DORDER = ['facile', 'moyen', 'difficile', 'infini'];
@@ -220,7 +222,7 @@ const mapReqOk = i => {
 };
 const mapOwned = i => TEST_ALL || !MAPS[i].price || M('map_' + MAPS[i].id) > 0;
 function saveMapIndex(sv) {
-  if (!sv) return -1;
+  if (!sv || sv.grid !== COLS) return -1; // sauvegarde faite sur l'ancienne grille : plus utilisable
   const id = sv.mapId || ['prairie', 'plage', 'volcan', 'pic'][sv.map];
   return MAPS.findIndex(m => m.id === id);
 }

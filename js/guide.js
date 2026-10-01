@@ -4,28 +4,24 @@
 const GUIDE = { on: false, i: 0, timer: 0, cellA: null, cellB: null };
 const guideBox = $('#guideBox'), guideRing = $('#guideRing');
 
-// Cases conseillées : près du début du chemin, constructibles ; pour Ondine, une case d'eau si possible
+// Cases conseillées : constructibles, collées au début du premier chemin ; pour Ondine, une case d'eau si possible
 function guideCells() {
-  const near = [];
-  for (let r = 0; r < ROWS; r++) for (let q = 0; q < COLS; q++) {
-    if (!canBuild(q, r)) continue;
-    let best = Infinity;
-    for (let i = 0; i < P.pts.length - 1; i++) {
-      for (let k = 0; k <= 40; k++) {
-        const [x0, y0] = P.pts[i], [x1, y1] = P.pts[i + 1], x = x0 + (x1 - x0) * k / 40, y = y0 + (y1 - y0) * k / 40;
-        const d = Math.hypot(x - q - 0.5, y - r - 0.5); if (d < 1.2) { best = Math.min(best, i * 100 + k); }
-      }
+  const near = [], seen = new Set();
+  P.paths[0].order.forEach(([pq, pr], i) => {
+    for (const [a, b] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
+      const q = pq + a, r = pr + b, k = q + ',' + r;
+      if (seen.has(k) || !canBuild(q, r)) continue;
+      seen.add(k); near.push({ q, r, order: i, T: terrainAt(q, r) });
     }
-    if (best < Infinity) near.push({ q, r, order: best, T: terrainAt(q, r) });
-  }
+  });
   near.sort((a, b) => a.order - b.order);
-  const A = near.find(c => !c.T) || near[0];
-  const B = near.find(c => c.T && c.T.name === 'Eau' && (c.q !== A.q || c.r !== A.r)) || near.find(c => !c.T && (c.q !== A.q || c.r !== A.r)) || near[1];
+  const A = near.find(c => !c.T && c.order >= 2) || near[0];
+  const B = near.find(c => c.T && c.T.name === 'Eau' && (c.q !== A.q || c.r !== A.r)) || near.find(c => !c.T && c.order >= A.order + 1 && (c.q !== A.q || c.r !== A.r)) || near[1];
   return [A, B];
 }
 const cellEl = c => c ? { cell: c } : null;
 const GSTEPS = [
-  { text: 'Bienvenue ! Les slimes sortent du <b>portail violet</b> et suivent le chemin jusqu’à ta <b>maison</b>. Chaque slime qui entre te coûte une vie.', target: () => ({ cell: { q: Math.floor(P.portal[0]), r: Math.floor(P.portal[1]) } }), btn: 'Suivant' },
+  { text: 'Bienvenue ! Les slimes sortent du <b>portail violet</b> et suivent le chemin jusqu’à ta <b>maison</b>. Chaque slime qui entre te coûte une vie.', target: () => ({ cell: { q: Math.floor(P.portals[0][0] / L.cw), r: Math.floor(P.portals[0][1] / L.cw) } }), btn: 'Suivant' },
   { text: 'Touche <b>Braise</b>, en bas, pour choisir cette tour de feu.', target: () => palBtns.feu, wait: () => G.selType === 'feu' || G.towers.length >= 1 },
   { text: 'Pose Braise sur la <b>case indiquée</b>, juste à côté du chemin : touche-la <b>deux fois</b> (une fois pour voir sa portée, une fois pour confirmer).', target: () => cellEl(GUIDE.cellA), wait: () => G.towers.length >= 1 },
   { text: 'Choisis maintenant <b>Ondine</b>. Regarde la carte : les cases <b>vertes</b> lui donnent un bonus, les <b>rouges</b> un malus. Ondine adore l’eau !', target: () => palBtns.eau, wait: () => G.selType === 'eau' || G.towers.length >= 2 },
@@ -75,7 +71,7 @@ function renderGuide() {
 function targetRect(t) {
   if (!t) return null;
   if (t.cell) {
-    const sr = stage.getBoundingClientRect(), [x, y] = toScreen(t.cell.q, t.cell.r);
+    const sr = stage.getBoundingClientRect(), [x, y] = cellXY(t.cell.q, t.cell.r);
     return { left: sr.left + x, top: sr.top + y, width: L.cs, height: L.cs };
   }
   if (t.hidden || !t.getBoundingClientRect) return null;
