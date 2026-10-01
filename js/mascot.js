@@ -9,7 +9,8 @@ function paintYglou(cv, w, h, mood, t, o = {}) {
   if (!cv || !cv.offsetParent) return;
   const c = prepMini(cv, w, h), oo = Object.assign({ costume: liveCostume() }, o);
   // Avec un chapeau, Yglou est un peu plus petit et plus bas pour que le chapeau tienne dans le cadre
-  const hat = !!oo.costume, sz = h * (hat ? 0.66 : 0.8), cy = h * (hat ? 0.67 : 0.6);
+  // o.top : place vide en haut du cadre (part de la hauteur) pour que les sauts et le chapeau ne soient jamais coupés
+  const h0 = h / (1 + (o.top || 0)), hat = !!oo.costume, sz = h0 * (hat ? 0.66 : 0.8), cy = h - h0 + h0 * (hat ? 0.67 : 0.6);
   drawYglou(c, w / 2, cy - (o.jump || 0), sz, mood, t, oo);
 }
 function mascotTick(t) {
@@ -20,8 +21,8 @@ function mascotTick(t) {
   MASCOT.lastShards = meta.shards;
   if (curScreen === 'title') {
     const j = MASCOT.jumpT > 0 ? Math.sin((0.6 - MASCOT.jumpT) / 0.6 * Math.PI) * 18 : 0;
-    const cv = $('#tYglou'), hh = cv.clientHeight || 130;
-    paintYglou(cv, Math.round(hh * 0.9), hh, MASCOT.jumpT > 0 ? 'party' : (t % 7) < 0.6 ? 'wink' : 'happy', t, { jump: j * hh / 130 });
+    const cv = $('#tYglou'), hh = cv.clientHeight || 175, base = hh / 1.35;
+    paintYglou(cv, Math.round(cv.clientWidth || hh * 0.8), hh, MASCOT.jumpT > 0 ? 'party' : (t % 7) < 0.6 ? 'wink' : 'happy', t, { jump: j * base / 130, top: 0.35 });
     if (!MASCOT.chipT || t - MASCOT.chipT > 1) { MASCOT.chipT = t; paintYglou($('#tProfCv'), 30, 30, 'happy', 0, { noShadow: true, noConfetti: true, costume: null }); }
   } else if (curScreen === 'over') paintYglou($('#oYglou'), 130, 130, MASCOT.overMood, t);
   else if (curScreen === 'profile') paintYglou($('#prCv'), 70, 70, (t % 5) < 0.6 ? 'wink' : 'happy', t, { noConfetti: true });
