@@ -8,7 +8,8 @@ const RSIZES = {
   grande: { name: 'Grande', w: 24, h: 15, np: [2, 4], len: [42, 85], hpMul: 1.35, shards: 1.5, short: '24 × 15 · 2-4 portails', desc: '24 × 15 cases, 2 à 4 portails, petites cases' },
 };
 const RTHEMES = MAPS.filter(m => !m.season).map(m => m.id);
-const newSeed = () => ((Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0) || 1;
+// Graines sur 5 caractères en base 36 (faciles à noter)
+const newSeed = () => ((Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0) % 60466175 + 1;
 
 function genRandomMap(size, seed) {
   const S = RSIZES[size] || RSIZES.moyenne, W = S.w, H = S.h, rnd = mulberry(seed % 2147483647);
@@ -99,3 +100,54 @@ function makeRandom(size, seed) {
 const loadRandom = rnd => makeRandom(rnd.size, rnd.seed);
 // ui.js a déjà affiché l'écran titre : on le rafraîchit pour proposer de reprendre une partie sur carte aléatoire
 if (typeof refreshTitle === 'function') refreshTitle();
+
+// ---------- Graines lisibles : lettre de la taille + nombre en base 36 (ex. M-4F7K2) ----------
+const SZ_LETTER = { petite: 'P', moyenne: 'M', grande: 'G' };
+const seedCode = rnd => SZ_LETTER[rnd.size] + '-' + (rnd.seed >>> 0).toString(36).toUpperCase();
+function parseSeed(txt) {
+  const m = String(txt || '').trim().toUpperCase().replace(/\s+/g, '').match(/^([PMG])-?([0-9A-Z]{1,7})$/);
+  if (!m) return null;
+  const seed = parseInt(m[2], 36), size = Object.keys(SZ_LETTER).find(k => SZ_LETTER[k] === m[1]);
+  return seed > 0 && seed <= 0xffffffff ? { size, seed } : null;
+}
+
+// ---------- Écran de génération ----------
+screens.rand = $('#sRand');
+const RS = { size: store.get('elemento.rsize') || 'moyenne', ready: false };
+function renderRandSizes() {
+  $('#rSizes').innerHTML = Object.entries(RSIZES).map(([k, S]) => '<button class="sbtn' + (RS.size === k ? ' on' : '') + '" type="button" data-size="' + k + '" aria-pressed="' + (RS.size === k) + '"><b>' + S.name + '</b><small>' + S.short + '</small></button>').join('');
+}
+function showRandPreview() {
+  const m = MAPS[RI], P2 = withGrid(m, () => buildPath(m)), w = 300, h = Math.round(w * m.rows / m.cols);
+  $('#rPrev').hidden = false;
+  drawMapMini(prepMini($('#rCv'), w, h), RI, w, h, 'moyen');
+  $('#rInfo').textContent = RSIZES[m.rnd.size].name + ' · ' + P2.portals.length + ' portail' + (P2.portals.length > 1 ? 's' : '') + ' · ' + P2.bases.length + ' maison' + (P2.bases.length > 1 ? 's' : '');
+  $('#rTheme').textContent = 'Thème ' + MAPS.find(x => x.id === m.wid).name + ' · biome ' + m.biome.name.toLowerCase();
+  $('#rSeed').textContent = seedCode(m.rnd);
+  $('#rPlay').disabled = false; $('#rErr').hidden = true;
+}
+function openRand(keep) {
+  show('rand'); screens.rand.scrollTop = 0; renderRandSizes();
+  if (!keep) RS.ready = false;
+  if (RS.ready) showRandPreview(); else { $('#rPrev').hidden = true; $('#rPlay').disabled = true; }
+  $('#rErr').hidden = true;
+}
+function genRand(rnd) {
+  makeRandom(rnd.size, rnd.seed); RS.size = rnd.size; RS.ready = true; store.set('elemento.rsize', rnd.size);
+  renderRandSizes(); showRandPreview(); Snd.play('build');
+}
+$('#rSizes').addEventListener('click', ev => { const b = ev.target.closest('[data-size]'); if (!b) return; RS.size = b.dataset.size; store.set('elemento.rsize', RS.size); renderRandSizes(); if (RS.ready) genRand({ size: RS.size, seed: newSeed() }); });
+$('#rGen').addEventListener('click', () => genRand({ size: RS.size, seed: newSeed() }));
+$('#rLoad').addEventListener('click', () => {
+  const r = parseSeed($('#rIn').value);
+  if (!r) { $('#rErr').textContent = 'Graine invalide : une lettre (P, M ou G pour la taille), un tiret, puis des chiffres et des lettres. Exemple : M-4F7K2.'; $('#rErr').hidden = false; Snd.play('no'); return; }
+  genRand(r); $('#rIn').blur();
+});
+$('#rIn').addEventListener('keydown', ev => { if (ev.key === 'Enter') $('#rLoad').click(); ev.stopPropagation(); });
+$('#rCopy').addEventListener('click', () => {
+  const t = $('#rSeed').textContent, b = $('#rCopy');
+  const done = ok => { b.textContent = ok ? 'Copiée !' : 'Note-la'; setTimeout(() => { b.textContent = 'Copier'; }, 1500); };
+  try { navigator.clipboard.writeText(t).then(() => done(true), () => done(false)); } catch (e) { done(false); }
+});
+$('#rPlay').addEventListener('click', () => { if (RS.ready) openDiff(RI); });
+$('#rBack').addEventListener('click', () => { renderMaps(); show('maps'); });

@@ -51,7 +51,8 @@ function exitDuelMeta() {
 function duelHostStart() {
   if (Net.role !== 'host') return;
   if (Net.players.length < 2) { MP.err = 'Il faut au moins 2 joueurs pour lancer la partie.'; renderMP(); return; }
-  const msg = { k: 'start', map: DUEL.lobbyMap, ids: Net.players.map(p => p.id), names: Object.fromEntries(Net.players.map(p => [p.id, p.name])), prep: DUEL.cfg.prep, gap: DUEL.cfg.gap };
+  const rm = MAPS[DUEL.lobbyMap] && MAPS[DUEL.lobbyMap].random ? { size: DUEL.lobbySize || 'moyenne', seed: newSeed() } : null;
+  const msg = { k: 'start', map: DUEL.lobbyMap, rnd: rm, ids: Net.players.map(p => p.id), names: Object.fromEntries(Net.players.map(p => [p.id, p.name])), prep: DUEL.cfg.prep, gap: DUEL.cfg.gap };
   Net.send('all', msg);
   beginDuel(msg);
 }
@@ -66,6 +67,8 @@ function beginDuel(msg) {
   const t0 = dnow(); for (const id of msg.ids) DUEL.last[id] = t0;
   DUEL.target = msg.ids.find(id => id !== meId()) || null;
   duelTab = 'tours';
+  if (msg.rnd) msg.map = makeRandom(msg.rnd.size, msg.rnd.seed); // même graine pour tous : même carte
+  DUEL.map = msg.map;
   newGame(msg.map, null, 'infini');
   G.duel = true; G.sendQ = []; G.sendT = 0; G.speed = 1;
   $('#bSpeed').hidden = true; $('#stage').classList.add('duel');
@@ -295,7 +298,7 @@ function duelPauseUI(on) {
   $('#pQuit').hidden = on; $('#pCash').hidden = on; $('#pAuto').hidden = on; $('#pForfeit').hidden = !on;
   if (on) {
     DUEL.forfeitArm = false; refreshForfeit();
-    $('#pSave').textContent = 'Duel en cours : le jeu ne s’arrête pas pendant ce menu. ' + MAPS[G.map].name + ' · biome ' + MAPS[G.map].biome.name.toLowerCase() + '.';
+    $('#pSave').textContent = 'Duel en cours : le jeu ne s’arrête pas pendant ce menu. ' + MAPS[G.map].name + ' · biome ' + MAPS[G.map].biome.name.toLowerCase() + (MAPS[G.map].random ? ' · graine ' + seedCode(MAPS[G.map].rnd) : '') + '.';
   }
 }
 function refreshForfeit() {
@@ -314,7 +317,7 @@ Net.on('msg', ({ from, data }) => {
   if (!data || !data.k) return;
   DUEL.last[from] = dnow();
   switch (data.k) {
-    case 'lobby': DUEL.lobbyMap = data.map; if (typeof MP !== 'undefined' && MP.state === 'lobby') renderMP(); break;
+    case 'lobby': DUEL.lobbyMap = data.map; if (data.rsize) DUEL.lobbySize = data.rsize; if (typeof MP !== 'undefined' && MP.state === 'lobby') renderMP(); break;
     case 'start': if (Net.role !== 'host') beginDuel(data); break;
     case 'wave': if (Net.role !== 'host') onWave(data.n, data.gap, data.w); break;
     case 'st': DUEL.stats[from] = data; break;
@@ -326,7 +329,7 @@ Net.on('msg', ({ from, data }) => {
 });
 Net.on('leave', id => { if (DUEL.on && Net.role === 'host') eliminate(id, 'parti'); });
 Net.on('closed', () => { if (DUEL.on) duelAbort('La connexion avec l’hôte est perdue. La partie est interrompue.'); });
-Net.on('roster', () => { if (Net.role === 'host' && !DUEL.on) Net.send('all', { k: 'lobby', map: DUEL.lobbyMap }); });
+Net.on('roster', () => { if (Net.role === 'host' && !DUEL.on) Net.send('all', { k: 'lobby', map: DUEL.lobbyMap, rsize: DUEL.lobbySize }); });
 
 // Quitter l'appli plus de 10 s élimine
 document.addEventListener('visibilitychange', () => {

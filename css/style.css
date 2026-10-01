@@ -314,7 +314,7 @@ button:disabled{cursor:default}
 .terrnotes{margin:10px 0 0;padding-left:18px;font-size:13.5px;font-weight:600;line-height:1.45}
 
 /* Cartes et difficultés */
-#sMaps,#sDiff{background:var(--sky) radial-gradient(rgba(42,27,61,.12) 1.2px,transparent 1.7px) 0 0/9px 9px}
+#sMaps,#sDiff,#sRand{background:var(--sky) radial-gradient(rgba(42,27,61,.12) 1.2px,transparent 1.7px) 0 0/9px 9px}
 .mapc.locked canvas{filter:grayscale(1) brightness(.8)}
 .mapc canvas{cursor:pointer}
 .mapc .sbtn{flex:none;background:var(--sun);font-size:15px;display:flex;align-items:center;justify-content:center;gap:4px}
@@ -464,18 +464,27 @@ button:disabled{cursor:default}
 .mapc.season.nouvelan{background:linear-gradient(160deg,#c0392b,#7a1420);box-shadow:0 4px 0 var(--ink),0 0 0 3px #ffd23f inset}
 .mapc.season.nouvelan .sbtn,.mapc.season.nouvelan .evt{background:#ffd23f}
 .mapc.season.locked{grid-column:auto}
-/* Carte aléatoire */
-.mapc.season.rand{background:linear-gradient(160deg,#3f6fd0,#6a3fb8);box-shadow:0 4px 0 var(--ink),0 0 0 3px #7fd6ff inset}
-.mapc.season.rand .evt{background:#7fd6ff}
-.mapc.rand .rsz{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:2px}
-.mapc.rand .rsz .sbtn{display:flex;flex-direction:column;gap:2px;padding:6px 4px;background:#ffd23f;line-height:1.1}
-.mapc.rand .rsz .sbtn b{font-family:var(--display);font-size:16px;letter-spacing:.5px;font-weight:400}
-.mapc.rand .rsz .sbtn small{font-size:10.5px;font-weight:700;opacity:.85}
-.rprev{display:flex;gap:10px;align-items:center;background:var(--mist);border:3px solid var(--ink);border-radius:14px;padding:8px;box-shadow:0 4px 0 var(--ink)}
-.rprev canvas{flex:none;width:220px;max-width:55%;height:auto;aspect-ratio:22/14;border:2px solid var(--ink);border-radius:8px}
-.rprev div{display:flex;flex-direction:column;gap:6px;min-width:0}
-.rprev span{font-size:12px;font-weight:700;color:var(--muted)}
-.mapc.rand .rsz .sbtn,.rprev .sbtn{white-space:normal;min-width:0}
-.rprev .sbtn{font-size:14px;padding:6px 8px}
-.rprev .sbtn,.mapc.rand .rsz .sbtn{height:auto;line-height:1.2}
-.rprev .sbtn{flex:none}
+/* Carte aléatoire : card de la liste et écran de génération */
+.mapc.rand{background:linear-gradient(160deg,#dcecff,#e8dcff)}
+.mapc.rand .medal{background:#fff;color:var(--ink)}
+.mapc.rand .sbtn{background:#7fd6ff}
+#mTabs{margin:2px 0 4px}
+.rpanel{gap:10px}
+.rsz{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.rsz .sbtn{display:flex;flex-direction:column;gap:3px;padding:8px 4px;background:var(--paper);height:auto;line-height:1.15;white-space:normal;min-width:0}
+.rsz .sbtn.on{background:var(--sun);box-shadow:0 2px 0 var(--ink)}
+.rsz .sbtn b{font-family:var(--display);font-size:17px;letter-spacing:.5px;font-weight:400}
+.rsz .sbtn small{font-size:11px;font-weight:700;letter-spacing:0;opacity:.8}
+.rprev{display:flex;flex-direction:column;gap:8px;align-items:stretch;background:var(--mist);border:3px solid var(--ink);border-radius:14px;padding:8px;box-shadow:0 4px 0 var(--ink)}
+.rprev canvas{display:block;width:100%;height:auto;border:2px solid var(--ink);border-radius:8px}
+.rinfo{display:flex;flex-direction:column;gap:3px;min-width:0}
+.rinfo b{font-size:15px}
+.rinfo span{font-size:12.5px;font-weight:700;color:var(--muted)}
+.rinfo .rseed{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:13px}
+.rseed code{font-family:ui-monospace,Menlo,monospace;font-size:16px;font-weight:800;background:#fff;border:2px solid var(--ink);border-radius:8px;padding:2px 8px;letter-spacing:1px}
+.rseed .sbtn,.rload .sbtn{flex:none;height:auto;line-height:1.2;padding:6px 10px;font-size:14px}
+.rload{display:flex;gap:6px}
+.rload input{flex:1;min-width:0;font:800 15px ui-monospace,Menlo,monospace;letter-spacing:1px;text-transform:uppercase;padding:8px 10px;border:2.5px solid var(--ink);border-radius:10px;background:#fff;color:var(--ink)}
+.rload input::placeholder{text-transform:none;letter-spacing:0;font-family:inherit;font-size:13px;font-weight:700;color:var(--muted)}
+#rPlay:disabled{opacity:.45}
+.mp-rsz{margin-top:6px}

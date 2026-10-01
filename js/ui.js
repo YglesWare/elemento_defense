@@ -230,6 +230,7 @@ document.addEventListener('keydown', ev => {
     if (curScreen === 'shop') { $('#sBack').click(); return; }
     if (curScreen === 'maps') { $('#mBack').click(); return; }
     if (curScreen === 'diff') { $('#dfBack').click(); return; }
+    if (curScreen === 'rand') { $('#rBack').click(); return; }
     if (curScreen === 'over') { $('#oMenu').click(); return; }
   }
   if (!G || curScreen !== 'game') return;
@@ -249,6 +250,7 @@ function pause() {
   if (!G.duel) G.paused = true;
   show('pause');
   $('#pSave').textContent = MAPS[G.map].name + ' · ' + DIFFS[G.diff].name + '. ' + (G.checkpoint && G.checkpoint.wave ? 'Partie sauvegardée à la fin de la vague ' + G.checkpoint.wave + '.' : 'La partie se sauvegarde à chaque fin de vague.')
+    + (MAPS[G.map].random ? ' Graine de la carte : ' + seedCode(MAPS[G.map].rnd) + '.' : '')
     + ' Biome ' + MAPS[G.map].biome.name.toLowerCase() + ' : ' + biomeText(MAPS[G.map].biome) + '.'
     + ' Météo : ' + (WEATHERS[G.weather] || WEATHERS.clear).name.toLowerCase() + ((WEATHERS[G.weather] || WEATHERS.clear).desc !== 'aucun effet' ? ' (' + WEATHERS[G.weather].desc + ')' : '') + '.'
     + ' Cagnotte : ' + (meta.bank || 0) + ' or. En fin de partie, elle reçoit tout l’or restant en cas de victoire, la moitié en cas de K.O. Un abandon ne rapporte rien : ni or, ni éclats.';
@@ -531,14 +533,15 @@ function renderMaps(boughtId) {
   $('#mBank').textContent = meta.bank || 0;
   $('#mTest').hidden = !TEST_ALL;
   const box = $('#tMaps'), best = store.get(BEST2) || {}; box.innerHTML = '';
-  // Les événements en cours s'affichent en premier, ceux à venir en dernier
-  const rank = i => !MAPS[i].season ? 1 : inSeason(MAPS[i]) ? 0 : 2;
-  const order = MAPS.map((m, i) => i).sort((a, b) => rank(a) - rank(b) || a - b);
-  let randDone = false;
+  // Onglets : « Cartes » (carte aléatoire + cartes fixes) et « Événements » (en cours d'abord, puis à venir)
+  const tab = store.get('elemento.tab.maps') === 'evt' ? 'evt' : 'std', live = MAPS.some(m => m.season && inSeason(m));
+  document.querySelectorAll('#mTabs [data-mt]').forEach(b => { const on = b.dataset.mt === tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+  $('#mTabs .dot').classList.toggle('has', live);
+  const rank = i => inSeason(MAPS[i]) ? 0 : 1;
+  const order = MAPS.map((m, i) => i).filter(i => !MAPS[i].random && !!MAPS[i].season === (tab === 'evt')).sort((a, b) => rank(a) - rank(b) || a - b);
+  if (tab === 'std') box.appendChild(randomCard());
   order.forEach(i => {
     const m = MAPS[i];
-    if (m.random) return;
-    if (!m.season && !randDone) { randDone = true; box.appendChild(randomCard()); }
     if (m.season) { box.appendChild(seasonCard(i, best[m.id] || {})); return; }
     const own = mapOwned(i), rec = best[m.id] || {}, d = document.createElement('div');
     d.className = 'mapc' + (own ? '' : ' locked') + (boughtId === m.id ? ' bought' : '');
@@ -565,14 +568,29 @@ function seasonCard(i, rec) {
   return d;
 }
 // Carte aléatoire : choix de la taille, puis écran des difficultés (avec « Nouvelle carte »)
+// Card de la carte aléatoire : un aperçu fixe surmonté d'un dé ; elle ouvre l'écran de génération
+let randCardMap = null;
 function randomCard() {
-  const d = document.createElement('div'); d.className = 'mapc season rand live';
-  d.innerHTML = '<span class="evt">🎲 Carte aléatoire</span><span class="nm">Une carte unique pour une partie</span>'
-    + '<span class="bio-l">Chemins, portails, maisons et terrains tirés au hasard, sur le thème d’une des cartes. Elle disparaît quand la partie se termine.</span>'
-    + '<div class="rsz">' + Object.entries(RSIZES).map(([k, S]) => '<button class="sbtn" type="button" data-size="' + k + '"><b>' + S.name + '</b><small>' + S.short + '</small></button>').join('') + '</div>';
-  d.querySelectorAll('[data-size]').forEach(b => b.addEventListener('click', () => { Snd.init(); openDiff(makeRandom(b.dataset.size, newSeed())); }));
+  const d = document.createElement('div'); d.className = 'mapc rand';
+  d.innerHTML = '<canvas></canvas><span class="nm">🎲 Carte aléatoire</span><span class="bio-l">Une carte unique, générée pour ta partie</span>'
+    + '<span class="medals"><span class="medal">Petite</span><span class="medal">Moyenne</span><span class="medal">Grande</span></span>'
+    + '<button class="sbtn" type="button">Créer ▸</button>';
+  const cv2 = d.querySelector('canvas'), c = prepMini(cv2, 140, 90);
+  randCardMap = randCardMap || genRandomMap('moyenne', 20261001);
+  const keep = MAPS[RI]; MAPS[RI] = randCardMap; drawMapMini(c, RI, 140, 90); MAPS[RI] = keep;
+  c.fillStyle = 'rgba(42,27,61,.35)'; c.fillRect(0, 0, 140, 90);
+  drawDice(c, 70, 45, 26);
+  const open = () => { Snd.init(); openRand(); };
+  d.querySelector('button').addEventListener('click', open); cv2.addEventListener('click', open);
   return d;
 }
+function drawDice(c, x, y, h) {
+  c.save(); c.translate(x, y); c.rotate(-0.18);
+  rr(c, -h, -h, h * 2, h * 2, h * 0.35); fs(c, '#ffffff', 3);
+  c.fillStyle = INK; for (const [a, b] of [[-0.5, -0.5], [0.5, -0.5], [0, 0], [-0.5, 0.5], [0.5, 0.5]]) { c.beginPath(); c.arc(a * h, b * h, h * 0.16, 0, TAU); c.fill(); }
+  c.restore();
+}
+document.querySelectorAll('#mTabs [data-mt]').forEach(b => b.addEventListener('click', () => { store.set('elemento.tab.maps', b.dataset.mt); renderMaps(); screens.maps.scrollTop = 0; Snd.play('build'); }));
 function buyMap(i) {
   const m = MAPS[i];
   if (mapOwned(i) || !mapReqOk(i)) return;
@@ -585,17 +603,8 @@ function openDiff(i) {
   diffMap = i; Snd.init(); show('diff'); screens.diff.scrollTop = 0;
   const m = MAPS[i], rec = (store.get(BEST2) || {})[m.id] || {};
   $('#dfName').textContent = (m.random ? '🎲 ' : m.season ? SEASONS[m.season].icon + ' ' : (i + 1) + '. ') + m.name;
-  $('#dfSub').textContent = m.blurb + ' Biome ' + m.biome.name.toLowerCase() + ' : ' + biomeText(m.biome) + ', sur toute la carte.';
+  $('#dfSub').textContent = m.blurb + (m.random ? ' Graine : ' + seedCode(m.rnd) + '.' : '') + ' Biome ' + m.biome.name.toLowerCase() + ' : ' + biomeText(m.biome) + ', sur toute la carte.';
   const box = $('#dfList'); box.innerHTML = '';
-  if (m.random) {
-    // Aperçu en grand et bouton pour tirer une autre carte
-    const P2 = withGrid(m, () => buildPath(m)), d = document.createElement('div'); d.className = 'rprev';
-    d.innerHTML = '<canvas></canvas><div><b>' + P2.portals.length + ' portail' + (P2.portals.length > 1 ? 's' : '') + ' · ' + P2.bases.length + ' maison' + (P2.bases.length > 1 ? 's' : '') + '</b><span>' + RSIZES[m.rnd.size].desc + '</span>'
-      + '<button class="sbtn" type="button">🔄 Nouvelle carte</button></div>';
-    box.appendChild(d);
-    drawMapMini(prepMini(d.querySelector('canvas'), 220, 140), i, 220, 140, 'moyen');
-    d.querySelector('button').addEventListener('click', () => { Snd.play('build'); openDiff(makeRandom(m.rnd.size, newSeed())); });
-  }
   for (const k of DORDER) {
     const Df = DIFFS[k], r = m.random ? null : rec[k], d = document.createElement('div'); d.className = 'df';
     const rt = m.random ? 'Carte unique' : !r ? 'Jamais jouée' : k === 'infini' ? 'Record : vague ' + r.wave : r.won ? '✓ Réussie · record vague ' + r.wave : 'Record : vague ' + r.wave;
@@ -607,7 +616,7 @@ function openDiff(i) {
 }
 $('#tPlay').addEventListener('click', () => { Snd.init(); renderMaps(); show('maps'); screens.maps.scrollTop = 0; });
 $('#mBack').addEventListener('click', () => show('title'));
-$('#dfBack').addEventListener('click', () => { renderMaps(); show('maps'); });
+$('#dfBack').addEventListener('click', () => { if (MAPS[diffMap] && MAPS[diffMap].random) openRand(true); else { renderMaps(); show('maps'); } });
 function refreshTitle() {
   const seen = !!store.get('elemento.tuto'); $('#tTuto').classList.toggle('green', !seen); $('#tTuto').classList.toggle('alt', seen);
   $('#tShop').innerHTML = 'L\u2019Atelier<span class="gemc">' + GEM + meta.shards + '</span>';

@@ -80,10 +80,13 @@ function manualHTML(copyCode) {
     + '<p class="fine">Code reçu :</p><textarea id="mpCodeIn" rows="3" placeholder="Colle le code ici"></textarea><button class="sbtn" type="button" id="mpPaste">Valider le code</button></details>';
 }
 function mapPickHTML(canPick) {
-  const m = MAPS[DUEL.lobbyMap] || MAPS[0];
+  const m = MAPS[DUEL.lobbyMap] || MAPS[0], rz = DUEL.lobbySize || 'moyenne';
+  // Carte aléatoire : l'hôte choisit la taille, la graine est tirée au lancement et envoyée à tous
+  const name = m.random ? '🎲 Carte aléatoire' : m.name, sub = m.random ? 'taille ' + RSIZES[rz].name.toLowerCase() + ' · générée au lancement' : 'biome ' + m.biome.name.toLowerCase();
   return '<div class="mp-map">' + (canPick ? '<button class="ibtn" type="button" data-a="map-prev" aria-label="Carte précédente">◀</button>' : '')
-    + '<div class="mp-mapn"><small>Carte</small><b>' + esc(m.name) + '</b><span>biome ' + m.biome.name.toLowerCase() + '</span></div>'
-    + (canPick ? '<button class="ibtn" type="button" data-a="map-next" aria-label="Carte suivante">▶</button>' : '') + '</div>';
+    + '<div class="mp-mapn"><small>Carte</small><b>' + esc(name) + '</b><span>' + sub + '</span></div>'
+    + (canPick ? '<button class="ibtn" type="button" data-a="map-next" aria-label="Carte suivante">▶</button>' : '') + '</div>'
+    + (m.random && canPick ? '<div class="rsz mp-rsz">' + Object.entries(RSIZES).map(([k, S]) => '<button class="sbtn' + (k === rz ? ' on' : '') + '" type="button" data-a="rsize-' + k + '"><b>' + S.name + '</b><small>' + S.short + '</small></button>').join('') + '</div>' : '');
 }
 function rulesHTML() {
   return '<details class="mp-manual"><summary>Règles du duel</summary><ul class="tips">'
@@ -206,7 +209,8 @@ $('#mpBody').addEventListener('click', ev => {
   else if (a === 'scan-answer') mpGo('scan', { scanFor: 'answer', code: MP.code });
   else if (a === 'back-invite') mpGo('invite', { code: MP.code });
   else if (a === 'cancel' || a === 'leave') mpCancel();
-  else if (a === 'map-prev' || a === 'map-next') { do DUEL.lobbyMap = (DUEL.lobbyMap + (a === 'map-next' ? 1 : MAPS.length - 1)) % MAPS.length; while (!inSeason(MAPS[DUEL.lobbyMap]) || MAPS[DUEL.lobbyMap].random); Net.send('all', { k: 'lobby', map: DUEL.lobbyMap }); renderMP(); }
+  else if (a === 'map-prev' || a === 'map-next') { do DUEL.lobbyMap = (DUEL.lobbyMap + (a === 'map-next' ? 1 : MAPS.length - 1)) % MAPS.length; while (!inSeason(MAPS[DUEL.lobbyMap])); Net.send('all', { k: 'lobby', map: DUEL.lobbyMap, rsize: DUEL.lobbySize }); renderMP(); }
+  else if (a.startsWith('rsize-')) { DUEL.lobbySize = a.slice(6); Net.send('all', { k: 'lobby', map: DUEL.lobbyMap, rsize: DUEL.lobbySize }); renderMP(); }
   else if (a === 'launch') duelHostStart();
 });
 // Garde le panneau de saisie manuelle ouvert d'un affichage à l'autre
