@@ -2,7 +2,11 @@
 'use strict';
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
-const COLS = 21, ROWS = 13, FLY = 0.42, MAXW = 30;
+// Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
+let COLS = 21, ROWS = 13;
+const FLY = 0.42, MAXW = 30, GRIDV = 21;
+function useGrid(m) { COLS = (m && m.cols) || 21; ROWS = (m && m.rows) || 13; }
+function withGrid(m, fn) { const c = COLS, r = ROWS; useGrid(m); try { return fn(); } finally { COLS = c; ROWS = r; } }
 // Taille d'une case en unités du monde (portées, vitesses) : la grille est 1/3 plus fine que ces distances
 const CW = 2 / 3;
 const SAVE = 'elemento.save', BEST = 'elemento.best', OPTS = 'elemento.opts';
@@ -126,8 +130,11 @@ const DIFFS = {
 const BEST2 = 'elemento.best2';
 const terrCache = {};
 function diffTerrain(mi, diff) {
-  const key = mi + '|' + diff; if (terrCache[key]) return terrCache[key];
-  const m = MAPS[mi], cells = buildPath(m).cells, rows = m.terrain.map(r => r.split('')), rnd = mulberry(mi * 31 + 7);
+  const m = MAPS[mi], key = (m.rnd ? 'r' + m.rnd.seed : mi) + '|' + diff; if (terrCache[key]) return terrCache[key];
+  return withGrid(m, () => diffTerrain2(m, mi, key, diff));
+}
+function diffTerrain2(m, mi, key, diff) {
+  const cells = buildPath(m).cells, rows = m.terrain.map(r => r.split('')), rnd = mulberry(mi * 31 + 7);
   const near = (q, r) => { for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) if (cells.has((q + a) + ',' + (r + b))) return true; return false; };
   for (let r = 0; r < ROWS; r++) for (let q = 0; q < COLS; q++) {
     const x = rnd(); if (cells.has(q + ',' + r)) continue;
@@ -222,7 +229,8 @@ const mapReqOk = i => {
 };
 const mapOwned = i => TEST_ALL || !MAPS[i].price || M('map_' + MAPS[i].id) > 0;
 function saveMapIndex(sv) {
-  if (!sv || sv.grid !== COLS) return -1; // sauvegarde faite sur l'ancienne grille : plus utilisable
+  if (!sv || sv.grid !== GRIDV) return -1; // sauvegarde faite sur l'ancienne grille : plus utilisable
+  if (sv.mapId === 'random') return sv.rnd && typeof loadRandom === 'function' ? loadRandom(sv.rnd) : -1;
   const id = sv.mapId || ['prairie', 'plage', 'volcan', 'pic'][sv.map];
   return MAPS.findIndex(m => m.id === id);
 }

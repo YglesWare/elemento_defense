@@ -2,7 +2,7 @@
 'use strict';
 // Garantit, sur chaque carte, une zone bonus pour chacune des 6 tours primaires
 const BEST_TILE = { feu: 'V', eau: 'L', terre: 'R', vent: 'W', foudre: 'K', glace: 'N' };
-MAPS.forEach((m, mi) => {
+function normMap(m, mi, thin) {
   // Les terrains sont dessinés sur l'ancienne grille 14 × 9 : on les agrandit à la grille actuelle
   const old = m.terrain, oh = old.length, ow = old[0].length;
   if (oh !== ROWS || ow !== COLS) m.terrain = Array.from({ length: ROWS }, (_, r) => Array.from({ length: COLS }, (_, q) => old[Math.floor(r * oh / ROWS)][Math.floor(q * ow / COLS)]).join(''));
@@ -10,7 +10,7 @@ MAPS.forEach((m, mi) => {
   // Allège les cartes : 60 % des petites zones spéciales (6 cases ou moins) redeviennent de l'herbe, et les grandes zones
   // (mer, champs de lave…) perdent une partie de leurs cases collées au chemin. Les obstacles et les collines restent.
   const seen = new Set(), rndT = mulberry(mi * 53 + 11);
-  for (let r = 0; r < ROWS; r++) for (let q = 0; q < COLS; q++) {
+  if (thin) for (let r = 0; r < ROWS; r++) for (let q = 0; q < COLS; q++) {
     const ch = rows[r][q], key = q + ',' + r;
     if (ch === '.' || ch === 'X' || ch === 'C' || seen.has(key) || cells.has(key)) continue;
     const comp = [], stack = [[q, r]]; seen.add(key);
@@ -41,7 +41,8 @@ MAPS.forEach((m, mi) => {
     }
   }
   m.terrain = rows.map(r => r.join(''));
-});
+}
+MAPS.forEach((m, mi) => normMap(m, mi, true));
 
 // ================= Layout / canvas =================
 const stage = $('#stage'), cv = $('#cv'), ctx = cv.getContext('2d'), bgCv = document.createElement('canvas');
@@ -140,7 +141,7 @@ function pathOn(pa, d) {
 const PP = e => P.paths[e.pi || 0] || P.paths[0];
 const pathAt = (d, pi = 0) => pathOn(P.paths[pi] || P.paths[0], d);
 function genDeco(mi) {
-  const m = MAPS[mi], rnd = mulberry(mi * 977 + 13), list = [];
+  const m = MAPS[mi], rnd = mulberry((m.rnd ? m.rnd.seed % 100000 : mi) * 977 + 13), list = [];
   for (let r = 0; r < ROWS; r++) for (let q = 0; q < COLS; q++) {
     const a = rnd(), b = rnd(), ox = rnd(), oy = rnd(), sz = rnd();
     if (P.cells.has(q + ',' + r) || a > 0.13 || (G && G.terrain && G.terrain[r][q] !== '.')) continue;
@@ -158,7 +159,7 @@ function baseState(mi, save, diff) {
     selType: null, selTower: null, hover: null, ghost: null, bad: null, autoT: 0, checkpoint: null };
 }
 function newGame(mi, save, diff) {
-  const m = MAPS[mi];
+  const m = MAPS[mi]; useGrid(m);
   G = baseState(mi, save, diff);
   P = buildPath(m); G.deco = genDeco(mi);
   if (save) for (const t of save.towers) addTower(t.type, t.c, t.r, t.lvl >= 3 && !t.br && !TOWERS[t.type].fusion ? 2 : t.lvl, t.mode, t.inv, t.br);
@@ -177,13 +178,13 @@ function newGame(mi, save, diff) {
 }
 function saveCheckpoint() {
   if (G.duel || duelOn) return;
-  G.checkpoint = { grid: COLS, map: G.map, mapId: MAPS[G.map].id, diff: G.diff, banked: G.banked, gold: G.gold, lives: G.lives, wave: G.wave, score: G.score, endless: G.endless,
+  G.checkpoint = { grid: GRIDV, rnd: MAPS[G.map].rnd || null, map: G.map, mapId: MAPS[G.map].id, diff: G.diff, banked: G.banked, gold: G.gold, lives: G.lives, wave: G.wave, score: G.score, endless: G.endless,
     bossKills: G.bossKills, shardsPaid: G.shardsPaid, shardsWon: G.shardsWon, won: G.won, reviveUsed: G.reviveUsed,
     weather: G.weather, towers: G.towers.map(t => ({ type: t.type, c: t.c, r: t.r, lvl: t.lvl, mode: t.mode, inv: t.inv, br: t.br })) };
   store.set(SAVE, G.checkpoint);
 }
 function recordBest() {
-  if (G.duel || duelOn) return { wave: G.wave, score: G.score };
+  if (G.duel || duelOn || MAPS[G.map].random) return { wave: G.wave, score: G.score };
   const b = store.get(BEST2) || {}, id = MAPS[G.map].id, rec = (b[id] = b[id] || {}), cur = rec[G.diff] || { wave: 0, score: 0, won: false };
   if (G.wave > cur.wave || (G.wave === cur.wave && G.score > cur.score)) { cur.wave = G.wave; cur.score = G.score; }
   if (G.won) cur.won = true;
@@ -300,7 +301,7 @@ function waveTimer() {
 function prepNextWave() {
   G.nextWave = (!G.endless && G.wave >= G.maxw) ? null : Object.assign({ n: G.wave + 1 }, makeWave(G.wave + 1));
   if (G.nextWave && G.nextWave.n > 1 && (G.nextWave.n - 1) % 5 === 0) {
-    const pool = (WEATHER_POOL[MAPS[G.map].id] || ['clear']).filter(w => w !== G.weather);
+    const pool = (WEATHER_POOL[MAPS[G.map].wid || MAPS[G.map].id] || ['clear']).filter(w => w !== G.weather);
     G.nextWave.weather = pool.length ? pick(pool) : 'clear';
   }
   if (typeof renderNextWave === 'function') renderNextWave();

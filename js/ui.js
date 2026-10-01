@@ -294,7 +294,8 @@ $('#tHelp').addEventListener('click', () => { helpFrom = 'title'; show('help'); 
 $('#hBack').addEventListener('click', () => show(helpFrom));
 $('#pQuit').addEventListener('click', () => { G = null; show('title'); });
 $('#oMenu').addEventListener('click', () => { G = null; show('title'); });
-$('#oRetry').addEventListener('click', () => { if (G) newGame(G.map, null, G.diff); else newGame(0, null, 'facile'); });
+// Rejouer une carte aléatoire en génère une nouvelle de même taille (l'ancienne a disparu avec la partie)
+$('#oRetry').addEventListener('click', () => { if (G && MAPS[G.map].random) newGame(makeRandom(MAPS[G.map].rnd.size, newSeed()), null, G.diff); else if (G) newGame(G.map, null, G.diff); else newGame(0, null, 'facile'); });
 $('#oEndless').addEventListener('click', () => { G.endless = true; G.paused = false; saveCheckpoint(); show('game'); banner('MODE INFINI', 'Jusqu’où iras-tu ?'); if (opts.auto) G.autoT = 3; });
 $('#tContinue').addEventListener('click', () => { const s = store.get(SAVE), i = saveMapIndex(s); if (i >= 0) newGame(i, s); });
 
@@ -507,7 +508,8 @@ function drawShowcase(t) {
     drawTower(o.c, o.type, 29, 37, 50, 1, t + i * 0.7, Math.sin(t * 1.3 + i), 0.2, rc, ((t + i * 0.9) % 4) < 0.12);
   });
 }
-function drawMapMini(c, mi, w, h, diff) {
+function drawMapMini(c, mi, w, h, diff) { withGrid(MAPS[mi], () => drawMapMini2(c, mi, w, h, diff)); }
+function drawMapMini2(c, mi, w, h, diff) {
   const m = MAPS[mi], cs = Math.min(w / COLS, h / ROWS), ox = (w - COLS * cs) / 2, oy = (h - ROWS * cs) / 2;
   c.fillStyle = m.frame; c.fillRect(0, 0, w, h);
   for (let r = 0; r < ROWS; r++) for (let q = 0; q < COLS; q++) { c.fillStyle = (q + r) % 2 ? m.ground : m.ground2; c.fillRect(ox + q * cs, oy + r * cs, cs + 0.5, cs + 0.5); }
@@ -532,8 +534,11 @@ function renderMaps(boughtId) {
   // Les événements en cours s'affichent en premier, ceux à venir en dernier
   const rank = i => !MAPS[i].season ? 1 : inSeason(MAPS[i]) ? 0 : 2;
   const order = MAPS.map((m, i) => i).sort((a, b) => rank(a) - rank(b) || a - b);
+  let randDone = false;
   order.forEach(i => {
     const m = MAPS[i];
+    if (m.random) return;
+    if (!m.season && !randDone) { randDone = true; box.appendChild(randomCard()); }
     if (m.season) { box.appendChild(seasonCard(i, best[m.id] || {})); return; }
     const own = mapOwned(i), rec = best[m.id] || {}, d = document.createElement('div');
     d.className = 'mapc' + (own ? '' : ' locked') + (boughtId === m.id ? ' bought' : '');
@@ -559,6 +564,15 @@ function seasonCard(i, rec) {
   if (on) { d.querySelector('button').addEventListener('click', () => openDiff(i)); cv2.addEventListener('click', () => openDiff(i)); }
   return d;
 }
+// Carte aléatoire : choix de la taille, puis écran des difficultés (avec « Nouvelle carte »)
+function randomCard() {
+  const d = document.createElement('div'); d.className = 'mapc season rand live';
+  d.innerHTML = '<span class="evt">🎲 Carte aléatoire</span><span class="nm">Une carte unique pour une partie</span>'
+    + '<span class="bio-l">Chemins, portails, maisons et terrains tirés au hasard, sur le thème d’une des cartes. Elle disparaît quand la partie se termine.</span>'
+    + '<div class="rsz">' + Object.entries(RSIZES).map(([k, S]) => '<button class="sbtn" type="button" data-size="' + k + '"><b>' + S.name + '</b><small>' + S.short + '</small></button>').join('') + '</div>';
+  d.querySelectorAll('[data-size]').forEach(b => b.addEventListener('click', () => { Snd.init(); openDiff(makeRandom(b.dataset.size, newSeed())); }));
+  return d;
+}
 function buyMap(i) {
   const m = MAPS[i];
   if (mapOwned(i) || !mapReqOk(i)) return;
@@ -570,12 +584,21 @@ let diffMap = 0;
 function openDiff(i) {
   diffMap = i; Snd.init(); show('diff'); screens.diff.scrollTop = 0;
   const m = MAPS[i], rec = (store.get(BEST2) || {})[m.id] || {};
-  $('#dfName').textContent = (m.season ? SEASONS[m.season].icon + ' ' : (i + 1) + '. ') + m.name;
+  $('#dfName').textContent = (m.random ? '🎲 ' : m.season ? SEASONS[m.season].icon + ' ' : (i + 1) + '. ') + m.name;
   $('#dfSub').textContent = m.blurb + ' Biome ' + m.biome.name.toLowerCase() + ' : ' + biomeText(m.biome) + ', sur toute la carte.';
   const box = $('#dfList'); box.innerHTML = '';
+  if (m.random) {
+    // Aperçu en grand et bouton pour tirer une autre carte
+    const P2 = withGrid(m, () => buildPath(m)), d = document.createElement('div'); d.className = 'rprev';
+    d.innerHTML = '<canvas></canvas><div><b>' + P2.portals.length + ' portail' + (P2.portals.length > 1 ? 's' : '') + ' · ' + P2.bases.length + ' maison' + (P2.bases.length > 1 ? 's' : '') + '</b><span>' + RSIZES[m.rnd.size].desc + '</span>'
+      + '<button class="sbtn" type="button">🔄 Nouvelle carte</button></div>';
+    box.appendChild(d);
+    drawMapMini(prepMini(d.querySelector('canvas'), 220, 140), i, 220, 140, 'moyen');
+    d.querySelector('button').addEventListener('click', () => { Snd.play('build'); openDiff(makeRandom(m.rnd.size, newSeed())); });
+  }
   for (const k of DORDER) {
-    const Df = DIFFS[k], r = rec[k], d = document.createElement('div'); d.className = 'df';
-    const rt = !r ? 'Jamais jouée' : k === 'infini' ? 'Record : vague ' + r.wave : r.won ? '✓ Réussie · record vague ' + r.wave : 'Record : vague ' + r.wave;
+    const Df = DIFFS[k], r = m.random ? null : rec[k], d = document.createElement('div'); d.className = 'df';
+    const rt = m.random ? 'Carte unique' : !r ? 'Jamais jouée' : k === 'infini' ? 'Record : vague ' + r.wave : r.won ? '✓ Réussie · record vague ' + r.wave : 'Record : vague ' + r.wave;
     d.innerHTML = '<canvas></canvas><div><b>' + Df.name + '</b><p>' + Df.desc + '</p><span class="st">' + rt + ' · éclats ×' + fr(+(m.shards * Df.shards).toFixed(2)) + '</span></div><button class="btn ' + k + '" type="button">Jouer</button>';
     box.appendChild(d);
     drawMapMini(prepMini(d.querySelector('canvas'), 112, 72), i, 112, 72, k);

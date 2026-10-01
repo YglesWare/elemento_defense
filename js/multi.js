@@ -206,7 +206,7 @@ $('#mpBody').addEventListener('click', ev => {
   else if (a === 'scan-answer') mpGo('scan', { scanFor: 'answer', code: MP.code });
   else if (a === 'back-invite') mpGo('invite', { code: MP.code });
   else if (a === 'cancel' || a === 'leave') mpCancel();
-  else if (a === 'map-prev' || a === 'map-next') { do DUEL.lobbyMap = (DUEL.lobbyMap + (a === 'map-next' ? 1 : MAPS.length - 1)) % MAPS.length; while (!inSeason(MAPS[DUEL.lobbyMap])); Net.send('all', { k: 'lobby', map: DUEL.lobbyMap }); renderMP(); }
+  else if (a === 'map-prev' || a === 'map-next') { do DUEL.lobbyMap = (DUEL.lobbyMap + (a === 'map-next' ? 1 : MAPS.length - 1)) % MAPS.length; while (!inSeason(MAPS[DUEL.lobbyMap]) || MAPS[DUEL.lobbyMap].random); Net.send('all', { k: 'lobby', map: DUEL.lobbyMap }); renderMP(); }
   else if (a === 'launch') duelHostStart();
 });
 // Garde le panneau de saisie manuelle ouvert d'un affichage à l'autre
