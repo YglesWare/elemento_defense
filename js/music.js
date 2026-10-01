@@ -17,6 +17,13 @@ const TRACKS = {
     mel: ['0 . 4 . 7 - 4 . 9 - 7 . 4 . 2 .', '2 . 7 . 11 - 7 . 14 - 11 . 7 - . .', '4 . 9 . 12 - 9 . 16 - 12 . 9 . 7 .', '5 . 9 . 12 - 14 - 12 - 9 - 7 - . .'],
     bass: 'r.r.f.r.r.r.f.o.', kick: 'x...x...x...x...', snare: '....x.......x...', hat: '..x...x...x...x.', arp: true, lead: 0.06,
   },
+  // Manoir Citrouille : valse mystérieuse en mineur, clavecin et écho
+  spooky: {
+    bpm: 104, root: 57, vol: 0.9, chords: [[0, 3, 7], [-4, 0, 3], [-7, -4, 0], [-1, 2, 8]],
+    mel: ['12 - 11 - 12 - 7 - 8 - 7 - 3 - - -', '8 - 7 - 8 - 3 - 5 - 3 - 0 - - -', '5 - 3 - 5 - 0 - 3 - 2 - -1 - - -', '2 - 3 - 5 - 8 - 11 - - - . . . .'],
+    bass: 'r.......f.......', kick: 'x.......x.......', snare: '................', hat: '....x.......x...',
+    arp: true, arpEvery: 2, arpType: 'sawtooth', arpVol: 0.018, lead: 0.05, leadType: 'triangle', leadLp: 2200, echo: true, bassType: 'sine', bassVol: 0.12,
+  },
   tension: {
     bpm: 124, root: 57, chords: [[0, 3, 7], [8, 12, 15], [3, 7, 10], [10, 14, 17]],
     mel: ['0 - - . 3 - 7 - 5 - 3 - 2 - 3 -', '0 - - - . . 8 - 7 - 5 - 3 - . .', '3 - - . 7 - 10 - 8 - 7 - 5 - 7 -', '10 - - - 8 - 7 - 5 - 3 - 2 - - -'],
@@ -60,7 +67,7 @@ const Music = {
       const ratio = G.lives / (G.startLives || 20);
       if (ratio <= 0.25) return 'danger';
       if (ratio <= 0.5 || G.enemies.some(e => ETYPES[e.type].boss)) return 'tension';
-      return 'level';
+      return spooky() ? 'spooky' : 'level';
     }
     return 'menu';
   },

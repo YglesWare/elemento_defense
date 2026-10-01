@@ -154,7 +154,7 @@ function renderNextWave() {
   const cnt = {}; for (const it of nw.list) cnt[it.type] = (cnt[it.type] || 0) + 1;
   const order = Object.keys(ETYPES).filter(k => cnt[k]);
   const Wc = WEATHERS[G.weather] || WEATHERS.clear, Wn = nw.weather && WEATHERS[nw.weather];
-  box.innerHTML = '<span class="nww" title="Météo : ' + Wc.name + '">' + Wc.icon + '</span><span class="nwl">Vague ' + nw.n + '</span>' + order.map(k => '<span class="nwi' + (ETYPES[k].boss ? ' boss' : '') + '" title="' + ETYPES[k].name + '"><canvas data-t="' + k + '"></canvas>×' + cnt[k] + '</span>').join('')
+  box.innerHTML = '<span class="nww" title="Météo : ' + Wc.name + '">' + Wc.icon + '</span><span class="nwl">Vague ' + nw.n + '</span>' + order.map(k => '<span class="nwi' + (ETYPES[k].boss ? ' boss' : '') + '" title="' + eName(k) + '"><canvas data-t="' + k + '"></canvas>×' + cnt[k] + '</span>').join('')
     + (Wn ? '<span class="nwt">→ ' + Wn.icon + ' ' + Wn.name + '</span>' : '') + (nw.label ? '<span class="nwt">' + nw.label + '</span>' : '');
   box.querySelectorAll('canvas').forEach(cv2 => { const k = cv2.dataset.t, c = prepMini(cv2, 24, 24); drawEnemy(c, k, 12, 22, k === 'boss' ? 19 : 26, 0.6, null); });
   box.hidden = false;
@@ -520,10 +520,14 @@ function drawMapMini(c, mi, w, h, diff) {
 function renderMaps(boughtId) {
   $('#mBank').textContent = meta.bank || 0;
   const box = $('#tMaps'), best = store.get(BEST2) || {}; box.innerHTML = '';
-  MAPS.forEach((m, i) => {
+  // Les cartes d'événement s'affichent en premier
+  const order = MAPS.map((m, i) => i).sort((a, b) => !!MAPS[b].season - !!MAPS[a].season);
+  order.forEach(i => {
+    const m = MAPS[i];
+    if (m.season) { box.appendChild(seasonCard(i, best[m.id] || {})); return; }
     const own = mapOwned(i), rec = best[m.id] || {}, d = document.createElement('div');
     d.className = 'mapc' + (own ? '' : ' locked') + (boughtId === m.id ? ' bought' : '');
-    const med = DORDER.map(k => { const r = rec[k], on = k === 'infini' ? r && r.wave : r && r.won; return '<span class="medal' + (on ? ' on' : '') + '" title="' + DIFFS[k].name + '">' + (k === 'infini' ? '∞' + (r && r.wave ? ' ' + r.wave : '') : DIFFS[k].name[0]) + '</span>'; }).join('');
+    const med = medalsHTML(rec);
     d.innerHTML = '<canvas></canvas><span class="nm">' + (i + 1) + '. ' + m.name + '</span><span class="bio-l">Biome ' + m.biome.name.toLowerCase() + '</span><span class="medals">' + med + '</span>'
       + (own ? '' : mapReqOk(i) ? '<span class="req ok">✓ ' + MAPS[i - 1].name + ' réussie en Moyen</span>' : '<span class="req">Réussis d’abord ' + MAPS[i - 1].name + ' en Moyen</span>')
       + (own ? '<button class="sbtn" type="button">Jouer ▸</button>'
@@ -533,6 +537,17 @@ function renderMaps(boughtId) {
     d.querySelector('button').addEventListener('click', () => own ? openDiff(i) : buyMap(i));
     if (own) cv2.addEventListener('click', () => openDiff(i));
   });
+}
+const medalsHTML = rec => DORDER.map(k => { const r = rec[k], on = k === 'infini' ? r && r.wave : r && r.won; return '<span class="medal' + (on ? ' on' : '') + '" title="' + DIFFS[k].name + '">' + (k === 'infini' ? '∞' + (r && r.wave ? ' ' + r.wave : '') : DIFFS[k].name[0]) + '</span>'; }).join('');
+function seasonCard(i, rec) {
+  const m = MAPS[i], on = inSeason(m), d = document.createElement('div');
+  d.className = 'mapc season' + (on ? '' : ' locked');
+  d.innerHTML = '<span class="evt">🎃 Événement Halloween</span><canvas></canvas><span class="nm">' + m.name + '</span><span class="bio-l">Biome ' + m.biome.name.toLowerCase() + '</span><span class="medals">' + medalsHTML(rec) + '</span>'
+    + '<span class="req ok">' + (on ? 'Gratuite, jusqu’au 10 novembre' : 'Revient en octobre') + '</span>'
+    + '<button class="sbtn" type="button"' + (on ? '' : ' disabled') + '>' + (on ? 'Jouer ▸' : 'Bientôt') + '</button>';
+  const cv2 = d.querySelector('canvas'); drawMapMini(prepMini(cv2, 140, 90), i, 140, 90, 'moyen');
+  if (on) { d.querySelector('button').addEventListener('click', () => openDiff(i)); cv2.addEventListener('click', () => openDiff(i)); }
+  return d;
 }
 function buyMap(i) {
   const m = MAPS[i];
@@ -545,7 +560,7 @@ let diffMap = 0;
 function openDiff(i) {
   diffMap = i; Snd.init(); show('diff'); screens.diff.scrollTop = 0;
   const m = MAPS[i], rec = (store.get(BEST2) || {})[m.id] || {};
-  $('#dfName').textContent = (i + 1) + '. ' + m.name;
+  $('#dfName').textContent = (m.season ? '🎃 ' : (i + 1) + '. ') + m.name;
   $('#dfSub').textContent = m.blurb + ' Biome ' + m.biome.name.toLowerCase() + ' : ' + biomeText(m.biome) + ', sur toute la carte.';
   const box = $('#dfList'); box.innerHTML = '';
   for (const k of DORDER) {
@@ -855,11 +870,11 @@ new ResizeObserver(() => { if (demo && curScreen === 'tuto') withWorld(demo, () 
 
 // Tableau des terrains
 (function () {
-  const ks = ['L', 'M', 'S', 'R', 'V', 'N', 'W', 'K'];
+  const ks = ['L', 'M', 'S', 'R', 'V', 'N', 'W', 'K', 'P', 'H', 'B'];
   let h = '<table class="ttable"><thead><tr><th>Terrain</th>' + TORDER.map(e => '<th>' + ELNAME[e] + '</th>').join('') + '</tr></thead><tbody>';
   for (const k of ks) {
     const T = TERRAINS[k];
-    h += '<tr><td><span class="sw" style="background:' + T.color + '"></span>' + T.name + '</td>' + TORDER.map(e => { const v = T.mods[e] || 0; return '<td class="' + (v > 0 ? 'pos' : v < 0 ? 'neg' : '') + '">' + (v ? fmtAff(v) : '·') + '</td>'; }).join('') + '</tr>';
+    h += '<tr><td><span class="sw" style="background:' + T.color + '"></span>' + (T.season ? '🎃 ' : '') + T.name + '</td>' + TORDER.map(e => { const v = T.mods[e] || 0; return '<td class="' + (v > 0 ? 'pos' : v < 0 ? 'neg' : '') + '">' + (v ? fmtAff(v) : '·') + '</td>'; }).join('') + '</tr>';
   }
   $('#hTerr').innerHTML = h + '</tbody></table>';
 })();

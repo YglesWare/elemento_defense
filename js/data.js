@@ -78,6 +78,13 @@ const MAPS = [
     deco: ['flocon', 'herbe'], obstacle: 'sapin',
     pts: [[-1, 3], [6, 3], [6, 6], [14, 6]],
     terrain: ['NNXXNNLLNNXXNN', 'N.RN..LL.KK.XN', 'XN.NLL..N.R.NN', '.......N.X.RNN', 'NRN.X.....N..X', 'N.LL.N.RXN.LLN', 'XN.NN.........', 'NNX.W.RLL.N.XN', 'XXNNXXNNNNXXNN'] },
+  // Carte saisonnière : gratuite, jouable du 1er octobre au 10 novembre (toujours en dernier dans la liste)
+  { id: 'halloween', name: 'Manoir Citrouille', price: 0, hpMul: 1.25, shards: 1.5, season: 'halloween', blurb: 'Événement Halloween : citrouilles, brume hantée et potions. Fantômes, chats noirs, spectres et le Roi Citrouille rôdent, et tes tours se déguisent !',
+    ground: '#6f5d91', ground2: '#68568a', path: '#d4b089', pathEdge: '#8f6a4c', frame: '#2b1f40', dot: 'rgba(255,170,60,.2)',
+    deco: ['citrouille', 'bougie', 'champinuit', 'os', 'citrouille'], obstacle: 'tombe',
+    best: { feu: 'P', terre: 'P', foudre: 'H', vent: 'H', eau: 'B', glace: 'B' },
+    pts: [[-1, 4], [2, 4], [2, 1], [6, 1], [6, 7], [9, 7], [9, 2], [12, 2], [12, 5], [14, 5]],
+    terrain: ['XXPPP.HHH..XXX', 'XP.....P.HH..X', 'PP..BB.PP.....', '...BBB..X.HH.X', '....X..PP.HH..', 'HH.C..B......X', 'HHX..BB..CPP..', 'X.......X..PPX', 'XXBBXX.HHXXPPX'] },
 ];
 const DORDER = ['facile', 'moyen', 'difficile', 'infini'];
 const DIFFS = {
@@ -113,12 +120,14 @@ const WEATHERS = {
   blizzard: { name: 'Blizzard', icon: '❄', mods: { glace: 0.2, feu: -0.15 }, desc: 'Givrette +20 %, Braise −15 %, ennemis ralentis' },
   thunder: { name: 'Orage', icon: '⛈', mods: { foudre: 0.25 }, desc: 'Voltie +25 %, des éclairs frappent les ennemis' },
   fog: { name: 'Brouillard', icon: '🌫', mods: {}, range: -0.4, desc: 'portée de toutes les tours −0,4' },
+  moon: { name: 'Pleine lune', icon: '🌕', mods: { foudre: 0.15, glace: 0.15 }, desc: 'Voltie +15 %, Givrette +15 %, les spectres restent intangibles moins longtemps' },
 };
 const WEATHER_POOL = {
   prairie: ['clear', 'rain', 'fog', 'thunder'], plage: ['clear', 'rain', 'storm', 'heat'], marais: ['rain', 'fog', 'thunder', 'clear'],
   foret: ['clear', 'rain', 'fog', 'storm'], desert: ['heat', 'heat', 'storm', 'clear'], ile: ['rain', 'thunder', 'storm', 'clear'],
   canyon: ['storm', 'heat', 'fog', 'clear'], volcan: ['heat', 'thunder', 'fog', 'clear'], pic: ['blizzard', 'blizzard', 'fog', 'storm', 'clear'],
   toundra: ['blizzard', 'blizzard', 'fog', 'storm'],
+  halloween: ['moon', 'fog', 'thunder', 'moon', 'rain'],
 };
 const BIOMES = {
   prairie: { name: 'Tempéré', mods: {} },
@@ -131,14 +140,23 @@ const BIOMES = {
   volcan: { name: 'Volcanique', mods: { feu: 0.15, terre: 0.1, eau: -0.1, glace: -0.2 } },
   pic: { name: 'Alpin', mods: { glace: 0.15, vent: 0.1, feu: -0.15 } },
   toundra: { name: 'Polaire', mods: { glace: 0.2, foudre: 0.1, feu: -0.2 } },
+  halloween: { name: 'Hanté', mods: { feu: 0.1, foudre: 0.1, eau: -0.1 } },
 };
 MAPS.forEach(m => { m.biome = BIOMES[m.id]; });
 function biomeText(B) {
   const e = Object.entries(B.mods).sort((a, b) => b[1] - a[1]);
   return e.length ? e.map(([k, v]) => ELNAME[k] + ' ' + fmtAff(v)).join(', ') : 'aucun effet sur les tours';
 }
+// Événements saisonniers : Halloween du 1er octobre au 10 novembre (?halloween dans l'adresse pour l'essayer hors saison)
+function inSeason(m) {
+  if (!m || !m.season) return true;
+  const d = new Date(), mo = d.getMonth();
+  return mo === 9 || (mo === 10 && d.getDate() <= 10) || /halloween/.test(location.search);
+}
+const spooky = () => !!(G && !G.demo && MAPS[G.map] && MAPS[G.map].season === 'halloween');
 const mapReqOk = i => {
   if (i === 0) return true;
+  if (MAPS[i].season) return inSeason(MAPS[i]);
   const rec = (store.get(BEST2) || {})[MAPS[i - 1].id] || {};
   return !!((rec.moyen && rec.moyen.won) || (rec.difficile && rec.difficile.won));
 };
@@ -157,6 +175,9 @@ const TERRAINS = {
   N: { name: 'Neige', color: '#f7fbff', color2: '#ebf3fb', mods: { glace: 0.4, eau: 0.2, vent: 0.2, feu: -0.4 } },
   W: { name: 'Crête venteuse', color: '#bfe6dc', color2: '#b3ddd2', mods: { vent: 0.4, feu: 0.2, terre: -0.4, eau: -0.2 } },
   K: { name: 'Cristaux', color: '#cdb8f2', color2: '#c2abec', mods: { foudre: 0.4, glace: 0.2, vent: -0.4, feu: -0.2 } },
+  P: { name: 'Champ de citrouilles', color: '#c07a3e', color2: '#b8733a', season: 1, mods: { feu: 0.3, terre: 0.15, glace: -0.2 } },
+  H: { name: 'Brume hantée', color: '#b4a6e2', color2: '#ab9cdc', season: 1, mods: { foudre: 0.3, vent: 0.15, feu: -0.2 } },
+  B: { name: 'Potion bouillonnante', color: '#86de6e', color2: '#7dd665', season: 1, mods: { eau: 0.3, glace: 0.15, feu: -0.25 } },
   C: { name: 'Colline', color: '#b3ea88', color2: '#a8e27c', range: 0.6, mods: {} },
   X: { name: 'Obstacle', block: true },
 };
@@ -262,7 +283,22 @@ const ETYPES = {
   crachou: { name: 'Crachou', hp: 70, speed: 0.8, reward: 6, size: 0.27, color: '#ff8a5c', light: '#ffc6a8', mood: 'grr', angry: true, armor: 1, desc: 'Crache sur les tours et leur fait perdre des PV.' },
   malefik: { name: 'Maléfik', hp: 150, speed: 0.7, reward: 12, size: 0.28, color: '#7a4fb8', light: '#c9a8f0', mood: 'grr', angry: true, armor: 2, desc: 'Pervertit une tour : elle attaque les autres tours un moment.' },
   boss: { name: 'Kaiju', hp: 650, speed: 0.42, reward: 45, size: 0.42, color: '#ff4f6e', light: '#ffa3b3', mood: 'grr', angry: true, armor: 5, lifeCost: 10, boss: true, desc: 'Boss des vagues 10, 20, 30. Ses coups de patte abîment les tours.' },
+  spectre: { name: 'Spectre', hp: 50, speed: 1.15, reward: 5, size: 0.24, color: '#e6e0ff', light: '#ffffff', mood: 'open', season: 'halloween', desc: 'Halloween : devient intangible par moments, aucune attaque ne le touche alors.' },
+  potiron: { name: 'Potiron', hp: 70, speed: 1.3, reward: 3, size: 0.2, color: '#ff8a2b', light: '#ffc27a', mood: 'grr', angry: true, season: 'halloween', desc: 'Halloween : trois Potirons s’échappent du Roi Citrouille quand il tombe.' },
 };
+// Déguisements d'Halloween : même comportement, autre allure et autre nom sur le Manoir Citrouille
+const HSKIN = {
+  gloop: { name: 'Fantôme', color: '#ece8ff', light: '#ffffff' },
+  zip: { name: 'Chat noir', color: '#3b3150', light: '#6d6188' },
+  flappy: { name: 'Chauve-souris', color: '#4a3d63', light: '#7f71a0' },
+  tonk: { name: 'Chevalier Citrouille', color: '#ff8a2b', light: '#ffc27a' },
+  magma: { name: 'Potion', color: '#6fd64a', light: '#c4ff9a' },
+  gresil: { name: 'Araignée', color: '#463a5c', light: '#7d6f96' },
+  crachou: { name: 'Zombie', color: '#93b86e', light: '#cfe6b0' },
+  malefik: { name: 'Sorcière', color: '#7cc65a', light: '#c4f0a6' },
+  boss: { name: 'Roi Citrouille', color: '#ff8a2b', light: '#ffc27a' },
+};
+const eName = k => (spooky() && HSKIN[k] ? HSKIN[k].name : ETYPES[k].name);
 const hpMul = w => 1 + (w - 1) * 0.16 + (w - 1) * (w - 1) * 0.011;
 
 function statsOf(type, lvl, br) {

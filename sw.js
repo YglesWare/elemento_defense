@@ -1,9 +1,9 @@
 // Élémento Defense : mise en cache pour jouer sans internet.
 // Stratégie : réponse immédiate depuis le cache, puis mise à jour en arrière-plan quand le réseau répond.
-const CACHE = 'elemento-v8';
+const CACHE = 'elemento-v10';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'css/style.css',
-  'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js',
+  'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js',
   'js/vendor/qrcode.min.js', 'js/vendor/jsQR.js', 'icons/icon-192.png', 'icons/icon-512.png',
 ];
 self.addEventListener('install', ev => {

@@ -28,7 +28,7 @@ MAPS.forEach((m, mi) => {
     if (near) cand.push([q, r]);
   }
   for (const el of ['feu', 'eau', 'terre', 'vent', 'foudre', 'glace']) {
-    const ch = BEST_TILE[el]; if (rows.some(r => r.includes(ch))) continue;
+    const ch = (m.best || BEST_TILE)[el]; if (rows.some(r => r.includes(ch))) continue;
     while (cand.length) {
       const k = Math.floor(rnd() * cand.length), [q, r] = cand.splice(k, 1)[0];
       if (rows[r][q] !== '.') continue;
@@ -157,7 +157,7 @@ function newGame(mi, save, diff) {
   else {
     banner('PRÊT ?', MAPS[mi].name + ' · ' + DIFFS[G.diff].name + (G.endless ? ' · vagues infinies' : ' · ' + G.maxw + ' vagues'));
     const seen = store.get('elemento.bankhint') || 0;
-    if (seen < 3) { store.set('elemento.bankhint', seen + 1); setTimeout(() => { if (G && G.map === mi && !G.over && !G.duel) bankHint(5000); }, 2400); }
+    if (seen < 3) { store.set('elemento.bankhint', seen + 1); setTimeout(() => { if (G && G.map === mi && !G.over && !G.duel && !G.guide) bankHint(5000); }, 2400); }
   }
 }
 function saveCheckpoint() {
@@ -237,8 +237,10 @@ function sell(t) {
 function makeWave(w) {
   const pool = ['gloop', 'gloop'];
   if (w >= 3) pool.push('zip'); if (w >= 4) pool.push('flappy'); if (w >= 6) pool.push('tonk'); if (w >= 8) pool.push('magma'); if (w >= 7) pool.push('gresil'); if (w >= 9) pool.push('crachou');
+  const hw = spooky(); if (hw && w >= 5) pool.push('spectre', 'spectre');
   let theme = null, label = '';
-  if (w % 10 === 0) label = 'Un Kaiju approche...';
+  if (w % 10 === 0) label = hw ? 'Le Roi Citrouille approche...' : 'Un Kaiju approche...';
+  else if (hw && w >= 5 && w % 10 === 5) { theme = 'spectre'; label = 'Nuit des Spectres !'; }
   else if (w >= 4 && w % 5 === 4) { theme = 'flappy'; label = 'Nuée de Flappy !'; }
   else if (w >= 7 && w % 7 === 0) { theme = 'zip'; label = 'Ruée de Zippy !'; }
   else if (w >= 6 && w % 6 === 0) { theme = 'tonk'; label = 'Parade de Tonk !'; }
@@ -314,6 +316,18 @@ function drawWeather(c) {
   c.save();
   if (k === 'heat') { c.fillStyle = 'rgba(255,150,50,.10)'; c.fillRect(0, 0, L.w, L.h); }
   if (k === 'thunder') { c.fillStyle = 'rgba(30,30,70,.14)'; c.fillRect(0, 0, L.w, L.h); }
+  if (k === 'moon') {
+    c.fillStyle = 'rgba(20,10,50,.16)'; c.fillRect(0, 0, L.w, L.h);
+    const mx = L.w - 34, my = 34, g = c.createRadialGradient(mx, my, 6, mx, my, 70); g.addColorStop(0, 'rgba(255,240,190,.5)'); g.addColorStop(1, 'rgba(255,240,190,0)');
+    c.fillStyle = g; c.fillRect(mx - 70, my - 70, 140, 140);
+    c.beginPath(); c.arc(mx, my, 16, 0, TAU); c.fillStyle = '#fff3c4'; c.fill(); c.lineWidth = 2; c.strokeStyle = INK; c.stroke();
+    c.fillStyle = 'rgba(200,180,120,.6)'; for (const [a, b, q] of [[-5, -4, 4], [5, 3, 3], [-2, 7, 2.2]]) { c.beginPath(); c.arc(mx + a, my + b, q, 0, TAU); c.fill(); }
+    for (let i = 0; i < 2; i++) {
+      const bx = ((G.time * (0.05 + i * 0.03) + i * 0.5) % 1.2 - 0.1) * L.w, by = 60 + i * 50 + Math.sin(G.time * 2 + i) * 14, f = Math.sin(G.time * 16 + i * 2) * 5;
+      c.beginPath(); c.moveTo(bx, by); c.quadraticCurveTo(bx - 7, by - 6 - f, bx - 14, by - f); c.quadraticCurveTo(bx - 7, by - 2, bx, by + 2);
+      c.quadraticCurveTo(bx + 7, by - 2, bx + 14, by - f); c.quadraticCurveTo(bx + 7, by - 6 - f, bx, by); c.fillStyle = 'rgba(42,27,61,.75)'; c.fill();
+    }
+  }
   if (k === 'fog') {
     const g = c.createLinearGradient(0, 0, 0, L.h); g.addColorStop(0, 'rgba(245,248,255,.42)'); g.addColorStop(0.5, 'rgba(245,248,255,.22)'); g.addColorStop(1, 'rgba(245,248,255,.4)');
     c.fillStyle = g; c.fillRect(0, 0, L.w, L.h);
@@ -380,10 +394,11 @@ function spawn(type) {
   const e = { id: ++G.eid, type, hp: D.hp * m, maxHp: D.hp * m, speed: D.speed * rand(0.95, 1.05) * (G.spd || 1),
     armor: D.armor ? D.armor + Math.floor(w / 10) : 0, flying: !!D.flying, d: 1, x: 0, y: 0, sdx: 1, sdy: 0,
     slowA: 0, slowT: 0, wet: 0, burn: 0, burnT: 0, frozen: 0, stun: 0, flash: 0, phase: rand(TAU), dead: false, lifeCost: D.lifeCost || 1, abT: 1.2 };
+  if (type === 'spectre') { e.gcy = rand(1, 2.5); e.ghost = 0; }
   setPos(e); G.enemies.push(e);
   if (D.boss) {
     G.speedLines = 1.5; G.shake = Math.max(G.shake, 0.5);
-    banner('KAIJU !!', 'Le boss débarque', true); Snd.play('boss');
+    banner(spooky() ? 'ROI CITROUILLE !!' : 'KAIJU !!', 'Le boss débarque', true); Snd.play('boss');
   }
 }
 function setPos(e) {
@@ -449,6 +464,10 @@ function updateEProjs(dt) {
 }
 function updateEnemy(e, dt) {
   enemyAbility(e, dt);
+  if (e.type === 'spectre' && !G.demo) {
+    if (e.ghost > 0) e.ghost -= dt;
+    else if ((e.gcy -= dt) <= 0) { e.ghost = G.weather === 'moon' ? 0.8 : 1.4; e.gcy = 2.6; e.burnT = 0; ono('BOUH!', e.x, e.y, '#e6e0ff', 0.4, 0.4, 0.8); }
+  }
   if (e.flash > 0) e.flash -= dt;
   if (e.wet > 0) e.wet -= dt;
   if (e.slowT > 0) { e.slowT -= dt; if (e.slowT <= 0) e.slowA = 0; }
@@ -487,7 +506,7 @@ function brMul(s, e) {
   return cat === s.br ? s.brMul : 1;
 }
 function hurt(e, dmg, elem, s) {
-  if (e.dead) return 0;
+  if (e.dead || e.ghost > 0) return 0;
   const D = ETYPES[e.type], up = (e.flying ? FLY : 0) + 0.7;
   if (D.immune === elem) { ono('IMMUNISÉ', e.x, e.y, '#ffffff', 0.34, 0.9, up); return 0; }
   let m = 1;
@@ -512,7 +531,11 @@ function kill(e) {
   burst(e.x, e.y, up, D.boss ? 40 : 10, [D.color, D.light, '#ffffff'], D.boss ? 4 : 2.4, D.boss ? 0.14 : 0.09, 4, 0.6);
   G.texts.push({ txt: '+' + rw, gx: e.x, gy: e.y, oy: -up - 0.3, t: 0, dur: 0.8, color: '#ffd23f', size: 0.32, rot: 0 });
   if (e.type === 'malefik') for (const t of G.towers) if (t.evil > 0 && t.evilBy === e.id) { t.evil = 0; ono('LIBÉRÉE !', t.c + 0.5, t.r + 0.5, '#5cd86a', 0.42, 0, 0.9); }
-  if (D.boss) { G.bossKills++; ono('K.O. !!', e.x, e.y, '#ff4f81', 1.1, 0, 0.9); G.shake = 0.7; Snd.play('boom'); }
+  if (D.boss) {
+    G.bossKills++; ono('K.O. !!', e.x, e.y, '#ff4f81', 1.1, 0, 0.9); G.shake = 0.7; Snd.play('boom');
+    // Le Roi Citrouille libère trois Potirons en tombant
+    if (spooky()) for (let i = 0; i < 3; i++) { const n = G.enemies.length; spawn('potiron'); const p = G.enemies[n]; if (p) { p.d = Math.max(1, e.d - i * 0.35); setPos(p); } }
+  }
   else { if (Math.random() < 0.18) ono(pick(['POP!', 'PAF!', 'BLOP!', 'SPLOTCH!']), e.x, e.y, '#ffffff', 0.45, 0.35, up + 0.4); Snd.play('pop'); }
 }
 function slowE(e, a, t) { const f = ETYPES[e.type].boss ? 0.6 : 1; e.slowA = Math.max(e.slowA, a * f); e.slowT = Math.max(e.slowT, t); }
@@ -544,7 +567,7 @@ function updateTower(t, dt) {
   if (t.type === 'plasma') { beamTower(t, dt); return; }
   t.cd -= dt; if (t.cd > 0) return;
   const s = t.s, cx = t.c + 0.5, cy = t.r + 0.5, R2 = s.range * s.range, list = [];
-  for (const e of G.enemies) { if (e.dead || (!s.air && e.flying)) continue; const dx = e.x - cx, dy = e.y - cy; if (dx * dx + dy * dy <= R2) list.push(e); }
+  for (const e of G.enemies) { if (e.dead || e.ghost > 0 || (!s.air && e.flying)) continue; const dx = e.x - cx, dy = e.y - cy; if (dx * dx + dy * dy <= R2) list.push(e); }
   if (!list.length) { t.cd = 0.08; return; }
   t.cd = 1 / s.rate; t.recoil = 1;
   if (t.type === 'glace' || t.type === 'blizzard') { pulse(t, s, list); return; }
@@ -594,7 +617,7 @@ function geyserBlast(s, tg) {
 }
 function beamTower(t, dt) {
   const s = t.s, cx = t.c + 0.5, cy = t.r + 0.5, R2 = s.range * s.range;
-  const ok = e => e && !e.dead && (s.air || !e.flying) && (e.x - cx) ** 2 + (e.y - cy) ** 2 <= R2;
+  const ok = e => e && !e.dead && !(e.ghost > 0) && (s.air || !e.flying) && (e.x - cx) ** 2 + (e.y - cy) ** 2 <= R2;
   if (!ok(t.beam)) {
     t.beam = null; t.beamT = 0; let bv = -Infinity;
     for (const e of G.enemies) { if (!ok(e)) continue; const v = t.mode === 'fort' ? e.hp : t.mode === 'proche' ? -((e.x - cx) ** 2 + (e.y - cy) ** 2) : e.d; if (v > bv) { bv = v; t.beam = e; } }
@@ -654,7 +677,7 @@ function chain(t, s, tg) {
   const hit = [tg]; let cur = tg;
   for (let i = 1; i < s.chain; i++) {
     let best = null, bd = 3.2;
-    for (const e of G.enemies) { if (e.dead || hit.includes(e)) continue; const d2 = (e.x - cur.x) ** 2 + (e.y - cur.y) ** 2; if (d2 < bd) { bd = d2; best = e; } }
+    for (const e of G.enemies) { if (e.dead || e.ghost > 0 || hit.includes(e)) continue; const d2 = (e.x - cur.x) ** 2 + (e.y - cur.y) ** 2; if (d2 < bd) { bd = d2; best = e; } }
     if (!best) break; hit.push(best); cur = best;
   }
   const pts = [{ gx: t.c + 0.5, gy: t.r + 0.5, up: 0.5 }];

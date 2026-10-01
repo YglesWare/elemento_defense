@@ -164,14 +164,14 @@ function refreshSendPanel() {
 }
 function duelSend(S) {
   if (!G || G.over || !DUEL.on) return;
-  if (DUEL.wave < S.from) { hint(ETYPES[S.type].name + ' : disponible dès la vague ' + S.from); return; }
+  if (DUEL.wave < S.from) { hint(eName(S.type) + ' : disponible dès la vague ' + S.from); return; }
   const c = sendCost(S), targets = c.multi ? foes() : [DUEL.target];
   if (!targets.length || !targets.every(id => id && DUEL.alive.has(id))) { hint('Aucun adversaire à viser'); return; }
   if (G.gold < c.price) { Snd.play('no'); hint('Pas assez d’or : il faut ' + c.price + ' or'); return; }
   G.gold -= c.price; DUEL.income += c.inc; DUEL.sent += targets.length;
   for (const id of targets) Net.send(id, { k: 'send', mob: S.type });
   Snd.play('pop');
-  hint(ETYPES[S.type].name + ' envoyé ' + (c.multi ? 'à tous (' + targets.length + ')' : 'à ' + dname(targets[0])) + ' · revenu +' + c.inc + ' (total ' + DUEL.income + '/vague)', 1800);
+  hint(eName(S.type) + ' envoyé ' + (c.multi ? 'à tous (' + targets.length + ')' : 'à ' + dname(targets[0])) + ' · revenu +' + c.inc + ' (total ' + DUEL.income + '/vague)', 1800);
   refreshSendPanel();
 }
 function receiveSend(from, mob) {
@@ -182,7 +182,7 @@ function receiveSend(from, mob) {
   clearTimeout(DUEL.inTimer);
   DUEL.inTimer = setTimeout(() => {
     const parts = [];
-    for (const f in DUEL.incoming) parts.push(dname(f) + ' t’envoie ' + Object.entries(DUEL.incoming[f]).map(([m, c]) => c + ' ' + ETYPES[m].name).join(', '));
+    for (const f in DUEL.incoming) parts.push(dname(f) + ' t’envoie ' + Object.entries(DUEL.incoming[f]).map(([m, c]) => c + ' ' + eName(m)).join(', '));
     DUEL.incoming = {};
     if (parts.length) { hint('⚠ ' + parts.join(' · ') + ' !', 2600); Snd.play('no'); }
   }, 600);

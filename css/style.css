@@ -421,6 +421,17 @@ button:disabled{cursor:default}
 .mp-rank li b{font-family:var(--display);font-weight:400;font-size:22px;width:24px;text-align:center}
 .mp-rank li.you{background:var(--sun2)}
 
+/* Tutoriel guidé */
+#guideRing{position:fixed;z-index:25;pointer-events:none;border:4px solid var(--pop);border-radius:14px;box-shadow:0 0 0 4px rgba(255,255,255,.85),0 0 18px rgba(255,79,129,.6);animation:gring 1s ease-in-out infinite}
+@keyframes gring{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+#guideBox{position:fixed;left:16px;right:16px;z-index:26;max-width:520px;margin:0 auto;background:var(--paper);border:3px solid var(--ink);border-radius:16px;box-shadow:0 5px 0 var(--ink);padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+#guideBox .gstep{font-family:var(--display);font-size:13px;letter-spacing:.5px;color:var(--pop);line-height:1}
+#guideBox p{margin:0;font-size:14.5px;font-weight:600;line-height:1.35}
+#guideBox.compact p{font-size:13.5px}
+#guideBox .gbtns{display:flex;gap:6px;justify-content:flex-end}
+#guideBox .gbtns .sbtn{flex:0 0 auto;padding:6px 14px}
+@media (prefers-reduced-motion:reduce){#guideRing{animation:none}}
+
 @media (max-width:370px){
   #hud{gap:4px}
   .chip{font-size:15px;padding:0 7px 0 3px;height:36px}
@@ -436,3 +447,10 @@ button:disabled{cursor:default}
   #bWave.go,#bWave.urgent{animation:none}
   .tbtn{transition:none}
 }
+/* Carte d'événement (Halloween) */
+.mapc.season{grid-column:span 2;background:linear-gradient(160deg,#4a3470,#2b1f40);color:#fff;box-shadow:0 4px 0 var(--ink),0 0 0 3px #ff8a2b inset}
+.mapc.season .bio-l{color:#d8c8f5}
+.mapc.season .sbtn{background:#ff8a2b}
+.mapc.season .req.ok{background:#ffd9a8}
+.mapc.season .medal:not(.on){background:rgba(255,255,255,.15);color:#fff}
+.mapc .evt{align-self:flex-start;font-size:11px;font-weight:800;letter-spacing:.3px;background:#ff8a2b;color:var(--ink);border:2px solid var(--ink);border-radius:999px;padding:1px 8px}
