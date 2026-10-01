@@ -73,6 +73,9 @@ function statChips(t) {
   if (s.terr && s.aff) ch.push([s.aff > 0 ? 'good' : 'bad', s.terr.name + ' ' + fmtAff(s.aff)]);
   if (s.terr && s.terr.range) ch.push(['good', s.terr.name + ' +0,6 portée']);
   if (s.bio) ch.push([s.bio > 0 ? 'good' : 'bad', 'Biome ' + fmtAff(s.bio)]);
+  if (s.wea) ch.push([s.wea > 0 ? 'good' : 'bad', 'Météo ' + fmtAff(s.wea)]);
+  if (G.weather === 'fog') ch.push(['bad', 'Brouillard −0,4 portée']);
+  if (s.affTot != null && Math.abs(s.affTot) >= 0.6) ch.push(['', 'plafond ±60 %']);
   ch.unshift([t.ko > 0 ? 'bad' : t.hp < t.maxHp * 0.5 ? 'bad' : '', t.ko > 0 ? 'Assommée ' + Math.ceil(t.ko) + ' s' : '<i>PV</i>' + Math.ceil(t.hp) + '/' + t.maxHp + (t.shield > 0 ? ' +' + Math.ceil(t.shield) + ' 🛡' : '')]);
   if (t.stun > 0) ch.unshift(['bad', 'Paralysée']);
   if (t.evil > 0) ch.unshift(['bad', 'Pervertie ' + Math.ceil(t.evil) + ' s']);
@@ -119,6 +122,7 @@ const elLives = $('#hLives'), elGold = $('#hGold'), bWave = $('#bWave');
 function refreshHUD() {
   setText(elLives, 'l', String(Math.max(0, G.lives)));
   setText(elGold, 'g', fmtK(G.gold));
+  const nwk = (G.over ? 'x' : G.nextWave ? G.nextWave.n : '-') + G.weather; if (hudCache.nw !== nwk) { hudCache.nw = nwk; renderNextWave(); }
   setText($('#hBank'), 'bk', '🐷 ' + fmtK(meta.bank || 0)); $('#hBank').hidden = !!G.duel;
   let ic = '▶', sm = 'Vague', big, cls, bonus = 0;
   const cap = G.endless ? '' : '/' + G.maxw;
@@ -142,6 +146,19 @@ bWave.addEventListener('click', () => { Snd.init(); if (G && !G.paused) startWav
 $('#bSpeed').addEventListener('click', () => { if (!G || G.duel) return; G.speed = G.speed % 3 + 1; $('#bSpeed').textContent = 'x' + G.speed; });
 $('#bPause').addEventListener('click', () => pause());
 
+// Aperçu de la prochaine vague
+const nwIcons = {};
+function renderNextWave() {
+  const box = $('#nextWave'), nw = G && G.nextWave;
+  if (!nw || G.over) { box.hidden = true; return; }
+  const cnt = {}; for (const it of nw.list) cnt[it.type] = (cnt[it.type] || 0) + 1;
+  const order = Object.keys(ETYPES).filter(k => cnt[k]);
+  const Wc = WEATHERS[G.weather] || WEATHERS.clear, Wn = nw.weather && WEATHERS[nw.weather];
+  box.innerHTML = '<span class="nww" title="Météo : ' + Wc.name + '">' + Wc.icon + '</span><span class="nwl">Vague ' + nw.n + '</span>' + order.map(k => '<span class="nwi' + (ETYPES[k].boss ? ' boss' : '') + '" title="' + ETYPES[k].name + '"><canvas data-t="' + k + '"></canvas>×' + cnt[k] + '</span>').join('')
+    + (Wn ? '<span class="nwt">→ ' + Wn.icon + ' ' + Wn.name + '</span>' : '') + (nw.label ? '<span class="nwt">' + nw.label + '</span>' : '');
+  box.querySelectorAll('canvas').forEach(cv2 => { const k = cv2.dataset.t, c = prepMini(cv2, 24, 24); drawEnemy(c, k, 12, 22, k === 'boss' ? 19 : 26, 0.6, null); });
+  box.hidden = false;
+}
 // Plateau
 function tapCell(q, r, isMouse) {
   if (!G || G.over) return;
@@ -232,6 +249,7 @@ function pause() {
   show('pause');
   $('#pSave').textContent = MAPS[G.map].name + ' · ' + DIFFS[G.diff].name + '. ' + (G.checkpoint && G.checkpoint.wave ? 'Partie sauvegardée à la fin de la vague ' + G.checkpoint.wave + '.' : 'La partie se sauvegarde à chaque fin de vague.')
     + ' Biome ' + MAPS[G.map].biome.name.toLowerCase() + ' : ' + biomeText(MAPS[G.map].biome) + '.'
+    + ' Météo : ' + (WEATHERS[G.weather] || WEATHERS.clear).name.toLowerCase() + ((WEATHERS[G.weather] || WEATHERS.clear).desc !== 'aucun effet' ? ' (' + WEATHERS[G.weather].desc + ')' : '') + '.'
     + ' Cagnotte : ' + (meta.bank || 0) + ' or. Elle ne reçoit l’or restant qu’en fin de partie (victoire, K.O. ou abandon).';
   cashArm = false; refreshCash();
   refreshOptBtns();
@@ -307,8 +325,9 @@ function refreshCosts() {
     const b = palBtns[type], lk = !unlocked(type);
     b.classList.toggle('locked', lk);
     b.setAttribute('aria-label', b.dataset.aria + (lk ? ', à débloquer dans l’Atelier' : ', ' + costOf(type) + ' or'));
-    const bs = b.querySelector('.bio'), a = G && !G.demo ? affinity(type, MAPS[G.map].biome) : 0;
-    bs.hidden = !a; if (a) { bs.textContent = (a > 0 ? '+' : '−') + Math.round(Math.abs(a) * 100); bs.className = 'bio ' + (a > 0 ? 'good' : 'bad'); bs.title = 'Biome ' + MAPS[G.map].biome.name + ' : ' + fmtAff(a); }
+    const Wx = G && !G.demo && G.weather && G.weather !== 'clear' ? WEATHERS[G.weather] : null;
+    const bs = b.querySelector('.bio'), a = G && !G.demo ? clamp(affinity(type, MAPS[G.map].biome) + (Wx ? affinity(type, Wx) : 0), -0.6, 0.6) : 0;
+    bs.hidden = !a; if (a) { bs.textContent = (a > 0 ? '+' : '−') + Math.round(Math.abs(a) * 100); bs.className = 'bio ' + (a > 0 ? 'good' : 'bad'); bs.title = 'Biome ' + MAPS[G.map].biome.name + (Wx ? ' + ' + Wx.name : '') + ' : ' + fmtAff(a); }
   }
 }
 function drawUpIcon(c, id, x, y, s) {

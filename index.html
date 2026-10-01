@@ -26,6 +26,7 @@
   <main id="stage">
     <canvas id="cv"></canvas>
     <div id="duelBar" hidden></div>
+    <div id="nextWave" hidden></div>
     <div id="hint" hidden></div>
     <div id="banner" hidden><div class="big"></div><div class="small"></div></div>
   </main>
@@ -100,6 +101,7 @@
       <div class="tscroll" id="hTerr"></div>
       <ul class="terrnotes">
         <li><b>Biome</b> : chaque carte a aussi un biome (aride, polaire, tropical…) qui renforce ou affaiblit certains éléments sur toute la carte, de 10 à 20 %. Il s’ajoute à l’effet de la case. Les boutons des tours affichent l’effet du biome (+15, −20…).</li>
+        <li><b>Météo</b> : elle change toutes les 5 vagues et s’annonce dans l’aperçu sous la carte. Pluie, canicule, tempête, blizzard, orage ou brouillard renforcent ou affaiblissent certains éléments, avec un effet en plus (ennemis mouillés, éclairs, portée réduite…). Case, biome et météo réunis ne dépassent jamais ±60 %.</li>
         <li><b>Colline</b> : +0,6 de portée pour toutes les tours.</li>
         <li><b>Obstacle</b> (arbre, rocher, sapin…) : impossible de construire.</li>
         <li>Quand tu choisis une tour à poser, les cases s’affichent en vert (bonus) ou en rouge (malus).</li>

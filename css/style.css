@@ -381,6 +381,13 @@ button:disabled{cursor:default}
 #duelBar .dp.dead{opacity:.5;text-decoration:line-through}
 #duelBar .dinc{color:#2f8f3a}
 #stage.duel #hint{top:44px}
+#nextWave{position:absolute;left:50%;bottom:4px;transform:translateX(-50%);z-index:4;display:flex;align-items:center;gap:6px;max-width:calc(100% - 32px);height:30px;padding:0 10px 0 8px;background:var(--paper);border:2.5px solid var(--ink);border-radius:99px;box-shadow:0 2px 0 var(--ink);pointer-events:none;white-space:nowrap;overflow:hidden}
+#nextWave .nww{font-size:16px;line-height:1;flex:none}
+#nextWave .nwl{font-family:var(--display);font-size:13px;letter-spacing:.4px;line-height:1;color:var(--muted)}
+#nextWave .nwt{font-size:11.5px;font-weight:800;color:var(--pop);overflow:hidden;text-overflow:ellipsis}
+#nextWave .nwi{display:flex;align-items:center;gap:1px;font-size:12.5px;font-weight:800;font-variant-numeric:tabular-nums;flex:none}
+#nextWave canvas{width:24px;height:24px;display:block}
+#nextWave .nwi.boss{color:var(--pop)}
 #duelTabs{display:flex;gap:6px;width:100%;max-width:580px;margin:0 auto}
 #duelTabs button{flex:1;font-family:var(--display);font-size:15px;letter-spacing:.5px;line-height:1;padding:4px 0;border:2.5px solid var(--ink);border-radius:10px;background:var(--mist);color:var(--muted)}
 #duelTabs button.on{background:var(--sun);color:var(--ink)}

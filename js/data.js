@@ -104,6 +104,22 @@ function diffTerrain(mi, diff) {
   }
   return (terrCache[key] = rows.map(r => r.join('')));
 }
+// Météos : elles changent toutes les 5 vagues (les 5 premières sont toujours par beau temps)
+const WEATHERS = {
+  clear: { name: 'Beau temps', icon: '☀', mods: {}, desc: 'aucun effet' },
+  rain: { name: 'Pluie', icon: '🌧', mods: { eau: 0.2, foudre: 0.1, feu: -0.15 }, desc: 'Ondine +20 %, Voltie +10 %, Braise −15 %, ennemis mouillés' },
+  heat: { name: 'Canicule', icon: '🔥', mods: { feu: 0.2, glace: -0.2 }, desc: 'Braise +20 %, Givrette −20 %' },
+  storm: { name: 'Tempête', icon: '🌪', mods: { vent: 0.25 }, desc: 'Zéphyr +25 %, volants plus rapides' },
+  blizzard: { name: 'Blizzard', icon: '❄', mods: { glace: 0.2, feu: -0.15 }, desc: 'Givrette +20 %, Braise −15 %, ennemis ralentis' },
+  thunder: { name: 'Orage', icon: '⛈', mods: { foudre: 0.25 }, desc: 'Voltie +25 %, des éclairs frappent les ennemis' },
+  fog: { name: 'Brouillard', icon: '🌫', mods: {}, range: -0.4, desc: 'portée de toutes les tours −0,4' },
+};
+const WEATHER_POOL = {
+  prairie: ['clear', 'rain', 'fog', 'thunder'], plage: ['clear', 'rain', 'storm', 'heat'], marais: ['rain', 'fog', 'thunder', 'clear'],
+  foret: ['clear', 'rain', 'fog', 'storm'], desert: ['heat', 'heat', 'storm', 'clear'], ile: ['rain', 'thunder', 'storm', 'clear'],
+  canyon: ['storm', 'heat', 'fog', 'clear'], volcan: ['heat', 'thunder', 'fog', 'clear'], pic: ['blizzard', 'blizzard', 'fog', 'storm', 'clear'],
+  toundra: ['blizzard', 'blizzard', 'fog', 'storm'],
+};
 const BIOMES = {
   prairie: { name: 'Tempéré', mods: {} },
   plage: { name: 'Côtier', mods: { eau: 0.1, vent: 0.1, feu: -0.1 } },

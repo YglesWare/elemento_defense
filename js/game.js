@@ -4,6 +4,24 @@
 const BEST_TILE = { feu: 'V', eau: 'L', terre: 'R', vent: 'W', foudre: 'K', glace: 'N' };
 MAPS.forEach((m, mi) => {
   const cells = buildPath(m).cells, rows = m.terrain.map(r => r.split('')), rnd = mulberry(mi * 97 + 3), cand = [];
+  // Allège les cartes : 60 % des petites zones spéciales (6 cases ou moins) redeviennent de l'herbe, et les grandes zones
+  // (mer, champs de lave…) perdent une partie de leurs cases collées au chemin. Les obstacles et les collines restent.
+  const seen = new Set(), rndT = mulberry(mi * 53 + 11);
+  for (let r = 0; r < ROWS; r++) for (let q = 0; q < COLS; q++) {
+    const ch = rows[r][q], key = q + ',' + r;
+    if (ch === '.' || ch === 'X' || ch === 'C' || seen.has(key) || cells.has(key)) continue;
+    const comp = [], stack = [[q, r]]; seen.add(key);
+    while (stack.length) {
+      const [a, b] = stack.pop(); comp.push([a, b]);
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const a2 = a + dx, b2 = b + dy, k2 = a2 + ',' + b2; if (a2 >= 0 && a2 < COLS && b2 >= 0 && b2 < ROWS && !seen.has(k2) && !cells.has(k2) && rows[b2][a2] === ch) { seen.add(k2); stack.push([a2, b2]); } }
+    }
+    if (comp.length <= 6) { if (rndT() < 0.6) for (const [a, b] of comp) rows[b][a] = '.'; continue; }
+    // Grande zone : on garde son cœur, mais 60 % des cases collées au chemin et 25 % des autres redeviennent de l'herbe
+    for (const [a, b] of comp) {
+      let near = false; for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) if (cells.has((a + dx) + ',' + (b + dy))) near = true;
+      if (rndT() < (near ? 0.6 : 0.25)) rows[b][a] = '.';
+    }
+  }
   for (let r = 0; r < ROWS; r++) for (let q = 0; q < COLS; q++) {
     if (cells.has(q + ',' + r) || rows[r][q] !== '.') continue;
     let near = false; for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) if (cells.has((q + a) + ',' + (r + b))) near = true;
@@ -47,8 +65,9 @@ function resize() {
   cv.width = Math.round(L.w * L.dpr); cv.height = Math.round(L.h * L.dpr);
   L.portrait = L.h > L.w * 1.08;
   const vc = L.portrait ? ROWS : COLS, vr = L.portrait ? COLS : ROWS;
-  L.cs = Math.max(8, Math.min((L.w - 32) / vc, (L.h - 24) / vr));
-  L.ox = (L.w - vc * L.cs) / 2; L.oy = (L.h - vr * L.cs) / 2;
+  const NW = 36; // place réservée sous la carte pour l'aperçu de la prochaine vague
+  L.cs = Math.max(8, Math.min((L.w - 32) / vc, (L.h - 24 - NW) / vr));
+  L.ox = (L.w - vc * L.cs) / 2; L.oy = Math.max(8, (L.h - NW - vr * L.cs) / 2);
   if (G) { buildBg(); for (const e of G.enemies) setPos(e); }
 }
 function dotPattern(c, col, step) {
@@ -118,7 +137,7 @@ function baseState(mi, save, diff) {
   const m = MAPS[mi]; diff = (save && save.diff) || diff || 'moyen'; const Df = DIFFS[diff];
   return { map: mi, diff, startLives: Df.lives + M('lives') * 2, maxw: Df.waves, hpd: Df.hp, spd: Df.speed, bm: Df.bonus, mm: Df.malus, banked: save ? save.banked || 0 : 0,
     terrain: m.terrain ? diffTerrain(mi, diff) : null, gold: save ? save.gold : Df.gold + M('gold') * 25, lives: save ? save.lives : Df.lives + M('lives') * 2, wave: save ? save.wave : 0, score: save ? save.score : 0,
-    bossKills: save ? save.bossKills || 0 : 0, shardsPaid: save ? save.shardsPaid || 0 : 0, won: save ? !!save.won : false, reviveUsed: save ? !!save.reviveUsed : false,
+    weather: (save && save.weather) || 'clear', bossKills: save ? save.bossKills || 0 : 0, shardsPaid: save ? save.shardsPaid || 0 : 0, won: save ? !!save.won : false, reviveUsed: save ? !!save.reviveUsed : false,
     endless: save ? !!save.endless : diff === 'infini', towers: [], enemies: [], projs: [], fx: [], parts: [], texts: [], zones: [], tors: [], eprojs: [], spawnQ: [], spawnT: 0,
     waveActive: false, speed: 1, paused: false, over: false, time: 0, shake: 0, speedLines: 0, hurtT: 0, baseHit: 0, eid: 0, onoCd: {},
     selType: null, selTower: null, hover: null, ghost: null, bad: null, autoT: 0, checkpoint: null };
@@ -133,6 +152,7 @@ function newGame(mi, save, diff) {
   resize(); refreshCosts(); showPanel('palette'); refreshPalette();
   $('#bSpeed').textContent = 'x1';
   show('game'); keepAwake();
+  prepNextWave();
   if (save) banner('REPRISE', 'Vague ' + (G.wave + 1) + ' prête');
   else {
     banner('PRÊT ?', MAPS[mi].name + ' · ' + DIFFS[G.diff].name + (G.endless ? ' · vagues infinies' : ' · ' + G.maxw + ' vagues'));
@@ -144,7 +164,7 @@ function saveCheckpoint() {
   if (G.duel || duelOn) return;
   G.checkpoint = { map: G.map, mapId: MAPS[G.map].id, diff: G.diff, banked: G.banked, gold: G.gold, lives: G.lives, wave: G.wave, score: G.score, endless: G.endless,
     bossKills: G.bossKills, shardsPaid: G.shardsPaid, won: G.won, reviveUsed: G.reviveUsed,
-    towers: G.towers.map(t => ({ type: t.type, c: t.c, r: t.r, lvl: t.lvl, mode: t.mode, inv: t.inv, br: t.br })) };
+    weather: G.weather, towers: G.towers.map(t => ({ type: t.type, c: t.c, r: t.r, lvl: t.lvl, mode: t.mode, inv: t.inv, br: t.br })) };
   store.set(SAVE, G.checkpoint);
 }
 function recordBest() {
@@ -174,6 +194,9 @@ function towerStats(t) {
   let a = 0;
   if (T && !T.block) { st.terr = T; st.aff = affinity(t.type, T); a += st.aff; if (T.range) st.range += T.range; }
   if (B) { st.bio = affinity(t.type, B); a += st.bio; }
+  const Wt = G && !G.demo && G.weather && G.weather !== 'clear' ? WEATHERS[G.weather] : null;
+  if (Wt) { st.wea = affinity(t.type, Wt); a += st.wea; if (Wt.range) st.range = Math.max(1, st.range + Wt.range); }
+  a = clamp(a, -0.6, 0.6); st.affTot = a;
   if (a) { const m = Math.max(0.1, 1 + a); st.dmg *= m; for (const k of ['burn', 'lava', 'poison']) if (st[k]) st[k] *= m; }
   return st;
 }
@@ -237,12 +260,80 @@ function waveTimer() {
   if (!t || G.duel || (!G.endless && G.wave >= G.maxw)) return null;
   return typeof t === 'function' ? t(G.wave) : t;
 }
+// La prochaine vague est tirée à l'avance : l'aperçu montre exactement ce qui va arriver
+function prepNextWave() {
+  G.nextWave = (!G.endless && G.wave >= G.maxw) ? null : Object.assign({ n: G.wave + 1 }, makeWave(G.wave + 1));
+  if (G.nextWave && G.nextWave.n > 1 && (G.nextWave.n - 1) % 5 === 0) {
+    const pool = (WEATHER_POOL[MAPS[G.map].id] || ['clear']).filter(w => w !== G.weather);
+    G.nextWave.weather = pool.length ? pick(pool) : 'clear';
+  }
+  if (typeof renderNextWave === 'function') renderNextWave();
+}
+function takeWave(n) {
+  const w = G.nextWave && G.nextWave.n === n ? G.nextWave : makeWave(n);
+  G.wave = n; prepNextWave();
+  if (w.weather && w.weather !== G.weather) setWeather(w.weather);
+  return w;
+}
+function setWeather(k) {
+  if (!WEATHERS[k] || G.demo) return;
+  G.weather = k; G.wT = 0;
+  for (const t of G.towers) t.s = towerStats(t);
+  if (typeof refreshCosts === 'function') refreshCosts();
+  const W = WEATHERS[k];
+  setTimeout(() => { if (G && !G.over && G.weather === k) banner(W.icon + ' ' + W.name.toUpperCase(), W.desc); }, 2400);
+}
+// Effets de la météo pendant la partie, et particules à l'écran (en coordonnées relatives à l'écran)
+function weatherTick(dt) {
+  const k = G.weather; if (G.demo) return;
+  G.wp = G.wp || [];
+  const want = { rain: 90, thunder: 90, blizzard: 70, storm: 34 }[k] || 0;
+  while (G.wp.length < want) G.wp.push({ x: Math.random(), y: Math.random(), s: rand(0.7, 1.3) });
+  if (G.wp.length > want) G.wp.length = want;
+  for (const p of G.wp) {
+    if (k === 'rain' || k === 'thunder') { p.y += 1.1 * dt * p.s; p.x += 0.12 * dt; }
+    else if (k === 'blizzard') { p.y += 0.12 * dt * p.s; p.x += Math.sin(G.time * 1.5 + p.s * 9) * 0.03 * dt + 0.03 * dt; }
+    else if (k === 'storm') { p.x += 1.4 * dt * p.s; p.y += 0.05 * dt; }
+    if (p.y > 1.05) { p.y = -0.05; p.x = Math.random(); } if (p.x > 1.05) { p.x = -0.05; p.y = Math.random(); }
+  }
+  if (G.flashT > 0) G.flashT -= dt;
+  if (!k || k === 'clear') return;
+  G.wT = (G.wT || 0) - dt;
+  if (k === 'rain' && G.wT <= 0) { G.wT = 1.5; for (const e of G.enemies) if (!e.dead) e.wet = Math.max(e.wet, 1.6); }
+  if (k === 'thunder' && G.wT <= 0) {
+    G.wT = 3.2; const al = G.enemies.filter(e => !e.dead);
+    if (al.length) {
+      const e = pick(al), up = (e.flying ? FLY : 0) + 0.2;
+      G.fx.push({ kind: 'bolt', pts: [{ gx: e.x, gy: e.y, up: 5 }, { gx: e.x + 0.1, gy: e.y, up: 2.5 }, { gx: e.x, gy: e.y, up }], t: 0, dur: 0.3 });
+      G.flashT = 0.18; hurt(e, 20 + G.wave * 3, 'foudre'); ono('CRAC!', e.x, e.y, '#ffe34d', 0.5, 0.5, up + 0.7); Snd.play('foudre');
+    }
+  }
+}
+function drawWeather(c) {
+  const k = G.weather; if (!k || k === 'clear' || G.demo) return;
+  c.save();
+  if (k === 'heat') { c.fillStyle = 'rgba(255,150,50,.10)'; c.fillRect(0, 0, L.w, L.h); }
+  if (k === 'thunder') { c.fillStyle = 'rgba(30,30,70,.14)'; c.fillRect(0, 0, L.w, L.h); }
+  if (k === 'fog') {
+    const g = c.createLinearGradient(0, 0, 0, L.h); g.addColorStop(0, 'rgba(245,248,255,.42)'); g.addColorStop(0.5, 'rgba(245,248,255,.22)'); g.addColorStop(1, 'rgba(245,248,255,.4)');
+    c.fillStyle = g; c.fillRect(0, 0, L.w, L.h);
+  }
+  c.lineCap = 'round';
+  for (const p of G.wp || []) {
+    const x = p.x * L.w, y = p.y * L.h;
+    if (k === 'rain' || k === 'thunder') { c.beginPath(); c.moveTo(x, y); c.lineTo(x - 3, y - 12 * p.s); c.lineWidth = 1.6; c.strokeStyle = 'rgba(200,230,255,.6)'; c.stroke(); }
+    else if (k === 'blizzard') { c.beginPath(); c.arc(x, y, 1.6 + p.s, 0, TAU); c.fillStyle = 'rgba(255,255,255,.85)'; c.fill(); }
+    else if (k === 'storm') { c.beginPath(); c.moveTo(x, y); c.lineTo(x - 40 * p.s, y - 2); c.lineWidth = 2; c.strokeStyle = 'rgba(255,255,255,.4)'; c.stroke(); }
+  }
+  if (G.flashT > 0) { c.fillStyle = 'rgba(255,255,255,' + Math.min(0.5, G.flashT * 3) + ')'; c.fillRect(0, 0, L.w, L.h); }
+  c.restore();
+}
 function startWave(forced) {
   if (!G || G.over || G.spawnQ.length || G.duel) return;
   let early = 0;
   if (!forced && G.waveActive && G.enemies.length) { early = 5 + Math.floor(G.wave / 2); G.gold += early; }
   G.wave++;
-  const { list, label } = makeWave(G.wave);
+  const { list, label } = takeWave(G.wave);
   for (const t of G.towers) if (!(t.ko > 0)) t.shield = Math.max(t.shield || 0, Math.round(t.maxHp * 0.15 * M('bouclier')));
   G.spawnQ.push(...list); G.spawnT = 0.5; G.waveActive = true; G.autoT = 0;
   G.chronoT = null; G.chronoArmed = true;
@@ -369,7 +460,7 @@ function updateEnemy(e, dt) {
     if (e.burnT <= 0) e.burn = 0;
     if (e.hp <= 0) { kill(e); return; }
   }
-  let v = e.speed * (1 - e.slowA);
+  let v = e.speed * (1 - e.slowA) * (G.weather === 'storm' && e.flying ? 1.25 : G.weather === 'blizzard' ? 0.9 : 1);
   if (e.frozen > 0 || e.stun > 0) v = 0;
   e.d += v * dt; e.phase += v * dt * 6;
   if (e.d >= P.goal) { reachBase(e); return; }
@@ -678,7 +769,7 @@ function update(dt) {
   for (const t of G.towers) updateTower(t, dt);
   updateProjs(dt); updateZones(dt); updateTors(dt); updateEProjs(dt);
   G.enemies = G.enemies.filter(e => !e.dead);
-  updateFx(dt);
+  updateFx(dt); weatherTick(dt);
   if (G.waveActive && !G.spawnQ.length && !G.enemies.length) waveDone();
 }
 
@@ -913,6 +1004,7 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
     }
     c.restore();
   }
+  drawWeather(c);
   if (G.hurtT > 0) {
     const g = c.createRadialGradient(L.w / 2, L.h / 2, Math.min(L.w, L.h) * 0.3, L.w / 2, L.h / 2, Math.hypot(L.w, L.h) / 2);
     g.addColorStop(0, 'rgba(255,60,90,0)'); g.addColorStop(1, 'rgba(255,60,90,' + (G.hurtT * 0.9) + ')');

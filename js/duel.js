@@ -84,8 +84,8 @@ function hostTick() {
   const t = dnow();
   if (t >= DUEL.hostNext) {
     DUEL.hostWave++; DUEL.hostNext += DUEL.cfg.gap;
-    Net.send('all', { k: 'wave', n: DUEL.hostWave, gap: DUEL.cfg.gap });
     onWave(DUEL.hostWave, DUEL.cfg.gap);
+    Net.send('all', { k: 'wave', n: DUEL.hostWave, gap: DUEL.cfg.gap, w: G ? G.weather : 'clear' });
   }
   for (const id of DUEL.alive) if (id !== meId() && t - (DUEL.last[id] || 0) > DUEL.cfg.afk) eliminate(id, 'absent');
 }
@@ -102,14 +102,15 @@ function sendStatus() {
 }
 
 // ---------- Vagues ----------
-function onWave(n, gap) {
+function onWave(n, gap, w) {
   if (!DUEL.on || !G) return;
   DUEL.wave = n; DUEL.nextAt = dnow() + gap;
   if (G.over) return;
   const pay = 10 + n + DUEL.income, shards = 2 + Math.floor(n / 5);
   G.gold += pay; meta.shards += shards;
   for (const t of G.towers) { healTower(t, true); t.ko = 0; t.stun = 0; t.evil = 0; refillShield(t); }
-  const { list, label } = makeWave(n);
+  const { list, label } = takeWave(n);
+  if (w && w !== G.weather) setWeather(w);
   const wasEmpty = !G.spawnQ.length;
   G.wave = n; G.spawnQ.push(...list); G.waveActive = true;
   if (wasEmpty) G.spawnT = Math.max(G.spawnT, 0.4);
@@ -315,7 +316,7 @@ Net.on('msg', ({ from, data }) => {
   switch (data.k) {
     case 'lobby': DUEL.lobbyMap = data.map; if (typeof MP !== 'undefined' && MP.state === 'lobby') renderMP(); break;
     case 'start': if (Net.role !== 'host') beginDuel(data); break;
-    case 'wave': if (Net.role !== 'host') onWave(data.n, data.gap); break;
+    case 'wave': if (Net.role !== 'host') onWave(data.n, data.gap, data.w); break;
     case 'st': DUEL.stats[from] = data; break;
     case 'send': if (DUEL.on) receiveSend(from, data.mob); break;
     case 'dead': if (Net.role === 'host') eliminate(from, data.why || 'ko'); break;
