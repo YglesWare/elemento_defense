@@ -35,12 +35,12 @@ TORDER.forEach((type, i) => {
 });
 function selectType(type) {
   if (!G || G.over) return;
-  if (!unlocked(type)) { Snd.play('no'); hint(TOWERS[type].name + ' se débloque dans l’Atelier (' + UNLOCK[type] + ' éclats)', 2600); return; }
+  if (!unlocked(type)) { Snd.play('no'); hint(TOWERS[type].name + T(' se débloque dans l’Atelier (') + UNLOCK[type] + T(' éclats)'), 2600); return; }
   G.selTower = null; G.ghost = null; showPanel('palette');
   G.selType = G.selType === type ? null : type;
   if (G.selType) {
     const D = TOWERS[type];
-    if (G.gold < costOf(type)) hint(D.name + ' coûte ' + costOf(type) + ' or');
+    if (G.gold < costOf(type)) hint(D.name + T(' coûte ') + costOf(type) + T(' or'));
     else hint(D.name + ' · ' + kindLine(type) + (G.terrain ? ' · vert = bonus, rouge = malus' : ''), 2800);
   }
   refreshPalette();
@@ -65,26 +65,26 @@ const iCtx = prepMini($('#iCv'), 44, 48);
 function statChips(t) {
   const s = t.s, D = TOWERS[t.type];
   const extra = {
-    feu: 'Brûlure ' + Math.round(s.burn) + '/s', eau: 'Ralentit ' + Math.round(s.slow * 100) + ' %', terre: s.stun ? 'Étourdit ' + Math.round(s.stun * 100) + ' %' : 'Zone',
-    vent: 'Recul ' + fr(s.knock), foudre: s.chain + ' cibles', glace: 'Gèle 1 onde / ' + s.every,
+    feu: T('Brûlure ') + Math.round(s.burn) + '/s', eau: T('Ralentit ') + Math.round(s.slow * 100) + ' %', terre: s.stun ? T('Étourdit ') + Math.round(s.stun * 100) + ' %' : T('Zone'),
+    vent: T('Recul ') + fr(s.knock), foudre: s.chain + ' cibles', glace: T('Gèle 1 onde / ') + s.every,
   }[t.type] || D.fx(s);
-  const ch = [['', '<i>Dégâts</i>' + Math.round(s.dmg)], ['', '<i>Portée</i>' + fr(s.range.toFixed(1))], ['', '<i>Cadence</i>' + fr(s.rate.toFixed(2)) + '/s'], ['', extra]];
+  const ch = [['', T('<i>Dégâts</i>') + Math.round(s.dmg)], ['', T('<i>Portée</i>') + fr(s.range.toFixed(1))], ['', T('<i>Cadence</i>') + fr(s.rate.toFixed(2)) + '/s'], ['', extra]];
   if (s.brMul) ch.push(['good', '×' + fr(s.brMul) + ' ' + BRANCH[s.br].vs]);
   if (s.terr && s.aff) ch.push([s.aff > 0 ? 'good' : 'bad', s.terr.name + ' ' + fmtAff(s.aff)]);
-  if (s.terr && s.terr.range) ch.push(['good', s.terr.name + ' +0,6 portée']);
+  if (s.terr && s.terr.range) ch.push(['good', s.terr.name + T(' +0,6 portée')]);
   if (s.bio) ch.push([s.bio > 0 ? 'good' : 'bad', 'Biome ' + fmtAff(s.bio)]);
-  if (s.wea) ch.push([s.wea > 0 ? 'good' : 'bad', 'Météo ' + fmtAff(s.wea)]);
-  if (G.weather === 'fog') ch.push(['bad', 'Brouillard −0,4 portée']);
+  if (s.wea) ch.push([s.wea > 0 ? 'good' : 'bad', T('Météo ') + fmtAff(s.wea)]);
+  if (G.weather === 'fog') ch.push(['bad', T('Brouillard −0,4 portée')]);
   if (s.affTot != null && Math.abs(s.affTot) >= 0.6) ch.push(['', 'plafond ±60 %']);
-  ch.unshift([t.ko > 0 ? 'bad' : t.hp < t.maxHp * 0.5 ? 'bad' : '', t.ko > 0 ? 'Assommée ' + Math.ceil(t.ko) + ' s' : '<i>PV</i>' + Math.ceil(t.hp) + '/' + t.maxHp + (t.shield > 0 ? ' +' + Math.ceil(t.shield) + ' 🛡' : '')]);
-  if (t.stun > 0) ch.unshift(['bad', 'Paralysée']);
-  if (t.evil > 0) ch.unshift(['bad', 'Pervertie ' + Math.ceil(t.evil) + ' s']);
+  ch.unshift([t.ko > 0 ? 'bad' : t.hp < t.maxHp * 0.5 ? 'bad' : '', t.ko > 0 ? T('Assommée ') + Math.ceil(t.ko) + ' s' : T('<i>PV</i>') + Math.ceil(t.hp) + '/' + t.maxHp + (t.shield > 0 ? ' +' + Math.ceil(t.shield) + ' 🛡' : '')]);
+  if (t.stun > 0) ch.unshift(['bad', T('Paralysée')]);
+  if (t.evil > 0) ch.unshift(['bad', T('Pervertie ') + Math.ceil(t.evil) + ' s']);
   return ch.map(([c, v]) => '<span class="ichip ' + c + '">' + v + '</span>').join('');
 }
 function selectTower(t) {
   G.selTower = t; G.selType = null; G.ghost = null; refreshPalette();
   showPanel('info'); hudCache.info = null; refreshInfo();
-  if (!G.drag && fusionPartners(t).some(o => o.ok)) hint('Pour fusionner, touche une tour entourée de rose (ou fais-y glisser ' + TOWERS[t.type].name + ')', 2800);
+  if (!G.drag && fusionPartners(t).some(o => o.ok)) hint(T('Pour fusionner, touche une tour entourée de rose (ou fais-y glisser ') + TOWERS[t.type].name + ')', 2800);
 }
 function refreshInfo() {
   const t = G && G.selTower; if (!t) return;
@@ -97,11 +97,11 @@ function refreshInfo() {
   $('#iStars').textContent = (D.fusion ? '★'.repeat(t.lvl) + '☆'.repeat(3 - t.lvl) + ' · Fusion' : '★'.repeat(t.lvl) + '☆'.repeat(4 - t.lvl) + (t.br ? ' · ' + BRANCH[t.br].short : '')) + ' · ' + KIND[D.kind];
   const ic = $('#iStats'); ic.innerHTML = statChips(t); ic.scrollLeft = 0; ic.classList.toggle('more', ic.scrollWidth > ic.clientWidth + 2);
   const up = $('#iUp');
-  if (D.fusion) { if (cost) { up.textContent = 'Améliorer ' + cost; up.disabled = G.gold < cost; } else { up.textContent = 'Niveau max'; up.disabled = true; } }
-  else if (t.lvl === 2 && !t.br) { up.textContent = 'Spécialiser ▸'; up.disabled = false; }
-  else if (t.lvl >= 4) { up.textContent = 'Arbre ▸'; up.disabled = false; }
-  else { up.textContent = (t.br ? BRANCH[t.br].short + ' II · ' : 'Améliorer ') + cost; up.disabled = G.gold < cost; }
-  $('#iSell').textContent = 'Vendre ' + sellValue(t);
+  if (D.fusion) { if (cost) { up.textContent = T('Améliorer ') + cost; up.disabled = G.gold < cost; } else { up.textContent = T('Niveau max'); up.disabled = true; } }
+  else if (t.lvl === 2 && !t.br) { up.textContent = T('Spécialiser ▸'); up.disabled = false; }
+  else if (t.lvl >= 4) { up.textContent = T('Arbre ▸'); up.disabled = false; }
+  else { up.textContent = (t.br ? BRANCH[t.br].short + ' II · ' : T('Améliorer ')) + cost; up.disabled = G.gold < cost; }
+  $('#iSell').textContent = T('Vendre ') + sellValue(t);
   if (!mine) { up.disabled = true; $('#iSell').disabled = true; } else $('#iSell').disabled = false;
   $('#iMode').textContent = MODE_LABEL[t.mode];
   $('#iMode').hidden = D.kind === 'onde';
@@ -110,7 +110,7 @@ function refreshInfo() {
 function deselect() { if (!G) return; if (typeof closeRadial === 'function') closeRadial(); G.selTower = null; G.selType = null; G.ghost = null; showPanel('palette'); refreshPalette(); }
 $('#iClose').addEventListener('click', deselect);
 // En coop, seul le propriétaire d'une tour peut la modifier
-const notMine = t => { if (!G.coop || !t.own || t.own === coopMe()) return false; hint('Tour de ' + coopName(t.own) + ' : seul son propriétaire peut la modifier', 2200); Snd.play('no'); return true; };
+const notMine = t => { if (!G.coop || !t.own || t.own === coopMe()) return false; hint(T('Tour de ') + coopName(t.own) + T(' : seul son propriétaire peut la modifier'), 2200); Snd.play('no'); return true; };
 $('#iUp').addEventListener('click', () => { if (G && G.selTower && !notMine(G.selTower)) evolve(G.selTower); });
 $('#iSell').addEventListener('click', () => { if (G && G.selTower && !notMine(G.selTower)) sell(G.selTower); });
 $('#iMode').addEventListener('click', () => {
@@ -121,7 +121,7 @@ $('#iMode').addEventListener('click', () => {
 
 // HUD
 const fmtK = n => n >= 100000 ? Math.round(n / 1000) + 'k' : n >= 10000 ? fr((n / 1000).toFixed(1)) + 'k' : String(n);
-function bankHint(ms) { if (G) hint('Or de la partie : ' + G.gold + '. À la fin, il rejoint la cagnotte 🐷 (' + (meta.bank || 0) + ' or), qui sert à acheter des cartes : tout en cas de victoire, la moitié en cas de K.O. Un abandon ne rapporte rien (ni or, ni éclats).', ms || 5000); }
+function bankHint(ms) { if (G) hint(T('Or de la partie : ') + G.gold + T('. À la fin, il rejoint la cagnotte 🐷 (') + (meta.bank || 0) + T(' or), qui sert à acheter des cartes : tout en cas de victoire, la moitié en cas de K.O. Un abandon ne rapporte rien (ni or, ni éclats).'), ms || 5000); }
 $('#hGoldChip').addEventListener('click', () => bankHint());
 const elLives = $('#hLives'), elGold = $('#hGold'), bWave = $('#bWave');
 function refreshHUD() {
@@ -129,13 +129,13 @@ function refreshHUD() {
   setText(elGold, 'g', fmtK(G.gold));
   const nwk = (G.over ? 'x' : G.nextWave ? G.nextWave.n : '-') + G.weather; if (hudCache.nw !== nwk) { hudCache.nw = nwk; renderNextWave(); }
   setText($('#hBank'), 'bk', '🐷 ' + fmtK(meta.bank || 0)); $('#hBank').hidden = !!(G.duel || G.coop);
-  let ic = '▶', sm = 'Vague', big, cls, bonus = 0;
+  let ic = '▶', sm = T('Vague'), big, cls, bonus = 0;
   const cap = G.endless ? '' : '/' + G.maxw;
   if (G.over || G.spawnQ.length) { ic = ''; big = G.wave + cap; cls = 'idle'; }
-  else if (!G.waveActive && G.autoT > 0) { ic = '⏱'; sm = 'Vague ' + (G.wave + 1); big = Math.ceil(G.autoT) + ' s'; cls = ''; }
+  else if (!G.waveActive && G.autoT > 0) { ic = '⏱'; sm = T('Vague ') + (G.wave + 1); big = Math.ceil(G.autoT) + ' s'; cls = ''; }
   else if (!G.waveActive) { big = String(G.wave + 1); cls = 'go'; }
   else { big = String(G.wave + 1); cls = ''; bonus = 5 + Math.floor(G.wave / 2); }
-  if (G.chronoT != null && !G.over && !G.spawnQ.length && !(G.autoT > 0 && !G.waveActive)) { sm = 'Dans ' + Math.ceil(G.chronoT) + ' s'; if (G.chronoT <= 5) cls = (cls + ' urgent').trim(); }
+  if (G.chronoT != null && !G.over && !G.spawnQ.length && !(G.autoT > 0 && !G.waveActive)) { sm = T('Dans ') + Math.ceil(G.chronoT) + ' s'; if (G.chronoT <= 5) cls = (cls + ' urgent').trim(); }
   if (G.duel && typeof duelWaveLabel === 'function') [ic, sm, big, cls, bonus] = duelWaveLabel();
   setHTML(bWave, 'wv', (ic ? '<span class="wi">' + ic + '</span>' : '') + '<span class="wt"><small>' + sm + '</small><b>' + big + '</b></span>' + (bonus ? '<span class="bonus">+' + bonus + '</span>' : ''));
   if (hudCache.wc !== cls) { hudCache.wc = cls; bWave.className = cls; bWave.disabled = cls === 'idle'; }
@@ -159,8 +159,8 @@ function renderNextWave() {
   const cnt = {}; for (const it of nw.list) cnt[it.type] = (cnt[it.type] || 0) + 1;
   const order = Object.keys(ETYPES).filter(k => cnt[k]);
   const Wc = WEATHERS[G.weather] || WEATHERS.clear, Wn = nw.weather && WEATHERS[nw.weather];
-  box.innerHTML = '<span class="nww" title="Météo : ' + Wc.name + '">' + Wc.icon + '</span><span class="nwl">Vague ' + nw.n + '</span>'
-    + (nw.portals && P && P.portals.length > 1 ? '<span class="nwt" title="Portails actifs à la prochaine vague">🌀 ' + nw.portals.length + '/' + P.portals.length + '</span>' : '') + order.map(k => '<span class="nwi' + (ETYPES[k].boss ? ' boss' : '') + '" title="' + eName(k) + '"><canvas data-t="' + k + '"></canvas>×' + cnt[k] + '</span>').join('')
+  box.innerHTML = T('<span class="nww" title="Météo : ') + Wc.name + '">' + Wc.icon + T('</span><span class="nwl">Vague ') + nw.n + '</span>'
+    + (nw.portals && P && P.portals.length > 1 ? T('<span class="nwt" title="Portails actifs à la prochaine vague">🌀 ') + nw.portals.length + '/' + P.portals.length + '</span>' : '') + order.map(k => '<span class="nwi' + (ETYPES[k].boss ? ' boss' : '') + '" title="' + eName(k) + '"><canvas data-t="' + k + '"></canvas>×' + cnt[k] + '</span>').join('')
     + (Wn ? '<span class="nwt">→ ' + Wn.icon + ' ' + Wn.name + '</span>' : '') + (nw.label ? '<span class="nwt">' + nw.label + '</span>' : '');
   box.querySelectorAll('canvas').forEach(cv2 => { const k = cv2.dataset.t, c = prepMini(cv2, 24, 24); drawEnemy(c, k, 12, 22, k === 'boss' ? 19 : 26, 0.6, null); });
   box.hidden = false;
@@ -178,9 +178,9 @@ function tapCell(q, r, isMouse) {
   }
   if (G.selType) {
     const D = TOWERS[G.selType];
-    if (!canBuild(q, r)) { G.bad = { c: q, r, t: 0.45 }; Snd.play('no'); hint((terrainAt(q, r) || {}).block ? 'Impossible de construire sur un obstacle' : 'Impossible de construire sur le chemin'); return; }
-    if (G.gold < costOf(G.selType)) { Snd.play('no'); hint('Pas assez d’or : ' + D.name + ' coûte ' + costOf(G.selType)); return; }
-    if (!isMouse && !(G.ghost && G.ghost.c === q && G.ghost.r === r)) { G.ghost = { c: q, r }; hint('Touche encore pour poser ' + D.name); return; }
+    if (!canBuild(q, r)) { G.bad = { c: q, r, t: 0.45 }; Snd.play('no'); hint((terrainAt(q, r) || {}).block ? T('Impossible de construire sur un obstacle') : T('Impossible de construire sur le chemin')); return; }
+    if (G.gold < costOf(G.selType)) { Snd.play('no'); hint(T('Pas assez d’or : ') + D.name + T(' coûte ') + costOf(G.selType)); return; }
+    if (!isMouse && !(G.ghost && G.ghost.c === q && G.ghost.r === r)) { G.ghost = { c: q, r }; hint(T('Touche encore pour poser ') + D.name); return; }
     if (G.coopGuest) { G.ghost = null; coopAct({ a: 'build', type: G.selType, q, r }); return; }
     build(G.selType, q, r); return;
   }
@@ -222,7 +222,7 @@ cv.addEventListener('pointerup', ev => {
   if (G.drag) {
     const d = G.drag; G.drag = null;
     if (d.over) tryFuse(d.t, d.over);
-    else hint('Pour fusionner, lâche la tour sur une tour compatible');
+    else hint(T('Pour fusionner, lâche la tour sur une tour compatible'));
     return;
   }
   if (curScreen === 'game' && !G.paused && G.towers.includes(p.t)) tapCell(p.t.c, p.t.r, p.mouse);
@@ -261,11 +261,11 @@ function pause() {
   if (!G || G.over || curScreen !== 'game') return;
   if (!G.duel && !G.coopGuest) G.paused = true;
   show('pause');
-  $('#pSave').textContent = MAPS[G.map].name + ' · ' + DIFFS[G.diff].name + '. ' + (G.checkpoint && G.checkpoint.wave ? 'Partie sauvegardée à la fin de la vague ' + G.checkpoint.wave + '.' : 'La partie se sauvegarde à chaque fin de vague.')
-    + (MAPS[G.map].random ? ' Graine de la carte : ' + seedCode(MAPS[G.map].rnd) + '.' : '')
-    + ' Biome ' + MAPS[G.map].biome.name.toLowerCase() + ' : ' + biomeText(MAPS[G.map].biome) + '.'
-    + ' Météo : ' + (WEATHERS[G.weather] || WEATHERS.clear).name.toLowerCase() + ((WEATHERS[G.weather] || WEATHERS.clear).desc !== 'aucun effet' ? ' (' + WEATHERS[G.weather].desc + ')' : '') + '.'
-    + ' Cagnotte : ' + (meta.bank || 0) + ' or. En fin de partie, elle reçoit tout l’or restant en cas de victoire, la moitié en cas de K.O. Un abandon ne rapporte rien : ni or, ni éclats.';
+  $('#pSave').textContent = MAPS[G.map].name + ' · ' + DIFFS[G.diff].name + '. ' + (G.checkpoint && G.checkpoint.wave ? T('Partie sauvegardée à la fin de la vague ') + G.checkpoint.wave + '.' : T('La partie se sauvegarde à chaque fin de vague.'))
+    + (MAPS[G.map].random ? T(' Graine de la carte : ') + seedCode(MAPS[G.map].rnd) + '.' : '')
+    + ' Biome ' + MAPS[G.map].biome.name.toLowerCase() + T(' : ') + biomeText(MAPS[G.map].biome) + '.'
+    + T(' Météo : ') + (WEATHERS[G.weather] || WEATHERS.clear).name.toLowerCase() + ((WEATHERS[G.weather] || WEATHERS.clear).desc !== 'aucun effet' ? ' (' + WEATHERS[G.weather].desc + ')' : '') + '.'
+    + T(' Cagnotte : ') + (meta.bank || 0) + T(' or. En fin de partie, elle reçoit tout l’or restant en cas de victoire, la moitié en cas de K.O. Un abandon ne rapporte rien : ni or, ni éclats.');
   cashArm = false; refreshCash();
   refreshOptBtns();
   if (typeof duelPauseUI === 'function') duelPauseUI(!!G.duel);
@@ -276,7 +276,7 @@ function refreshCash() {
   if (!G) return;
   const v = Math.max(0, G.gold - (G.banked || 0)), b = $('#pCash');
   const sh = Math.max(0, G.shardsPaid - (G.shardsWon || 0));
-  b.textContent = cashArm ? 'Sûr ? Touche encore : tu perds tes ' + v + ' or' + (sh ? ' et les ' + sh + ' éclats gagnés' : '') : 'Abandonner la partie';
+  b.textContent = cashArm ? T('Sûr ? Touche encore : tu perds tes ') + v + T(' or') + (sh ? T(' et les ') + sh + T(' éclats gagnés') : '') : T('Abandonner la partie');
   b.classList.toggle('alt', cashArm); b.classList.toggle('pink', !cashArm);
 }
 function cashOut() {
@@ -287,11 +287,11 @@ function cashOut() {
 }
 $('#pCash').addEventListener('click', () => { if (!G || G.over) return; if (!cashArm) { cashArm = true; refreshCash(); return; } cashArm = false; cashOut(); });
 function resume() { if (!G) return; G.paused = false; show('game'); keepAwake(); }
-const soundLabel = () => 'Son : ' + (opts.sound && opts.music !== false ? 'tout' : opts.sound ? 'effets' : 'coupé');
+const soundLabel = () => T('Son : ') + (opts.sound && opts.music !== false ? T('tout') : opts.sound ? T('effets') : T('coupé'));
 function refreshOptBtns() {
   $('#pSound').textContent = soundLabel();
   $('#tSound').textContent = soundLabel();
-  $('#pAuto').textContent = 'Vagues auto : ' + (opts.auto ? 'oui' : 'non');
+  $('#pAuto').textContent = T('Vagues auto : ') + (opts.auto ? 'oui' : 'non');
 }
 // Trois réglages : tout (effets + musique) → effets seuls → coupé → tout
 function toggleSound() {
@@ -311,7 +311,7 @@ $('#pQuit').addEventListener('click', () => { G = null; show('title'); });
 $('#oMenu').addEventListener('click', () => { G = null; show('title'); });
 // Rejouer une carte aléatoire en génère une nouvelle de même taille (l'ancienne a disparu avec la partie)
 $('#oRetry').addEventListener('click', () => { if (G && MAPS[G.map].random) newGame(makeRandom(MAPS[G.map].rnd.size, newSeed()), null, G.diff); else if (G) newGame(G.map, null, G.diff); else newGame(0, null, 'facile'); });
-$('#oEndless').addEventListener('click', () => { G.endless = true; G.paused = false; saveCheckpoint(); show('game'); banner('MODE INFINI', 'Jusqu’où iras-tu ?'); if (opts.auto) G.autoT = 3; });
+$('#oEndless').addEventListener('click', () => { G.endless = true; G.paused = false; saveCheckpoint(); show('game'); banner('MODE INFINI', T('Jusqu’où iras-tu ?')); if (opts.auto) G.autoT = 3; });
 $('#tContinue').addEventListener('click', () => { const s = store.get(SAVE), i = saveMapIndex(s); if (i >= 0) newGame(i, s); });
 
 function showOver(win, best, award, bank, quit, lostShards) {
@@ -319,22 +319,22 @@ function showOver(win, best, award, bank, quit, lostShards) {
   const bk = bank || { gain: 0, total: meta.bank || 0 };
   $('#oBank').textContent = '+' + bk.gain;
   const nextMap = MAPS.findIndex((mm, i) => !mapOwned(i));
-  const why = quit ? 'Abandon : ton or restant (' + (bk.lost || 0) + ') est perdu.' : bk.rate < 1 ? 'K.O. : seule la moitié de ton or restant rejoint la cagnotte (' + (bk.lost || 0) + ' or perdus).' : 'Victoire : tout ton or restant rejoint la cagnotte.';
-  $('#oBankDetail').textContent = why + ' Cagnotte : ' + bk.total + ' or, pour acheter des cartes.' + (nextMap >= 0 ? ' Prochaine carte : ' + MAPS[nextMap].name + ', ' + MAPS[nextMap].price + ' or' + (mapReqOk(nextMap) ? (win && !quit && G.diff !== 'facile' && G.diff !== 'infini' && nextMap === G.map + 1 ? '. Elle est maintenant achetable !' : '.') : ', après avoir réussi ' + MAPS[nextMap - 1].name + ' en Moyen.') : '');
-  $('#oWord').textContent = quit ? 'ABANDON' : win ? 'VICTOIRE !!' : 'K.O. !';
+  const why = quit ? T('Abandon : ton or restant (') + (bk.lost || 0) + T(') est perdu.') : bk.rate < 1 ? T('K.O. : seule la moitié de ton or restant rejoint la cagnotte (') + (bk.lost || 0) + T(' or perdus).') : T('Victoire : tout ton or restant rejoint la cagnotte.');
+  $('#oBankDetail').textContent = why + T(' Cagnotte : ') + bk.total + T(' or, pour acheter des cartes.') + (nextMap >= 0 ? T(' Prochaine carte : ') + MAPS[nextMap].name + ', ' + MAPS[nextMap].price + T(' or') + (mapReqOk(nextMap) ? (win && !quit && G.diff !== 'facile' && G.diff !== 'infini' && nextMap === G.map + 1 ? T('. Elle est maintenant achetable !') : '.') : T(', après avoir réussi ') + MAPS[nextMap - 1].name + T(' en Moyen.')) : '');
+  $('#oWord').textContent = quit ? 'ABANDON' : win ? T('VICTOIRE !!') : 'K.O. !';
   $('#oWord').classList.toggle('win', win);
-  $('#oText').textContent = quit ? 'Partie abandonnée : elle ne rapporte ni or ni éclats.' : win ? 'Les ' + G.maxw + ' vagues sont repoussées. La petite maison est sauve !' : 'Les slimes ont envahi la petite maison. Retente ta chance !';
+  $('#oText').textContent = quit ? T('Partie abandonnée : elle ne rapporte ni or ni éclats.') : win ? T('Les ') + G.maxw + T(' vagues sont repoussées. La petite maison est sauve !') : T('Les slimes ont envahi la petite maison. Retente ta chance !');
   $('#oWave').textContent = G.wave; $('#oScore').textContent = G.score;
   $('#oBest').textContent = best ? best.wave : G.wave;
   $('#oEndless').hidden = !win;
   const a = award || { gain: 0, parts: { wave: 0, score: 0, boss: 0, win: 0 }, mult: 1, before: 0 }, p = a.parts;
   $('#oShards').textContent = quit ? (lostShards ? '−' + lostShards : '0') : '+' + G.shardsPaid;
-  const bits = ['Vagues +' + p.wave, 'Score +' + p.score];
+  const bits = [T('Vagues +') + p.wave, 'Score +' + p.score];
   if (p.boss) bits.push('Kaiju +' + p.boss);
-  if (p.win) bits.push('Victoire +' + p.win);
+  if (p.win) bits.push(T('Victoire +') + p.win);
   if (a.mult > 1) bits.push('Terrain ×' + fr(a.mult));
   $('#oShop').classList.toggle('ping', canBuyAnything());
-  $('#oGainDetail').textContent = (quit ? 'Abandon : ' + (lostShards ? lostShards + ' éclat' + (lostShards > 1 ? 's' : '') + ' gagné' + (lostShards > 1 ? 's' : '') + ' pendant la partie ' + (lostShards > 1 ? 'sont repris' : 'est repris') : 'aucun éclat repris') : bits.join(' · ')) + '. Tu as maintenant ' + meta.shards + ' éclats.';
+  $('#oGainDetail').textContent = (quit ? T('Abandon : ') + (lostShards ? (IS_EN ? lostShards + ' shard' + (lostShards > 1 ? 's' : '') + ' earned during the game ' + (lostShards > 1 ? 'are' : 'is') + ' taken back' : lostShards + ' éclat' + (lostShards > 1 ? 's' : '') + ' gagné' + (lostShards > 1 ? 's' : '') + ' pendant la partie ' + (lostShards > 1 ? 'sont repris' : 'est repris')) : T('aucun éclat repris')) : bits.join(' · ')) + T('. Tu as maintenant ') + meta.shards + T(' éclats.');
   show('over');
 }
 
@@ -344,10 +344,10 @@ function refreshCosts() {
   for (const type of TORDER) {
     const b = palBtns[type], lk = !unlocked(type);
     b.classList.toggle('locked', lk);
-    b.setAttribute('aria-label', b.dataset.aria + (lk ? ', à débloquer dans l’Atelier' : ', ' + costOf(type) + ' or'));
+    b.setAttribute('aria-label', b.dataset.aria + (lk ? T(', à débloquer dans l’Atelier') : ', ' + costOf(type) + T(' or')));
     const Wx = G && !G.demo && G.weather && G.weather !== 'clear' ? WEATHERS[G.weather] : null;
     const bs = b.querySelector('.bio'), a = G && !G.demo ? clamp(affinity(type, MAPS[G.map].biome) + (Wx ? affinity(type, Wx) : 0), -0.6, 0.6) : 0;
-    bs.hidden = !a; if (a) { bs.textContent = (a > 0 ? '+' : '−') + Math.round(Math.abs(a) * 100); bs.className = 'bio ' + (a > 0 ? 'good' : 'bad'); bs.title = 'Biome ' + MAPS[G.map].biome.name + (Wx ? ' + ' + Wx.name : '') + ' : ' + fmtAff(a); }
+    bs.hidden = !a; if (a) { bs.textContent = (a > 0 ? '+' : '−') + Math.round(Math.abs(a) * 100); bs.className = 'bio ' + (a > 0 ? 'good' : 'bad'); bs.title = 'Biome ' + MAPS[G.map].biome.name + (Wx ? ' + ' + Wx.name : '') + T(' : ') + fmtAff(a); }
   }
 }
 function drawUpIcon(c, id, x, y, s) {
@@ -415,9 +415,9 @@ function setupTabs(bar, key) {
     panes.forEach(pn => { pn.hidden = pn.dataset.pane !== id; });
     store.set(key, id);
   };
-  btns.forEach(b => b.addEventListener('click', () => { set(b.dataset.tab); bar.closest('.curScreen').scrollTop = 0; }));
+  btns.forEach(b => b.addEventListener('click', () => { set(b.dataset.tab); (bar.closest('.screen') || {}).scrollTop = 0; }));
   const cur = () => (btns.find(b => b.classList.contains('on')) || btns[0]).dataset.tab;
-  const step = d => { set(ids[(ids.indexOf(cur()) + d + ids.length) % ids.length]); bar.closest('.curScreen').scrollTop = 0; };
+  const step = d => { set(ids[(ids.indexOf(cur()) + d + ids.length) % ids.length]); (bar.closest('.screen') || {}).scrollTop = 0; };
   set(store.get(key));
   return { set, step };
 }
@@ -426,9 +426,9 @@ function openShop() {
   shopFrom = curScreen;
   const inRun = curScreen === 'game' && G;
   if (inRun && !G.duel && !G.coop) G.paused = true;
-  $('#sBubble').textContent = inRun && G.duel ? 'Le duel continue pendant tes achats : fais vite !' : inRun ? 'Partie en pause. Tes achats comptent tout de suite, même l’or et les vies bonus.'
-    : 'Chaque vague gagnée rapporte des éclats. Les terrains difficiles paient mieux !';
-  $('#sBack').textContent = inRun ? 'Retour au jeu' : 'Retour';
+  $('#sBubble').textContent = inRun && G.duel ? T('Le duel continue pendant tes achats : fais vite !') : inRun ? T('Partie en pause. Tes achats comptent tout de suite, même l’or et les vies bonus.')
+    : T('Chaque vague gagnée rapporte des éclats. Les terrains difficiles paient mieux !');
+  $('#sBack').textContent = inRun ? T('Retour au jeu') : T('Retour');
   show('shop'); screens.shop.scrollTop = 0; renderShop();
 }
 function renderShop(boughtId) {
@@ -439,7 +439,7 @@ function renderShop(boughtId) {
     d.className = 'up' + (own ? ' maxed' : need.length ? ' lockd' : '') + (boughtId === 'f_' + k ? ' bought' : '');
     d.innerHTML = '<canvas></canvas><span class="un">' + F.name + '</span><span class="tag" style="background:' + F.color + ';align-self:start">' + F.elem + '</span><p><b>' + kindLine(k) + '.</b> ' + F.desc + '</p>'
       + '<button class="sbtn buy" type="button"' + (own || need.length || meta.shards < F.unlock ? ' disabled' : '') + '>'
-      + (own ? 'Débloquée' : need.length ? 'Débloque ' + need.map(q => TOWERS[q].name).join(' et ') + ' d’abord' : 'Débloquer ' + GEM + F.unlock) + '</button>';
+      + (own ? T('Débloquée') : need.length ? T('Débloque ') + need.map(q => TOWERS[q].name).join(T(' et ')) + T(' d’abord') : T('Débloquer ') + GEM + F.unlock) + '</button>';
     fb.appendChild(d);
     drawTower(prepMini(d.querySelector('canvas'), 44, 48), k, 22, 27, 37, 1, 0.5, 0, 0.3, 0, false);
     d.querySelector('button').addEventListener('click', () => buyFusion(k));
@@ -456,7 +456,7 @@ function renderShop(boughtId) {
     const D = TOWERS[t], price = UNLOCK[t], own = unlocked(t), d = document.createElement('div');
     d.className = 'up' + (own ? ' maxed' : ' lockd') + (boughtId === 'u_' + t ? ' bought' : '');
     d.innerHTML = '<canvas></canvas><span class="un">' + D.name + '</span><span class="tag" style="background:' + D.color + ';align-self:start">' + D.elem + '</span><p><b>' + kindLine(t) + '.</b> ' + D.desc + '</p>'
-      + '<button class="sbtn buy" type="button"' + (own || meta.shards < price ? ' disabled' : '') + '>' + (own ? (price ? 'Débloqué' : 'Offert dès le départ') : 'Débloquer ' + GEM + price) + '</button>';
+      + '<button class="sbtn buy" type="button"' + (own || meta.shards < price ? ' disabled' : '') + '>' + (own ? (price ? T('Débloqué') : T('Offert dès le départ')) : T('Débloquer ') + GEM + price) + '</button>';
     tb.appendChild(d);
     drawTower(prepMini(d.querySelector('canvas'), 44, 48), t, 22, 27, 37, 1, 0.5, 0, 0.3, 0, false);
     d.querySelector('button').addEventListener('click', () => buyUnlock(t));
@@ -467,9 +467,9 @@ function renderShop(boughtId) {
       const l = M(u.id), maxed = l >= u.max, price = upPrice(u), d = document.createElement('div'), lockT = u.tower && !unlocked(u.tower);
       d.className = 'up' + (u.id === 'revive' ? ' wide' : '') + (maxed ? ' maxed' : '') + (lockT ? ' lockd' : '') + (boughtId === u.id ? ' bought' : '');
       let pips = ''; for (let i = 0; i < u.max; i++) pips += '<span class="pip' + (i < l ? ' on' : '') + '"></span>';
-      d.innerHTML = '<canvas></canvas><span class="un">' + u.name + '</span><span class="pips" aria-label="Niveau ' + l + ' sur ' + u.max + '">' + pips + '</span>'
-        + '<p>' + (l ? u.fx(l) : 'Pas encore acheté') + (maxed ? '' : '<br><span class="nx">Niveau ' + (l + 1) + ' : ' + u.fx(l + 1) + '</span>') + '</p>'
-        + '<button class="sbtn buy" type="button"' + (maxed || lockT || meta.shards < price ? ' disabled' : '') + '>' + (lockT ? 'Débloque ' + TOWERS[u.tower].name + ' d’abord' : maxed ? 'Niveau max' : 'Acheter ' + GEM + price) + '</button>';
+      d.innerHTML = '<canvas></canvas><span class="un">' + u.name + T('</span><span class="pips" aria-label="Niveau ') + l + T(' sur ') + u.max + '">' + pips + '</span>'
+        + '<p>' + (l ? u.fx(l) : T('Pas encore acheté')) + (maxed ? '' : T('<br><span class="nx">Niveau ') + (l + 1) + T(' : ') + u.fx(l + 1) + '</span>') + '</p>'
+        + '<button class="sbtn buy" type="button"' + (maxed || lockT || meta.shards < price ? ' disabled' : '') + '>' + (lockT ? T('Débloque ') + TOWERS[u.tower].name + T(' d’abord') : maxed ? T('Niveau max') : T('Acheter ') + GEM + price) + '</button>';
       box.appendChild(d);
       const c = prepMini(d.querySelector('canvas'), 44, 48);
       if (u.tower) drawTower(c, u.tower, 22, 27, 37, l ? Math.min(3, Math.ceil(l * 3 / 5)) : 1, 0.5, 0, 0.3, 0, false);
@@ -563,9 +563,9 @@ function renderMaps(boughtId) {
     d.className = 'mapc' + (own ? '' : ' locked') + (boughtId === m.id ? ' bought' : '');
     const med = medalsHTML(rec);
     d.innerHTML = '<canvas></canvas><span class="nm">' + (i + 1) + '. ' + m.name + '</span><span class="bio-l">Biome ' + m.biome.name.toLowerCase() + '</span><span class="medals">' + med + '</span>'
-      + (own ? '' : mapReqOk(i) ? '<span class="req ok">✓ ' + MAPS[i - 1].name + ' réussie en Moyen</span>' : '<span class="req">Réussis d’abord ' + MAPS[i - 1].name + ' en Moyen</span>')
-      + (own ? '<button class="sbtn" type="button">Jouer ▸</button>'
-        : '<button class="sbtn" type="button"' + ((meta.bank || 0) < m.price || !mapReqOk(i) ? ' disabled' : '') + '>' + LOCK + 'Acheter · ' + m.price + ' or</button>');
+      + (own ? '' : mapReqOk(i) ? '<span class="req ok">✓ ' + MAPS[i - 1].name + T(' réussie en Moyen</span>') : T('<span class="req">Réussis d’abord ') + MAPS[i - 1].name + T(' en Moyen</span>'))
+      + (own ? T('<button class="sbtn" type="button">Jouer ▸</button>')
+        : '<button class="sbtn" type="button"' + ((meta.bank || 0) < m.price || !mapReqOk(i) ? ' disabled' : '') + '>' + LOCK + T('Acheter · ') + m.price + T(' or</button>'));
     box.appendChild(d);
     const cv2 = d.querySelector('canvas'); drawMapMini(prepMini(cv2, 140, 90), i, 140, 90, 'moyen');
     d.querySelector('button').addEventListener('click', () => own ? openDiff(i) : buyMap(i));
@@ -576,16 +576,16 @@ const medalsHTML = rec => DORDER.map(k => { const r = rec[k], on = k === 'infini
 function upcomingCard(nLive) {
   const now = new Date(), list = Object.keys(SEASONS).filter(k => !SEASONS[k].on(now)).map(k => ({ k, d: nextSeasonStart(k, now) })).sort((a, b) => a.d - b.d);
   const d = document.createElement('div'); d.className = 'upcoming';
-  d.innerHTML = (nLive ? '' : '<p class="none">Aucun événement en cours pour le moment.</p>')
-    + '<b>À venir</b><ul>' + list.map(({ k, d: dt }) => '<li><span>' + SEASONS[k].icon + ' ' + SEASONS[k].name + '</span><em>à partir du ' + frDate(dt) + (dt.getFullYear() !== now.getFullYear() ? ' ' + dt.getFullYear() : '') + '</em></li>').join('') + '</ul>';
+  d.innerHTML = (nLive ? '' : T('<p class="none">Aucun événement en cours pour le moment.</p>'))
+    + T('<b>À venir</b><ul>') + list.map(({ k, d: dt }) => '<li><span>' + SEASONS[k].icon + ' ' + SEASONS[k].name + T('</span><em>à partir du ') + frDate(dt) + (dt.getFullYear() !== now.getFullYear() ? ' ' + dt.getFullYear() : '') + '</em></li>').join('') + '</ul>';
   return d;
 }
 function seasonCard(i, rec) {
   const m = MAPS[i], on = inSeason(m), S = SEASONS[m.season], d = document.createElement('div');
   d.className = 'mapc season ' + m.season + (on ? ' live' : ' locked');
-  d.innerHTML = '<span class="evt">' + S.icon + ' Événement ' + S.name + (m.edition ? ' · édition ' + m.edition : '') + '</span><canvas></canvas><span class="nm">' + m.name + '</span><span class="bio-l">Biome ' + m.biome.name.toLowerCase() + '</span><span class="medals">' + medalsHTML(rec) + '</span>'
-    + '<span class="req ok">' + (on ? 'Gratuite, ' + S.until() : S.back) + '</span>'
-    + '<button class="sbtn" type="button"' + (on ? '' : ' disabled') + '>' + (on ? 'Jouer ▸' : 'Bientôt') + '</button>';
+  d.innerHTML = '<span class="evt">' + S.icon + T(' Événement ') + S.name + (m.edition ? T(' · édition ') + m.edition : '') + '</span><canvas></canvas><span class="nm">' + m.name + '</span><span class="bio-l">Biome ' + m.biome.name.toLowerCase() + '</span><span class="medals">' + medalsHTML(rec) + '</span>'
+    + '<span class="req ok">' + (on ? T('Gratuite, ') + S.until() : S.back) + '</span>'
+    + '<button class="sbtn" type="button"' + (on ? '' : ' disabled') + '>' + (on ? T('Jouer ▸') : T('Bientôt')) + '</button>';
   const cv2 = d.querySelector('canvas'); drawMapMini(prepMini(cv2, 140, 90), i, 140, 90, 'moyen');
   if (on) { d.querySelector('button').addEventListener('click', () => openDiff(i)); cv2.addEventListener('click', () => openDiff(i)); }
   return d;
@@ -595,9 +595,9 @@ function seasonCard(i, rec) {
 let randCardMap = null;
 function randomCard() {
   const d = document.createElement('div'); d.className = 'mapc rand';
-  d.innerHTML = '<canvas></canvas><span class="nm">🎲 Carte aléatoire</span><span class="bio-l">Une carte unique, générée pour ta partie</span>'
-    + '<span class="medals"><span class="medal">Petite</span><span class="medal">Moyenne</span><span class="medal">Grande</span></span>'
-    + '<button class="sbtn" type="button">Créer ▸</button>';
+  d.innerHTML = T('<canvas></canvas><span class="nm">🎲 Carte aléatoire</span><span class="bio-l">Une carte unique, générée pour ta partie</span>')
+    + T('<span class="medals"><span class="medal">Petite</span><span class="medal">Moyenne</span><span class="medal">Grande</span></span>')
+    + T('<button class="sbtn" type="button">Créer ▸</button>');
   const cv2 = d.querySelector('canvas'), c = prepMini(cv2, 140, 90);
   randCardMap = randCardMap || genRandomMap('moyenne', 20261001);
   const keep = MAPS[RI]; MAPS[RI] = randCardMap; drawMapMini(c, RI, 140, 90); MAPS[RI] = keep;
@@ -626,12 +626,12 @@ function openDiff(i) {
   diffMap = i; Snd.init(); show('diff'); screens.diff.scrollTop = 0;
   const m = MAPS[i], rec = (store.get(BEST2) || {})[recId(m)] || {};
   $('#dfName').textContent = (m.random ? '🎲 ' : m.season ? SEASONS[m.season].icon + ' ' : (i + 1) + '. ') + m.name;
-  $('#dfSub').textContent = m.blurb + (m.random ? ' Graine : ' + seedCode(m.rnd) + '.' : '') + ' Biome ' + m.biome.name.toLowerCase() + ' : ' + biomeText(m.biome) + ', sur toute la carte.';
+  $('#dfSub').textContent = m.blurb + (m.random ? T(' Graine : ') + seedCode(m.rnd) + '.' : '') + ' Biome ' + m.biome.name.toLowerCase() + T(' : ') + biomeText(m.biome) + T(', sur toute la carte.');
   const box = $('#dfList'); box.innerHTML = '';
   for (const k of DORDER) {
     const Df = DIFFS[k], r = m.random ? null : rec[k], d = document.createElement('div'); d.className = 'df';
-    const rt = m.random ? 'Carte unique' : !r ? 'Jamais jouée' : k === 'infini' ? 'Record : vague ' + r.wave : r.won ? '✓ Réussie · record vague ' + r.wave : 'Record : vague ' + r.wave;
-    d.innerHTML = '<canvas></canvas><div><b>' + Df.name + '</b><p>' + Df.desc + '</p><span class="st">' + rt + ' · éclats ×' + fr(+(m.shards * Df.shards).toFixed(2)) + '</span></div><button class="btn ' + k + '" type="button">Jouer</button>';
+    const rt = m.random ? T('Carte unique') : !r ? T('Jamais jouée') : k === 'infini' ? T('Record : vague ') + r.wave : r.won ? T('✓ Réussie · record vague ') + r.wave : T('Record : vague ') + r.wave;
+    d.innerHTML = '<canvas></canvas><div><b>' + Df.name + '</b><p>' + Df.desc + '</p><span class="st">' + rt + T(' · éclats ×') + fr(+(m.shards * Df.shards).toFixed(2)) + '</span></div><button class="btn ' + k + T('" type="button">Jouer</button>');
     box.appendChild(d);
     drawMapMini(prepMini(d.querySelector('canvas'), 112, 72), i, 112, 72, k);
     d.querySelector('button').addEventListener('click', () => newGame(i, null, k));
@@ -642,10 +642,10 @@ $('#mBack').addEventListener('click', () => show('title'));
 $('#dfBack').addEventListener('click', () => { if (MAPS[diffMap] && MAPS[diffMap].random) openRand(true); else { renderMaps(); show('maps'); } });
 function refreshTitle() {
   const seen = !!store.get('elemento.tuto'); $('#tTuto').classList.toggle('green', !seen); $('#tTuto').classList.toggle('alt', seen);
-  $('#tShop').innerHTML = 'L\u2019Atelier<span class="gemc">' + GEM + meta.shards + '</span>';
+  $('#tShop').innerHTML = T('L\u2019Atelier<span class="gemc">') + GEM + meta.shards + '</span>';
   $('#tShop').classList.toggle('ping', canBuyAnything());
   const s = store.get(SAVE), si = saveMapIndex(s), tc = $('#tContinue');
-  if (si >= 0 && s.wave > 0) { tc.hidden = false; tc.textContent = 'Continuer · ' + MAPS[si].name + ' (' + DIFFS[s.diff || 'moyen'].name + '), vague ' + (s.wave + 1); }
+  if (si >= 0 && s.wave > 0) { tc.hidden = false; tc.textContent = T('Continuer · ') + MAPS[si].name + ' (' + DIFFS[s.diff || 'moyen'].name + T('), vague ') + (s.wave + 1); }
   else tc.hidden = true;
   refreshOptBtns();
 }
@@ -667,14 +667,14 @@ Object.keys(ETYPES).forEach(type => {
 
 // Fusions
 function fuseCheck(src, dst) {
-  if (TOWERS[src.type].fusion || TOWERS[dst.type].fusion) return { k: null, why: 'Une tour fusionnée ne peut plus fusionner' };
+  if (TOWERS[src.type].fusion || TOWERS[dst.type].fusion) return { k: null, why: T('Une tour fusionnée ne peut plus fusionner') };
   const k = fusionKey(src.type, dst.type);
-  if (!k) return { k, why: TOWERS[src.type].name + ' et ' + TOWERS[dst.type].name + ' ne fusionnent pas' };
+  if (!k) return { k, why: TOWERS[src.type].name + T(' et ') + TOWERS[dst.type].name + T(' ne fusionnent pas') };
   const F = TOWERS[k];
-  if (!fusionUnlocked(k)) return { k, why: F.name + ' : à débloquer dans l’Atelier (' + F.unlock + ' éclats)' };
-  if (src.lvl < 2 || dst.lvl < 2) return { k, why: F.name + ' : les deux tours doivent être au niveau 2' };
-  if (G.gold < F.fee) return { k, why: F.name + ' : il faut ' + F.fee + ' or' };
-  if (G.coop && (src.own !== coopActor() || dst.own !== coopActor())) return { k, why: 'En coop, tu ne peux fusionner que tes propres tours' };
+  if (!fusionUnlocked(k)) return { k, why: F.name + T(' : à débloquer dans l’Atelier (') + F.unlock + T(' éclats)') };
+  if (src.lvl < 2 || dst.lvl < 2) return { k, why: F.name + T(' : les deux tours doivent être au niveau 2') };
+  if (G.gold < F.fee) return { k, why: F.name + T(' : il faut ') + F.fee + T(' or') };
+  if (G.coop && (src.own !== coopActor() || dst.own !== coopActor())) return { k, why: T('En coop, tu ne peux fusionner que tes propres tours') };
   return { k, ok: true };
 }
 function fusionPartners(t) {
@@ -698,9 +698,9 @@ function openRadial(src, dst) {
   radial.style.left = bx + 'px'; radial.style.top = by + 'px'; radial.style.setProperty('--d', d + 'px');
   const c = prepMini(rFuse.querySelector('canvas'), 40, 44); drawTower(c, k, 20, 27, 34, 1, 0.5, 0, 0.3, 0, false);
   rFuse.querySelector('.rc').innerHTML = COIN + F.fee;
-  rFuse.classList.toggle('no', !r.ok); rFuse.setAttribute('aria-label', 'Fusionner en ' + F.name + (r.ok ? '' : ' (' + r.why + ')'));
+  rFuse.classList.toggle('no', !r.ok); rFuse.setAttribute('aria-label', T('Fusionner en ') + F.name + (r.ok ? '' : ' (' + r.why + ')'));
   radial.hidden = false; radial.classList.remove('pop'); void radial.offsetWidth; radial.classList.add('pop');
-  hint(r.ok ? F.name + ' : touche l’icône de gauche pour fusionner (' + F.fee + ' or)' : r.why, 2600);
+  hint(r.ok ? F.name + T(' : touche l’icône de gauche pour fusionner (') + F.fee + T(' or)') : r.why, 2600);
   Snd.play('build');
 }
 function closeRadial() { rad = null; radial.hidden = true; }
@@ -743,12 +743,12 @@ function renderTree() {
   const t = treeT, D = TOWERS[t.type], cost = upCost(t);
   const ic = prepMini($('#trIcon'), 64, 68); drawTower(ic, t.type, 32, 40, 54, t.lvl, 1, 0, 0.3, 0, false, t.br);
   $('#trName').textContent = D.name;
-  $('#trSub').textContent = 'Niveau ' + t.lvl + ' · ' + KIND[D.kind] + ' · ' + D.elem;
+  $('#trSub').textContent = T('Niveau ') + t.lvl + ' · ' + KIND[D.kind] + ' · ' + D.elem;
   $('#trGold').textContent = G.gold;
-  $('#trPath').innerHTML = '<span class="node done">Niv. 1 ✓</span><span class="arr">▶</span><span class="node' + (t.lvl >= 2 ? ' done' : '') + '">Niv. 2' + (t.lvl >= 2 ? ' ✓' : '') + '</span><span class="arr">▶</span><span class="node' + (t.br ? ' done' : '') + '">' + (t.br ? BRANCH[t.br].name + ' ✓' : 'Spécialisation') + '</span>';
-  $('#trNote').textContent = t.br ? 'Branche ' + BRANCH[t.br].name + ' choisie. Les deux autres sont fermées pour cette tour.'
-    : t.lvl < 2 ? 'Monte cette tour au niveau 2 pour choisir sa spécialisation.'
-    : 'Choisis une branche pour cette tour. Ce choix est définitif : les deux autres se fermeront.';
+  $('#trPath').innerHTML = T('<span class="node done">Niv. 1 ✓</span><span class="arr">▶</span><span class="node') + (t.lvl >= 2 ? ' done' : '') + '">Niv. 2' + (t.lvl >= 2 ? ' ✓' : '') + '</span><span class="arr">▶</span><span class="node' + (t.br ? ' done' : '') + '">' + (t.br ? BRANCH[t.br].name + ' ✓' : T('Spécialisation')) + '</span>';
+  $('#trNote').textContent = t.br ? T('Branche ') + BRANCH[t.br].name + T(' choisie. Les deux autres sont fermées pour cette tour.')
+    : t.lvl < 2 ? T('Monte cette tour au niveau 2 pour choisir sa spécialisation.')
+    : T('Choisis une branche pour cette tour. Ce choix est définitif : les deux autres se fermeront.');
   const box = $('#trBrs'); box.innerHTML = '';
   for (const key of BRANCHES) {
     const B = BRANCH[key], closed = !!t.br && t.br !== key, d = document.createElement('div');
@@ -759,9 +759,9 @@ function renderTree() {
       const next = !closed && t.lvl === lvl - 1 && (r === 1 ? !t.br : t.br === key);
       let foot;
       if (done) foot = '<span class="st">✓ Acquis</span>';
-      else if (next) foot = '<button class="sbtn" type="button" data-br="' + key + '"' + (G.gold < cost ? ' disabled' : '') + '>' + (r === 1 ? 'Choisir' : 'Améliorer') + ' · ' + cost + '</button>';
-      else if (closed) foot = '<span class="st">Branche fermée</span>';
-      else foot = '<span class="st">' + (r === 1 ? 'Dès le niveau 2' : 'Après le rang I') + '</span>';
+      else if (next) foot = '<button class="sbtn" type="button" data-br="' + key + '"' + (G.gold < cost ? ' disabled' : '') + '>' + (r === 1 ? T('Choisir') : T('Améliorer')) + ' · ' + cost + '</button>';
+      else if (closed) foot = T('<span class="st">Branche fermée</span>');
+      else foot = '<span class="st">' + (r === 1 ? T('Dès le niveau 2') : T('Après le rang I')) + '</span>';
       html += '<div class="rk' + (done ? ' done' : '') + '"><span class="rn">Rang ' + (r === 1 ? 'I' : 'II') + '</span><p>' + rankText(key, r, t.type) + '</p>' + foot + '</div>';
     }
     d.innerHTML = html + '</div>';
@@ -777,24 +777,24 @@ $('#trClose').addEventListener('click', closeTree);
 
 // Tutoriel
 const TINFO = {
-  feu: { what: 'Braise crache une boule de feu sur un seul ennemi. La cible prend feu et perd des PV chaque seconde pendant quelques instants, même quand elle sort du cercle de portée.',
-    good: ['Tous les ennemis, au sol comme en vol', 'Les groupes, quand Zéphyr propage les flammes'],
-    bad: ['Magmo est immunisé au feu', 'Portée courte, une seule cible à la fois'] },
-  eau: { what: 'Ondine lance une bulle qui éclate en zone. Tous les ennemis éclaboussés sont ralentis et restent mouillés pendant 3,5 secondes.',
-    good: ['Freiner les Zippy très rapides', 'Préparer le combo avec Voltie'],
-    bad: ['Dégâts faibles', 'Le casque de Tonk absorbe ses petits coups'] },
-  terre: { what: 'Rocaille lance un gros rocher en cloche qui écrase tout un petit groupe. Elle tire lentement mais frappe très fort. Aux niveaux 2 et 3, le choc peut étourdir.',
-    good: ['Les groupes serrés', 'Tonk : un gros coup traverse son casque', 'La plus longue portée du jeu'],
-    bad: ['Ne touche jamais les volants (Flappy)', 'Lente : les Zippy passent entre deux rochers'] },
-  vent: { what: 'Zéphyr envoie une rafale qui fait reculer l’ennemi sur le chemin. Les volants prennent 2,5 fois plus de dégâts.',
-    good: ['Les Flappy', 'Longue portée : elle couvre beaucoup de chemin', 'Gagner du temps pour les autres tours'],
-    bad: ['Une seule cible à la fois', 'Tonk et le Kaiju reculent à peine', 'Dégâts faibles au sol'] },
-  foudre: { what: 'Voltie frappe instantanément, puis l’éclair rebondit d’ennemi en ennemi : 3 cibles, puis 4 et 6 aux niveaux supérieurs. Chaque rebond est un peu plus faible.',
-    good: ['Les files d’ennemis serrés', 'Les ennemis mouillés : dégâts ×2'],
-    bad: ['La tour la plus chère', 'Moins utile contre un ennemi isolé'] },
-  glace: { what: 'Givrette ne vise personne : elle envoie une onde glacée tout autour d’elle. L’onde touche et ralentit tout ce qui est dans le cercle. Toutes les 4 ondes (puis 3, puis 2), elle gèle les ennemis sur place.',
-    good: ['Dans un virage, elle couvre deux bouts de chemin', 'Préparer le combo avec Rocaille'],
-    bad: ['Toute petite portée et dégâts faibles', 'Le Kaiju dégèle très vite'] },
+  feu: { what: T('Braise crache une boule de feu sur un seul ennemi. La cible prend feu et perd des PV chaque seconde pendant quelques instants, même quand elle sort du cercle de portée.'),
+    good: [T('Tous les ennemis, au sol comme en vol'), T('Les groupes, quand Zéphyr propage les flammes')],
+    bad: [T('Magmo est immunisé au feu'), T('Portée courte, une seule cible à la fois')] },
+  eau: { what: T('Ondine lance une bulle qui éclate en zone. Tous les ennemis éclaboussés sont ralentis et restent mouillés pendant 3,5 secondes.'),
+    good: [T('Freiner les Zippy très rapides'), T('Préparer le combo avec Voltie')],
+    bad: [T('Dégâts faibles'), T('Le casque de Tonk absorbe ses petits coups')] },
+  terre: { what: T('Rocaille lance un gros rocher en cloche qui écrase tout un petit groupe. Elle tire lentement mais frappe très fort. Aux niveaux 2 et 3, le choc peut étourdir.'),
+    good: [T('Les groupes serrés'), T('Tonk : un gros coup traverse son casque'), T('La plus longue portée du jeu')],
+    bad: [T('Ne touche jamais les volants (Flappy)'), T('Lente : les Zippy passent entre deux rochers')] },
+  vent: { what: T('Zéphyr envoie une rafale qui fait reculer l’ennemi sur le chemin. Les volants prennent 2,5 fois plus de dégâts.'),
+    good: [T('Les Flappy'), T('Longue portée : elle couvre beaucoup de chemin'), T('Gagner du temps pour les autres tours')],
+    bad: [T('Une seule cible à la fois'), T('Tonk et le Kaiju reculent à peine'), T('Dégâts faibles au sol')] },
+  foudre: { what: T('Voltie frappe instantanément, puis l’éclair rebondit d’ennemi en ennemi : 3 cibles, puis 4 et 6 aux niveaux supérieurs. Chaque rebond est un peu plus faible.'),
+    good: [T('Les files d’ennemis serrés'), T('Les ennemis mouillés : dégâts ×2')],
+    bad: [T('La tour la plus chère'), T('Moins utile contre un ennemi isolé')] },
+  glace: { what: T('Givrette ne vise personne : elle envoie une onde glacée tout autour d’elle. L’onde touche et ralentit tout ce qui est dans le cercle. Toutes les 4 ondes (puis 3, puis 2), elle gèle les ennemis sur place.'),
+    good: [T('Dans un virage, elle couvre deux bouts de chemin'), T('Préparer le combo avec Rocaille')],
+    bad: [T('Toute petite portée et dégâts faibles'), T('Le Kaiju dégèle très vite')] },
 };
 const DEMOS = {
   intro: { towers: [['eau', 5, 3], ['feu', 8, 5]], waves: ['gloop', 'gloop', 'zip', 'gloop'], gap: 1.0, lvl: 1 },
@@ -810,46 +810,46 @@ const DEMOS = {
   c_fwoosh: { towers: [['feu', 5, 3], ['vent', 7, 5]], waves: ['gloop', 'gloop', 'gloop', 'gloop', 'gloop'], gap: 0.35, lvl: 1 },
 };
 const TUTO = [
-  { kind: 'intro', demo: 'intro', title: 'Bienvenue !', tag: 'Les bases', html: '<ul>'
-    + '<li>Les slimes sortent du portail violet et suivent le chemin jusqu’à la petite maison. Chaque slime qui entre te coûte une vie (2 pour Tonk, 10 pour un Kaiju).</li>'
-    + '<li>Pose des tours sur l’herbe avec ton or. Chaque ennemi vaincu en rapporte, chaque vague terminée aussi.</li>'
-    + '<li>Une tour attaque tout ce qui passe dans son cercle de portée. Touche une tour posée pour voir ce cercle, l’améliorer ou la vendre.</li>'
-    + '<li>Tu commences avec Braise et Ondine. Les quatre autres gardiens se débloquent dans l’Atelier, avec les éclats gagnés à chaque vague. Les pages suivantes les présentent tous.</li></ul>' },
+  { kind: 'intro', demo: 'intro', title: T('Bienvenue !'), tag: T('Les bases'), html: '<ul>'
+    + T('<li>Les slimes sortent du portail violet et suivent le chemin jusqu’à la petite maison. Chaque slime qui entre te coûte une vie (2 pour Tonk, 10 pour un Kaiju).</li>')
+    + T('<li>Pose des tours sur l’herbe avec ton or. Chaque ennemi vaincu en rapporte, chaque vague terminée aussi.</li>')
+    + T('<li>Une tour attaque tout ce qui passe dans son cercle de portée. Touche une tour posée pour voir ce cercle, l’améliorer ou la vendre.</li>')
+    + T('<li>Tu commences avec Braise et Ondine. Les quatre autres gardiens se débloquent dans l’Atelier, avec les éclats gagnés à chaque vague. Les pages suivantes les présentent tous.</li></ul>') },
   ...TORDER.map(t => ({ kind: 'tower', tower: t, demo: t })),
-  { kind: 'combo', demo: 'c_zap', title: 'ZAP x2!', tag: 'Eau puis Éclair', towers: ['eau', 'foudre'],
-    what: 'Ondine mouille les ennemis pendant 3,5 secondes. Tant qu’ils sont mouillés, les éclairs de Voltie leur font deux fois plus de dégâts, rebonds compris.',
-    tips: ['Place Ondine en amont de Voltie sur le chemin', 'Les deux cercles de portée doivent se recouvrir'] },
-  { kind: 'combo', demo: 'c_crack', title: 'CRACK x2!', tag: 'Glace puis Terre', towers: ['glace', 'terre'],
-    what: 'Quand Givrette gèle des ennemis, le prochain rocher de Rocaille les brise : dégâts ×2, et le gel s’arrête.',
-    tips: ['Monte Givrette au niveau 2 ou 3 pour geler plus souvent', 'Rocaille doit viser la zone de Givrette'] },
-  { kind: 'combo', demo: 'c_fwoosh', title: 'FWOOSH!', tag: 'Feu puis Vent', towers: ['feu', 'vent'],
-    what: 'Quand une rafale de Zéphyr frappe un ennemi en feu, les flammes sautent sur tous ses voisins proches.',
-    tips: ['Idéal contre les longues files de Gloop', 'Magmo, lui, ne brûle jamais'] },
-  { kind: 'spec', title: 'Spécialisations', tag: 'Niveaux 3 et 4', html: '<p style="margin:0">Au niveau 2, chaque tour posée peut se spécialiser contre les ennemis au sol, les volants ou les Kaiju. Le choix vaut pour <b>cette tour uniquement</b>, et il est définitif : les deux autres branches se ferment. Deux Braise peuvent donc avoir des spécialisations différentes.</p>' },
-  { kind: 'fusion', demo: 'fus', title: 'Fusions', tag: 'Deux éléments, une tour', html: '<p style="margin:0">Touche une tour, puis une autre tour d’élément compatible (entourée de rose), toutes deux au niveau 2 ou plus : un menu propose de les fusionner. Tu peux aussi faire glisser l’une sur l’autre. Elles deviennent une seule tour, plus puissante, avec son propre effet, à la place de la seconde. Chaque fusion se débloque une par une dans l’Atelier. Ici, une Tornade de feu.</p>' },
-  { kind: 'terrain', title: 'Terrains', tag: 'Bonus et malus', html: '<p style="margin:0">Certaines cases changent la puissance des tours posées dessus. Une Ondine sur l’eau frappe 40 % plus fort, mais perd 40 % sur le sable. L’eau et la lave ont les effets les plus forts, le marécage des effets plus doux. Une fusion prend la moyenne de ses deux éléments : un Volcan sur l’eau a donc un malus. Quand tu choisis une tour, les cases s’affichent en vert (bonus) ou en rouge (malus). Chaque carte a aussi un biome qui renforce ou affaiblit certains éléments sur toute la carte. Le tableau complet est dans l’Aide.</p>' },
-  { kind: 'end', title: 'À toi de jouer !', tag: 'Récap', html: '<ul>'
-    + '<li>Commence avec Ondine et Braise près d’un virage : les ennemis y restent plus longtemps à portée.</li>'
-    + '<li>Débloque vite Zéphyr (contre les Flappy volants, dès la vague 4) et Rocaille (contre les Tonk casqués, dès la vague 6).</li>'
-    + '<li>Garde de l’or pour la vague 10 : le Kaiju encaisse énormément.</li>'
-    + '<li>Au niveau 2, spécialise chaque tour selon la menace : Sol, Air ou Boss.</li>'
-    + '<li>À tout moment, ouvre l’Atelier (bouton violet en haut) pour débloquer des tours et les renforcer.</li></ul>' },
+  { kind: 'combo', demo: 'c_zap', title: 'ZAP x2!', tag: T('Eau puis Éclair'), towers: ['eau', 'foudre'],
+    what: T('Ondine mouille les ennemis pendant 3,5 secondes. Tant qu’ils sont mouillés, les éclairs de Voltie leur font deux fois plus de dégâts, rebonds compris.'),
+    tips: [T('Place Ondine en amont de Voltie sur le chemin'), T('Les deux cercles de portée doivent se recouvrir')] },
+  { kind: 'combo', demo: 'c_crack', title: 'CRACK x2!', tag: T('Glace puis Terre'), towers: ['glace', 'terre'],
+    what: T('Quand Givrette gèle des ennemis, le prochain rocher de Rocaille les brise : dégâts ×2, et le gel s’arrête.'),
+    tips: [T('Monte Givrette au niveau 2 ou 3 pour geler plus souvent'), T('Rocaille doit viser la zone de Givrette')] },
+  { kind: 'combo', demo: 'c_fwoosh', title: 'FWOOSH!', tag: T('Feu puis Vent'), towers: ['feu', 'vent'],
+    what: T('Quand une rafale de Zéphyr frappe un ennemi en feu, les flammes sautent sur tous ses voisins proches.'),
+    tips: [T('Idéal contre les longues files de Gloop'), T('Magmo, lui, ne brûle jamais')] },
+  { kind: 'spec', title: T('Spécialisations'), tag: T('Niveaux 3 et 4'), html: T('<p style="margin:0">Au niveau 2, chaque tour posée peut se spécialiser contre les ennemis au sol, les volants ou les Kaiju. Le choix vaut pour <b>cette tour uniquement</b>, et il est définitif : les deux autres branches se ferment. Deux Braise peuvent donc avoir des spécialisations différentes.</p>') },
+  { kind: 'fusion', demo: 'fus', title: 'Fusions', tag: T('Deux éléments, une tour'), html: T('<p style="margin:0">Touche une tour, puis une autre tour d’élément compatible (entourée de rose), toutes deux au niveau 2 ou plus : un menu propose de les fusionner. Tu peux aussi faire glisser l’une sur l’autre. Elles deviennent une seule tour, plus puissante, avec son propre effet, à la place de la seconde. Chaque fusion se débloque une par une dans l’Atelier. Ici, une Tornade de feu.</p>') },
+  { kind: 'terrain', title: 'Terrains', tag: T('Bonus et malus'), html: T('<p style="margin:0">Certaines cases changent la puissance des tours posées dessus. Une Ondine sur l’eau frappe 40 % plus fort, mais perd 40 % sur le sable. L’eau et la lave ont les effets les plus forts, le marécage des effets plus doux. Une fusion prend la moyenne de ses deux éléments : un Volcan sur l’eau a donc un malus. Quand tu choisis une tour, les cases s’affichent en vert (bonus) ou en rouge (malus). Chaque carte a aussi un biome qui renforce ou affaiblit certains éléments sur toute la carte. Le tableau complet est dans l’Aide.</p>') },
+  { kind: 'end', title: T('À toi de jouer !'), tag: T('Récap'), html: '<ul>'
+    + T('<li>Commence avec Ondine et Braise près d’un virage : les ennemis y restent plus longtemps à portée.</li>')
+    + T('<li>Débloque vite Zéphyr (contre les Flappy volants, dès la vague 4) et Rocaille (contre les Tonk casqués, dès la vague 6).</li>')
+    + T('<li>Garde de l’or pour la vague 10 : le Kaiju encaisse énormément.</li>')
+    + T('<li>Au niveau 2, spécialise chaque tour selon la menace : Sol, Air ou Boss.</li>')
+    + T('<li>À tout moment, ouvre l’Atelier (bouton violet en haut) pour débloquer des tours et les renforcer.</li></ul>') },
 ];
 const EFFECT = {
-  feu: ['Brûlure', s => s.burn + '/s'], eau: ['Ralentit', s => Math.round(s.slow * 100) + ' %'],
-  terre: ['Étourdit', s => s.stun ? Math.round(s.stun * 100) + ' %' : '—'], vent: ['Recul', s => fr(s.knock) + ' case'],
-  foudre: ['Cibles', s => String(s.chain)], glace: ['Gel', s => '1 onde / ' + s.every],
+  feu: [T('Brûlure'), s => s.burn + '/s'], eau: [T('Ralentit'), s => Math.round(s.slow * 100) + ' %'],
+  terre: [T('Étourdit'), s => s.stun ? Math.round(s.stun * 100) + ' %' : '—'], vent: [T('Recul'), s => fr(s.knock) + ' case'],
+  foudre: [T('Cibles'), s => String(s.chain)], glace: [T('Gel'), s => '1 onde / ' + s.every],
 };
 function tutoTable(type) {
-  const rows = [['Dégâts'], ['Portée'], ['Attaques/s'], [EFFECT[type][0]], ['Prix']];
+  const rows = [[T('Dégâts')], [T('Portée')], [T('Attaques/s')], [EFFECT[type][0]], [T('Prix')]];
   for (let l = 1; l <= 4; l++) {
     const st = statsOf(type, l);
     rows[0].push(Math.round(st.dmg)); rows[1].push(fr(st.range.toFixed(1))); rows[2].push(fr(st.rate.toFixed(2)));
     rows[3].push(EFFECT[type][1](st)); rows[4].push(l === 1 ? costOf(type) : '+' + upCost({ type, lvl: l - 1 }));
   }
-  return '<table class="ttable"><thead><tr><th></th><th>Niv. 1</th><th>Niv. 2</th><th>Spé. I</th><th>Spé. II</th></tr></thead><tbody>'
+  return T('<table class="ttable"><thead><tr><th></th><th>Niv. 1</th><th>Niv. 2</th><th>Spé. I</th><th>Spé. II</th></tr></thead><tbody>')
     + rows.map(r => '<tr>' + r.map(v => '<td>' + v + '</td>').join('') + '</tr>').join('') + '</tbody></table>'
-    + '<p class="fine" style="text-align:left;margin-top:6px">Spé. I et II : stats de base, sans le bonus de la branche choisie (Sol, Air ou Boss).</p>';
+    + T('<p class="fine" style="text-align:left;margin-top:6px">Spé. I et II : stats de base, sans le bonus de la branche choisie (Sol, Air ou Boss).</p>');
 }
 const gbox = (cls, title, items) => '<div class="' + cls + '"><b>' + title + '</b><ul>' + items.map(i => '<li>' + i + '</li>').join('') + '</ul></div>';
 
@@ -907,23 +907,23 @@ function gotoTuto(i) {
   let name, tag, tagColor = '#ffd23f', what, gb = '', table = '';
   if (pg.kind === 'tower') {
     const D = TOWERS[pg.tower], I = TINFO[pg.tower];
-    name = D.name; tag = D.elem + ' · ' + kindLine(pg.tower) + (D.air ? '' : ' · sol uniquement') + (unlocked(pg.tower) ? '' : ' · à débloquer'); tagColor = D.color; what = '<p style="margin:0">' + I.what + '</p>';
-    gb = gbox('good', 'Efficace', I.good) + gbox('bad', 'Attention', I.bad); table = tutoTable(pg.tower);
+    name = D.name; tag = D.elem + ' · ' + kindLine(pg.tower) + (D.air ? '' : ' · sol uniquement') + (unlocked(pg.tower) ? '' : T(' · à débloquer')); tagColor = D.color; what = '<p style="margin:0">' + I.what + '</p>';
+    gb = gbox('good', T('Efficace'), I.good) + gbox('bad', T('Attention'), I.bad); table = tutoTable(pg.tower);
     drawTower(ic, pg.tower, 32, 40, 54, 1, 0.5, 0, 0.3, 0, false);
   } else if (pg.kind === 'spec') {
     name = pg.title; tag = pg.tag; what = pg.html;
-    gb = ['sol', 'boss', 'air'].map((k, i) => gbox(['good', 'bad', 'tip'][i], BRANCH[k].name + ' · ' + BRANCH[k].short, BRANCH[k].ranks.map((x, j) => 'Rang ' + (j ? 'II' : 'I') + ' : ' + x))).join('');
+    gb = ['sol', 'boss', 'air'].map((k, i) => gbox(['good', 'bad', 'tip'][i], BRANCH[k].name + ' · ' + BRANCH[k].short, BRANCH[k].ranks.map((x, j) => T('Rang ') + (j ? 'II' : 'I') + T(' : ') + x))).join('');
     drawEmblem(ic, 'sol', 16, 44, 13); drawEmblem(ic, 'air', 32, 24, 13); drawEmblem(ic, 'boss', 48, 44, 13);
   } else if (pg.kind === 'terrain') {
     name = pg.title; tag = pg.tag; what = pg.html;
-    gb = gbox('good', 'Le terrain préféré de chaque tour', ['Braise : lave +40 %', 'Ondine : eau +40 %', 'Rocaille : roche +40 %', 'Zéphyr : crête venteuse +40 %', 'Voltie : cristaux +40 %', 'Givrette : neige +40 %', 'Colline : +0,6 de portée pour tous']) + gbox('bad', 'Leurs pires terrains', ['Braise : eau et neige −40 %', 'Ondine : sable −40 %, lave −50 %', 'Rocaille : crête venteuse −40 %', 'Zéphyr : cristaux −40 %', 'Voltie : sable −40 %', 'Givrette : sable −40 %, lave −50 %', 'Obstacles : impossible de construire']);
+    gb = gbox('good', T('Le terrain préféré de chaque tour'), [T('Braise : lave +40 %'), T('Ondine : eau +40 %'), T('Rocaille : roche +40 %'), T('Zéphyr : crête venteuse +40 %'), T('Voltie : cristaux +40 %'), T('Givrette : neige +40 %'), T('Colline : +0,6 de portée pour tous')]) + gbox('bad', T('Leurs pires terrains'), [T('Braise : eau et neige −40 %'), T('Ondine : sable −40 %, lave −50 %'), T('Rocaille : crête venteuse −40 %'), T('Zéphyr : cristaux −40 %'), T('Voltie : sable −40 %'), T('Givrette : sable −40 %, lave −50 %'), T('Obstacles : impossible de construire')]);
     [['L', 8, 8], ['W', 34, 8], ['V', 8, 34], ['K', 34, 34]].forEach(([k, x, y]) => { rr(ic, x, y, 22, 22, 5); fs(ic, TERRAINS[k].color, 2.5); });
   } else if (pg.kind === 'fusion') {
     name = pg.title; tag = pg.tag; what = pg.html;
-    gb = gbox('tip', 'Les recettes', Object.keys(FUSIONS).map(k => '<b>' + FUSIONS[k].elem + '</b> → ' + FUSIONS[k].name + (fusionUnlocked(k) ? ' ✓' : '')));
+    gb = gbox('tip', T('Les recettes'), Object.keys(FUSIONS).map(k => '<b>' + FUSIONS[k].elem + '</b> → ' + FUSIONS[k].name + (fusionUnlocked(k) ? ' ✓' : '')));
     drawTower(ic, 'tornade', 32, 40, 54, 1, 0.5, 0, 0.3, 0, false);
   } else if (pg.kind === 'combo') {
-    name = pg.title; tag = pg.tag; what = '<p style="margin:0">' + pg.what + '</p>'; gb = gbox('tip', 'Astuces', pg.tips);
+    name = pg.title; tag = pg.tag; what = '<p style="margin:0">' + pg.what + '</p>'; gb = gbox('tip', T('Astuces'), pg.tips);
     drawTower(ic, pg.towers[0], 19, 46, 36, 1, 0.5, 0.4, 0.3, 0, false); drawTower(ic, pg.towers[1], 45, 46, 36, 1, 1.5, -0.4, 0.3, 0, false);
   } else {
     name = pg.title; tag = pg.tag; what = pg.html;
@@ -938,7 +938,7 @@ function gotoTuto(i) {
   $('#uTable').innerHTML = table; $('#uTable').hidden = !table;
   $('#uDemoBox').hidden = !pg.demo; $('#uLvls').hidden = pg.kind === 'intro';
   $('#uPrev').disabled = tIdx === 0;
-  $('#uNext').textContent = last ? (tutoFrom === 'title' ? 'Jouer !' : 'Terminer') : 'Suivant ▶';
+  $('#uNext').textContent = last ? (tutoFrom === 'title' ? T('Jouer !') : T('Terminer')) : T('Suivant ▶');
   $('#uDots').querySelectorAll('button').forEach((b, i) => b.classList.toggle('on', i === tIdx));
   screens.tuto.scrollTop = 0;
   demo = pg.demo ? makeDemo(pg.demo, $('#uDemo')) : null;

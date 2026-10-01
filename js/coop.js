@@ -9,7 +9,7 @@ const COOP_COLORS = ['#ff4f81', '#3fa9ff', '#4fd36a', '#ffb03d'];
 const coopMe = () => (Net.me && Net.me.id) || 'solo';
 const coopActor = () => COOP.actor || coopMe();
 const coopLv = id => (id === coopMe() ? meta.lv : COOP.lvs[id]) || {};
-const coopName = id => COOP.names[id] || 'Joueur';
+const coopName = id => COOP.names[id] || T('Joueur');
 const coopColor = id => COOP_COLORS[Math.max(0, COOP.ids.indexOf(id)) % 4];
 const coopActive = () => COOP.ids.filter(id => !COOP.gone.has(id));
 const isHostCoop = () => G && G.coop && !G.coopGuest;
@@ -39,7 +39,7 @@ function asPlayer(id, fn) {
 // ---------- Lancement ----------
 function coopHostStart() {
   if (Net.role !== 'host') return;
-  if (Net.players.length < 2) { MP.err = 'Il faut au moins 2 joueurs pour lancer la partie.'; renderMP(); return; }
+  if (Net.players.length < 2) { MP.err = T('Il faut au moins 2 joueurs pour lancer la partie.'); renderMP(); return; }
   const rm = MAPS[DUEL.lobbyMap] && MAPS[DUEL.lobbyMap].random ? { size: DUEL.lobbySize || 'moyenne', seed: newSeed() } : null;
   const msg = { k: 'cstart', map: DUEL.lobbyMap, rnd: rm, diff: DUEL.lobbyDiff || 'moyen', ids: Net.players.map(p => p.id), names: Object.fromEntries(Net.players.map(p => [p.id, p.name])) };
   Net.send('all', msg);
@@ -60,8 +60,8 @@ function beginCoop(msg) {
   $('#bSpeed').hidden = !host; $('#bSpeed').textContent = 'x1';
   $('#stage').classList.add('duel'); resize();
   renderCoopBar();
-  banner('COOP !', COOP.ids.length + ' joueurs · ' + MAPS[G.map].name + ' · ' + DIFFS[G.diff].name);
-  hint('Tout le monde repart de zéro. Vos tours ont un anneau de votre couleur et l’or des ennemis est partagé. Touche un coéquipier en haut pour lui donner 50 or. Appui long sur la carte : ping.', 6500);
+  banner('COOP !', COOP.ids.length + T(' joueurs · ') + MAPS[G.map].name + ' · ' + DIFFS[G.diff].name);
+  hint(T('Tout le monde repart de zéro. Vos tours ont un anneau de votre couleur et l’or des ennemis est partagé. Touche un coéquipier en haut pour lui donner 50 or. Appui long sur la carte : ping.'), 6500);
 }
 const hostOf = () => { const h = Net.players.find(p => p.host); return h ? h.id : 'host'; };
 
@@ -80,7 +80,7 @@ function hostAction(pid, a) {
     const to = a.to, v = Math.min(50, wallet(pid));
     if (!COOP.ids.includes(to) || to === pid || v <= 0 || COOP.gone.has(to)) return;
     setWallet(pid, wallet(pid) - v); setWallet(to, wallet(to) + v);
-    coopNotice(coopName(pid) + ' donne ' + v + ' or à ' + coopName(to));
+    coopNotice(coopName(pid) + ' donne ' + v + T(' or à ') + coopName(to));
     return;
   }
   asPlayer(pid, () => {
@@ -170,7 +170,7 @@ function applyTowers(list) {
 function applySnapshot(s) {
   COOP.lastSnap = performance.now();
   if (s.wx && s.wx !== G.weather) setWeather(s.wx);
-  if (!!s.pz !== !!G.hostPause) hint(s.pz ? '⏸ L’hôte a mis la partie en pause' : '▶ La partie reprend', 2000);
+  if (!!s.pz !== !!G.hostPause) hint(s.pz ? T('⏸ L’hôte a mis la partie en pause') : T('▶ La partie reprend'), 2000);
   Object.assign(G, { lives: s.lv, wave: s.w, waveActive: s.wa, score: s.sc, bossKills: s.bk, speed: s.sp || 1, hostPause: s.pz, chronoT: s.ch, autoT: s.at });
   G.gold = s.g[coopMe()] != null ? s.g[coopMe()] : G.gold;
   COOP.gold = s.g;
@@ -204,7 +204,7 @@ function coopTick(dt) {
     const sig = towerSig(); if (sig !== COOP.towerSig) { COOP.towerSig = sig; sendTowers(); }
     COOP.snapT -= dt; if (COOP.snapT <= 0 && !G.over) { COOP.snapT = 0.125; sendSnapshot(); }
   } else {
-    if (!G.over && now - COOP.lastSnap > 8000) coopFinish(false, 'La connexion avec l’hôte est perdue. La partie s’arrête.');
+    if (!G.over && now - COOP.lastSnap > 8000) coopFinish(false, T('La connexion avec l’hôte est perdue. La partie s’arrête.'));
     // Achats dans l'Atelier pendant la partie : l'hôte en a besoin pour calculer nos tours
     const lv = JSON.stringify(meta.lv); if (lv !== COOP.lvSent) { COOP.lvSent = lv; Net.send(hostOf(), { k: 'clv', lv: meta.lv }); }
   }
@@ -225,9 +225,9 @@ function renderCoopBar() {
 $('#duelBar').addEventListener('click', ev => {
   if (!COOP.on) return;
   const b = ev.target.closest('.coopp'); if (!b || b.disabled || COOP.gone.has(b.dataset.id)) return;
-  if (G.gold < 1) { hint('Tu n’as pas d’or à donner'); Snd.play('no'); return; }
+  if (G.gold < 1) { hint(T('Tu n’as pas d’or à donner')); Snd.play('no'); return; }
   coopAct({ a: 'give', to: b.dataset.id }); Snd.play('sell');
-  hint('Tu donnes ' + Math.min(50, G.gold) + ' or à ' + coopName(b.dataset.id), 1600);
+  hint(T('Tu donnes ') + Math.min(50, G.gold) + T(' or à ') + coopName(b.dataset.id), 1600);
 }, true);
 
 // ---------- Pings : appui long sur la carte ----------
@@ -268,19 +268,19 @@ function coopFinish(win, text, quit) {
     // Partie coop : comme en duel, rien n'est versé à la progression solo
     showOver(!!win, { wave: G.wave }, null, { gain: 0, total: soloMeta ? soloMeta.bank || 0 : meta.bank || 0 }, !!quit, 0);
     $('#oRetry').hidden = true; $('#oEndless').hidden = true;
-    $('#oWord').textContent = quit ? 'ABANDON' : win ? 'VICTOIRE !!' : 'K.O. !';
-    $('#oText').textContent = text || (win ? 'Toute l’équipe a tenu : bravo !' : quit ? 'Tu as quitté la partie coop.' : 'La maison est tombée. Retentez votre chance ensemble !');
+    $('#oWord').textContent = quit ? 'ABANDON' : win ? T('VICTOIRE !!') : 'K.O. !';
+    $('#oText').textContent = text || (win ? T('Toute l’équipe a tenu : bravo !') : quit ? T('Tu as quitté la partie coop.') : T('La maison est tombée. Retentez votre chance ensemble !'));
     $('#oBank').textContent = '—'; $('#oShards').textContent = '—';
-    $('#oBankDetail').textContent = 'Partie coop : tout le monde repart de zéro, ta cagnotte et ton Atelier solo ne changent pas.';
-    $('#oGainDetail').textContent = 'Les éclats gagnés pendant la partie ne servaient qu’à cette partie.';
-    $('#oMenu').textContent = 'Retour au salon';
+    $('#oBankDetail').textContent = T('Partie coop : tout le monde repart de zéro, ta cagnotte et ton Atelier solo ne changent pas.');
+    $('#oGainDetail').textContent = T('Les éclats gagnés pendant la partie ne servaient qu’à cette partie.');
+    $('#oMenu').textContent = T('Retour au salon');
   }, win ? 300 : 1100);
 }
 function coopQuit() {
   if (!G || !G.coop || G.over) return;
   if (G.coopGuest) { Net.send(hostOf(), { k: 'cquit' }); coopFinish(false, null, true); return; }
   // L'hôte quitte : la partie s'arrête pour tout le monde (les invités gardent les règles du K.O.)
-  Net.send('all', { k: 'cend', win: false, text: coopName(coopMe()) + ' (l’hôte) a arrêté la partie.' });
+  Net.send('all', { k: 'cend', win: false, text: coopName(coopMe()) + T(' (l’hôte) a arrêté la partie.') });
   coopFinish(false, null, true);
 }
 function playerGone(id) {
@@ -288,7 +288,7 @@ function playerGone(id) {
   COOP.gone.add(id);
   const left = coopActive(), v = wallet(id); setWallet(id, 0);
   for (const o of left) addGold(o, v / left.length);
-  coopNotice(coopName(id) + ' a quitté la partie' + (v ? ' : son or (' + v + ') est partagé' : '') + '. Ses tours continuent de tirer.');
+  coopNotice(coopName(id) + T(' a quitté la partie') + (v ? T(' : son or (') + v + T(') est partagé') : '') + T('. Ses tours continuent de tirer.'));
 }
 function leaveCoop() {
   COOP.on = false; clearTimeout(COOP.pingHold); exitDuelMeta(); $('#stage').classList.remove('duel');
@@ -307,17 +307,17 @@ document.addEventListener('click', ev => {
   if (!COOP.on || !G || !G.coop || !ev.target.closest('#pCash')) return;
   ev.stopPropagation(); ev.preventDefault();
   const b = $('#pCash');
-  if (!COOP.quitArm) { COOP.quitArm = true; b.textContent = G.coopGuest ? 'Sûr ? Touche encore pour quitter' : 'Sûr ? La partie s’arrête pour tous'; return; }
+  if (!COOP.quitArm) { COOP.quitArm = true; b.textContent = G.coopGuest ? T('Sûr ? Touche encore pour quitter') : T('Sûr ? La partie s’arrête pour tous'); return; }
   COOP.quitArm = false; coopQuit();
 }, true);
 function coopPauseUI() {
   if (!G || !G.coop) return;
   COOP.quitArm = false;
   $('#pQuit').hidden = true; $('#pAuto').hidden = G.coopGuest; $('#pCash').hidden = false;
-  $('#pCash').textContent = G.coopGuest ? 'Quitter la partie coop' : 'Arrêter la partie (pour tous)';
+  $('#pCash').textContent = G.coopGuest ? T('Quitter la partie coop') : T('Arrêter la partie (pour tous)');
   $('#pCash').classList.add('pink'); $('#pCash').classList.remove('alt');
-  $('#pSave').textContent = 'Partie coop · ' + COOP.ids.length + ' joueurs · ' + MAPS[G.map].name + ' · ' + DIFFS[G.diff].name
-    + (MAPS[G.map].random ? ' · graine ' + seedCode(MAPS[G.map].rnd) : '') + '. ' + (G.coopGuest ? 'Le jeu continue pendant ce menu : seul l’hôte peut mettre tout le monde en pause.' : 'Ta pause met tout le monde en pause.');
+  $('#pSave').textContent = T('Partie coop · ') + COOP.ids.length + T(' joueurs · ') + MAPS[G.map].name + ' · ' + DIFFS[G.diff].name
+    + (MAPS[G.map].random ? ' · graine ' + seedCode(MAPS[G.map].rnd) : '') + '. ' + (G.coopGuest ? T('Le jeu continue pendant ce menu : seul l’hôte peut mettre tout le monde en pause.') : T('Ta pause met tout le monde en pause.'));
 }
 
 // ---------- Messages ----------
@@ -338,14 +338,14 @@ Net.on('msg', ({ from, data }) => {
     case 'ct': if (G && G.coopGuest) applyTowers(data.t); break;
     case 'cs': if (G && G.coopGuest && !G.over) applySnapshot(data); break;
     case 'cnw': if (G && G.coopGuest) { G.nextWave = data.nw; hudCache.nw = null; } break;
-    case 'cws': if (G && G.coopGuest) { G.curPortals = data.portals; banner('VAGUE ' + data.n, data.early ? 'Bonus d’audace +' + data.early : data.label || '', false); Snd.play('wave'); } break;
-    case 'cwd': if (G && G.coopGuest) { G.partyUntil = G.time + 2.4; G.wave = data.n; G.score = data.sc; G.bossKills = data.bk; const aw = awardShards(); hint('Vague ' + data.n + ' terminée' + (aw.gain ? ' : +' + aw.gain + ' éclats' : ''), 2600); Snd.play('clear'); } break;
+    case 'cws': if (G && G.coopGuest) { G.curPortals = data.portals; banner(T('VAGUE ') + data.n, data.early ? T('Bonus d’audace +') + data.early : data.label || '', false); Snd.play('wave'); } break;
+    case 'cwd': if (G && G.coopGuest) { G.partyUntil = G.time + 2.4; G.wave = data.n; G.score = data.sc; G.bossKills = data.bk; const aw = awardShards(); hint(T('Vague ') + data.n + T(' terminée') + (aw.gain ? ' : +' + aw.gain + T(' éclats') : ''), 2600); Snd.play('clear'); } break;
     case 'cend': if (G && G.coopGuest) coopFinish(data.win, data.text); break;
     case 'cmsg': if (G && G.coop) hint(data.txt, 2400); break;
     case 'cping': if (G && G.coop) addPing(from, data.x, data.y); break;
   }
 });
 Net.on('leave', id => { if (COOP.on) playerGone(id); });
-Net.on('closed', () => { if (COOP.on && G && G.coopGuest && !G.over) coopFinish(false, 'La connexion avec l’hôte est perdue. La partie s’arrête (règles du K.O.).'); });
+Net.on('closed', () => { if (COOP.on && G && G.coopGuest && !G.over) coopFinish(false, T('La connexion avec l’hôte est perdue. La partie s’arrête (règles du K.O.).')); });
 // Un invité envoie ses améliorations à l'hôte dès qu'il voit le mode coop dans le salon
 Net.on('msg', ({ data }) => { if (data && data.k === 'lobby' && data.mode === 'coop' && Net.role !== 'host') Net.send(hostOf(), { k: 'clv', lv: meta.lv }); });

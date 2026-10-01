@@ -36,21 +36,27 @@ $('#tYglou').addEventListener('click', () => {
   try { navigator.vibrate && navigator.vibrate(15); } catch (e) {}
   if (MASCOT.taps >= 10 && !store.get(EGG_KEY)) {
     store.set(EGG_KEY, true); meta.shards += 5; meta.earned = (meta.earned || 0) + 5; saveMeta();
-    document.querySelector('#sTitle .bubble').textContent = 'Kiiaaa ! Tu as trouvé mon secret : +5 éclats pour toi !';
+    document.querySelector('#sTitle .bubble').textContent = T('Kiiaaa ! Tu as trouvé mon secret : +5 éclats pour toi !');
     Snd.play('win'); refreshTitle();
   }
 });
 
 // ---------- Profil : pseudo, son, tutoriel et aide ----------
-function refreshProfileChip() { const n = (store.get('elemento.pseudo') || '').trim(); $('#tProfName').textContent = n || 'Profil'; }
+function refreshProfileChip() { const n = (store.get('elemento.pseudo') || '').trim(); $('#tProfName').textContent = n || T('Profil'); }
 function openProfile() {
   Snd.init(); show('profile'); screens.profile.scrollTop = 0;
   $('#prName').value = store.get('elemento.pseudo') || '';
   const best = store.get(BEST2) || {}, owned = MAPS.filter((m, i) => !m.season && !m.random && mapOwned(i)).length, wins = Object.values(best).reduce((n, r) => n + Object.values(r).filter(x => x && x.won).length, 0);
-  $('#prStats').textContent = (meta.shards || 0) + ' éclats · ' + (meta.earned || 0) + ' gagnés en tout · cagnotte ' + (meta.bank || 0) + ' or · ' + owned + '/10 cartes · ' + wins + ' victoire' + (wins > 1 ? 's' : '');
+  $('#prStats').textContent = (meta.shards || 0) + T(' éclats · ') + (meta.earned || 0) + T(' gagnés en tout · cagnotte ') + (meta.bank || 0) + T(' or · ') + owned + T('/10 cartes · ') + wins + (IS_EN ? ' win' + (wins === 1 ? '' : 's') : ' victoire' + (wins > 1 ? 's' : ''));
 }
 $('#tProfile').addEventListener('click', openProfile);
 $('#prName').addEventListener('input', ev => { store.set('elemento.pseudo', ev.target.value.trim().slice(0, 12)); refreshProfileChip(); });
 $('#prName').addEventListener('keydown', ev => ev.stopPropagation());
 $('#prBack').addEventListener('click', () => show('title'));
 refreshProfileChip();
+
+// Langue : auto (celle du téléphone), français ou anglais ; changer recharge le jeu
+document.querySelectorAll('#prLang [data-lang]').forEach(b => {
+  b.classList.toggle('on', b.dataset.lang === LANG_PREF);
+  b.addEventListener('click', () => { if (b.dataset.lang !== LANG_PREF) setLang(b.dataset.lang); });
+});

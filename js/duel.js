@@ -30,7 +30,7 @@ function sendCost(S) {
 screens.duel = $('#sDuel');
 const dnow = () => performance.now();
 const hostId = () => { const h = Net.players.find(p => p.host); return h ? h.id : null; };
-const dname = id => DUEL.names[id] || (Net.players.find(p => p.id === id) || {}).name || 'Joueur';
+const dname = id => DUEL.names[id] || (Net.players.find(p => p.id === id) || {}).name || T('Joueur');
 const meId = () => Net.me && Net.me.id;
 
 // ---------- Progression temporaire du duel (tout le monde repart de zéro) ----------
@@ -50,7 +50,7 @@ function exitDuelMeta() {
 // ---------- Lancement ----------
 function duelHostStart() {
   if (Net.role !== 'host') return;
-  if (Net.players.length < 2) { MP.err = 'Il faut au moins 2 joueurs pour lancer la partie.'; renderMP(); return; }
+  if (Net.players.length < 2) { MP.err = T('Il faut au moins 2 joueurs pour lancer la partie.'); renderMP(); return; }
   const rm = MAPS[DUEL.lobbyMap] && MAPS[DUEL.lobbyMap].random ? { size: DUEL.lobbySize || 'moyenne', seed: newSeed() } : null;
   const msg = { k: 'start', map: DUEL.lobbyMap, rnd: rm, ids: Net.players.map(p => p.id), names: Object.fromEntries(Net.players.map(p => [p.id, p.name])), prep: DUEL.cfg.prep, gap: DUEL.cfg.gap };
   Net.send('all', msg);
@@ -74,7 +74,7 @@ function beginDuel(msg) {
   $('#bSpeed').hidden = true; $('#stage').classList.add('duel'); resize();
   DUEL.nextAt = dnow() + (msg.prep || DUEL.cfg.prep);
   buildSendPanel(); showPanel('palette'); renderDuelBar();
-  banner('DUEL !', 'Prépare tes défenses : 1re vague dans ' + Math.round((msg.prep || DUEL.cfg.prep) / 1000) + ' s');
+  banner('DUEL !', T('Prépare tes défenses : 1re vague dans ') + Math.round((msg.prep || DUEL.cfg.prep) / 1000) + ' s');
   Snd.play('wave');
   DUEL.timers.push(setInterval(sendStatus, 1000));
   if (Net.role === 'host') {
@@ -95,7 +95,7 @@ function hostTick() {
 function guestWatch() {
   if (!DUEL.on || DUEL.result) return;
   const h = hostId();
-  if (!h || dnow() - (DUEL.last[h] || 0) > DUEL.cfg.hostAfk) duelAbort('L’hôte ne répond plus. La partie est interrompue.');
+  if (!h || dnow() - (DUEL.last[h] || 0) > DUEL.cfg.hostAfk) duelAbort(T('L’hôte ne répond plus. La partie est interrompue.'));
 }
 function sendStatus() {
   if (!DUEL.on || !G) return;
@@ -117,13 +117,13 @@ function onWave(n, gap, w) {
   const wasEmpty = !G.spawnQ.length;
   G.wave = n; G.spawnQ.push(...list); G.waveActive = true;
   if (wasEmpty) G.spawnT = Math.max(G.spawnT, 0.4);
-  banner('VAGUE ' + n, label || ('+' + pay + ' or · +' + shards + ' éclats'), n % 10 === 0);
-  hint('Vague ' + n + ' : +' + pay + ' or (dont ' + DUEL.income + ' de revenu), +' + shards + ' éclats', 2600);
+  banner(T('VAGUE ') + n, label || ('+' + pay + T(' or · +') + shards + T(' éclats')), n % 10 === 0);
+  hint(T('Vague ') + n + ' : +' + pay + T(' or (dont ') + DUEL.income + T(' de revenu), +') + shards + T(' éclats'), 2600);
   Snd.play('wave');
 }
 function duelWaveLabel() {
   const s = Math.max(0, Math.ceil((DUEL.nextAt - dnow()) / 1000));
-  return ['⏱', DUEL.wave ? 'Vague ' + (DUEL.wave + 1) : 'Départ', s + ' s', 'idle', 0];
+  return ['⏱', DUEL.wave ? T('Vague ') + (DUEL.wave + 1) : T('Départ'), s + ' s', 'idle', 0];
 }
 function duelTick(dt) {
   if (!DUEL.on || !G) return;
@@ -136,7 +136,7 @@ function buildSendPanel() {
   const box = $('#sendPanel'); box.innerHTML = '<div class="sendrow" id="sendRow"></div>';
   const row = $('#sendRow');
   const mode = document.createElement('button'); mode.type = 'button'; mode.className = 'sbt mode'; mode.id = 'sendMode';
-  mode.addEventListener('click', () => { if (foes().length < 2) return; DUEL.all = !DUEL.all; Snd.play('build'); refreshSendPanel(); hint(DUEL.all ? 'Mode « À tous » : chaque envoi part chez tous tes adversaires (−20 %)' : 'Mode cible : envoi à ' + dname(DUEL.target), 2000); });
+  mode.addEventListener('click', () => { if (foes().length < 2) return; DUEL.all = !DUEL.all; Snd.play('build'); refreshSendPanel(); hint(DUEL.all ? T('Mode « À tous » : chaque envoi part chez tous tes adversaires (−20 %)') : T('Mode cible : envoi à ') + dname(DUEL.target), 2000); });
   row.appendChild(mode);
   for (const S of SENDS) {
     const b = document.createElement('button'); b.type = 'button'; b.className = 'sbt'; b.dataset.mob = S.type;
@@ -153,8 +153,8 @@ function refreshSendPanel() {
   if (nf < 2) DUEL.all = false;
   const mode = $('#sendMode');
   if (mode) {
-    const html = DUEL.all ? '<span class="mi">👥</span><span class="mt">À tous</span><span class="ms">' + nf + ' joueurs</span>'
-      : '<span class="mi">🎯</span><span class="mt">' + esc(tgt ? dname(DUEL.target) : '—') + '</span><span class="ms">' + (nf > 1 ? 'toucher : à tous' : 'ta cible') + '</span>';
+    const html = DUEL.all ? T('<span class="mi">👥</span><span class="mt">À tous</span><span class="ms">') + nf + T(' joueurs</span>')
+      : '<span class="mi">🎯</span><span class="mt">' + esc(tgt ? dname(DUEL.target) : '—') + '</span><span class="ms">' + (nf > 1 ? T('toucher : à tous') : T('ta cible')) + '</span>';
     if (mode._h !== html) { mode._h = html; mode.innerHTML = html; }
     mode.classList.toggle('on', DUEL.all); mode.disabled = nf < 2;
   }
@@ -167,14 +167,14 @@ function refreshSendPanel() {
 }
 function duelSend(S) {
   if (!G || G.over || !DUEL.on) return;
-  if (DUEL.wave < S.from) { hint(eName(S.type) + ' : disponible dès la vague ' + S.from); return; }
+  if (DUEL.wave < S.from) { hint(eName(S.type) + T(' : disponible dès la vague ') + S.from); return; }
   const c = sendCost(S), targets = c.multi ? foes() : [DUEL.target];
-  if (!targets.length || !targets.every(id => id && DUEL.alive.has(id))) { hint('Aucun adversaire à viser'); return; }
-  if (G.gold < c.price) { Snd.play('no'); hint('Pas assez d’or : il faut ' + c.price + ' or'); return; }
+  if (!targets.length || !targets.every(id => id && DUEL.alive.has(id))) { hint(T('Aucun adversaire à viser')); return; }
+  if (G.gold < c.price) { Snd.play('no'); hint(T('Pas assez d’or : il faut ') + c.price + T(' or')); return; }
   G.gold -= c.price; DUEL.income += c.inc; DUEL.sent += targets.length;
   for (const id of targets) Net.send(id, { k: 'send', mob: S.type });
   Snd.play('pop');
-  hint(eName(S.type) + ' envoyé ' + (c.multi ? 'à tous (' + targets.length + ')' : 'à ' + dname(targets[0])) + ' · revenu +' + c.inc + ' (total ' + DUEL.income + '/vague)', 1800);
+  hint(eName(S.type) + T(' envoyé ') + (c.multi ? T('à tous (') + targets.length + ')' : T('à ') + dname(targets[0])) + ' · revenu +' + c.inc + ' (total ' + DUEL.income + T('/vague)'), 1800);
   refreshSendPanel();
 }
 function receiveSend(from, mob) {
@@ -185,7 +185,7 @@ function receiveSend(from, mob) {
   clearTimeout(DUEL.inTimer);
   DUEL.inTimer = setTimeout(() => {
     const parts = [];
-    for (const f in DUEL.incoming) parts.push(dname(f) + ' t’envoie ' + Object.entries(DUEL.incoming[f]).map(([m, c]) => c + ' ' + eName(m)).join(', '));
+    for (const f in DUEL.incoming) parts.push(dname(f) + T(' t’envoie ') + Object.entries(DUEL.incoming[f]).map(([m, c]) => c + ' ' + eName(m)).join(', '));
     DUEL.incoming = {};
     if (parts.length) { hint('⚠ ' + parts.join(' · ') + ' !', 2600); Snd.play('no'); }
   }, 600);
@@ -206,7 +206,7 @@ function renderDuelBar() {
 $('#duelBar').addEventListener('click', ev => {
   const b = ev.target.closest('.dp'); if (!b || !DUEL.alive.has(b.dataset.id)) return;
   DUEL.target = b.dataset.id; renderDuelBar(); refreshSendPanel();
-  hint('Cible : ' + dname(DUEL.target), 1500);
+  hint(T('Cible : ') + dname(DUEL.target), 1500);
 });
 $('#duelTabs').addEventListener('click', ev => {
   const b = ev.target.closest('[data-dt]'); if (!b) return;
@@ -237,14 +237,14 @@ function eliminate(id, why) {
     onEnd(rank);
   }
 }
-const WHY = { ko: 'n’a plus de vies', absent: 'a quitté l’appli trop longtemps', parti: 's’est déconnecté', abandon: 'a abandonné' };
+const WHY = { ko: T('n’a plus de vies'), absent: T('a quitté l’appli trop longtemps'), parti: T('s’est déconnecté'), abandon: T('a abandonné') };
 function onElim(id, why) {
   DUEL.alive.delete(id); if (!DUEL.elim.includes(id)) DUEL.elim.push(id);
   if (id === meId()) {
     if (!DUEL.dead) { DUEL.dead = true; if (G) G.over = true; }
     if (!DUEL.result) showDuelScreen(false, why);
   } else {
-    hint(dname(id) + ' est éliminé : il ' + (WHY[why] || 'est hors jeu'), 2600);
+    hint(dname(id) + T(' est éliminé : il ') + (WHY[why] || T('est hors jeu')), 2600);
     if (DUEL.target === id) DUEL.target = [...DUEL.alive].find(x => x !== meId()) || null;
   }
   renderDuelBar(); refreshSendPanel();
@@ -267,12 +267,12 @@ function duelAbort(text) {
 function showDuelScreen(final, why, abortText) {
   const me = meId(), rank = DUEL.result || [...DUEL.alive, ...[...DUEL.elim].reverse()];
   const won = final && !abortText && rank[0] === me, place = rank.indexOf(me) + 1;
-  $('#dWord').textContent = abortText ? 'FIN' : won ? 'VICTOIRE !!' : 'ÉLIMINÉ';
+  $('#dWord').textContent = abortText ? 'FIN' : won ? T('VICTOIRE !!') : T('ÉLIMINÉ');
   $('#dWord').classList.toggle('win', won);
-  $('#dText').textContent = abortText || (won ? 'Tu es le dernier survivant. Bravo !'
-    : final ? 'Tu termines ' + (place === 2 ? '2e' : place + 'e') + ' sur ' + DUEL.ids.length + '.'
-    : why === 'absent' ? 'Tu as quitté l’appli plus de 10 secondes : tu es éliminé. La partie continue sans toi.'
-    : 'Ta maison est tombée. ' + (DUEL.alive.size > 1 ? 'La partie continue entre les survivants.' : ''));
+  $('#dText').textContent = abortText || (won ? T('Tu es le dernier survivant. Bravo !')
+    : final ? T('Tu termines ') + (IS_EN ? place + (['', 'st', 'nd', 'rd'][place] || 'th') : place === 2 ? '2e' : place + 'e') + T(' sur ') + DUEL.ids.length + '.'
+    : why === 'absent' ? T('Tu as quitté l’appli plus de 10 secondes : tu es éliminé. La partie continue sans toi.')
+    : T('Ta maison est tombée. ') + (DUEL.alive.size > 1 ? T('La partie continue entre les survivants.') : ''));
   $('#dRank').innerHTML = final && !abortText ? rank.map((id, i) => '<li' + (id === me ? ' class="you"' : '') + '><b>' + (i + 1) + '</b> ' + esc(dname(id)) + (id === me ? ' (toi)' : '') + '</li>').join('') : '';
   $('#dRank').hidden = !final || !!abortText;
   $('#dWave').textContent = DUEL.wave; $('#dSent').textContent = DUEL.sent; $('#dInc').textContent = DUEL.income;
@@ -298,12 +298,12 @@ function duelPauseUI(on) {
   $('#pQuit').hidden = on; $('#pCash').hidden = on; $('#pAuto').hidden = on; $('#pForfeit').hidden = !on;
   if (on) {
     DUEL.forfeitArm = false; refreshForfeit();
-    $('#pSave').textContent = 'Duel en cours : le jeu ne s’arrête pas pendant ce menu. ' + MAPS[G.map].name + ' · biome ' + MAPS[G.map].biome.name.toLowerCase() + (MAPS[G.map].random ? ' · graine ' + seedCode(MAPS[G.map].rnd) : '') + '.';
+    $('#pSave').textContent = T('Duel en cours : le jeu ne s’arrête pas pendant ce menu. ') + MAPS[G.map].name + ' · biome ' + MAPS[G.map].biome.name.toLowerCase() + (MAPS[G.map].random ? ' · graine ' + seedCode(MAPS[G.map].rnd) : '') + '.';
   }
 }
 function refreshForfeit() {
   const b = $('#pForfeit');
-  b.textContent = DUEL.forfeitArm ? 'Sûr ? Touche encore pour abandonner' : 'Abandonner le duel';
+  b.textContent = DUEL.forfeitArm ? T('Sûr ? Touche encore pour abandonner') : T('Abandonner le duel');
   b.classList.toggle('alt', DUEL.forfeitArm); b.classList.toggle('pink', !DUEL.forfeitArm);
 }
 function duelForfeit() {
@@ -328,7 +328,7 @@ Net.on('msg', ({ from, data }) => {
   }
 });
 Net.on('leave', id => { if (DUEL.on && Net.role === 'host') eliminate(id, 'parti'); });
-Net.on('closed', () => { if (DUEL.on) duelAbort('La connexion avec l’hôte est perdue. La partie est interrompue.'); });
+Net.on('closed', () => { if (DUEL.on) duelAbort(T('La connexion avec l’hôte est perdue. La partie est interrompue.')); });
 Net.on('roster', () => { if (Net.role === 'host' && !DUEL.on) sendLobby(); });
 
 // Quitter l'appli plus de 10 s élimine

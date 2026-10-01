@@ -3,9 +3,9 @@
 'use strict';
 
 const RSIZES = {
-  petite: { name: 'Petite', w: 15, h: 9, np: [1, 2], len: [18, 40], hpMul: 0.95, shards: 1.1, short: '15 × 9 · 1-2 portails', desc: '15 × 9 cases, 1 ou 2 portails, parties rapides' },
-  moyenne: { name: 'Moyenne', w: 21, h: 13, np: [1, 3], len: [30, 62], hpMul: 1.15, shards: 1.3, short: '21 × 13 · 1-3 portails', desc: '21 × 13 cases, 1 à 3 portails' },
-  grande: { name: 'Grande', w: 24, h: 15, np: [2, 4], len: [42, 85], hpMul: 1.35, shards: 1.5, short: '24 × 15 · 2-4 portails', desc: '24 × 15 cases, 2 à 4 portails, petites cases' },
+  petite: { name: T('Petite'), w: 15, h: 9, np: [1, 2], len: [18, 40], hpMul: 0.95, shards: 1.1, short: T('15 × 9 · 1-2 portails'), desc: T('15 × 9 cases, 1 ou 2 portails, parties rapides') },
+  moyenne: { name: T('Moyenne'), w: 21, h: 13, np: [1, 3], len: [30, 62], hpMul: 1.15, shards: 1.3, short: T('21 × 13 · 1-3 portails'), desc: T('21 × 13 cases, 1 à 3 portails') },
+  grande: { name: T('Grande'), w: 24, h: 15, np: [2, 4], len: [42, 85], hpMul: 1.35, shards: 1.5, short: T('24 × 15 · 2-4 portails'), desc: T('24 × 15 cases, 2 à 4 portails, petites cases') },
 };
 const RTHEMES = MAPS.filter(m => !m.season).map(m => m.id);
 // Graines sur 5 caractères en base 36 (faciles à noter)
@@ -67,7 +67,7 @@ function genRandomMap(size, seed, evtMap) {
   const sz = RSIZES[size] ? size : 'moyenne';
   const m = {
     id: 'random', random: true, rnd: { size: sz, seed }, cols: W, rows: H, price: 0, hpMul: S.hpMul, shards: S.shards,
-    name: 'Carte aléatoire · ' + S.name, blurb: 'Carte unique générée pour cette partie, sur le thème « ' + theme.name + ' ». Elle disparaît quand la partie se termine.',
+    name: T('Carte aléatoire · ') + S.name, blurb: T('Carte unique générée pour cette partie, sur le thème « ') + theme.name + T(' ». Elle disparaît quand la partie se termine.'),
     ground: theme.ground, ground2: theme.ground2, path: theme.path, pathEdge: theme.pathEdge, frame: theme.frame, dot: theme.dot,
     deco: theme.deco, obstacle: theme.obstacle, wid: theme.id, biome: BIOMES[theme.id], best: evtMap ? evtMap.best : undefined, paths,
   };
@@ -143,8 +143,8 @@ function showRandPreview() {
   const m = MAPS[RI], P2 = withGrid(m, () => buildPath(m)), w = 300, h = Math.round(w * m.rows / m.cols);
   $('#rPrev').hidden = false;
   drawMapMini(prepMini($('#rCv'), w, h), RI, w, h, 'moyen');
-  $('#rInfo').textContent = RSIZES[m.rnd.size].name + ' · ' + P2.portals.length + ' portail' + (P2.portals.length > 1 ? 's' : '') + ' · ' + P2.bases.length + ' maison' + (P2.bases.length > 1 ? 's' : '');
-  $('#rTheme').textContent = 'Thème ' + MAPS.find(x => x.id === m.wid).name + ' · biome ' + m.biome.name.toLowerCase();
+  $('#rInfo').textContent = RSIZES[m.rnd.size].name + ' · ' + P2.portals.length + T(' portail') + (P2.portals.length > 1 ? 's' : '') + ' · ' + P2.bases.length + T(' maison') + (P2.bases.length > 1 ? 's' : '');
+  $('#rTheme').textContent = T('Thème ') + MAPS.find(x => x.id === m.wid).name + ' · biome ' + m.biome.name.toLowerCase();
   $('#rSeed').textContent = seedCode(m.rnd);
   $('#rPlay').disabled = false; $('#rErr').hidden = true;
 }
@@ -162,13 +162,13 @@ $('#rSizes').addEventListener('click', ev => { const b = ev.target.closest('[dat
 $('#rGen').addEventListener('click', () => genRand({ size: RS.size, seed: newSeed() }));
 $('#rLoad').addEventListener('click', () => {
   const r = parseSeed($('#rIn').value);
-  if (!r) { $('#rErr').textContent = 'Graine invalide : une lettre (P, M ou G pour la taille), un tiret, puis des chiffres et des lettres. Exemple : M-4F7K2.'; $('#rErr').hidden = false; Snd.play('no'); return; }
+  if (!r) { $('#rErr').textContent = T('Graine invalide : une lettre (P, M ou G pour la taille), un tiret, puis des chiffres et des lettres. Exemple : M-4F7K2.'); $('#rErr').hidden = false; Snd.play('no'); return; }
   genRand(r); $('#rIn').blur();
 });
 $('#rIn').addEventListener('keydown', ev => { if (ev.key === 'Enter') $('#rLoad').click(); ev.stopPropagation(); });
 $('#rCopy').addEventListener('click', () => {
   const t = $('#rSeed').textContent, b = $('#rCopy');
-  const done = ok => { b.textContent = ok ? 'Copiée !' : 'Note-la'; setTimeout(() => { b.textContent = 'Copier'; }, 1500); };
+  const done = ok => { b.textContent = ok ? T('Copiée !') : T('Note-la'); setTimeout(() => { b.textContent = T('Copier'); }, 1500); };
   try { navigator.clipboard.writeText(t).then(() => done(true), () => done(false)); } catch (e) { done(false); }
 });
 $('#rPlay').addEventListener('click', () => { if (RS.ready) openDiff(RI); });

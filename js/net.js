@@ -22,7 +22,7 @@ async function encodeSignal(obj) {
   return QR_PREFIX + 'n' + b64u.enc(raw);
 }
 async function decodeSignal(text) {
-  if (typeof text !== 'string' || !text.startsWith(QR_PREFIX)) throw new Error('Ce QR code ne vient pas d’Élémento Defense.');
+  if (typeof text !== 'string' || !text.startsWith(QR_PREFIX)) throw new Error(T('Ce QR code ne vient pas d’Élémento Defense.'));
   const mode = text[QR_PREFIX.length], bytes = b64u.dec(text.slice(QR_PREFIX.length + 1));
   const raw = mode === 'r' ? await pipeBytes(bytes, new DecompressionStream('deflate-raw')) : bytes;
   return JSON.parse(new TextDecoder().decode(raw));
@@ -56,7 +56,7 @@ const Net = {
   },
   // Hôte : prépare une invitation pour un nouveau joueur (QR à faire scanner)
   async createInvite() {
-    if (this.peers.size + 1 >= NET_MAX) throw new Error('La partie est complète (' + NET_MAX + ' joueurs maximum).');
+    if (this.peers.size + 1 >= NET_MAX) throw new Error(T('La partie est complète (') + NET_MAX + T(' joueurs maximum).'));
     if (this.pending) { try { this.pending.pc.close(); } catch (e) {} }
     const pc = newPC(), dc = pc.createDataChannel('game', { ordered: true }), inv = rid();
     this.pending = { pc, dc, inv };
@@ -68,16 +68,16 @@ const Net = {
   // Hôte : lit la réponse scannée sur le téléphone de l'invité
   async acceptAnswer(text) {
     const m = await decodeSignal(text);
-    if (m.t !== 'a') throw new Error('Ce QR code est une invitation, pas une réponse.');
-    if (!this.pending || m.inv !== this.pending.inv) throw new Error('Cette réponse correspond à une autre invitation. Recommence l’invitation.');
+    if (m.t !== 'a') throw new Error(T('Ce QR code est une invitation, pas une réponse.'));
+    if (!this.pending || m.inv !== this.pending.inv) throw new Error(T('Cette réponse correspond à une autre invitation. Recommence l’invitation.'));
     await this.pending.pc.setRemoteDescription({ type: 'answer', sdp: m.sdp });
     this.pending = null;
   },
   // Invité : lit l'invitation et prépare sa réponse (QR à montrer à l'hôte)
   async join(name, text) {
     const m = await decodeSignal(text);
-    if (m.t !== 'o') throw new Error('Ce QR code est une réponse. Scanne l’invitation affichée par l’hôte.');
-    if (m.v !== NET_VER) throw new Error('Versions du jeu différentes : recharge la page sur les deux téléphones.');
+    if (m.t !== 'o') throw new Error(T('Ce QR code est une réponse. Scanne l’invitation affichée par l’hôte.'));
+    if (m.v !== NET_VER) throw new Error(T('Versions du jeu différentes : recharge la page sur les deux téléphones.'));
     this.reset(); this.role = 'guest'; this.me = { id: rid(), name, host: false };
     const pc = newPC();
     pc.ondatachannel = ev => this.wire(pc, ev.channel, 'host');
@@ -103,7 +103,7 @@ const Net = {
     if (this.role === 'host') {
       if (msg.t === 'hello') {
         if (this.peers.size + 1 >= NET_MAX) { try { dc.send(JSON.stringify({ t: 'full' })); } catch (e) {} setTimeout(() => pc.close(), 300); return; }
-        this.peers.set(msg.id, { pc, dc, name: String(msg.name || 'Joueur').slice(0, 12), ping: 0 });
+        this.peers.set(msg.id, { pc, dc, name: String(msg.name || T('Joueur')).slice(0, 12), ping: 0 });
         this.syncRoster(); this.emit('join', msg.id); return;
       }
       const id = this.idOf(pc); if (!id) return;
@@ -114,8 +114,8 @@ const Net = {
     } else {
       if (msg.t === 'ping') { this.sendTo('host', { t: 'pong', ts: msg.ts }); return; }
       if (msg.t === 'roster') { this.players = msg.players; this.emit('roster', this.players); return; }
-      if (msg.t === 'full') { this.emit('error', 'La partie est déjà complète.'); return; }
-      if (msg.t === 'bye') { this.emit('closed', 'L’hôte a fermé la partie.'); this.reset(); return; }
+      if (msg.t === 'full') { this.emit('error', T('La partie est déjà complète.')); return; }
+      if (msg.t === 'bye') { this.emit('closed', T('L’hôte a fermé la partie.')); this.reset(); return; }
       if (msg.t === 'relay') { this.emit('msg', { from: msg.from, data: msg.data }); return; }
       this.emit('msg', { from: 'host', data: msg });
     }
@@ -125,7 +125,7 @@ const Net = {
     const id = this.idOf(pc); if (!id) return;
     this.peers.delete(id); try { pc.close(); } catch (e) {}
     if (this.role === 'host') { this.syncRoster(); this.emit('leave', id); }
-    else { this.emit('closed', 'Connexion perdue avec l’hôte.'); this.reset(); }
+    else { this.emit('closed', T('Connexion perdue avec l’hôte.')); this.reset(); }
   },
   sendTo(id, msg) { const p = this.peers.get(id); if (p && p.dc.readyState === 'open') { try { p.dc.send(JSON.stringify(msg)); } catch (e) {} } },
   broadcast(msg) { for (const id of this.peers.keys()) this.sendTo(id, msg); },

@@ -11,7 +11,7 @@ const esc = t => String(t).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;'
 let camStream = null, camRaf = 0, jsqrLoad = null, mpTimer = 0;
 function loadJsQR() {
   if (typeof jsQR !== 'undefined') return Promise.resolve();
-  return jsqrLoad || (jsqrLoad = new Promise((ok, ko) => { const sc = document.createElement('script'); sc.src = 'js/vendor/jsQR.js'; sc.onload = ok; sc.onerror = () => ko(new Error('Lecteur de QR code introuvable.')); document.head.appendChild(sc); }));
+  return jsqrLoad || (jsqrLoad = new Promise((ok, ko) => { const sc = document.createElement('script'); sc.src = 'js/vendor/jsQR.js'; sc.onload = ok; sc.onerror = () => ko(new Error(T('Lecteur de QR code introuvable.'))); document.head.appendChild(sc); }));
 }
 // Tant que la caméra est active, le navigateur donne la vraie adresse locale du téléphone
 // (sinon il la masque derrière un nom en « .local », que certains réseaux ne savent pas résoudre).
@@ -59,9 +59,9 @@ function drawQR(canvas, text) {
 }
 function camError(e) {
   const n = e && e.name;
-  if (n === 'NotAllowedError' || n === 'SecurityError') return 'La caméra est refusée. Autorise-la dans les réglages du navigateur pour ce site, puis réessaie.';
-  if (n === 'NotFoundError' || n === 'OverconstrainedError') return 'Aucune caméra trouvée sur cet appareil. Utilise « Saisir le code à la main ».';
-  return (e && e.message) || 'La caméra ne s’est pas lancée.';
+  if (n === 'NotAllowedError' || n === 'SecurityError') return T('La caméra est refusée. Autorise-la dans les réglages du navigateur pour ce site, puis réessaie.');
+  if (n === 'NotFoundError' || n === 'OverconstrainedError') return T('Aucune caméra trouvée sur cet appareil. Utilise « Saisir le code à la main ».');
+  return (e && e.message) || T('La caméra ne s’est pas lancée.');
 }
 
 // ---------- États de l'écran ----------
@@ -71,13 +71,13 @@ function mpGo(state, extra) {
   renderMP();
 }
 function rosterHTML() {
-  const ps = Net.players.length ? Net.players : [{ name: mpName() || 'Toi', host: true, ping: 0, id: 'me' }];
-  return '<ul class="mp-list">' + ps.map((p, i) => '<li><canvas class="mp-yg" data-i="' + i + '" aria-hidden="true"></canvas><b>' + esc(p.name) + '</b>' + (p.host ? '<span class="mp-tag">hôte</span>' : '') + (Net.me && p.id === Net.me.id ? '<span class="mp-tag you">toi</span>' : '') + '<span class="mp-ping">' + (p.host && Net.role === 'host' ? '' : p.ping ? p.ping + ' ms' : '') + '</span></li>').join('') + '</ul>';
+  const ps = Net.players.length ? Net.players : [{ name: mpName() || T('Toi'), host: true, ping: 0, id: 'me' }];
+  return '<ul class="mp-list">' + ps.map((p, i) => '<li><canvas class="mp-yg" data-i="' + i + '" aria-hidden="true"></canvas><b>' + esc(p.name) + '</b>' + (p.host ? T('<span class="mp-tag">hôte</span>') : '') + (Net.me && p.id === Net.me.id ? '<span class="mp-tag you">toi</span>' : '') + '<span class="mp-ping">' + (p.host && Net.role === 'host' ? '' : p.ping ? p.ping + ' ms' : '') + '</span></li>').join('') + '</ul>';
 }
 function manualHTML(copyCode) {
-  return '<details class="mp-manual"' + (MP.manual ? ' open' : '') + '><summary>Pas de caméra ? Saisir le code à la main</summary>'
-    + (copyCode ? '<p class="fine">Ton code, à transmettre :</p><textarea readonly id="mpCodeOut" rows="3">' + esc(copyCode) + '</textarea><button class="sbtn" type="button" id="mpCopy">Copier le code</button>' : '')
-    + '<p class="fine">Code reçu :</p><textarea id="mpCodeIn" rows="3" placeholder="Colle le code ici"></textarea><button class="sbtn" type="button" id="mpPaste">Valider le code</button></details>';
+  return '<details class="mp-manual"' + (MP.manual ? ' open' : '') + T('><summary>Pas de caméra ? Saisir le code à la main</summary>')
+    + (copyCode ? T('<p class="fine">Ton code, à transmettre :</p><textarea readonly id="mpCodeOut" rows="3">') + esc(copyCode) + T('</textarea><button class="sbtn" type="button" id="mpCopy">Copier le code</button>') : '')
+    + T('<p class="fine">Code reçu :</p><textarea id="mpCodeIn" rows="3" placeholder="Colle le code ici"></textarea><button class="sbtn" type="button" id="mpPaste">Valider le code</button></details>');
 }
 // Mode de jeu du salon : duel (chacun sa carte) ou coop (tous sur la même carte, avec une difficulté)
 function sendLobby() { Net.send('all', { k: 'lobby', map: DUEL.lobbyMap, rsize: DUEL.lobbySize, mode: DUEL.lobbyMode || 'duel', diff: DUEL.lobbyDiff || 'moyen' }); }
@@ -85,30 +85,30 @@ function modePickHTML(canPick) {
   const mode = DUEL.lobbyMode || 'duel', diff = DUEL.lobbyDiff || 'moyen';
   const seg = (items, cur, pre) => '<div class="mp-seg">' + items.map(([k, label]) => '<button class="sbtn' + (k === cur ? ' on' : '') + '" type="button"' + (canPick ? ' data-a="' + pre + k + '"' : ' disabled') + '>' + label + '</button>').join('') + '</div>';
   return '<div class="mp-mode"><small>Mode</small>' + seg([['duel', '⚔ Duel'], ['coop', '🤝 Coop']], mode, 'mode-')
-    + (mode === 'coop' ? '<small>Difficulté</small>' + seg(DORDER.map(k => [k, DIFFS[k].name]), diff, 'diff-') : '') + '</div>';
+    + (mode === 'coop' ? T('<small>Difficulté</small>') + seg(DORDER.map(k => [k, DIFFS[k].name]), diff, 'diff-') : '') + '</div>';
 }
 function mapPickHTML(canPick) {
   const m = MAPS[DUEL.lobbyMap] || MAPS[0], rz = DUEL.lobbySize || 'moyenne';
   // Carte aléatoire : l'hôte choisit la taille, la graine est tirée au lancement et envoyée à tous
-  const name = m.random ? '🎲 Carte aléatoire' : m.name, sub = m.random ? 'taille ' + RSIZES[rz].name.toLowerCase() + ' · générée au lancement' : 'biome ' + m.biome.name.toLowerCase();
-  return '<div class="mp-map">' + (canPick ? '<button class="ibtn" type="button" data-a="map-prev" aria-label="Carte précédente">◀</button>' : '')
-    + '<div class="mp-mapn"><small>Carte</small><b>' + esc(name) + '</b><span>' + sub + '</span></div>'
-    + (canPick ? '<button class="ibtn" type="button" data-a="map-next" aria-label="Carte suivante">▶</button>' : '') + '</div>'
+  const name = m.random ? T('🎲 Carte aléatoire') : m.name, sub = m.random ? 'taille ' + RSIZES[rz].name.toLowerCase() + T(' · générée au lancement') : 'biome ' + m.biome.name.toLowerCase();
+  return '<div class="mp-map">' + (canPick ? T('<button class="ibtn" type="button" data-a="map-prev" aria-label="Carte précédente">◀</button>') : '')
+    + T('<div class="mp-mapn"><small>Carte</small><b>') + esc(name) + '</b><span>' + sub + '</span></div>'
+    + (canPick ? T('<button class="ibtn" type="button" data-a="map-next" aria-label="Carte suivante">▶</button>') : '') + '</div>'
     + (m.random && canPick ? '<div class="rsz mp-rsz">' + Object.entries(RSIZES).map(([k, S]) => '<button class="sbtn' + (k === rz ? ' on' : '') + '" type="button" data-a="rsize-' + k + '"><b>' + S.name + '</b><small>' + S.short + '</small></button>').join('') + '</div>' : '');
 }
 function rulesHTML() {
-  if (DUEL.lobbyMode === 'coop') return '<details class="mp-manual"><summary>Règles de la coop</summary><ul class="tips">'
-    + '<li>Tout le monde défend la même carte et repart de zéro, comme en duel : Braise et Ondine, 0 éclat. Ta progression solo n’est pas touchée.</li>'
-    + '<li>Les éclats gagnés à chaque vague servent dans l’Atelier (bouton violet), qui ne met pas le jeu en pause. Chaque tour porte un anneau de la couleur de son joueur : seul son propriétaire peut l’améliorer, la vendre ou la fusionner.</li>'
-    + '<li>Les vies sont communes. Les ennemis ont plus de PV et sont plus nombreux selon le nombre de joueurs, et leur or est partagé à parts égales.</li>'
-    + '<li>Touche un coéquipier dans le bandeau du haut pour lui donner 50 or. Appui long sur la carte : un ping visible par tous.</li>'
-    + '<li>Seul l’hôte peut accélérer ou mettre en pause.</li></ul></details>';
-  return '<details class="mp-manual"><summary>Règles du duel</summary><ul class="tips">'
-    + '<li>Mode infini, tout le monde repart de zéro : Braise et Ondine, 200 or, 0 éclat. Ta progression solo n’est pas touchée.</li>'
-    + '<li>Une vague part toutes les 25 s pour tout le monde. Pas de pause ni d’accélération.</li>'
-    + '<li>Onglet « Envoyer » : dépense de l’or pour envoyer des ennemis à ta cible. Chaque envoi augmente ton revenu, versé à chaque vague. À 3 ou 4 joueurs, le mode « À tous » envoie l’ennemi à chaque adversaire, avec 20 % de réduction.</li>'
-    + '<li>Les éclats gagnés à chaque vague servent dans l’Atelier (bouton violet), qui ne met pas le jeu en pause.</li>'
-    + '<li>Le dernier survivant gagne. Quitter l’appli plus de 10 s élimine.</li></ul></details>';
+  if (DUEL.lobbyMode === 'coop') return T('<details class="mp-manual"><summary>Règles de la coop</summary><ul class="tips">')
+    + T('<li>Tout le monde défend la même carte et repart de zéro, comme en duel : Braise et Ondine, 0 éclat. Ta progression solo n’est pas touchée.</li>')
+    + T('<li>Les éclats gagnés à chaque vague servent dans l’Atelier (bouton violet), qui ne met pas le jeu en pause. Chaque tour porte un anneau de la couleur de son joueur : seul son propriétaire peut l’améliorer, la vendre ou la fusionner.</li>')
+    + T('<li>Les vies sont communes. Les ennemis ont plus de PV et sont plus nombreux selon le nombre de joueurs, et leur or est partagé à parts égales.</li>')
+    + T('<li>Touche un coéquipier dans le bandeau du haut pour lui donner 50 or. Appui long sur la carte : un ping visible par tous.</li>')
+    + T('<li>Seul l’hôte peut accélérer ou mettre en pause.</li></ul></details>');
+  return T('<details class="mp-manual"><summary>Règles du duel</summary><ul class="tips">')
+    + T('<li>Mode infini, tout le monde repart de zéro : Braise et Ondine, 200 or, 0 éclat. Ta progression solo n’est pas touchée.</li>')
+    + T('<li>Une vague part toutes les 25 s pour tout le monde. Pas de pause ni d’accélération.</li>')
+    + T('<li>Onglet « Envoyer » : dépense de l’or pour envoyer des ennemis à ta cible. Chaque envoi augmente ton revenu, versé à chaque vague. À 3 ou 4 joueurs, le mode « À tous » envoie l’ennemi à chaque adversaire, avec 20 % de réduction.</li>')
+    + T('<li>Les éclats gagnés à chaque vague servent dans l’Atelier (bouton violet), qui ne met pas le jeu en pause.</li>')
+    + T('<li>Le dernier survivant gagne. Quitter l’appli plus de 10 s élimine.</li></ul></details>');
 }
 function renderMP() {
   const b = $('#mpBody'), S = MP.state, name = mpName();
@@ -116,60 +116,60 @@ function renderMP() {
   if (MP.err) h += '<p class="mp-err">' + esc(MP.err) + '</p>';
   if (MP.info) h += '<p class="mp-info">' + esc(MP.info) + '</p>';
   if (S === 'unsupported') {
-    h += '<p class="trnote">Le multijoueur a besoin d’un navigateur récent, de la caméra et d’une liaison directe entre téléphones. Cette version du jeu ne le permet pas.</p>'
-      + '<p class="fine" style="text-align:left">Ouvre le jeu depuis cette adresse, sur chaque téléphone :</p><p class="mp-url">' + GH_URL + '</p>'
-      + '<button class="btn alt" type="button" data-a="back">Retour</button>';
+    h += T('<p class="trnote">Le multijoueur a besoin d’un navigateur récent, de la caméra et d’une liaison directe entre téléphones. Cette version du jeu ne le permet pas.</p>')
+      + T('<p class="fine" style="text-align:left">Ouvre le jeu depuis cette adresse, sur chaque téléphone :</p><p class="mp-url">') + GH_URL + '</p>'
+      + T('<button class="btn alt" type="button" data-a="back">Retour</button>');
   } else if (S === 'home') {
-    h += '<p class="trnote">De 2 à 4 joueurs, téléphones côte à côte, <b>sans internet</b>. Connectez-vous au même Wi-Fi, ou activez le partage de connexion d’un des téléphones et connectez les autres dessus.</p>'
-      + '<label class="mp-label" for="mpName">Ton pseudo</label><input id="mpName" class="mp-input" maxlength="12" autocomplete="nickname" placeholder="Ex. Léa" value="' + esc(name) + '">'
-      + '<button class="btn" type="button" data-a="create">Créer une partie</button>'
-      + '<button class="btn green" type="button" data-a="join">Rejoindre une partie</button>'
-      + '<button class="btn alt" type="button" data-a="back">Retour</button>';
+    h += T('<p class="trnote">De 2 à 4 joueurs, téléphones côte à côte, <b>sans internet</b>. Connectez-vous au même Wi-Fi, ou activez le partage de connexion d’un des téléphones et connectez les autres dessus.</p>')
+      + T('<label class="mp-label" for="mpName">Ton pseudo</label><input id="mpName" class="mp-input" maxlength="12" autocomplete="nickname" placeholder="Ex. Léa" value="') + esc(name) + '">'
+      + T('<button class="btn" type="button" data-a="create">Créer une partie</button>')
+      + T('<button class="btn green" type="button" data-a="join">Rejoindre une partie</button>')
+      + T('<button class="btn alt" type="button" data-a="back">Retour</button>');
   } else if (S === 'busy') {
-    h += '<p class="mp-busy">' + esc(MP.busyText || 'Un instant…') + '</p><button class="btn alt" type="button" data-a="cancel">Annuler</button>';
+    h += '<p class="mp-busy">' + esc(MP.busyText || T('Un instant…')) + T('</p><button class="btn alt" type="button" data-a="cancel">Annuler</button>');
   } else if (S === 'host') {
     const full = Net.players.length >= NET_MAX;
-    h += '<h3 class="mp-h">Salon · ' + Net.players.length + '/' + NET_MAX + ' joueurs</h3>' + rosterHTML()
-      + (full ? '<p class="fine">La partie est complète.</p>' : '<button class="btn green" type="button" data-a="invite">Inviter un joueur</button>')
+    h += T('<h3 class="mp-h">Salon · ') + Net.players.length + '/' + NET_MAX + T(' joueurs</h3>') + rosterHTML()
+      + (full ? T('<p class="fine">La partie est complète.</p>') : T('<button class="btn green" type="button" data-a="invite">Inviter un joueur</button>'))
       + modePickHTML(true) + mapPickHTML(true)
-      + '<button class="btn" type="button" data-a="launch"' + (Net.players.length < 2 ? ' disabled' : '') + '>' + (Net.players.length < 2 ? 'Invite au moins 1 joueur' : 'Lancer la partie !') + '</button>'
+      + '<button class="btn" type="button" data-a="launch"' + (Net.players.length < 2 ? ' disabled' : '') + '>' + (Net.players.length < 2 ? T('Invite au moins 1 joueur') : T('Lancer la partie !')) + '</button>'
       + rulesHTML()
-      + '<button class="btn pink" type="button" data-a="leave">Fermer la partie</button>';
+      + T('<button class="btn pink" type="button" data-a="leave">Fermer la partie</button>');
   } else if (S === 'invite') {
-    h += '<h3 class="mp-h">1. Fais scanner ce QR code</h3><p class="fine" style="text-align:left">Ton ami touche « Rejoindre une partie » et vise ce QR avec sa caméra. Monte la luminosité de ton écran.</p>'
+    h += T('<h3 class="mp-h">1. Fais scanner ce QR code</h3><p class="fine" style="text-align:left">Ton ami touche « Rejoindre une partie » et vise ce QR avec sa caméra. Monte la luminosité de ton écran.</p>')
       + '<canvas class="mp-qr" id="mpQr"></canvas>'
-      + '<h3 class="mp-h">2. Scanne sa réponse</h3><button class="btn" type="button" data-a="scan-answer">Scanner sa réponse</button>'
-      + manualHTML(MP.code) + '<button class="btn alt" type="button" data-a="cancel">Annuler</button>';
+      + T('<h3 class="mp-h">2. Scanne sa réponse</h3><button class="btn" type="button" data-a="scan-answer">Scanner sa réponse</button>')
+      + manualHTML(MP.code) + T('<button class="btn alt" type="button" data-a="cancel">Annuler</button>');
   } else if (S === 'scan') {
-    h += '<h3 class="mp-h">' + (MP.scanFor === 'answer' ? 'Vise le QR de réponse de ton ami' : 'Vise le QR code affiché par l’hôte') + '</h3>'
+    h += '<h3 class="mp-h">' + (MP.scanFor === 'answer' ? T('Vise le QR de réponse de ton ami') : T('Vise le QR code affiché par l’hôte')) + '</h3>'
       + (MP.camFail ? '' : '<div class="mp-cam"><video id="mpVideo" playsinline muted></video><span class="mp-frame"></span></div>')
       + manualHTML(null)
       + '<button class="btn alt" type="button" data-a="' + (MP.scanFor === 'answer' ? 'back-invite' : 'cancel') + '">Annuler</button>';
   } else if (S === 'answer') {
-    h += '<h3 class="mp-h">Montre ce QR code à ' + esc(MP.hostName) + '</h3><p class="fine" style="text-align:left">' + esc(MP.hostName) + ' touche « Scanner sa réponse » et vise ton écran. La connexion se fait toute seule ensuite.</p>'
-      + '<canvas class="mp-qr" id="mpQr"></canvas><p class="mp-busy">En attente de connexion…</p>'
-      + manualHTML(MP.code) + '<button class="btn alt" type="button" data-a="cancel">Annuler</button>';
+    h += T('<h3 class="mp-h">Montre ce QR code à ') + esc(MP.hostName) + '</h3><p class="fine" style="text-align:left">' + esc(MP.hostName) + T(' touche « Scanner sa réponse » et vise ton écran. La connexion se fait toute seule ensuite.</p>')
+      + T('<canvas class="mp-qr" id="mpQr"></canvas><p class="mp-busy">En attente de connexion…</p>')
+      + manualHTML(MP.code) + T('<button class="btn alt" type="button" data-a="cancel">Annuler</button>');
   } else if (S === 'lobby') {
     const hp = Net.players.find(p => p.host);
-    h += '<h3 class="mp-h">Connecté ! · ' + Net.players.length + '/' + NET_MAX + ' joueurs</h3>' + rosterHTML()
+    h += T('<h3 class="mp-h">Connecté ! · ') + Net.players.length + '/' + NET_MAX + T(' joueurs</h3>') + rosterHTML()
       + modePickHTML(false) + mapPickHTML(false)
-      + '<p class="mp-busy">En attente que ' + esc(hp ? hp.name : 'l’hôte') + ' lance la partie…</p>' + rulesHTML()
-      + '<button class="btn pink" type="button" data-a="leave">Quitter la partie</button>';
+      + T('<p class="mp-busy">En attente que ') + esc(hp ? hp.name : T('l’hôte')) + T(' lance la partie…</p>') + rulesHTML()
+      + T('<button class="btn pink" type="button" data-a="leave">Quitter la partie</button>');
   }
   b.innerHTML = h;
   b.querySelectorAll('canvas.mp-yg').forEach(cv => drawYglou(prepMini(cv, 34, 34), 17, 19, 30, 'happy', 0, { crest: ['#ff4f81', '#3fa9ff', '#4fd36a', '#ffb03d'][+cv.dataset.i % 4], noShadow: true }));
-  const qr = $('#mpQr'); if (qr && MP.code) { try { drawQR(qr, MP.code); } catch (e) { MP.err = 'Impossible de dessiner le QR code.'; } }
+  const qr = $('#mpQr'); if (qr && MP.code) { try { drawQR(qr, MP.code); } catch (e) { MP.err = T('Impossible de dessiner le QR code.'); } }
   if (S === 'scan' && !MP.camFail) startScan((txt, cam) => MP.scanFor === 'answer' ? hostGotAnswer(txt, cam) : guestGotOffer(txt, cam)).catch(e => { if (MP.state !== 'scan') return; stopScan(); MP.camFail = true; MP.manual = true; MP.err = camError(e); renderMP(); });
 }
 
 // ---------- Actions ----------
 function needName() {
   const inp = $('#mpName'), v = (inp ? inp.value : mpName()).trim().slice(0, 12);
-  if (!v) { MP.err = 'Choisis un pseudo pour que les autres te reconnaissent.'; renderMP(); return null; }
+  if (!v) { MP.err = T('Choisis un pseudo pour que les autres te reconnaissent.'); renderMP(); return null; }
   store.set('elemento.pseudo', v); return v;
 }
 async function hostInvite() {
-  mpGo('busy', { busyText: 'Préparation de l’invitation…' });
+  mpGo('busy', { busyText: T('Préparation de l’invitation…') });
   let cam = null;
   try {
     cam = await openCamera().catch(() => null);
@@ -180,20 +180,20 @@ async function hostInvite() {
 }
 async function hostGotAnswer(txt, cam) {
   closeCamera(cam);
-  mpGo('busy', { busyText: 'Connexion en cours…' });
+  mpGo('busy', { busyText: T('Connexion en cours…') });
   try {
     await Net.acceptAnswer(txt);
-    mpTimer = setTimeout(() => { if (MP.state === 'busy') mpGo('host', { err: 'La connexion n’a pas abouti. Vérifiez que les téléphones sont sur le même Wi-Fi ou partage de connexion, puis recommencez l’invitation.' }); }, 20000);
+    mpTimer = setTimeout(() => { if (MP.state === 'busy') mpGo('host', { err: T('La connexion n’a pas abouti. Vérifiez que les téléphones sont sur le même Wi-Fi ou partage de connexion, puis recommencez l’invitation.') }); }, 20000);
   } catch (e) { mpGo('host', { err: e.message || String(e) }); }
 }
 async function guestGotOffer(txt, cam) {
-  const name = mpName() || 'Joueur';
-  mpGo('busy', { busyText: 'Préparation de ta réponse…' });
+  const name = mpName() || T('Joueur');
+  mpGo('busy', { busyText: T('Préparation de ta réponse…') });
   try {
     if (!cam) cam = await openCamera().catch(() => null);
     const { hostName, code } = await Net.join(name, txt).finally(() => closeCamera(cam));
     mpGo('answer', { code, hostName });
-    mpTimer = setTimeout(() => { if (MP.state === 'answer') mpGo('home', { err: 'La connexion n’a pas abouti. Vérifiez que les téléphones sont sur le même Wi-Fi ou partage de connexion, puis recommencez.' }); Net.reset(); }, 90000);
+    mpTimer = setTimeout(() => { if (MP.state === 'answer') mpGo('home', { err: T('La connexion n’a pas abouti. Vérifiez que les téléphones sont sur le même Wi-Fi ou partage de connexion, puis recommencez.') }); Net.reset(); }, 90000);
   } catch (e) { mpGo('home', { err: e.message || String(e) }); }
 }
 function mpCancel() {
@@ -207,7 +207,7 @@ $('#mpBody').addEventListener('click', ev => {
   const el = ev.target.closest('[data-a], #mpCopy, #mpPaste'); if (!el) return;
   Snd.init();
   if (el.id === 'mpCopy') {
-    const ta = $('#mpCodeOut'); const done = () => { MP.info = 'Code copié.'; MP.manual = true; renderMP(); };
+    const ta = $('#mpCodeOut'); const done = () => { MP.info = T('Code copié.'); MP.manual = true; renderMP(); };
     navigator.clipboard && navigator.clipboard.writeText(MP.code).then(done, () => { ta.select(); });
     return;
   }
@@ -240,7 +240,7 @@ Net.on('roster', () => {
 Net.on('join', id => {
   const p = Net.players.find(x => x.id === id);
   Snd.play('clear');
-  if (Net.role === 'host') mpGo('host', { info: (p ? p.name : 'Un joueur') + ' a rejoint la partie !' });
+  if (Net.role === 'host') mpGo('host', { info: (p ? p.name : T('Un joueur')) + T(' a rejoint la partie !') });
 });
 Net.on('leave', () => { if (MP.state === 'host') renderMP(); });
 Net.on('closed', msg => mpGo('home', { err: msg }));
