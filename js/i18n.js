@@ -880,7 +880,16 @@ const EN = {
 "🎲 Carte aléatoire": "🎲 Random map",
 "🎲 Générer une carte": "🎲 Generate a map",
 "🧪 Mode test : toutes les cartes et tous les événements sont débloqués.": "🧪 Test mode: all maps and events are unlocked.",
-"Tutoriel · ": "Tutorial · "
+"Tutoriel · ": "Tutorial · ",
+"📷 Utiliser la caméra arrière": "📷 Use the back camera",
+"🤳 Mode face à face (caméra avant)": "🤳 Face-to-face mode (front camera)",
+"Mettez les deux téléphones <b>écran contre écran</b>, dans le même sens, à 15–20 cm. Ton ami touche « Rejoindre une partie » : la connexion se fait toute seule.": "Hold the two phones <b>screen to screen</b>, the same way up, 15–20 cm apart. Your friend taps “Join a game”: the connection happens on its own.",
+"Ton ami touche « Rejoindre une partie » et vise ce QR. Vise ensuite sa réponse avec ta caméra arrière.": "Your friend taps “Join a game” and points at this QR. Then point your back camera at their answer.",
+"Ta caméra attend la réponse de ton ami…": "Your camera is waiting for your friend’s answer…",
+"Mets ton téléphone <b>écran contre écran</b> avec celui de l’hôte, dans le même sens, à 15–20 cm.": "Hold your phone <b>screen to screen</b> with the host’s, the same way up, 15–20 cm apart.",
+"Garde ton écran face à celui de ": "Keep your screen facing ",
+" : sa caméra lit ta réponse et la connexion se fait toute seule.": ": their camera reads your answer and the connection happens on its own.",
+"Code incomplet ou mal recopié : vérifie chaque groupe de 4 caractères.": "Incomplete or mistyped code: check each group of 4 characters."
 };
 const T = s => (IS_EN && typeof s === 'string' && EN[s] !== undefined ? EN[s] : s);
 // Textes fixes de la page : nœuds de texte et attributs (placeholder, aria-label, title, alt)

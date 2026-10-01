@@ -551,3 +551,8 @@ button:disabled{cursor:default}
 .profhead{display:flex;align-items:center;gap:10px}
 .profhead canvas{width:70px;height:70px;flex:none}
 .profhead .fine{text-align:left;margin:4px 0 0;font-size:13px;opacity:1}
+/* Connexion multijoueur : mode face à face */
+.mp-step{margin:0;font-size:14px;font-weight:700;line-height:1.35;text-align:left}
+.mp-cam.small{max-width:200px}
+.mp-cam.mirror video{transform:scaleX(-1)}
+.mp-flip{align-self:center;height:auto;line-height:1.2;padding:7px 12px;font-size:14px;background:var(--paper)}

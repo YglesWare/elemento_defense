@@ -2,7 +2,7 @@
 'use strict';
 
 const GH_URL = 'https://yglesware.github.io/elemento_defense/';
-const MP = { state: 'home', err: '', info: '', code: '', hostName: '', scanFor: null, busyText: '', manual: false, camFail: false };
+const MP = { state: 'home', err: '', info: '', code: '', hostName: '', scanFor: null, busyText: '', manual: false, camFail: false, cam: null, facing: (store.get('elemento.mpFacing') === 'environment' ? 'environment' : 'user') };
 screens.multi = $('#sMulti');
 const mpName = () => (store.get('elemento.pseudo') || '').slice(0, 12);
 const esc = t => String(t).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
@@ -15,15 +15,16 @@ function loadJsQR() {
 }
 // Tant que la caméra est active, le navigateur donne la vraie adresse locale du téléphone
 // (sinon il la masque derrière un nom en « .local », que certains réseaux ne savent pas résoudre).
-function openCamera() {
-  const ask = navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+function openCamera(facing = 'environment') {
+  const ask = navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: false });
   const late = new Promise(res => setTimeout(() => res(null), 10000));
   return Promise.race([ask, late]).then(st => { if (!st) ask.then(closeCamera, () => {}); return st; });
 }
 const closeCamera = s => { if (s) s.getTracks().forEach(t => t.stop()); };
-async function startScan(onCode) {
-  const video = $('#mpVideo');
-  camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+// facing : 'user' (caméra avant, téléphones face à face) ou 'environment' (caméra arrière) ; stream : caméra déjà ouverte
+async function startScan(onCode, facing = 'environment', stream = null) {
+  const video = $('#mpVideo'); if (!video) { closeCamera(stream); return; }
+  camStream = stream || await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: false });
   video.srcObject = camStream; video.setAttribute('playsinline', ''); video.muted = true; await video.play();
   let det = null;
   if ('BarcodeDetector' in window) { try { const f = await BarcodeDetector.getSupportedFormats(); if (f.includes('qr_code')) det = new BarcodeDetector({ formats: ['qr_code'] }); } catch (e) {} }
@@ -43,7 +44,7 @@ async function startScan(onCode) {
         }
       } catch (e) {}
       busy = false;
-      if (txt && txt.startsWith(QR_PREFIX)) { cancelAnimationFrame(camRaf); const keep = camStream; camStream = null; try { navigator.vibrate && navigator.vibrate(30); } catch (e) {} onCode(txt, keep); return; }
+      if (txt && isSignalText(txt)) { cancelAnimationFrame(camRaf); const keep = camStream; camStream = null; try { navigator.vibrate && navigator.vibrate(30); } catch (e) {} onCode(txt, keep); return; }
     }
     camRaf = requestAnimationFrame(loop);
   };
@@ -51,7 +52,7 @@ async function startScan(onCode) {
 }
 function stopScan() { cancelAnimationFrame(camRaf); if (camStream) camStream.getTracks().forEach(t => t.stop()); camStream = null; }
 function drawQR(canvas, text) {
-  const q = qrcode(0, 'L'); q.addData(text); q.make();
+  const q = qrcode(0, 'L'); q.addData(text, /^[0-9A-Z]+$/.test(text) ? 'Alphanumeric' : 'Byte'); q.make();
   const n = q.getModuleCount(), m = 4, size = n + m * 2, px = Math.max(4, Math.floor(640 / size));
   canvas.width = canvas.height = size * px;
   const c = canvas.getContext('2d'); c.fillStyle = '#ffffff'; c.fillRect(0, 0, canvas.width, canvas.height); c.fillStyle = '#000000';
@@ -67,16 +68,20 @@ function camError(e) {
 // ---------- États de l'écran ----------
 function mpGo(state, extra) {
   stopScan(); clearTimeout(mpTimer);
-  Object.assign(MP, { state, err: '', info: '', manual: false, camFail: false }, extra || {});
+  Object.assign(MP, { state, err: '', info: '', manual: false, camFail: false, cam: null }, extra || {});
   renderMP();
 }
 function rosterHTML() {
   const ps = Net.players.length ? Net.players : [{ name: mpName() || T('Toi'), host: true, ping: 0, id: 'me' }];
   return '<ul class="mp-list">' + ps.map((p, i) => '<li><canvas class="mp-yg" data-i="' + i + '" aria-hidden="true"></canvas><b>' + esc(p.name) + '</b>' + (p.host ? T('<span class="mp-tag">hôte</span>') : '') + (Net.me && p.id === Net.me.id ? '<span class="mp-tag you">toi</span>' : '') + '<span class="mp-ping">' + (p.host && Net.role === 'host' ? '' : p.ping ? p.ping + ' ms' : '') + '</span></li>').join('') + '</ul>';
 }
+// Code à taper : par groupes de 4 (les tirets, espaces et minuscules sont acceptés à la saisie)
+const groupCode = c => (/^E[0-9A-Z]+$/.test(c) ? c.match(/.{1,4}/g).join('-') : c);
+const camHTML = () => (MP.camFail ? '' : '<div class="mp-cam' + (MP.facing === 'user' ? ' mirror small' : '') + '"><video id="mpVideo" playsinline muted></video><span class="mp-frame"></span></div>')
+  + '<button class="sbtn mp-flip" type="button" data-a="flip">' + (MP.facing === 'user' ? T('📷 Utiliser la caméra arrière') : T('🤳 Mode face à face (caméra avant)')) + '</button>';
 function manualHTML(copyCode) {
   return '<details class="mp-manual"' + (MP.manual ? ' open' : '') + T('><summary>Pas de caméra ? Saisir le code à la main</summary>')
-    + (copyCode ? T('<p class="fine">Ton code, à transmettre :</p><textarea readonly id="mpCodeOut" rows="3">') + esc(copyCode) + T('</textarea><button class="sbtn" type="button" id="mpCopy">Copier le code</button>') : '')
+    + (copyCode ? T('<p class="fine">Ton code, à transmettre :</p><textarea readonly id="mpCodeOut" rows="3">') + esc(groupCode(copyCode)) + T('</textarea><button class="sbtn" type="button" id="mpCopy">Copier le code</button>') : '')
     + T('<p class="fine">Code reçu :</p><textarea id="mpCodeIn" rows="3" placeholder="Colle le code ici"></textarea><button class="sbtn" type="button" id="mpPaste">Valider le code</button></details>');
 }
 // Mode de jeu du salon : duel (chacun sa carte) ou coop (tous sur la même carte, avec une difficulté)
@@ -136,18 +141,21 @@ function renderMP() {
       + rulesHTML()
       + T('<button class="btn pink" type="button" data-a="leave">Fermer la partie</button>');
   } else if (S === 'invite') {
-    h += T('<h3 class="mp-h">1. Fais scanner ce QR code</h3><p class="fine" style="text-align:left">Ton ami touche « Rejoindre une partie » et vise ce QR avec sa caméra. Monte la luminosité de ton écran.</p>')
-      + '<canvas class="mp-qr" id="mpQr"></canvas>'
-      + T('<h3 class="mp-h">2. Scanne sa réponse</h3><button class="btn" type="button" data-a="scan-answer">Scanner sa réponse</button>')
+    // Un seul écran : le QR de l'invitation, et la caméra qui attend déjà la réponse de l'invité
+    h += '<canvas class="mp-qr" id="mpQr"></canvas>'
+      + '<p class="mp-step">' + (MP.facing === 'user' ? T('Mettez les deux téléphones <b>écran contre écran</b>, dans le même sens, à 15–20 cm. Ton ami touche « Rejoindre une partie » : la connexion se fait toute seule.')
+        : T('Ton ami touche « Rejoindre une partie » et vise ce QR. Vise ensuite sa réponse avec ta caméra arrière.')) + '</p>'
+      + camHTML() + '<p class="fine">' + T('Ta caméra attend la réponse de ton ami…') + '</p>'
       + manualHTML(MP.code) + T('<button class="btn alt" type="button" data-a="cancel">Annuler</button>');
   } else if (S === 'scan') {
     h += '<h3 class="mp-h">' + (MP.scanFor === 'answer' ? T('Vise le QR de réponse de ton ami') : T('Vise le QR code affiché par l’hôte')) + '</h3>'
-      + (MP.camFail ? '' : '<div class="mp-cam"><video id="mpVideo" playsinline muted></video><span class="mp-frame"></span></div>')
+      + (MP.facing === 'user' && MP.scanFor !== 'answer' ? '<p class="mp-step">' + T('Mets ton téléphone <b>écran contre écran</b> avec celui de l’hôte, dans le même sens, à 15–20 cm.') + '</p>' : '')
+      + camHTML()
       + manualHTML(null)
       + '<button class="btn alt" type="button" data-a="' + (MP.scanFor === 'answer' ? 'back-invite' : 'cancel') + '">Annuler</button>';
   } else if (S === 'answer') {
-    h += T('<h3 class="mp-h">Montre ce QR code à ') + esc(MP.hostName) + '</h3><p class="fine" style="text-align:left">' + esc(MP.hostName) + T(' touche « Scanner sa réponse » et vise ton écran. La connexion se fait toute seule ensuite.</p>')
-      + T('<canvas class="mp-qr" id="mpQr"></canvas><p class="mp-busy">En attente de connexion…</p>')
+    h += T('<canvas class="mp-qr" id="mpQr"></canvas><p class="mp-busy">En attente de connexion…</p>')
+      + '<p class="mp-step">' + T('Garde ton écran face à celui de ') + esc(MP.hostName) + T(' : sa caméra lit ta réponse et la connexion se fait toute seule.') + '</p>'
       + manualHTML(MP.code) + T('<button class="btn alt" type="button" data-a="cancel">Annuler</button>');
   } else if (S === 'lobby') {
     const hp = Net.players.find(p => p.host);
@@ -159,7 +167,8 @@ function renderMP() {
   b.innerHTML = h;
   b.querySelectorAll('canvas.mp-yg').forEach(cv => drawYglou(prepMini(cv, 34, 34), 17, 19, 30, 'happy', 0, { crest: ['#ff4f81', '#3fa9ff', '#4fd36a', '#ffb03d'][+cv.dataset.i % 4], noShadow: true }));
   const qr = $('#mpQr'); if (qr && MP.code) { try { drawQR(qr, MP.code); } catch (e) { MP.err = T('Impossible de dessiner le QR code.'); } }
-  if (S === 'scan' && !MP.camFail) startScan((txt, cam) => MP.scanFor === 'answer' ? hostGotAnswer(txt, cam) : guestGotOffer(txt, cam)).catch(e => { if (MP.state !== 'scan') return; stopScan(); MP.camFail = true; MP.manual = true; MP.err = camError(e); renderMP(); });
+  if (S === 'invite' && !MP.camFail) { const st = MP.cam; MP.cam = null; startScan(hostGotAnswer, MP.facing, st).catch(e => { if (MP.state !== 'invite') return; stopScan(); MP.camFail = true; MP.manual = true; MP.err = camError(e); renderMP(); }); }
+  if (S === 'scan' && !MP.camFail) startScan((txt, cam) => MP.scanFor === 'answer' ? hostGotAnswer(txt, cam) : guestGotOffer(txt, cam), MP.facing).catch(e => { if (MP.state !== 'scan') return; stopScan(); MP.camFail = true; MP.manual = true; MP.err = camError(e); renderMP(); });
 }
 
 // ---------- Actions ----------
@@ -172,9 +181,10 @@ async function hostInvite() {
   mpGo('busy', { busyText: T('Préparation de l’invitation…') });
   let cam = null;
   try {
-    cam = await openCamera().catch(() => null);
+    cam = await openCamera(MP.facing).catch(() => null);
     const code = await Net.createInvite();
-    if (MP.state === 'busy') mpGo('invite', { code });
+    // La caméra reste allumée : elle lira directement la réponse de l'invité
+    if (MP.state === 'busy') { mpGo('invite', { code, cam }); cam = null; }
   } catch (e) { mpGo('host', { err: e.message || String(e) }); }
   finally { closeCamera(cam); }
 }
@@ -190,7 +200,7 @@ async function guestGotOffer(txt, cam) {
   const name = mpName() || T('Joueur');
   mpGo('busy', { busyText: T('Préparation de ta réponse…') });
   try {
-    if (!cam) cam = await openCamera().catch(() => null);
+    if (!cam) cam = await openCamera(MP.facing).catch(() => null);
     const { hostName, code } = await Net.join(name, txt).finally(() => closeCamera(cam));
     mpGo('answer', { code, hostName });
     mpTimer = setTimeout(() => { if (MP.state === 'answer') mpGo('home', { err: T('La connexion n’a pas abouti. Vérifiez que les téléphones sont sur le même Wi-Fi ou partage de connexion, puis recommencez.') }); Net.reset(); }, 90000);
@@ -208,7 +218,7 @@ $('#mpBody').addEventListener('click', ev => {
   Snd.init();
   if (el.id === 'mpCopy') {
     const ta = $('#mpCodeOut'); const done = () => { MP.info = T('Code copié.'); MP.manual = true; renderMP(); };
-    navigator.clipboard && navigator.clipboard.writeText(MP.code).then(done, () => { ta.select(); });
+    navigator.clipboard && navigator.clipboard.writeText(groupCode(MP.code)).then(done, () => { ta.select(); });
     return;
   }
   if (el.id === 'mpPaste') {
@@ -222,6 +232,7 @@ $('#mpBody').addEventListener('click', ev => {
   else if (a === 'join') { const n = needName(); if (!n) return; keepAwake(); mpGo('scan', { scanFor: 'offer' }); }
   else if (a === 'invite') hostInvite();
   else if (a === 'scan-answer') mpGo('scan', { scanFor: 'answer', code: MP.code });
+  else if (a === 'flip') { MP.facing = MP.facing === 'user' ? 'environment' : 'user'; store.set('elemento.mpFacing', MP.facing); stopScan(); MP.camFail = false; renderMP(); }
   else if (a === 'back-invite') mpGo('invite', { code: MP.code });
   else if (a === 'cancel' || a === 'leave') mpCancel();
   else if (a === 'map-prev' || a === 'map-next') { do DUEL.lobbyMap = (DUEL.lobbyMap + (a === 'map-next' ? 1 : MAPS.length - 1)) % MAPS.length; while (!inSeason(MAPS[DUEL.lobbyMap])); sendLobby(); renderMP(); }
