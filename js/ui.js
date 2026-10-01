@@ -519,6 +519,7 @@ function drawMapMini(c, mi, w, h, diff) {
 }
 function renderMaps(boughtId) {
   $('#mBank').textContent = meta.bank || 0;
+  $('#mTest').hidden = !TEST_ALL;
   const box = $('#tMaps'), best = store.get(BEST2) || {}; box.innerHTML = '';
   // Les événements en cours s'affichent en premier, ceux à venir en dernier
   const rank = i => !MAPS[i].season ? 1 : inSeason(MAPS[i]) ? 0 : 2;

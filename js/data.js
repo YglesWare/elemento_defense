@@ -203,20 +203,22 @@ const SEASONS = {
 // Nouvel An chinois : la date suit le calendrier lunaire (fin janvier ou février selon les années)
 const LUNAR = { 2025: '01-29', 2026: '02-17', 2027: '02-06', 2028: '01-26', 2029: '02-13', 2030: '02-03', 2031: '01-23', 2032: '02-11', 2033: '01-31', 2034: '02-19', 2035: '02-08', 2036: '01-28', 2037: '02-15', 2038: '02-04', 2039: '01-24', 2040: '02-12' };
 function lunarNY(y) { const [m, d] = (LUNAR[y] || '02-05').split('-').map(Number); return new Date(y, m - 1, d); }
+// TEMPORAIRE : mode test, toutes les cartes et tous les événements sont débloqués (repasser à false pour revenir à la normale)
+const TEST_ALL = true;
 function inSeason(m) {
-  if (!m || !m.season) return true;
+  if (!m || !m.season || TEST_ALL) return true;
   return SEASONS[m.season].on(new Date()) || new RegExp('[?&]' + m.season + '\\b').test(location.search);
 }
 // Événement de la partie en cours (null sur les cartes normales)
 const evt = () => (G && !G.demo && MAPS[G.map] && MAPS[G.map].season) || null;
 const spooky = () => evt() === 'halloween';
 const mapReqOk = i => {
-  if (i === 0) return true;
+  if (i === 0 || TEST_ALL) return true;
   if (MAPS[i].season) return inSeason(MAPS[i]);
   const rec = (store.get(BEST2) || {})[MAPS[i - 1].id] || {};
   return !!((rec.moyen && rec.moyen.won) || (rec.difficile && rec.difficile.won));
 };
-const mapOwned = i => !MAPS[i].price || M('map_' + MAPS[i].id) > 0;
+const mapOwned = i => TEST_ALL || !MAPS[i].price || M('map_' + MAPS[i].id) > 0;
 function saveMapIndex(sv) {
   if (!sv) return -1;
   const id = sv.mapId || ['prairie', 'plage', 'volcan', 'pic'][sv.map];
