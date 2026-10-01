@@ -131,6 +131,8 @@ const DIFFS = {
     desc: 'Vagues sans fin, de plus en plus dures · 20 vies · vagues 1 à 10 sans chrono, puis vague suivante automatique après 30 s, un délai qui raccourcit jusqu’à 15 s · bats ton record' },
 };
 const BEST2 = 'elemento.best2';
+// Clé des records d'une carte (les cartes d'événement ont des records par édition annuelle)
+const recId = m => m.rid || m.id;
 const terrCache = {};
 function diffTerrain(mi, diff) {
   const m = MAPS[mi], key = (m.rnd ? 'r' + m.rnd.seed : mi) + '|' + diff; if (terrCache[key]) return terrCache[key];
@@ -202,7 +204,7 @@ function easter(y) {
   const h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
   const n = h + l - 7 * m + 114; return new Date(y, Math.floor(n / 31) - 1, (n % 31) + 1);
 }
-const DAY = 864e5, frDate = d => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+const DAY = 864e5, frDate = d => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }).replace(/^1 /, '1er ');
 const SEASONS = {
   halloween: { name: 'Halloween', icon: '🎃', on: d => d.getMonth() === 9 || (d.getMonth() === 10 && d.getDate() <= 10), until: () => 'jusqu’au 10 novembre', back: 'Revient en octobre' },
   noel: { name: 'Noël', icon: '🎄', on: d => d.getMonth() === 11 || (d.getMonth() === 0 && d.getDate() <= 6), until: () => 'jusqu’au 6 janvier', back: 'Revient en décembre' },
@@ -212,11 +214,17 @@ const SEASONS = {
   nouvelan: { name: 'Nouvel An chinois', icon: '🏮', on: d => { const n = lunarNY(d.getFullYear()); return d >= n - 7 * DAY && d <= +n + 15 * DAY; },
     until: () => 'jusqu’au ' + frDate(new Date(+lunarNY(new Date().getFullYear()) + 15 * DAY)), back: 'Revient pour le Nouvel An chinois' },
 };
+// Date de début de chaque événement pour une année donnée, et prochain début à venir
+const SEASON_START = {
+  halloween: y => new Date(y, 9, 1), noel: y => new Date(y, 11, 1), valentin: y => new Date(y, 1, 1),
+  paques: y => new Date(+easter(y) - 14 * DAY), nouvelan: y => new Date(+lunarNY(y) - 7 * DAY),
+};
+function nextSeasonStart(k, now = new Date()) { const y = now.getFullYear(); const a = SEASON_START[k](y); return a > now ? a : SEASON_START[k](y + 1); }
 // Nouvel An chinois : la date suit le calendrier lunaire (fin janvier ou février selon les années)
 const LUNAR = { 2025: '01-29', 2026: '02-17', 2027: '02-06', 2028: '01-26', 2029: '02-13', 2030: '02-03', 2031: '01-23', 2032: '02-11', 2033: '01-31', 2034: '02-19', 2035: '02-08', 2036: '01-28', 2037: '02-15', 2038: '02-04', 2039: '01-24', 2040: '02-12' };
 function lunarNY(y) { const [m, d] = (LUNAR[y] || '02-05').split('-').map(Number); return new Date(y, m - 1, d); }
 // TEMPORAIRE : mode test, toutes les cartes et tous les événements sont débloqués (repasser à false pour revenir à la normale)
-const TEST_ALL = true;
+const TEST_ALL = false;
 function inSeason(m) {
   if (!m || !m.season || TEST_ALL) return true;
   return SEASONS[m.season].on(new Date()) || new RegExp('[?&]' + m.season + '\\b').test(location.search);
@@ -463,7 +471,7 @@ const UPGRADES = [
   { id: 'bouclier', name: 'Bouclier', max: 3, base: 15, fx: l => 'Chaque tour commence la vague avec un bouclier de ' + l * 15 + ' % de ses PV' },
   { id: 'paratonnerre', name: 'Paratonnerre', max: 3, base: 12, fx: l => 'Paralysie des Grésillons −' + l * 25 + ' %' },
   { id: 'talisman', name: 'Talisman', max: 3, base: 14, fx: l => 'Perversion des Maléfik −' + l * 25 + ' % de durée' },
-  { id: 'revive', name: 'Seconde chance', max: 1, base: 60, fx: () => 'Une fois par partie, la maison repart avec 5 vies' },
+  { id: 'revive', name: 'Seconde chance', max: 1, base: 60, fx: () => 'Une fois par partie, le nid repart avec 5 vies' },
   ...TORDER.map(t => ({ id: 'm_' + t, tower: t, name: 'Maîtrise ' + MASTERY[t], max: 5, base: 10,
     fx: l => TOWERS[t].name + ' : +' + l * 10 + ' % de dégâts' + (l >= 5 ? ', +0,3 de portée' : '') })),
 ];
@@ -529,6 +537,7 @@ const Snd = {
         case 'plasma': this.tone('sawtooth', 240, 300, 0.12, 0.07); break;
         case 'evil': this.tone('sawtooth', 180, 80, 0.4, 0.14); this.tone('square', 260, 120, 0.3, 0.07, 0.05); break;
         case 'thit': this.tone('square', 220, 110, 0.09, 0.12); break;
+        case 'cri': this.tone('sawtooth', 1900, 1100, 0.14, 0.1); this.tone('square', 2400, 1500, 0.11, 0.06, 0.09); this.tone('sawtooth', 1700, 900, 0.16, 0.08, 0.17); break;
         case 'clear': [659, 784, 988].forEach((f, i) => this.tone('sine', f, f, 0.14, 0.25, i * 0.08)); break;
       }
     } catch (e) {}

@@ -21,7 +21,7 @@ function guideCells() {
 }
 const cellEl = c => c ? { cell: c } : null;
 const GSTEPS = [
-  { text: 'Bienvenue ! Les slimes sortent du <b>portail violet</b> et suivent le chemin jusqu’à ta <b>maison</b>. Chaque slime qui entre te coûte une vie.', target: () => ({ cell: { q: Math.floor(P.portals[0][0] / L.cw), r: Math.floor(P.portals[0][1] / L.cw) } }), btn: 'Suivant' },
+  { text: 'Salut, moi c’est <b>Yglou</b> ! Les slimes sortent du <b>portail violet</b> et suivent le chemin jusqu’à <b>mon nid</b>. Chaque slime qui y entre te coûte une vie.', target: () => ({ cell: { q: Math.floor(P.portals[0][0] / L.cw), r: Math.floor(P.portals[0][1] / L.cw) } }), btn: 'Suivant' },
   { text: 'Touche <b>Braise</b>, en bas, pour choisir cette tour de feu.', target: () => palBtns.feu, wait: () => G.selType === 'feu' || G.towers.length >= 1 },
   { text: 'Pose Braise sur la <b>case indiquée</b>, juste à côté du chemin : touche-la <b>deux fois</b> (une fois pour voir sa portée, une fois pour confirmer).', target: () => cellEl(GUIDE.cellA), wait: () => G.towers.length >= 1 },
   { text: 'Choisis maintenant <b>Ondine</b>. Regarde la carte : les cases <b>vertes</b> lui donnent un bonus, les <b>rouges</b> un malus. Ondine adore l’eau !', target: () => palBtns.eau, wait: () => G.selType === 'eau' || G.towers.length >= 2 },
@@ -64,7 +64,7 @@ function guideNext() {
 }
 function renderGuide() {
   const st = GSTEPS[GUIDE.i];
-  guideBox.innerHTML = '<div class="gstep">Tutoriel · ' + (GUIDE.i + 1) + '/' + GSTEPS.length + '</div><p>' + st.text + '</p><div class="gbtns">'
+  guideBox.innerHTML = '<canvas class="gy" aria-hidden="true"></canvas><div class="gstep">Tutoriel · ' + (GUIDE.i + 1) + '/' + GSTEPS.length + '</div><p>' + st.text + '</p><div class="gbtns">'
     + '<button type="button" class="sbtn" data-g="skip">Passer</button>' + (st.btn ? '<button type="button" class="sbtn up" data-g="next">' + st.btn + '</button>' : '') + '</div>';
   guideTick();
 }

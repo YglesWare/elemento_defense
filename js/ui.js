@@ -281,7 +281,7 @@ function refreshCash() {
 function cashOut() {
   if (!G || G.over) return;
   G.over = true; G.paused = true; Snd.play('clear');
-  const lost = revokeShards(), bank = bankGold(0), best = ((store.get(BEST2) || {})[MAPS[G.map].id] || {})[G.diff]; store.del(SAVE);
+  const lost = revokeShards(), bank = bankGold(0), best = ((store.get(BEST2) || {})[recId(MAPS[G.map])] || {})[G.diff]; store.del(SAVE);
   showOver(false, best, null, bank, true, lost);
 }
 $('#pCash').addEventListener('click', () => { if (!G || G.over) return; if (!cashArm) { cashArm = true; refreshCash(); return; } cashArm = false; cashOut(); });
@@ -314,6 +314,7 @@ $('#oEndless').addEventListener('click', () => { G.endless = true; G.paused = fa
 $('#tContinue').addEventListener('click', () => { const s = store.get(SAVE), i = saveMapIndex(s); if (i >= 0) newGame(i, s); });
 
 function showOver(win, best, award, bank, quit, lostShards) {
+  if (typeof MASCOT !== 'undefined') MASCOT.overMood = win ? 'party' : quit ? 'shock' : 'sad';
   const bk = bank || { gain: 0, total: meta.bank || 0 };
   $('#oBank').textContent = '+' + bk.gain;
   const nextMap = MAPS.findIndex((mm, i) => !mapOwned(i));
@@ -321,7 +322,7 @@ function showOver(win, best, award, bank, quit, lostShards) {
   $('#oBankDetail').textContent = why + ' Cagnotte : ' + bk.total + ' or, pour acheter des cartes.' + (nextMap >= 0 ? ' Prochaine carte : ' + MAPS[nextMap].name + ', ' + MAPS[nextMap].price + ' or' + (mapReqOk(nextMap) ? (win && !quit && G.diff !== 'facile' && G.diff !== 'infini' && nextMap === G.map + 1 ? '. Elle est maintenant achetable !' : '.') : ', après avoir réussi ' + MAPS[nextMap - 1].name + ' en Moyen.') : '');
   $('#oWord').textContent = quit ? 'ABANDON' : win ? 'VICTOIRE !!' : 'K.O. !';
   $('#oWord').classList.toggle('win', win);
-  $('#oText').textContent = quit ? 'Partie abandonnée : elle ne rapporte ni or ni éclats.' : win ? 'Les ' + G.maxw + ' vagues sont repoussées. La petite maison est sauve !' : 'Les slimes ont envahi la petite maison. Retente ta chance !';
+  $('#oText').textContent = quit ? 'Partie abandonnée : elle ne rapporte ni or ni éclats.' : win ? 'Les ' + G.maxw + ' vagues sont repoussées. Le nid de Yglou est sauvé !' : 'Les slimes ont envahi le nid de Yglou. Retente ta chance !';
   $('#oWave').textContent = G.wave; $('#oScore').textContent = G.score;
   $('#oBest').textContent = best ? best.wave : G.wave;
   $('#oEndless').hidden = !win;
@@ -550,11 +551,13 @@ function renderMaps(boughtId) {
   document.querySelectorAll('#mTabs [data-mt]').forEach(b => { const on = b.dataset.mt === tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
   $('#mTabs .dot').classList.toggle('has', live);
   const rank = i => inSeason(MAPS[i]) ? 0 : 1;
-  const order = MAPS.map((m, i) => i).filter(i => !MAPS[i].random && !!MAPS[i].season === (tab === 'evt')).sort((a, b) => rank(a) - rank(b) || a - b);
+  // Les événements inactifs sont masqués : on annonce seulement leur date de retour
+  const order = MAPS.map((m, i) => i).filter(i => !MAPS[i].random && !!MAPS[i].season === (tab === 'evt') && (tab !== 'evt' || inSeason(MAPS[i]))).sort((a, b) => rank(a) - rank(b) || a - b);
   if (tab === 'std') box.appendChild(randomCard());
+  if (tab === 'evt') box.appendChild(upcomingCard(order.length));
   order.forEach(i => {
     const m = MAPS[i];
-    if (m.season) { box.appendChild(seasonCard(i, best[m.id] || {})); return; }
+    if (m.season) { box.appendChild(seasonCard(i, best[recId(m)] || {})); return; }
     const own = mapOwned(i), rec = best[m.id] || {}, d = document.createElement('div');
     d.className = 'mapc' + (own ? '' : ' locked') + (boughtId === m.id ? ' bought' : '');
     const med = medalsHTML(rec);
@@ -569,10 +572,17 @@ function renderMaps(boughtId) {
   });
 }
 const medalsHTML = rec => DORDER.map(k => { const r = rec[k], on = k === 'infini' ? r && r.wave : r && r.won; return '<span class="medal' + (on ? ' on' : '') + '" title="' + DIFFS[k].name + '">' + (k === 'infini' ? '∞' + (r && r.wave ? ' ' + r.wave : '') : DIFFS[k].name[0]) + '</span>'; }).join('');
+function upcomingCard(nLive) {
+  const now = new Date(), list = Object.keys(SEASONS).filter(k => !SEASONS[k].on(now)).map(k => ({ k, d: nextSeasonStart(k, now) })).sort((a, b) => a.d - b.d);
+  const d = document.createElement('div'); d.className = 'upcoming';
+  d.innerHTML = (nLive ? '' : '<p class="none">Aucun événement en cours pour le moment.</p>')
+    + '<b>À venir</b><ul>' + list.map(({ k, d: dt }) => '<li><span>' + SEASONS[k].icon + ' ' + SEASONS[k].name + '</span><em>à partir du ' + frDate(dt) + (dt.getFullYear() !== now.getFullYear() ? ' ' + dt.getFullYear() : '') + '</em></li>').join('') + '</ul>';
+  return d;
+}
 function seasonCard(i, rec) {
   const m = MAPS[i], on = inSeason(m), S = SEASONS[m.season], d = document.createElement('div');
   d.className = 'mapc season ' + m.season + (on ? ' live' : ' locked');
-  d.innerHTML = '<span class="evt">' + S.icon + ' Événement ' + S.name + '</span><canvas></canvas><span class="nm">' + m.name + '</span><span class="bio-l">Biome ' + m.biome.name.toLowerCase() + '</span><span class="medals">' + medalsHTML(rec) + '</span>'
+  d.innerHTML = '<span class="evt">' + S.icon + ' Événement ' + S.name + (m.edition ? ' · édition ' + m.edition : '') + '</span><canvas></canvas><span class="nm">' + m.name + '</span><span class="bio-l">Biome ' + m.biome.name.toLowerCase() + '</span><span class="medals">' + medalsHTML(rec) + '</span>'
     + '<span class="req ok">' + (on ? 'Gratuite, ' + S.until() : S.back) + '</span>'
     + '<button class="sbtn" type="button"' + (on ? '' : ' disabled') + '>' + (on ? 'Jouer ▸' : 'Bientôt') + '</button>';
   const cv2 = d.querySelector('canvas'); drawMapMini(prepMini(cv2, 140, 90), i, 140, 90, 'moyen');
@@ -613,7 +623,7 @@ function buyMap(i) {
 let diffMap = 0;
 function openDiff(i) {
   diffMap = i; Snd.init(); show('diff'); screens.diff.scrollTop = 0;
-  const m = MAPS[i], rec = (store.get(BEST2) || {})[m.id] || {};
+  const m = MAPS[i], rec = (store.get(BEST2) || {})[recId(m)] || {};
   $('#dfName').textContent = (m.random ? '🎲 ' : m.season ? SEASONS[m.season].icon + ' ' : (i + 1) + '. ') + m.name;
   $('#dfSub').textContent = m.blurb + (m.random ? ' Graine : ' + seedCode(m.rnd) + '.' : '') + ' Biome ' + m.biome.name.toLowerCase() + ' : ' + biomeText(m.biome) + ', sur toute la carte.';
   const box = $('#dfList'); box.innerHTML = '';
@@ -800,7 +810,7 @@ const DEMOS = {
 };
 const TUTO = [
   { kind: 'intro', demo: 'intro', title: 'Bienvenue !', tag: 'Les bases', html: '<ul>'
-    + '<li>Les slimes sortent du portail violet et suivent le chemin jusqu’à la petite maison. Chaque slime qui entre te coûte une vie (2 pour Tonk, 10 pour un Kaiju).</li>'
+    + '<li>Les slimes sortent du portail violet et suivent le chemin jusqu’au nid de Yglou. Chaque slime qui entre te coûte une vie (2 pour Tonk, 10 pour un Kaiju).</li>'
     + '<li>Pose des tours sur l’herbe avec ton or. Chaque ennemi vaincu en rapporte, chaque vague terminée aussi.</li>'
     + '<li>Une tour attaque tout ce qui passe dans son cercle de portée. Touche une tour posée pour voir ce cercle, l’améliorer ou la vendre.</li>'
     + '<li>Tu commences avec Braise et Ondine. Les quatre autres gardiens se débloquent dans l’Atelier, avec les éclats gagnés à chaque vague. Les pages suivantes les présentent tous.</li></ul>' },
@@ -987,6 +997,7 @@ function frame(now) {
     render(); refreshHUD();
   }
   if (curScreen === 'title') drawShowcase(now / 1000);
+  if (typeof mascotTick === 'function') mascotTick(now / 1000);
   if (curScreen === 'tuto' && demo) stepDemo(dt);
   requestAnimationFrame(frame);
 }

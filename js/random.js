@@ -11,11 +11,12 @@ const RTHEMES = MAPS.filter(m => !m.season).map(m => m.id);
 // Graines sur 5 caractères en base 36 (faciles à noter)
 const newSeed = () => ((Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0) % 60466175 + 1;
 
-function genRandomMap(size, seed) {
+// theme : une carte d'événement dont on garde l'ambiance (édition annuelle), sinon une carte fixe tirée au hasard
+function genRandomMap(size, seed, evtMap) {
   const S = RSIZES[size] || RSIZES.moyenne, W = S.w, H = S.h, rnd = mulberry(seed % 2147483647);
   const ri = n => Math.floor(rnd() * n), pickR = a => a[ri(a.length)];
   const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = ri(i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; };
-  const tid = RTHEMES[ri(RTHEMES.length)], theme = MAPS.find(m => m.id === tid);
+  const tid = RTHEMES[ri(RTHEMES.length)], theme = evtMap || MAPS.find(m => m.id === tid);
   // Nœuds du labyrinthe tous les 3 cases : deux rangées constructibles entre deux chemins parallèles
   const xs = [], ys = [];
   for (let x = 1; x <= W - 2; x += 3) xs.push(x);
@@ -68,7 +69,7 @@ function genRandomMap(size, seed) {
     id: 'random', random: true, rnd: { size: sz, seed }, cols: W, rows: H, price: 0, hpMul: S.hpMul, shards: S.shards,
     name: 'Carte aléatoire · ' + S.name, blurb: 'Carte unique générée pour cette partie, sur le thème « ' + theme.name + ' ». Elle disparaît quand la partie se termine.',
     ground: theme.ground, ground2: theme.ground2, path: theme.path, pathEdge: theme.pathEdge, frame: theme.frame, dot: theme.dot,
-    deco: theme.deco, obstacle: theme.obstacle, wid: theme.id, biome: BIOMES[theme.id], paths,
+    deco: theme.deco, obstacle: theme.obstacle, wid: theme.id, biome: BIOMES[theme.id], best: evtMap ? evtMap.best : undefined, paths,
   };
   // Terrain : des taches des terrains du thème, posées au hasard hors du chemin
   const pal = []; for (const row of theme.terrain) for (const ch of row) if (ch !== '.' && TERRAINS[ch]) pal.push(ch);
@@ -88,8 +89,29 @@ function genRandomMap(size, seed) {
     m.terrain = rows.map(r => r.join(''));
     normMap(m, seed % 100000, false);
   });
+  if (evtMap) {
+    // Édition d'un événement : même ambiance et mêmes réglages, seuls le tracé et les terrains changent
+    return Object.assign({}, evtMap, { paths: m.paths, terrain: m.terrain });
+  }
   return m;
 }
+// ---------- Éditions annuelles des événements ----------
+// 2026 garde les cartes dessinées à la main ; chaque année suivante, un nouveau tracé est généré (même graine pour tous)
+const BASE_EDITION = 2026;
+function hashStr(s) { let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0) || 1; }
+function editionYear(k, now = new Date()) {
+  const forced = +((location.search.match(/[?&]edition=(\d{4})/) || [])[1] || 0); if (forced) return forced;
+  const y = now.getFullYear();
+  if (SEASONS[k].on(now)) return SEASON_START[k](y) <= now ? y : y - 1;
+  return nextSeasonStart(k, now).getFullYear();
+}
+MAPS.forEach((m, i) => {
+  if (!m.season) return;
+  const y = editionYear(m.season); m.edition = y;
+  if (y <= BASE_EDITION) return;
+  const g = genRandomMap('moyenne', hashStr(m.season + ':' + y), m);
+  m.paths = g.paths; m.terrain = g.terrain; m.rid = m.id + '-' + y;
+});
 // La carte aléatoire occupe toujours la dernière place de MAPS (jamais affichée dans la liste)
 const RI = MAPS.push(genRandomMap('moyenne', 1)) - 1;
 function makeRandom(size, seed) {
@@ -121,7 +143,7 @@ function showRandPreview() {
   const m = MAPS[RI], P2 = withGrid(m, () => buildPath(m)), w = 300, h = Math.round(w * m.rows / m.cols);
   $('#rPrev').hidden = false;
   drawMapMini(prepMini($('#rCv'), w, h), RI, w, h, 'moyen');
-  $('#rInfo').textContent = RSIZES[m.rnd.size].name + ' · ' + P2.portals.length + ' portail' + (P2.portals.length > 1 ? 's' : '') + ' · ' + P2.bases.length + ' maison' + (P2.bases.length > 1 ? 's' : '');
+  $('#rInfo').textContent = RSIZES[m.rnd.size].name + ' · ' + P2.portals.length + ' portail' + (P2.portals.length > 1 ? 's' : '') + ' · ' + P2.bases.length + ' nid' + (P2.bases.length > 1 ? 's' : '');
   $('#rTheme').textContent = 'Thème ' + MAPS.find(x => x.id === m.wid).name + ' · biome ' + m.biome.name.toLowerCase();
   $('#rSeed').textContent = seedCode(m.rnd);
   $('#rPlay').disabled = false; $('#rErr').hidden = true;

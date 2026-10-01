@@ -186,7 +186,7 @@ function saveCheckpoint() {
 }
 function recordBest() {
   if (G.duel || duelOn || G.coop || MAPS[G.map].random) return { wave: G.wave, score: G.score };
-  const b = store.get(BEST2) || {}, id = MAPS[G.map].id, rec = (b[id] = b[id] || {}), cur = rec[G.diff] || { wave: 0, score: 0, won: false };
+  const b = store.get(BEST2) || {}, id = recId(MAPS[G.map]), rec = (b[id] = b[id] || {}), cur = rec[G.diff] || { wave: 0, score: 0, won: false };
   if (G.wave > cur.wave || (G.wave === cur.wave && G.score > cur.score)) { cur.wave = G.wave; cur.score = G.score; }
   if (G.won) cur.won = true;
   rec[G.diff] = cur; store.set(BEST2, b);
@@ -429,6 +429,7 @@ function waveDone() {
   for (const t of G.towers) { healTower(t, true); t.ko = 0; t.stun = 0; t.evil = 0; refillShield(t); }
   const bonus = Math.round((10 + G.wave) * (1 + 0.2 * M('bonus'))); G.gold += bonus; G.score += G.wave * 50;
   if (G.coop) coopWaveDone();
+  G.partyUntil = G.time + 2.4;
   const aw = awardShards();
   hint('Vague ' + G.wave + ' : +' + bonus + ' or' + (aw.gain ? ', +' + aw.gain + ' éclats' : '') + (canBuyAnything() ? ' · achat possible dans l’Atelier' : ''), 3200);
   Snd.play('clear');
@@ -1021,7 +1022,7 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
       if (dg) c.restore();
     }
     else if (k === 1) drawEnemy(c, o.type, x, y, cs, T, o);
-    else drawBase(c, x, y, cs, T, G.hitBase && Math.hypot(G.hitBase[0] - o[0], G.hitBase[1] - o[1]) < 0.1 ? G.baseHit : 0);
+    else drawBase(c, x, y - cs * 0.15, cs * 1.45, T, G.hitBase && Math.hypot(G.hitBase[0] - o[0], G.hitBase[1] - o[1]) < 0.1 ? G.baseHit : 0);
   }
   if (gc && inside(gc.c, gc.r) && !towerAt(gc.c, gc.r)) {
     const [x, y] = cellXY(gc.c + 0.5, gc.r + 0.5);

@@ -72,7 +72,7 @@ function mpGo(state, extra) {
 }
 function rosterHTML() {
   const ps = Net.players.length ? Net.players : [{ name: mpName() || 'Toi', host: true, ping: 0, id: 'me' }];
-  return '<ul class="mp-list">' + ps.map(p => '<li><span class="mp-dot"></span><b>' + esc(p.name) + '</b>' + (p.host ? '<span class="mp-tag">hôte</span>' : '') + (Net.me && p.id === Net.me.id ? '<span class="mp-tag you">toi</span>' : '') + '<span class="mp-ping">' + (p.host && Net.role === 'host' ? '' : p.ping ? p.ping + ' ms' : '') + '</span></li>').join('') + '</ul>';
+  return '<ul class="mp-list">' + ps.map((p, i) => '<li><canvas class="mp-yg" data-i="' + i + '" aria-hidden="true"></canvas><b>' + esc(p.name) + '</b>' + (p.host ? '<span class="mp-tag">hôte</span>' : '') + (Net.me && p.id === Net.me.id ? '<span class="mp-tag you">toi</span>' : '') + '<span class="mp-ping">' + (p.host && Net.role === 'host' ? '' : p.ping ? p.ping + ' ms' : '') + '</span></li>').join('') + '</ul>';
 }
 function manualHTML(copyCode) {
   return '<details class="mp-manual"' + (MP.manual ? ' open' : '') + '><summary>Pas de caméra ? Saisir le code à la main</summary>'
@@ -157,6 +157,7 @@ function renderMP() {
       + '<button class="btn pink" type="button" data-a="leave">Quitter la partie</button>';
   }
   b.innerHTML = h;
+  b.querySelectorAll('canvas.mp-yg').forEach(cv => drawYglou(prepMini(cv, 34, 34), 17, 19, 30, 'happy', 0, { crest: ['#ff4f81', '#3fa9ff', '#4fd36a', '#ffb03d'][+cv.dataset.i % 4], noShadow: true }));
   const qr = $('#mpQr'); if (qr && MP.code) { try { drawQR(qr, MP.code); } catch (e) { MP.err = 'Impossible de dessiner le QR code.'; } }
   if (S === 'scan' && !MP.camFail) startScan((txt, cam) => MP.scanFor === 'answer' ? hostGotAnswer(txt, cam) : guestGotOffer(txt, cam)).catch(e => { if (MP.state !== 'scan') return; stopScan(); MP.camFail = true; MP.manual = true; MP.err = camError(e); renderMP(); });
 }

@@ -514,3 +514,18 @@ button:disabled{cursor:default}
 #radial .rb:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
 #radial.pop .rb{animation:radpop .18s ease-out}
 @keyframes radpop{from{transform:scale(.5)}to{transform:scale(1)}}
+/* Événements à venir */
+.upcoming{grid-column:1/-1;order:99;background:var(--mist);border:3px solid var(--ink);border-radius:14px;box-shadow:0 4px 0 var(--ink);padding:10px 12px;text-align:left}
+.upcoming .none{margin:0 0 6px;font-weight:800}
+.upcoming b{font-family:var(--display);font-size:17px;letter-spacing:.5px;font-weight:400}
+.upcoming ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:5px}
+.upcoming li{display:flex;justify-content:space-between;gap:8px;font-weight:800;font-size:14px}
+.upcoming em{font-style:normal;font-weight:700;color:var(--muted);font-size:13px;text-align:right}
+/* Yglou, la mascotte */
+#tYglou{display:block;width:120px;height:120px;margin:4px auto -34px;position:relative;z-index:2;cursor:pointer;-webkit-tap-highlight-color:transparent}
+#oYglou{display:block;width:130px;height:130px;margin:0 auto -14px}
+.ybub{display:flex;align-items:center;gap:8px}
+.ybub canvas{flex:none;width:72px;height:72px}
+.ybub p{flex:1;min-width:0;text-align:left;margin:0}
+#guideBox .gy{float:left;width:56px;height:56px;margin:-4px 8px 0 -4px}
+.mp-list li canvas.mp-yg{width:34px;height:34px;flex:none;margin:-6px 2px -6px -4px}

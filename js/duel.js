@@ -272,7 +272,7 @@ function showDuelScreen(final, why, abortText) {
   $('#dText').textContent = abortText || (won ? 'Tu es le dernier survivant. Bravo !'
     : final ? 'Tu termines ' + (place === 2 ? '2e' : place + 'e') + ' sur ' + DUEL.ids.length + '.'
     : why === 'absent' ? 'Tu as quitté l’appli plus de 10 secondes : tu es éliminé. La partie continue sans toi.'
-    : 'Ta maison est tombée. ' + (DUEL.alive.size > 1 ? 'La partie continue entre les survivants.' : ''));
+    : 'Ton nid est tombé. ' + (DUEL.alive.size > 1 ? 'La partie continue entre les survivants.' : ''));
   $('#dRank').innerHTML = final && !abortText ? rank.map((id, i) => '<li' + (id === me ? ' class="you"' : '') + '><b>' + (i + 1) + '</b> ' + esc(dname(id)) + (id === me ? ' (toi)' : '') + '</li>').join('') : '';
   $('#dRank').hidden = !final || !!abortText;
   $('#dWave').textContent = DUEL.wave; $('#dSent').textContent = DUEL.sent; $('#dInc').textContent = DUEL.income;

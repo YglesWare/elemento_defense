@@ -1,4 +1,4 @@
-// Élémento Defense : Dessin des sprites : tours, ennemis, décors, obstacles, portail et maison.
+// Élémento Defense : Dessin des sprites : tours, ennemis, décors, obstacles, portail, Yglou et son nid.
 'use strict';
 // ================= Primitives de dessin =================
 function fs(c, fill, lw) { c.fillStyle = fill; c.fill(); c.lineWidth = lw; c.strokeStyle = INK; c.stroke(); }
@@ -1019,22 +1019,95 @@ function drawPortal(c, x, y, s, t) {
   for (let i = 0; i < 3; i++) { const a = -t * 3 + i * TAU / 3; c.beginPath(); c.arc(0, 0, s * (0.14 + i * 0.08), a, a + 2.4); c.stroke(); }
   c.restore();
 }
+// ---------- Yglou, la mascotte (aiglon chibi « aigle royal ») ----------
+// (x, y) : centre du corps ; s : taille (environ la hauteur totale) ; mood : happy, wink, shock, sad, party
+// o.crest : couleur de la crête (joueurs en multi) ; o.costume : clé d'événement pour son déguisement
+const YG = { body: ['#c98a45', '#8a5226'], crest: '#e0a640' };
+function drawYglou(c, x, y, s, mood = 'happy', t = 0, o = {}) {
+  const r = s * 0.36, lw = Math.max(1.5, s * 0.03), blinkOn = mood === 'happy' && ((t + (o.seed || 0)) % 3.6) < 0.12;
+  const hop = mood === 'party' ? Math.abs(Math.sin(t * 7)) * s * 0.06 : 0;
+  c.save(); c.translate(x, y); c.lineJoin = 'round'; c.lineCap = 'round';
+  if (!o.noShadow) { c.fillStyle = 'rgba(42,27,61,.2)'; c.beginPath(); c.ellipse(0, r * 1.05, r * 0.8 * (1 - hop / s), r * 0.15, 0, 0, TAU); c.fill(); }
+  c.translate(0, -hop);
+  const hy = -r * 0.45, hr = r * 0.85, by0 = r * 0.35;
+  for (const sg of [-1, 1]) { c.beginPath(); c.ellipse(sg * r * 0.3, r * 0.95, r * 0.2, r * 0.09, 0, 0, TAU); fs(c, '#ffb03d', lw * 0.8); }
+  // ailes (levées en fête, écartées s'il est surpris, tombantes s'il est triste)
+  const wa = (mood === 'party' ? -1.15 + Math.sin(t * 14) * 0.15 : mood === 'shock' ? -0.5 : mood === 'sad' ? 0.45 : 0.12 + Math.sin(t * 2) * 0.04);
+  for (const sg of [-1, 1]) {
+    c.save(); c.translate(sg * r * 0.68, r * 0.32); c.rotate(sg * wa);
+    c.beginPath(); c.moveTo(0, -r * 0.28); c.quadraticCurveTo(sg * r * 0.5, -r * 0.25, sg * r * 0.52, r * 0.12);
+    for (let i = 0; i < 3; i++) { const yy = r * (0.12 + i * 0.13); c.quadraticCurveTo(sg * r * (0.56 - i * 0.08), yy + r * 0.12, sg * r * (0.4 - i * 0.12), yy + r * 0.1); }
+    c.quadraticCurveTo(sg * r * 0.05, r * 0.42, 0, r * 0.3); c.closePath(); fs(c, YG.body[1], lw); c.restore();
+  }
+  const grd = (yy, rad) => { const g = c.createRadialGradient(-rad * 0.35, yy - rad * 0.45, rad * 0.1, 0, yy, rad * 1.25); g.addColorStop(0, YG.body[0]); g.addColorStop(1, YG.body[1]); return g; };
+  c.beginPath(); c.ellipse(0, by0, r * 0.75, r * 0.7, 0, 0, TAU); fs(c, grd(by0, r * 0.75), lw);
+  c.lineWidth = lw * 0.8; c.strokeStyle = 'rgba(42,27,61,.35)';
+  for (let i = 0; i < 3; i++) { const yy = by0 + r * (0.05 + i * 0.18); c.beginPath(); c.moveTo(-r * 0.28 + i * r * 0.05, yy); c.lineTo(0, yy + r * 0.1); c.lineTo(r * 0.28 - i * r * 0.05, yy); c.stroke(); }
+  c.beginPath(); c.arc(0, hy, hr, 0, TAU); fs(c, grd(hy, hr), lw);
+  // crête dorée plaquée vers l'arrière (cachée par un déguisement)
+  if (!o.costume) for (const [a, k, dx] of [[0.35, 1, -0.1], [0.75, 0.9, 0.12], [1.1, 0.75, 0.32]]) {
+    c.save(); c.translate(hr * dx, hy - hr * 0.88 + hr * dx * 0.25); c.rotate(a + (mood === 'shock' ? -0.25 : 0));
+    c.beginPath(); c.moveTo(-r * 0.11, r * 0.08); c.quadraticCurveTo(-r * 0.1, -r * 0.42 * k, r * 0.06, -r * 0.62 * k); c.quadraticCurveTo(r * 0.13, -r * 0.3 * k, r * 0.11, r * 0.08); c.closePath(); fs(c, o.crest || YG.crest, lw * 0.9); c.restore();
+  }
+  // yeux d'aigle dorés
+  const fy = hy - hr * 0.04, ex = hr * 0.44, ew = hr * 0.17, eh = hr * 0.21;
+  const eye = (sx, kind) => {
+    const cx = sx * ex, ey = fy;
+    if (kind === 'closed' || kind === 'joy') {
+      const yy = ey - eh * (kind === 'closed' ? 0.35 : 0.1);
+      c.beginPath(); c.moveTo(cx - ew * 1.05, yy + eh * 0.25); c.quadraticCurveTo(cx, yy - eh * 0.75, cx + ew * 1.05, yy + eh * 0.25); c.lineWidth = r * 0.08; c.strokeStyle = INK; c.stroke();
+      if (kind === 'closed') { c.beginPath(); c.moveTo(cx + sx * ew * 1.05, yy + eh * 0.25); c.lineTo(cx + sx * ew * 1.4, yy + eh * 0.05); c.lineWidth = r * 0.06; c.stroke();
+        c.beginPath(); c.moveTo(cx - sx * ew * 1.2, ey - eh * 1.45); c.quadraticCurveTo(cx, ey - eh * 1.7, cx + sx * ew * 1.1, ey - eh * 1.3); c.lineWidth = r * 0.07; c.stroke(); }
+      return;
+    }
+    const sad = kind === 'sad', wide = kind === 'wide';
+    c.beginPath(); c.ellipse(cx, ey, ew * (wide ? 1.35 : 1.15), eh * (wide ? 1.35 : sad ? 0.9 : 1.1), 0, 0, TAU); fs(c, '#ffd23f', lw * 0.8);
+    c.beginPath(); c.ellipse(cx + sx * ew * 0.1 + (o.lx || 0) * ew * 0.25, ey + eh * 0.08, ew * (wide ? 0.4 : 0.62), eh * (wide ? 0.45 : 0.7), 0, 0, TAU); c.fillStyle = INK; c.fill();
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(cx - ew * 0.15, ey - eh * 0.3, ew * 0.3, 0, TAU); c.fill();
+    c.beginPath(); if (sad) { c.moveTo(cx - sx * ew * 1.1, ey - eh * 1.65); c.lineTo(cx + sx * ew * 1.15, ey - eh * 1.05); } else if (wide) c.arc(cx, ey - eh * 1.75, ew * 0.9, Math.PI * 1.15, Math.PI * 1.85); else { c.moveTo(cx + sx * ew * 1.15, ey - eh * 1.15); c.quadraticCurveTo(cx, ey - eh * 1.65, cx - sx * ew * 1.05, ey - eh * 1.3); }
+    c.lineWidth = r * 0.075; c.strokeStyle = INK; c.stroke();
+    if (sad && sx < 0) { c.beginPath(); c.moveTo(cx - ew * 0.3, ey + eh); c.quadraticCurveTo(cx - ew * 0.75, ey + eh * 2.2, cx - ew * 0.1, ey + eh * 2.4); c.quadraticCurveTo(cx + ew * 0.4, ey + eh * 2.1, cx - ew * 0.3, ey + eh); fs(c, '#8fd6ff', lw * 0.6); }
+  };
+  const K = blinkOn ? ['closed', 'closed'] : ({ happy: ['n', 'n'], wink: ['n', 'closed'], party: ['joy', 'joy'], shock: ['wide', 'wide'], sad: ['sad', 'sad'] }[mood] || ['n', 'n']);
+  if (blinkOn) { for (const sx of [-1, 1]) { c.beginPath(); c.moveTo(sx * ex - ew, fy); c.quadraticCurveTo(sx * ex, fy + eh * 0.6, sx * ex + ew, fy); c.lineWidth = r * 0.08; c.strokeStyle = INK; c.stroke(); } }
+  else { eye(-1, K[0]); eye(1, K[1]); }
+  c.fillStyle = 'rgba(255,105,150,.5)'; for (const sg of [-1, 1]) { c.beginPath(); c.ellipse(sg * hr * 0.66, fy + hr * 0.3, hr * 0.15, hr * 0.09, 0, 0, TAU); c.fill(); }
+  // bec d'aigle crochu (ouvert quand il est surpris ou en fête)
+  const k = 1.35, bw = hr * 0.24 * k, by = fy + hr * 0.2, open = mood === 'party' || mood === 'shock';
+  if (open) { c.beginPath(); c.ellipse(0, by + hr * 0.24 * k, bw * 0.7, hr * 0.1, 0, 0, TAU); fs(c, '#7a2240', lw * 0.8); }
+  c.beginPath(); c.moveTo(-bw * 1.05, by + hr * 0.04); c.bezierCurveTo(-bw * 0.9, by - hr * 0.17 * k, bw * 0.9, by - hr * 0.17 * k, bw * 1.05, by + hr * 0.04);
+  c.bezierCurveTo(bw, by + hr * 0.22 * k, bw * 0.45, by + hr * 0.32 * k, bw * 0.05, by + hr * (open ? 0.26 : 0.38) * k);
+  c.quadraticCurveTo(-bw * 0.1, by + hr * 0.24 * k, -bw * 0.3, by + hr * 0.17 * k); c.quadraticCurveTo(-bw * 0.8, by + hr * 0.15 * k, -bw * 1.05, by + hr * 0.04); c.closePath(); fs(c, '#ffc23a', lw);
+  c.beginPath(); c.moveTo(-bw * 0.55, by - hr * 0.02); c.quadraticCurveTo(0, by - hr * 0.1 * k, bw * 0.55, by - hr * 0.02); c.lineWidth = lw * 0.7; c.strokeStyle = 'rgba(255,255,255,.75)'; c.stroke();
+  // déguisements d'événement
+  const ty = hy - hr * 0.72;
+  if (o.costume === 'halloween') witchHat(c, ty, hr * 1.5, lw, '#ff9f3a');
+  else if (o.costume === 'noel') santaHat(c, ty + hr * 0.08, hr * 1.3, lw, '#e8344e');
+  else if (o.costume === 'paques') bunnyEars(c, hy - hr * 0.6, hr * 1.25, lw, '#ffffff', '#ffb3cf', t);
+  else if (o.costume === 'valentin') {
+    c.beginPath(); c.arc(0, hy, hr * 1.02, Math.PI * 1.15, Math.PI * 1.85); c.lineWidth = lw * 1.6; c.strokeStyle = '#ff4f81'; c.stroke();
+    for (const sg of [-1, 1]) { const bx = sg * hr * 0.55, bby = hy - hr * 1.45 + Math.sin(t * 5 + sg) * hr * 0.05; c.beginPath(); c.moveTo(sg * hr * 0.5, hy - hr * 0.88); c.lineTo(bx, bby); c.lineWidth = lw * 0.8; c.strokeStyle = INK; c.stroke(); heart(c, bx, bby, hr * 0.42); fs(c, '#ff4f81', lw * 0.7); }
+  } else if (o.costume === 'nouvelan') {
+    c.beginPath(); c.moveTo(-hr * 1.1, ty + hr * 0.4); c.lineTo(0, ty - hr * 0.45); c.lineTo(hr * 1.1, ty + hr * 0.4); c.quadraticCurveTo(0, ty + hr * 0.18, -hr * 1.1, ty + hr * 0.4); fs(c, '#e8c47a', lw);
+    c.beginPath(); c.moveTo(-hr * 0.5, ty + hr * 0.1); c.lineTo(0, ty - hr * 0.45); c.lineTo(hr * 0.5, ty + hr * 0.1); c.lineWidth = lw * 0.6; c.strokeStyle = 'rgba(120,80,30,.5)'; c.stroke();
+  }
+  c.restore();
+  if (mood === 'party' && !o.noConfetti) { const cols = ['#ff4f81', '#ffd23f', '#3fa9ff', '#4fd36a']; for (let i = 0; i < 10; i++) { const a = i * 2.4 + t * 0.8, d = s * (0.42 + (i % 3) * 0.06); c.save(); c.translate(x + Math.cos(a) * d, y - s * 0.14 + Math.sin(a) * d * 0.7); c.rotate(a + t * 3); c.fillStyle = cols[i % 4]; c.fillRect(-s * 0.015, -s * 0.03, s * 0.03, s * 0.06); c.restore(); } }
+}
+// Le nid de Yglou, à protéger (remplace la maison) : il s'affole quand un ennemi entre, s'inquiète quand les vies baissent, fête la fin des vagues
 function drawBase(c, x, y, s, t, hit) {
-  const lw = Math.max(1.5, s * 0.05), jig = hit > 0 ? Math.sin(t * 60) * s * 0.04 : 0;
-  c.save(); c.translate(x + jig, y); c.lineJoin = 'round';
-  c.fillStyle = 'rgba(42,27,61,.25)'; c.beginPath(); c.ellipse(0, s * 0.35, s * 0.44, s * 0.1, 0, 0, TAU); c.fill();
-  rr(c, -s * 0.33, -s * 0.08, s * 0.66, s * 0.43, s * 0.06); fs(c, '#fff6e6', lw);
-  c.beginPath(); c.moveTo(-s * 0.08, s * 0.35); c.lineTo(-s * 0.08, s * 0.16); c.arc(0, s * 0.16, s * 0.08, Math.PI, TAU); c.lineTo(s * 0.08, s * 0.35); c.closePath(); fs(c, '#a86a42', lw * 0.8);
-  c.beginPath(); c.moveTo(-s * 0.46, -s * 0.04); c.quadraticCurveTo(0, -s * 0.62, s * 0.46, -s * 0.04); c.quadraticCurveTo(0, -s * 0.2, -s * 0.46, -s * 0.04); c.closePath(); fs(c, ROOFC[evt()] || '#ff4f81', lw);
-  const ev = evt();
-  if (ev === 'halloween') pumpkin(c, s * 0.38, s * 0.28, s * 0.11, s * 0.08, lw * 0.7, true);
-  else if (ev === 'noel') { c.beginPath(); c.moveTo(-s * 0.4, -s * 0.1); c.quadraticCurveTo(0, -s * 0.52, s * 0.4, -s * 0.1); for (let i = 0; i < 5; i++) c.quadraticCurveTo(s * (0.32 - i * 0.16), -s * 0.02, s * (0.24 - i * 0.16), -s * 0.12); c.closePath(); fs(c, '#ffffff', lw * 0.6); }
-  else if (ev === 'paques') { c.beginPath(); c.ellipse(s * 0.4, s * 0.25, s * 0.07, s * 0.1, 0, 0, TAU); fs(c, '#9fd8ff', lw * 0.6); }
-  else if (ev === 'nouvelan') lantern(c, s * 0.4, s * 0.12, s * 0.12, lw * 0.5);
-  c.beginPath(); c.arc(-s * 0.2, s * 0.06, s * 0.055, 0, TAU); c.arc(s * 0.2, s * 0.06, s * 0.055, 0, TAU); c.fillStyle = INK; c.fill();
-  const hb = 1 + Math.sin(t * 5) * 0.08 * (hit > 0 ? 3 : 1);
-  c.translate(0, -s * 0.52 + Math.sin(t * 3) * s * 0.03); c.scale(hb, hb);
-  heart(c, 0, 0, s * 0.13); fs(c, '#ff4f6e', lw * 0.8);
+  const lw = Math.max(1.5, s * 0.05), jig = hit > 0 ? Math.sin(t * 60) * s * 0.04 : 0, g = typeof G !== 'undefined' && G && !G.demo ? G : null;
+  const mood = hit > 0 ? 'shock' : g && g.partyUntil > g.time ? 'party' : g && g.lives <= (g.startLives || 20) * 0.25 ? 'sad' : 'happy';
+  c.save(); c.translate(x + jig, y); c.lineJoin = 'round'; c.lineCap = 'round';
+  c.fillStyle = 'rgba(42,27,61,.25)'; c.beginPath(); c.ellipse(0, s * 0.34, s * 0.46, s * 0.1, 0, 0, TAU); c.fill();
+  const twig = (yy, w, col) => { c.beginPath(); c.ellipse(0, yy, w, s * 0.13, 0, 0, TAU); fs(c, col, lw); c.lineWidth = lw * 0.7; c.strokeStyle = 'rgba(42,27,61,.35)'; for (let i = 0; i < 7; i++) { const a = -0.9 + i * 0.3; c.beginPath(); c.moveTo(Math.cos(Math.PI + a) * w * 0.9, yy + Math.sin(a) * s * 0.06); c.lineTo(Math.cos(Math.PI + a) * w * 0.9 + w * 0.35, yy + Math.sin(a) * s * 0.06 + s * 0.04); c.stroke(); } };
+  twig(s * 0.12, s * 0.42, '#8a5a34');
+  drawYglou(c, 0, -s * 0.05, s * 0.78, mood, t, { noShadow: true, noConfetti: true, costume: typeof evt === 'function' ? evt() : null, seed: x * 0.01 });
+  // avant du nid (cache le bas de Yglou) avec deux œufs
+  c.beginPath(); c.moveTo(-s * 0.44, s * 0.14); c.quadraticCurveTo(0, s * 0.46, s * 0.44, s * 0.14); c.quadraticCurveTo(0, s * 0.26, -s * 0.44, s * 0.14); c.closePath(); fs(c, '#a8703f', lw);
+  c.lineWidth = lw * 0.7; c.strokeStyle = '#6e4630';
+  for (let i = 0; i < 6; i++) { const a = -s * 0.36 + i * s * 0.14; c.beginPath(); c.moveTo(a, s * 0.2 + Math.abs(a) * 0.12); c.lineTo(a + s * 0.12, s * 0.26 + Math.abs(a) * 0.08); c.stroke(); }
+  for (const [ex, col] of [[-s * 0.3, '#fff6e6'], [s * 0.3, '#e8f4ff']]) { c.beginPath(); c.ellipse(ex, s * 0.12, s * 0.07, s * 0.09, ex > 0 ? 0.3 : -0.3, 0, TAU); fs(c, col, lw * 0.7); }
   c.restore();
 }
 

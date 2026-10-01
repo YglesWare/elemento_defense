@@ -269,7 +269,7 @@ function coopFinish(win, text, quit) {
     showOver(!!win, { wave: G.wave }, null, { gain: 0, total: soloMeta ? soloMeta.bank || 0 : meta.bank || 0 }, !!quit, 0);
     $('#oRetry').hidden = true; $('#oEndless').hidden = true;
     $('#oWord').textContent = quit ? 'ABANDON' : win ? 'VICTOIRE !!' : 'K.O. !';
-    $('#oText').textContent = text || (win ? 'Toute l’équipe a tenu : bravo !' : quit ? 'Tu as quitté la partie coop.' : 'La maison est tombée. Retentez votre chance ensemble !');
+    $('#oText').textContent = text || (win ? 'Toute l’équipe a tenu : bravo !' : quit ? 'Tu as quitté la partie coop.' : 'Le nid de Yglou est tombé. Retentez votre chance ensemble !');
     $('#oBank').textContent = '—'; $('#oShards').textContent = '—';
     $('#oBankDetail').textContent = 'Partie coop : tout le monde repart de zéro, ta cagnotte et ton Atelier solo ne changent pas.';
     $('#oGainDetail').textContent = 'Les éclats gagnés pendant la partie ne servaient qu’à cette partie.';
@@ -339,7 +339,7 @@ Net.on('msg', ({ from, data }) => {
     case 'cs': if (G && G.coopGuest && !G.over) applySnapshot(data); break;
     case 'cnw': if (G && G.coopGuest) { G.nextWave = data.nw; hudCache.nw = null; } break;
     case 'cws': if (G && G.coopGuest) { G.curPortals = data.portals; banner('VAGUE ' + data.n, data.early ? 'Bonus d’audace +' + data.early : data.label || '', false); Snd.play('wave'); } break;
-    case 'cwd': if (G && G.coopGuest) { G.wave = data.n; G.score = data.sc; G.bossKills = data.bk; const aw = awardShards(); hint('Vague ' + data.n + ' terminée' + (aw.gain ? ' : +' + aw.gain + ' éclats' : ''), 2600); Snd.play('clear'); } break;
+    case 'cwd': if (G && G.coopGuest) { G.partyUntil = G.time + 2.4; G.wave = data.n; G.score = data.sc; G.bossKills = data.bk; const aw = awardShards(); hint('Vague ' + data.n + ' terminée' + (aw.gain ? ' : +' + aw.gain + ' éclats' : ''), 2600); Snd.play('clear'); } break;
     case 'cend': if (G && G.coopGuest) coopFinish(data.win, data.text); break;
     case 'cmsg': if (G && G.coop) hint(data.txt, 2400); break;
     case 'cping': if (G && G.coop) addPing(from, data.x, data.y); break;

@@ -53,9 +53,10 @@
 
 <section class="screen" id="sTitle">
   <div class="inner">
+    <canvas id="tYglou" aria-label="Yglou, la mascotte : touche-le !" role="img"></canvas>
     <div class="logo"><span class="l1">ÉLÉMENTO</span><span class="l2">DEFENSE</span></div>
     <div id="tShow"></div>
-    <div class="bubble">Six gardiens élémentaires contre une armée de slimes. Protège la petite maison !</div>
+    <div class="bubble">Six gardiens élémentaires contre une armée de slimes. Protège le nid de Yglou !</div>
     <button class="btn" id="tPlay" type="button" style="font-size:30px">Jouer !</button>
     <button class="btn mpbtn" id="tMulti" type="button">Multijoueur · 2 à 4 joueurs</button>
     <button class="btn green" id="tContinue" type="button" hidden>Continuer</button>
@@ -112,7 +113,7 @@
       <h2 class="ptitle">Astuces</h2>
       <ul class="tips">
         <li>Choisis une tour en bas, puis touche une case d'herbe. Sur téléphone, touche deux fois la même case pour confirmer.</li>
-        <li>Certaines cartes ont plusieurs portails, des chemins qui se séparent ou plusieurs maisons (les vies sont communes). Une flèche jaune clignote au-dessus des portails d’où sortira la prochaine vague, et l’aperçu sous la carte indique combien seront actifs.</li>
+        <li>Certaines cartes ont plusieurs portails, des chemins qui se séparent ou plusieurs nids (les vies sont communes). Une flèche jaune clignote au-dessus des portails d’où sortira la prochaine vague, et l’aperçu sous la carte indique combien seront actifs.</li>
         <li>Touche une tour posée pour l'améliorer, la vendre ou changer sa cible. Au niveau 2, elle choisit une spécialisation : Sol, Air ou Boss. Ce choix est définitif pour cette tour.</li>
         <li>Pour fusionner deux tours compatibles (toutes deux au niveau 2 ou plus), touche la première, puis la seconde : choisis l’icône de fusion dans le petit menu. Tu peux aussi faire glisser l’une sur l’autre. La fusion prend la place de la seconde tour. Chaque fusion se débloque une par une dans l’Atelier.</li>
         <li>Lancer la vague suivante pendant qu'il reste des ennemis rapporte un bonus d'audace.</li>
@@ -150,6 +151,7 @@
 
 <section class="screen veil" id="sOver" hidden>
   <div class="inner">
+    <canvas id="oYglou" aria-hidden="true"></canvas>
     <div class="bigword" id="oWord">K.O. !</div>
     <div class="panelbox col">
       <p class="fine" id="oText" style="font-size:15px;opacity:1"></p>
@@ -178,7 +180,7 @@
       <div class="bigword win" style="font-size:clamp(50px,14vw,84px)">L’ATELIER</div>
       <div class="purse"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l7 7-7 13L5 9z" fill="#c59bff" stroke="#2a1b3d" stroke-width="2.2" stroke-linejoin="round"/><path d="M5 9h14M12 2L9 9l3 13 3-13z" fill="none" stroke="#2a1b3d" stroke-width="1.3" stroke-linejoin="round"/></svg><b id="sShards">0</b><span>éclats</span></div>
     </div>
-    <p class="fine" id="sBubble" style="font-size:14px;opacity:1"></p>
+    <div class="ybub"><canvas id="sYglou" aria-hidden="true"></canvas><p class="fine" id="sBubble" style="font-size:14px;opacity:1"></p></div>
     <div class="tabbar" role="tablist" id="sTabs">
       <button type="button" role="tab" data-tab="tow">Gardiens<span class="dot"></span></button>
       <button type="button" role="tab" data-tab="fus">Fusions<span class="dot"></span></button>
@@ -306,3 +308,4 @@
 <script src="js/guide.js"></script>
   <script src="js/random.js"></script>
   <script src="js/coop.js"></script>
+  <script src="js/mascot.js"></script>
