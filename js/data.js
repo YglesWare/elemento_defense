@@ -27,6 +27,9 @@ const META = 'elemento.meta';
 const meta = Object.assign({ shards: 0, earned: 0, lv: {} }, store.get(META) || {});
 if (!meta.lv) meta.lv = {};
 const M = id => meta.lv[id] || 0;
+// Améliorations d'un autre profil le temps d'un calcul (coop : chaque tour suit l'Atelier de son propriétaire)
+function withLv(lv, fn) { const s = meta.lv; meta.lv = lv || {}; try { return fn(); } finally { meta.lv = s; } }
+const Mo = (t, id) => (G && G.coop && t && t.own && t.own !== coopMe() ? (coopLv(t.own)[id] || 0) : M(id));
 // Pendant un duel, la progression est temporaire : on n'écrit jamais dans la sauvegarde solo
 let duelOn = false;
 const saveMeta = () => { if (!duelOn) store.set(META, meta); };

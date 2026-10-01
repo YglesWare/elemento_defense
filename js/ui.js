@@ -92,7 +92,8 @@ function refreshInfo() {
   const key = [t.type, t.lvl, t.br, t.mode, G.gold >= cost, Math.ceil(t.hp), Math.ceil(t.shield || 0), Math.ceil(t.ko || 0), t.stun > 0, Math.ceil(t.evil || 0)].join('|');
   if (hudCache.info === key) return;
   hudCache.info = key;
-  $('#iName').textContent = D.name;
+  $('#iName').textContent = D.name + (G.coop && t.own && t.own !== coopMe() ? ' · ' + coopName(t.own) : '');
+  const mine = !(G.coop && t.own && t.own !== coopMe());
   $('#iStars').textContent = (D.fusion ? '★'.repeat(t.lvl) + '☆'.repeat(3 - t.lvl) + ' · Fusion' : '★'.repeat(t.lvl) + '☆'.repeat(4 - t.lvl) + (t.br ? ' · ' + BRANCH[t.br].short : '')) + ' · ' + KIND[D.kind];
   const ic = $('#iStats'); ic.innerHTML = statChips(t); ic.scrollLeft = 0; ic.classList.toggle('more', ic.scrollWidth > ic.clientWidth + 2);
   const up = $('#iUp');
@@ -101,17 +102,21 @@ function refreshInfo() {
   else if (t.lvl >= 4) { up.textContent = 'Arbre ▸'; up.disabled = false; }
   else { up.textContent = (t.br ? BRANCH[t.br].short + ' II · ' : 'Améliorer ') + cost; up.disabled = G.gold < cost; }
   $('#iSell').textContent = 'Vendre ' + sellValue(t);
+  if (!mine) { up.disabled = true; $('#iSell').disabled = true; } else $('#iSell').disabled = false;
   $('#iMode').textContent = MODE_LABEL[t.mode];
   $('#iMode').hidden = D.kind === 'onde';
   iCtx.clearRect(0, 0, 44, 48); drawTower(iCtx, t.type, 22, 27, 37, t.lvl, 1, 0, 0.3, 0, false, t.br);
 }
 function deselect() { if (!G) return; G.selTower = null; G.selType = null; G.ghost = null; showPanel('palette'); refreshPalette(); }
 $('#iClose').addEventListener('click', deselect);
-$('#iUp').addEventListener('click', () => { if (G && G.selTower) evolve(G.selTower); });
-$('#iSell').addEventListener('click', () => { if (G && G.selTower) sell(G.selTower); });
+// En coop, seul le propriétaire d'une tour peut la modifier
+const notMine = t => { if (!G.coop || !t.own || t.own === coopMe()) return false; hint('Tour de ' + coopName(t.own) + ' : seul son propriétaire peut la modifier', 2200); Snd.play('no'); return true; };
+$('#iUp').addEventListener('click', () => { if (G && G.selTower && !notMine(G.selTower)) evolve(G.selTower); });
+$('#iSell').addEventListener('click', () => { if (G && G.selTower && !notMine(G.selTower)) sell(G.selTower); });
 $('#iMode').addEventListener('click', () => {
-  const t = G && G.selTower; if (!t) return;
+  const t = G && G.selTower; if (!t || notMine(t)) return;
   t.mode = MODES[(MODES.indexOf(t.mode) + 1) % MODES.length]; refreshInfo();
+  if (G.coopGuest) coopAct({ a: 'mode', id: t.id, mode: t.mode });
 });
 
 // HUD
@@ -143,7 +148,7 @@ function refreshHUD() {
   refreshPalette(); refreshInfo();
 }
 bWave.addEventListener('click', () => { Snd.init(); if (G && !G.paused) startWave(); });
-$('#bSpeed').addEventListener('click', () => { if (!G || G.duel) return; G.speed = G.speed % 3 + 1; $('#bSpeed').textContent = 'x' + G.speed; });
+$('#bSpeed').addEventListener('click', () => { if (!G || G.duel || G.coopGuest) return; G.speed = G.speed % 3 + 1; $('#bSpeed').textContent = 'x' + G.speed; });
 $('#bPause').addEventListener('click', () => pause());
 
 // Aperçu de la prochaine vague
@@ -171,6 +176,7 @@ function tapCell(q, r, isMouse) {
     if (!canBuild(q, r)) { G.bad = { c: q, r, t: 0.45 }; Snd.play('no'); hint((terrainAt(q, r) || {}).block ? 'Impossible de construire sur un obstacle' : 'Impossible de construire sur le chemin'); return; }
     if (G.gold < costOf(G.selType)) { Snd.play('no'); hint('Pas assez d’or : ' + D.name + ' coûte ' + costOf(G.selType)); return; }
     if (!isMouse && !(G.ghost && G.ghost.c === q && G.ghost.r === r)) { G.ghost = { c: q, r }; hint('Touche encore pour poser ' + D.name); return; }
+    if (G.coopGuest) { G.ghost = null; coopAct({ a: 'build', type: G.selType, q, r }); return; }
     build(G.selType, q, r); return;
   }
   deselect();
@@ -192,7 +198,7 @@ cv.addEventListener('pointermove', ev => {
   if (!G) return;
   const [px, py] = cvPos(ev);
   if (press && ev.pointerId === press.id) {
-    if (!G.drag && Math.hypot(px - press.px, py - press.py) > 10) { selectTower(press.t); G.drag = { t: press.t, px, py, over: null, mouse: press.mouse }; }
+    if (!G.drag && Math.hypot(px - press.px, py - press.py) > 10 && !(G.coop && press.t.own !== coopMe())) { selectTower(press.t); G.drag = { t: press.t, px, py, over: null, mouse: press.mouse }; }
     if (G.drag) {
       const d = G.drag; d.px = px; d.py = py;
       const prev = d.over; d.over = dragTarget(d);
@@ -247,7 +253,7 @@ document.addEventListener('keydown', ev => {
 // Écrans
 function pause() {
   if (!G || G.over || curScreen !== 'game') return;
-  if (!G.duel) G.paused = true;
+  if (!G.duel && !G.coopGuest) G.paused = true;
   show('pause');
   $('#pSave').textContent = MAPS[G.map].name + ' · ' + DIFFS[G.diff].name + '. ' + (G.checkpoint && G.checkpoint.wave ? 'Partie sauvegardée à la fin de la vague ' + G.checkpoint.wave + '.' : 'La partie se sauvegarde à chaque fin de vague.')
     + (MAPS[G.map].random ? ' Graine de la carte : ' + seedCode(MAPS[G.map].rnd) + '.' : '')
@@ -257,6 +263,7 @@ function pause() {
   cashArm = false; refreshCash();
   refreshOptBtns();
   if (typeof duelPauseUI === 'function') duelPauseUI(!!G.duel);
+  if (G.coop && typeof coopPauseUI === 'function') coopPauseUI();
 }
 let cashArm = false;
 function refreshCash() {
@@ -411,7 +418,7 @@ const shopTabs = setupTabs($('#sTabs'), 'elemento.tab.shop'), helpTabs = setupTa
 function openShop() {
   shopFrom = curScreen;
   const inRun = curScreen === 'game' && G;
-  if (inRun && !G.duel) G.paused = true;
+  if (inRun && !G.duel && !G.coop) G.paused = true;
   $('#sBubble').textContent = inRun && G.duel ? 'Le duel continue pendant tes achats : fais vite !' : inRun ? 'Partie en pause. Tes achats comptent tout de suite, même l’or et les vies bonus.'
     : 'Chaque vague gagnée rapporte des éclats. Les terrains difficiles paient mieux !';
   $('#sBack').textContent = inRun ? 'Retour au jeu' : 'Retour';
@@ -651,6 +658,7 @@ function fuseCheck(src, dst) {
   if (!fusionUnlocked(k)) return { k, why: F.name + ' : à débloquer dans l’Atelier (' + F.unlock + ' éclats)' };
   if (src.lvl < 2 || dst.lvl < 2) return { k, why: F.name + ' : les deux tours doivent être au niveau 2' };
   if (G.gold < F.fee) return { k, why: F.name + ' : il faut ' + F.fee + ' or' };
+  if (G.coop && (src.own !== coopMe() || dst.own !== coopMe())) return { k, why: 'En coop, tu ne peux fusionner que tes propres tours' };
   return { k, ok: true };
 }
 function fusionPartners(t) {
@@ -665,6 +673,7 @@ function fusionPartners(t) {
 function tryFuse(src, dst) {
   const r = fuseCheck(src, dst);
   if (!r.ok) { Snd.play('no'); hint(r.why, 2800); return; }
+  if (G.coopGuest) { coopAct({ a: 'fuse', src: src.id, dst: dst.id }); return; }
   doFuse(src, dst, r.k);
 }
 function doFuse(src, dst, k) {
@@ -684,7 +693,7 @@ function doFuse(src, dst, k) {
 let treeT = null;
 function openTree(t) {
   if (!G || G.over) return;
-  treeT = t; G.paused = true; show('tree'); screens.tree.scrollTop = 0; renderTree();
+  treeT = t; if (!G.coop) G.paused = true; show('tree'); screens.tree.scrollTop = 0; renderTree();
 }
 function closeTree() { treeT = null; resume(); }
 function renderTree() {
@@ -937,9 +946,12 @@ let lastT = performance.now();
 function frame(now) {
   const dt = Math.min(0.05, Math.max(0, (now - lastT) / 1000)); lastT = now;
   if (G) {
-    if (G.duel ? !G.over : curScreen === 'game' && !G.paused && !G.over) for (let i = 0; i < G.speed; i++) update(dt);
+    // Duel et coop ne s'arrêtent pas quand on ouvre un menu (en coop, seule la pause de l'hôte arrête tout le monde)
+    const run = G.duel ? !G.over : G.coop ? !G.over && !(G.coopGuest ? G.hostPause : G.paused) : curScreen === 'game' && !G.paused && !G.over;
+    if (run) for (let i = 0; i < G.speed; i++) update(dt);
     else if (G.over) update(dt);
     if (G.duel && typeof duelTick === 'function') duelTick(dt);
+    if (G.coop && typeof coopTick === 'function') coopTick(dt);
     render(); refreshHUD();
   }
   if (curScreen === 'title') drawShowcase(now / 1000);

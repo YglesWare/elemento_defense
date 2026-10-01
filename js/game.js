@@ -177,14 +177,14 @@ function newGame(mi, save, diff) {
   }
 }
 function saveCheckpoint() {
-  if (G.duel || duelOn) return;
+  if (G.duel || duelOn || G.coop) return;
   G.checkpoint = { grid: GRIDV, rnd: MAPS[G.map].rnd || null, map: G.map, mapId: MAPS[G.map].id, diff: G.diff, banked: G.banked, gold: G.gold, lives: G.lives, wave: G.wave, score: G.score, endless: G.endless,
     bossKills: G.bossKills, shardsPaid: G.shardsPaid, shardsWon: G.shardsWon, won: G.won, reviveUsed: G.reviveUsed,
     weather: G.weather, towers: G.towers.map(t => ({ type: t.type, c: t.c, r: t.r, lvl: t.lvl, mode: t.mode, inv: t.inv, br: t.br })) };
   store.set(SAVE, G.checkpoint);
 }
 function recordBest() {
-  if (G.duel || duelOn || MAPS[G.map].random) return { wave: G.wave, score: G.score };
+  if (G.duel || duelOn || G.coop || MAPS[G.map].random) return { wave: G.wave, score: G.score };
   const b = store.get(BEST2) || {}, id = MAPS[G.map].id, rec = (b[id] = b[id] || {}), cur = rec[G.diff] || { wave: 0, score: 0, won: false };
   if (G.wave > cur.wave || (G.wave === cur.wave && G.score > cur.score)) { cur.wave = G.wave; cur.score = G.score; }
   if (G.won) cur.won = true;
@@ -207,7 +207,9 @@ function terrainAt(q, r) {
   if (!G || !G.terrain || !inside(q, r) || P.cells.has(q + ',' + r)) return null;
   return TERRAINS[G.terrain[r][q]] || null;
 }
-function towerStats(t) {
+// En coop, une tour utilise les améliorations de l'Atelier de son propriétaire
+function towerStats(t) { return G && G.coop && t.own && t.own !== coopMe() ? withLv(coopLv(t.own), () => towerStats0(t)) : towerStats0(t); }
+function towerStats0(t) {
   const st = statsOf(t.type, t.lvl, t.br), T = terrainAt(t.c, t.r), B = G && !G.demo ? MAPS[G.map].biome : null;
   let a = 0;
   if (T && !T.block) { st.terr = T; st.aff = affinity(t.type, T); a += st.aff; if (T.range) st.range += T.range; }
@@ -220,7 +222,7 @@ function towerStats(t) {
 }
 function addTower(type, q, r, lvl = 1, mode = 'premier', inv, br) {
   const [wx, wy] = cellW(q, r);
-  const t = { type, c: q, r, x: wx, y: wy, lvl, mode, br: br || null, inv: inv || costOf(type), cd: 0.3, recoil: 0, blink: rand(1, 4), lx: 0, ly: 0.3, pulses: 0 };
+  const t = { id: (G.tid = (G.tid || 0) + 1), own: G.coop ? coopActor() : null, type, c: q, r, x: wx, y: wy, lvl, mode, br: br || null, inv: inv || costOf(type), cd: 0.3, recoil: 0, blink: rand(1, 4), lx: 0, ly: 0.3, pulses: 0 };
   t.s = towerStats(t); healTower(t, true); refillShield(t); t.ko = 0; t.stun = 0; G.towers.push(t);
   const n = G.deco.length; G.deco = G.deco.filter(d => !(d.c === q && d.r === r)); if (n !== G.deco.length && L.w > 1) buildBg();
   return t;
@@ -238,6 +240,7 @@ function upgrade(t, br) {
   if (t.lvl === 2 && !t.br && !br && !TOWERS[t.type].fusion) { openTree(t); return; }
   if (br && t.br && br !== t.br) return;
   if (G.gold < cost) { hint('Pas assez d’or pour améliorer'); Snd.play('no'); return; }
+  if (G.coopGuest) { coopAct({ a: 'up', id: t.id, br: br || null }); return; }
   G.gold -= cost; t.lvl++; if (t.lvl >= 3 && !t.br) t.br = br; t.inv += cost; t.s = towerStats(t); t.recoil = 1; if (!(t.ko > 0)) healTower(t, true);
   burst(t.x, t.y, 0.4, 16, ['#ffd23f', '#ffffff', t.br ? BRANCH[t.br].color : TOWERS[t.type].color], 2.6, 0.1, 2, 0.7, 'star');
   ono(t.br ? BRANCH[t.br].short.toUpperCase() + (t.lvl === 3 ? ' I !' : ' II !') : 'LEVEL UP!', t.x, t.y, '#ffd23f', 0.5, 0, 1.0);
@@ -245,6 +248,7 @@ function upgrade(t, br) {
 }
 function evolve(t) { if (TOWERS[t.type].fusion) upgrade(t); else if (t.lvl === 2 || t.lvl >= 4) openTree(t); else upgrade(t, t.br); }
 function sell(t) {
+  if (G.coopGuest) { coopAct({ a: 'sell', id: t.id }); deselect(); return; }
   const v = sellValue(t); G.gold += v;
   G.towers = G.towers.filter(x => x !== t);
   burst(t.x, t.y, 0.3, 12, ['#cdbfe0', '#ffffff', '#ffd23f'], 2, 0.09, 3, 0.5);
@@ -273,7 +277,7 @@ function makeWave(w) {
   else if (w >= 7 && w % 7 === 0) { theme = 'zip'; label = 'Ruée de Zippy !'; }
   else if (w >= 6 && w % 6 === 0) { theme = 'tonk'; label = 'Parade de Tonk !'; }
   else if (w >= 8 && w % 8 === 3) { theme = 'magma'; label = 'Pluie de Magmo !'; }
-  let n = Math.round(6 + w * 1.5);
+  let n = Math.round((6 + w * 1.5) * (G && G.coop ? 1 + 0.3 * (G.coopN - 1) : 1));
   if (theme === 'tonk') n = Math.round(n * 0.55); if (theme === 'zip') n = Math.round(n * 1.4);
   const gap = Math.max(0.32, 0.95 - w * 0.017), list = [];
   for (let i = 0; i < n; i++) {
@@ -305,6 +309,7 @@ function prepNextWave() {
     G.nextWave.weather = pool.length ? pick(pool) : 'clear';
   }
   if (typeof renderNextWave === 'function') renderNextWave();
+  if (G.coop && !G.coopGuest) coopNextWave();
 }
 function takeWave(n) {
   const w = G.nextWave && G.nextWave.n === n ? G.nextWave : makeWave(n);
@@ -404,8 +409,9 @@ function drawWeather(c) {
 }
 function startWave(forced) {
   if (!G || G.over || G.spawnQ.length || G.duel) return;
+  if (G.coopGuest) { if (!forced) coopAct({ a: 'wave' }); return; }
   let early = 0;
-  if (!forced && G.waveActive && G.enemies.length) { early = 5 + Math.floor(G.wave / 2); G.gold += early; }
+  if (!forced && G.waveActive && G.enemies.length) { early = 5 + Math.floor(G.wave / 2); if (G.coop) coopGiveAll(early); else G.gold += early; }
   G.wave++;
   const { list, label } = takeWave(G.wave);
   for (const t of G.towers) if (!(t.ko > 0)) t.shield = Math.max(t.shield || 0, Math.round(t.maxHp * 0.15 * M('bouclier')));
@@ -414,12 +420,14 @@ function startWave(forced) {
   const last = G.wave === G.maxw && !G.endless;
   banner('VAGUE ' + G.wave, early ? 'Bonus d’audace +' + early : (last ? 'Dernière vague !' : label), false);
   Snd.play('wave');
+  if (G.coop) coopWaveStart(early, last ? 'Dernière vague !' : label);
 }
 function waveDone() {
   if (G.duel) { G.waveActive = false; return; }
   G.waveActive = false;
   for (const t of G.towers) { healTower(t, true); t.ko = 0; t.stun = 0; t.evil = 0; refillShield(t); }
   const bonus = Math.round((10 + G.wave) * (1 + 0.2 * M('bonus'))); G.gold += bonus; G.score += G.wave * 50;
+  if (G.coop) coopWaveDone();
   const aw = awardShards();
   hint('Vague ' + G.wave + ' : +' + bonus + ' or' + (aw.gain ? ', +' + aw.gain + ' éclats' : '') + (canBuyAnything() ? ' · achat possible dans l’Atelier' : ''), 3200);
   Snd.play('clear');
@@ -443,12 +451,14 @@ function revokeShards() {
 }
 function victory() {
   if (!G || G.over) return;
+  if (G.coop) { coopEnd(true); return; }
   G.paused = true; G.won = true; G.endless = true; Snd.play('win');
   const best = recordBest(), award = awardShards(), bank = bankGold(); G.shardsWon = G.shardsPaid; saveCheckpoint();
   showOver(true, best, award, bank);
 }
 function gameOver() {
   if (G.duel) { duelDead('ko'); return; }
+  if (G.coop) { if (!G.coopGuest) coopEnd(false); return; }
   G.over = true; G.lives = 0; Snd.play('ko');
   const best = recordBest(), award = awardShards(), bank = bankGold(0.5); store.del(SAVE);
   setTimeout(() => { if (G && G.over) showOver(false, best, award, bank); }, 1300);
@@ -456,7 +466,7 @@ function gameOver() {
 
 // ---------- Ennemis ----------
 function spawn(type, pi) {
-  const D = ETYPES[type], w = G.wave, m = hpMul(w) * MAPS[G.map].hpMul * (G.hpd || 1);
+  const D = ETYPES[type], w = G.wave, m = hpMul(w) * MAPS[G.map].hpMul * (G.hpd || 1) * (G.coopHp || 1);
   const e = { id: ++G.eid, type, hp: D.hp * m, maxHp: D.hp * m, speed: D.speed * rand(0.95, 1.05) * (G.spd || 1),
     armor: D.armor ? D.armor + Math.floor(w / 10) : 0, flying: !!D.flying, d: 0, x: 0, y: 0, sdx: 1, sdy: 0,
     slowA: 0, slowT: 0, wet: 0, burn: 0, burnT: 0, frozen: 0, stun: 0, flash: 0, phase: rand(TAU), dead: false, lifeCost: D.lifeCost ?? 1, abT: 1.2 };
@@ -480,11 +490,11 @@ function setPos(e) {
   if (L.portrait) { e.sdx = dy; e.sdy = dx; } else { e.sdx = dx; e.sdy = dy; }
 }
 const THP = { feu: 100, eau: 100, terre: 160, vent: 90, foudre: 110, glace: 120 };
-const towerMaxHp = t => Math.round((THP[t.type] || 180) * (1 + 0.25 * (t.lvl - 1)) * (1 + 0.2 * M('remparts')));
-function refillShield(t) { t.shield = Math.round(t.maxHp * 0.15 * M('bouclier')); }
+const towerMaxHp = t => Math.round((THP[t.type] || 180) * (1 + 0.25 * (t.lvl - 1)) * (1 + 0.2 * Mo(t, 'remparts')));
+function refillShield(t) { t.shield = Math.round(t.maxHp * 0.15 * Mo(t, 'bouclier')); }
 function healTower(t, full) { t.maxHp = towerMaxHp(t); if (full || t.hp == null) t.hp = t.maxHp; else t.hp = Math.min(t.hp, t.maxHp); }
 function damageTower(t, dmg) {
-  if (t.ko > 0 || G.demo) return;
+  if (t.ko > 0 || G.demo || G.coopGuest) return;
   if (t.shield > 0) { const a = Math.min(t.shield, dmg); t.shield -= a; dmg -= a; }
   t.hp -= dmg; t.hitT = 0.25;
   if (t.hp <= 0) {
@@ -496,13 +506,12 @@ function damageTower(t, dmg) {
 const nearTowers = (e, R) => G.towers.filter(t => !(t.ko > 0) && (t.x - e.x) ** 2 + (t.y - e.y) ** 2 <= R * R);
 function enemyAbility(e, dt) {
   const D = ETYPES[e.type];
-  if (!(e.type === 'gresil' || e.type === 'crachou' || e.type === 'malefik' || D.boss) || e.frozen > 0 || e.stun > 0 || G.demo) return;
+  if (!(e.type === 'gresil' || e.type === 'crachou' || e.type === 'malefik' || D.boss) || e.frozen > 0 || e.stun > 0 || G.demo || G.coopGuest) return;
   e.abT -= dt; if (e.abT > 0) return;
   const pw = 1 + G.wave * 0.04;
   if (e.type === 'gresil') {
     const ts = nearTowers(e, 1.5); if (!ts.length) { e.abT = 0.3; return; }
-    const dur = 1.8 * (1 - 0.25 * M('paratonnerre'));
-    for (const t of ts) t.stun = Math.max(t.stun || 0, dur);
+    for (const t of ts) t.stun = Math.max(t.stun || 0, 1.8 * (1 - 0.25 * Mo(t, 'paratonnerre')));
     G.fx.push({ kind: 'ring', gx: e.x, gy: e.y, r0: 0.2, r1: 1.5, t: 0, dur: 0.4, color: '#e6ff5a' });
     ono('BZZT!', e.x, e.y, '#e6ff5a', 0.45, 0.4, 0.8); Snd.play('foudre');
     e.abT = 3.5;
@@ -514,7 +523,7 @@ function enemyAbility(e, dt) {
   } else if (e.type === 'malefik') {
     const ts = nearTowers(e, 2.2).filter(t => !(t.evil > 0)); if (!ts.length) { e.abT = 0.4; return; }
     let tg = ts[0]; for (const t of ts) if (t.lvl > tg.lvl || (t.lvl === tg.lvl && t.s.dmg * t.s.rate > tg.s.dmg * tg.s.rate)) tg = t;
-    tg.evil = 6 * (1 - 0.25 * M('talisman')); tg.evilBy = e.id; tg.beam = null; tg.cd = 0.5;
+    tg.evil = 6 * (1 - 0.25 * Mo(tg, 'talisman')); tg.evilBy = e.id; tg.beam = null; tg.cd = 0.5;
     G.fx.push({ kind: 'bolt', pts: [{ gx: e.x, gy: e.y, up: 0.5 }, { gx: tg.x, gy: tg.y, up: 0.45 }], t: 0, dur: 0.4, color: '#c77dff' });
     ono('MWAHAHA!', e.x, e.y, '#c77dff', 0.5, 0.5, 0.9); Snd.play('evil');
     e.abT = 7;
@@ -559,7 +568,7 @@ function updateEnemy(e, dt) {
   if (e.frozen > 0) e.frozen -= dt;
   if (e.stun > 0) e.stun -= dt;
   if (e.burnT > 0) {
-    e.burnT -= dt; e.hp -= e.burn * dt;
+    e.burnT -= dt; if (!G.coopGuest) e.hp -= e.burn * dt;
     if (Math.random() < dt * 5) burst(e.x, e.y, (e.flying ? FLY : 0) + 0.45, 1, ['#ff9a3d', '#ffd23f'], 0.6, 0.06, -1.5, 0.5);
     if (e.burnT <= 0) e.burn = 0;
     if (e.hp <= 0) { kill(e); return; }
@@ -571,7 +580,7 @@ function updateEnemy(e, dt) {
   setPos(e);
 }
 function reachBase(e) {
-  if (G.demo) { e.dead = true; return; }
+  if (G.demo || G.coopGuest) { e.dead = true; return; }
   const B = PP(e).base;
   if (!e.lifeCost) { e.dead = true; ono('FILÉE !', B[0], B[1], '#ffd23f', 0.5, 0.2, 1.1); return; }
   e.dead = true; G.lives -= e.lifeCost; G.shake = Math.max(G.shake, 0.45); G.hurtT = 0.5; G.baseHit = 0.4; G.hitBase = B;
@@ -594,6 +603,7 @@ function brMul(s, e) {
 }
 function hurt(e, dmg, elem, s) {
   if (e.dead || e.ghost > 0) return 0;
+  if (G.coopGuest) { e.flash = 0.12; return 0; } // invité coop : simple effet visuel, l'hôte calcule les dégâts
   const D = ETYPES[e.type], up = (e.flying ? FLY : 0) + 0.7;
   if (D.immune === elem) { ono('IMMUNISÉ', e.x, e.y, '#ffffff', 0.34, 0.9, up); return 0; }
   let m = 1;
@@ -611,10 +621,11 @@ function hurt(e, dmg, elem, s) {
   return d;
 }
 function kill(e) {
-  if (e.dead) return;
+  if (e.dead || G.coopGuest) return;
   e.dead = true;
-  const D = ETYPES[e.type], rw = Math.round(D.reward * (1 + G.wave * 0.01) * (1 + 0.06 * M('loot'))), up = (e.flying ? FLY : 0) + 0.25;
-  G.gold += rw; G.score += rw * 10;
+  const D = ETYPES[e.type], up = (e.flying ? FLY : 0) + 0.25;
+  const rw = G.coop ? coopLoot(D.reward * (1 + G.wave * 0.01)) : Math.round(D.reward * (1 + G.wave * 0.01) * (1 + 0.06 * M('loot')));
+  if (!G.coop) G.gold += rw; G.score += rw * 10;
   burst(e.x, e.y, up, D.boss ? 40 : 10, [D.color, D.light, '#ffffff'], D.boss ? 4 : 2.4, D.boss ? 0.14 : 0.09, 4, 0.6);
   G.texts.push({ txt: '+' + rw, gx: e.x, gy: e.y, oy: -up - 0.3, t: 0, dur: 0.8, color: '#ffd23f', size: 0.32, rot: 0 });
   if (e.type === 'malefik') for (const t of G.towers) if (t.evil > 0 && t.evilBy === e.id) { t.evil = 0; ono('LIBÉRÉE !', t.x, t.y, '#5cd86a', 0.42, 0, 0.9); }
@@ -727,6 +738,7 @@ function updateZones(dt) {
     z.t += dt;
     for (const e of G.enemies) {
       if (e.dead || e.flying || (e.x - z.gx) ** 2 + (e.y - z.gy) ** 2 > z.r * z.r) continue;
+      if (G.coopGuest) { if (z.kind !== 'lava') slowE(e, z.slow, 0.3); continue; }
       if (z.kind === 'lava') { if (ETYPES[e.type].immune === 'feu') continue; e.hp -= z.dps * dt; }
       else { e.hp -= z.dps * dt; slowE(e, z.slow, 0.3); }
       if (e.hp <= 0) kill(e);
@@ -870,19 +882,20 @@ function updateFx(dt) {
 }
 function update(dt) {
   G.time += dt;
-  if (G.spawnQ.length) {
+  if (G.coopGuest) { /* l'hôte gère apparitions, chronos et fins de vague */ }
+  else if (G.spawnQ.length) {
     G.spawnT -= dt;
     while (G.spawnQ.length && G.spawnT <= 0) { const s = G.spawnQ.shift(); spawn(s.type, s.pi); G.spawnT += s.gap; }
   } else if (!G.waveActive && G.autoT > 0) { G.autoT -= dt; if (G.autoT <= 0) startWave(); }
-  if (G.chronoArmed && !G.spawnQ.length) { G.chronoArmed = false; G.chronoT = waveTimer(); }
-  if (G.chronoT != null && !G.over) { G.chronoT -= dt; if (G.chronoT <= 0) { G.chronoT = null; startWave(true); } }
+  if (G.chronoArmed && !G.spawnQ.length && !G.coopGuest) { G.chronoArmed = false; G.chronoT = waveTimer(); }
+  if (G.chronoT != null && !G.over && !G.coopGuest) { G.chronoT -= dt; if (G.chronoT <= 0) { G.chronoT = null; startWave(true); } }
   for (const e of G.enemies) if (!e.dead) updateEnemy(e, dt);
   if (G.over) { G.enemies = G.enemies.filter(e => !e.dead); updateFx(dt); return; }
   for (const t of G.towers) updateTower(t, dt);
   updateProjs(dt); updateZones(dt); updateTors(dt); updateEProjs(dt);
   G.enemies = G.enemies.filter(e => !e.dead);
   updateFx(dt); weatherTick(dt);
-  if (G.waveActive && !G.spawnQ.length && !G.enemies.length) waveDone();
+  if (G.waveActive && !G.spawnQ.length && !G.enemies.length && !G.coopGuest) waveDone();
 }
 
 // ================= Rendu =================
@@ -983,6 +996,7 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
     if (k === 0) {
       const dg = G.drag && G.drag.t === o; if (dg) { c.save(); c.globalAlpha = 0.35; }
       const ko = o.ko > 0; if (ko) { c.save(); c.globalAlpha *= 0.45; }
+      if (G.coop && o.own) { c.beginPath(); c.ellipse(x, y + cs * 0.33, cs * 0.4, cs * 0.12, 0, 0, TAU); c.lineWidth = Math.max(2, cs * 0.09); c.strokeStyle = coopColor(o.own); c.stroke(); }
       drawTower(c, o.type, x, y, cs, o.lvl, T, o.lx, o.ly, o.recoil, o.blink < 0, o.br);
       if (ko) { c.restore(); for (let i = 0; i < 3; i++) { const a = T * 4 + i * TAU / 3; star(c, x + Math.cos(a) * cs * 0.28, y - cs * 0.45 + Math.sin(a) * cs * 0.08, cs * 0.08, cs * 0.035); fs(c, '#ffd23f', 1.2); } }
       if (o.evil > 0 && !ko) {
@@ -1123,6 +1137,7 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
     }
   }
   if (G.tpill && !G.drag) { const [txt, x, y, bg] = G.tpill; pill(c, txt, x, y, false, bg, INK); }
+  if (G.coop && typeof drawPings === 'function') drawPings(c);
   if (G.speedLines > 0 && !RM) {
     const a = Math.min(1, G.speedLines), cx = L.w / 2, cy = L.h / 2, R = Math.hypot(L.w, L.h) / 2;
     c.save(); c.globalAlpha = a * 0.75; c.fillStyle = INK;

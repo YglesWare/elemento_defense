@@ -317,7 +317,7 @@ Net.on('msg', ({ from, data }) => {
   if (!data || !data.k) return;
   DUEL.last[from] = dnow();
   switch (data.k) {
-    case 'lobby': DUEL.lobbyMap = data.map; if (data.rsize) DUEL.lobbySize = data.rsize; if (typeof MP !== 'undefined' && MP.state === 'lobby') renderMP(); break;
+    case 'lobby': DUEL.lobbyMap = data.map; if (data.rsize) DUEL.lobbySize = data.rsize; DUEL.lobbyMode = data.mode || 'duel'; if (data.diff) DUEL.lobbyDiff = data.diff; if (typeof MP !== 'undefined' && MP.state === 'lobby') renderMP(); break;
     case 'start': if (Net.role !== 'host') beginDuel(data); break;
     case 'wave': if (Net.role !== 'host') onWave(data.n, data.gap, data.w); break;
     case 'st': DUEL.stats[from] = data; break;
@@ -329,7 +329,7 @@ Net.on('msg', ({ from, data }) => {
 });
 Net.on('leave', id => { if (DUEL.on && Net.role === 'host') eliminate(id, 'parti'); });
 Net.on('closed', () => { if (DUEL.on) duelAbort('La connexion avec l’hôte est perdue. La partie est interrompue.'); });
-Net.on('roster', () => { if (Net.role === 'host' && !DUEL.on) Net.send('all', { k: 'lobby', map: DUEL.lobbyMap, rsize: DUEL.lobbySize }); });
+Net.on('roster', () => { if (Net.role === 'host' && !DUEL.on) sendLobby(); });
 
 // Quitter l'appli plus de 10 s élimine
 document.addEventListener('visibilitychange', () => {

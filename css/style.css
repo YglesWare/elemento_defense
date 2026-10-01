@@ -488,3 +488,15 @@ button:disabled{cursor:default}
 .rload input::placeholder{text-transform:none;letter-spacing:0;font-family:inherit;font-size:13px;font-weight:700;color:var(--muted)}
 #rPlay:disabled{opacity:.45}
 .mp-rsz{margin-top:6px}
+/* Salon : mode et difficulté ; coop : bandeau des joueurs */
+.mp-mode{display:flex;flex-direction:column;gap:5px;text-align:left}
+.mp-mode small{font-size:12px;font-weight:800;color:var(--muted)}
+.mp-seg{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:5px}
+.mp-seg .sbtn{background:var(--paper);height:auto;padding:8px 4px;font-size:15px}
+.mp-seg .sbtn.on{background:var(--sun)}
+.mp-seg .sbtn:disabled{opacity:1}
+.mp-seg .sbtn:disabled:not(.on){opacity:.55}
+#duelBar .coopp i{display:inline-block;width:10px;height:10px;border-radius:50%;border:2px solid var(--ink);margin-right:4px;vertical-align:-1px}
+#duelBar .coopp svg{width:13px;height:13px;vertical-align:-2px;margin-right:2px}
+#duelBar .coopp{font-size:12.5px;padding:3px 9px}
+#duelBar .coopp:disabled{opacity:1}

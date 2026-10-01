@@ -79,6 +79,14 @@ function manualHTML(copyCode) {
     + (copyCode ? '<p class="fine">Ton code, à transmettre :</p><textarea readonly id="mpCodeOut" rows="3">' + esc(copyCode) + '</textarea><button class="sbtn" type="button" id="mpCopy">Copier le code</button>' : '')
     + '<p class="fine">Code reçu :</p><textarea id="mpCodeIn" rows="3" placeholder="Colle le code ici"></textarea><button class="sbtn" type="button" id="mpPaste">Valider le code</button></details>';
 }
+// Mode de jeu du salon : duel (chacun sa carte) ou coop (tous sur la même carte, avec une difficulté)
+function sendLobby() { Net.send('all', { k: 'lobby', map: DUEL.lobbyMap, rsize: DUEL.lobbySize, mode: DUEL.lobbyMode || 'duel', diff: DUEL.lobbyDiff || 'moyen' }); }
+function modePickHTML(canPick) {
+  const mode = DUEL.lobbyMode || 'duel', diff = DUEL.lobbyDiff || 'moyen';
+  const seg = (items, cur, pre) => '<div class="mp-seg">' + items.map(([k, label]) => '<button class="sbtn' + (k === cur ? ' on' : '') + '" type="button"' + (canPick ? ' data-a="' + pre + k + '"' : ' disabled') + '>' + label + '</button>').join('') + '</div>';
+  return '<div class="mp-mode"><small>Mode</small>' + seg([['duel', '⚔ Duel'], ['coop', '🤝 Coop']], mode, 'mode-')
+    + (mode === 'coop' ? '<small>Difficulté</small>' + seg(DORDER.map(k => [k, DIFFS[k].name]), diff, 'diff-') : '') + '</div>';
+}
 function mapPickHTML(canPick) {
   const m = MAPS[DUEL.lobbyMap] || MAPS[0], rz = DUEL.lobbySize || 'moyenne';
   // Carte aléatoire : l'hôte choisit la taille, la graine est tirée au lancement et envoyée à tous
@@ -89,6 +97,11 @@ function mapPickHTML(canPick) {
     + (m.random && canPick ? '<div class="rsz mp-rsz">' + Object.entries(RSIZES).map(([k, S]) => '<button class="sbtn' + (k === rz ? ' on' : '') + '" type="button" data-a="rsize-' + k + '"><b>' + S.name + '</b><small>' + S.short + '</small></button>').join('') + '</div>' : '');
 }
 function rulesHTML() {
+  if (DUEL.lobbyMode === 'coop') return '<details class="mp-manual"><summary>Règles de la coop</summary><ul class="tips">'
+    + '<li>Tout le monde défend la même carte, avec ses propres améliorations de l’Atelier. Chaque tour porte un anneau de la couleur de son joueur : seul son propriétaire peut l’améliorer, la vendre ou la fusionner.</li>'
+    + '<li>Les vies sont communes. Les ennemis ont plus de PV et sont plus nombreux selon le nombre de joueurs, et leur or est partagé à parts égales.</li>'
+    + '<li>Touche un coéquipier dans le bandeau du haut pour lui donner 50 or. Appui long sur la carte : un ping visible par tous.</li>'
+    + '<li>Seul l’hôte peut accélérer ou mettre en pause. Fin de partie comme en solo : tout l’or en cas de victoire, la moitié en cas de K.O., rien si tu quittes.</li></ul></details>';
   return '<details class="mp-manual"><summary>Règles du duel</summary><ul class="tips">'
     + '<li>Mode infini, tout le monde repart de zéro : Braise et Ondine, 200 or, 0 éclat. Ta progression solo n’est pas touchée.</li>'
     + '<li>Une vague part toutes les 25 s pour tout le monde. Pas de pause ni d’accélération.</li>'
@@ -117,7 +130,7 @@ function renderMP() {
     const full = Net.players.length >= NET_MAX;
     h += '<h3 class="mp-h">Salon · ' + Net.players.length + '/' + NET_MAX + ' joueurs</h3>' + rosterHTML()
       + (full ? '<p class="fine">La partie est complète.</p>' : '<button class="btn green" type="button" data-a="invite">Inviter un joueur</button>')
-      + mapPickHTML(true)
+      + modePickHTML(true) + mapPickHTML(true)
       + '<button class="btn" type="button" data-a="launch"' + (Net.players.length < 2 ? ' disabled' : '') + '>' + (Net.players.length < 2 ? 'Invite au moins 1 joueur' : 'Lancer la partie !') + '</button>'
       + rulesHTML()
       + '<button class="btn pink" type="button" data-a="leave">Fermer la partie</button>';
@@ -138,7 +151,7 @@ function renderMP() {
   } else if (S === 'lobby') {
     const hp = Net.players.find(p => p.host);
     h += '<h3 class="mp-h">Connecté ! · ' + Net.players.length + '/' + NET_MAX + ' joueurs</h3>' + rosterHTML()
-      + mapPickHTML(false)
+      + modePickHTML(false) + mapPickHTML(false)
       + '<p class="mp-busy">En attente que ' + esc(hp ? hp.name : 'l’hôte') + ' lance la partie…</p>' + rulesHTML()
       + '<button class="btn pink" type="button" data-a="leave">Quitter la partie</button>';
   }
@@ -209,9 +222,11 @@ $('#mpBody').addEventListener('click', ev => {
   else if (a === 'scan-answer') mpGo('scan', { scanFor: 'answer', code: MP.code });
   else if (a === 'back-invite') mpGo('invite', { code: MP.code });
   else if (a === 'cancel' || a === 'leave') mpCancel();
-  else if (a === 'map-prev' || a === 'map-next') { do DUEL.lobbyMap = (DUEL.lobbyMap + (a === 'map-next' ? 1 : MAPS.length - 1)) % MAPS.length; while (!inSeason(MAPS[DUEL.lobbyMap])); Net.send('all', { k: 'lobby', map: DUEL.lobbyMap, rsize: DUEL.lobbySize }); renderMP(); }
-  else if (a.startsWith('rsize-')) { DUEL.lobbySize = a.slice(6); Net.send('all', { k: 'lobby', map: DUEL.lobbyMap, rsize: DUEL.lobbySize }); renderMP(); }
-  else if (a === 'launch') duelHostStart();
+  else if (a === 'map-prev' || a === 'map-next') { do DUEL.lobbyMap = (DUEL.lobbyMap + (a === 'map-next' ? 1 : MAPS.length - 1)) % MAPS.length; while (!inSeason(MAPS[DUEL.lobbyMap])); sendLobby(); renderMP(); }
+  else if (a.startsWith('rsize-')) { DUEL.lobbySize = a.slice(6); sendLobby(); renderMP(); }
+  else if (a.startsWith('mode-')) { DUEL.lobbyMode = a.slice(5); sendLobby(); renderMP(); }
+  else if (a.startsWith('diff-')) { DUEL.lobbyDiff = a.slice(5); sendLobby(); renderMP(); }
+  else if (a === 'launch') { if (DUEL.lobbyMode === 'coop') coopHostStart(); else duelHostStart(); }
 });
 // Garde le panneau de saisie manuelle ouvert d'un affichage à l'autre
 $('#mpBody').addEventListener('toggle', ev => { if (ev.target.classList && ev.target.classList.contains('mp-manual')) MP.manual = ev.target.open; }, true);
