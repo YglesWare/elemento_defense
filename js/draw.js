@@ -1021,11 +1021,12 @@ function drawPortal(c, x, y, s, t) {
 }
 // ---------- Yglou, la mascotte (aiglon chibi « aigle royal ») ----------
 // (x, y) : centre du corps ; s : taille (environ la hauteur totale) ; mood : happy, wink, shock, sad, party
-// o.crest : couleur de la crête (joueurs en multi) ; o.costume : clé d'événement pour son déguisement
+// o.crest : couleur de la crête (joueurs en multi) ; o.costume : clé d'événement pour son déguisement ; o.atom : taille de l'atome d'éléments en orbite (1 = taille de Yglou)
 const YG = { body: ['#c98a45', '#8a5226'], crest: '#e0a640' };
 function drawYglou(c, x, y, s, mood = 'happy', t = 0, o = {}) {
   const r = s * 0.36, lw = Math.max(1.5, s * 0.03), blinkOn = mood === 'happy' && ((t + (o.seed || 0)) % 3.6) < 0.12;
   const hop = mood === 'party' ? Math.abs(Math.sin(t * 7)) * s * 0.06 : 0;
+  if (o.atom) yAtom(c, x, y, s * o.atom, t, false);
   c.save(); c.translate(x, y); c.lineJoin = 'round'; c.lineCap = 'round';
   if (!o.noShadow) { c.fillStyle = 'rgba(42,27,61,.2)'; c.beginPath(); c.ellipse(0, r * 1.05, r * 0.8 * (1 - hop / s), r * 0.15, 0, 0, TAU); c.fill(); }
   c.translate(0, -hop);
@@ -1093,6 +1094,66 @@ function drawYglou(c, x, y, s, mood = 'happy', t = 0, o = {}) {
   }
   c.restore();
   if (mood === 'party' && !o.noConfetti) { const cols = ['#ff4f81', '#ffd23f', '#3fa9ff', '#4fd36a']; for (let i = 0; i < 10; i++) { const a = i * 2.4 + t * 0.8, d = s * (0.42 + (i % 3) * 0.06); c.save(); c.translate(x + Math.cos(a) * d, y - s * 0.14 + Math.sin(a) * d * 0.7); c.rotate(a + t * 3); c.fillStyle = cols[i % 4]; c.fillRect(-s * 0.015, -s * 0.03, s * 0.03, s * 0.06); c.restore(); } }
+  if (o.atom) yAtom(c, x, y, s * o.atom, t, true);
+}
+// L'atome d'éléments autour de Yglou : les symboles des tours tournent comme des électrons,
+// sur 3 orbites de tailles, d'angles et de vitesses différents (cy = hauteur du centre, rx/ry = rayons, tilt = inclinaison)
+const YEL = { feu: ['#ff7a3d', '#ffe066'], eau: ['#3a95ff', '#a8ecff'], terre: ['#a8703f', '#6fd35a'], vent: ['#6fe0c0', '#f0fffa'], foudre: ['#ffd23f', '#fff7b0'], glace: ['#7fd6ff', '#f2feff'] };
+const YATOM = [
+  { cy: -0.02, rx: 0.62, ry: 0.14, tilt: -0.3, sp: 1.1, ks: ['feu', 'vent'] },
+  { cy: -0.08, rx: 0.5, ry: 0.12, tilt: 0.55, sp: -0.8, ks: ['eau', 'terre'] },
+  { cy: -0.12, rx: 0.56, ry: 0.13, tilt: 1.35, sp: 0.65, ks: ['foudre', 'glace'] },
+];
+// Symbole d'un élément (comme sur les tours), centré en (x, y), demi-hauteur s
+function elemMotif(c, k, x, y, s, lw) {
+  c.save(); c.translate(x, y); c.lineJoin = 'round'; c.lineCap = 'round';
+  const [a, b] = YEL[k];
+  if (k === 'feu') {
+    c.beginPath(); c.moveTo(0, -s); c.quadraticCurveTo(s * 0.8, -s * 0.2, s * 0.55, s * 0.35); c.arc(0, s * 0.35, s * 0.55, 0, Math.PI); c.quadraticCurveTo(-s * 0.8, -s * 0.2, 0, -s); fs(c, a, lw);
+    c.beginPath(); c.moveTo(0, -s * 0.25); c.quadraticCurveTo(s * 0.35, s * 0.1, s * 0.27, s * 0.4); c.arc(0, s * 0.4, s * 0.27, 0, Math.PI); c.quadraticCurveTo(-s * 0.35, s * 0.1, 0, -s * 0.25); c.fillStyle = b; c.fill();
+  } else if (k === 'eau') {
+    c.beginPath(); c.moveTo(0, -s); c.bezierCurveTo(s * 0.3, -s * 0.5, s * 0.65, -s * 0.15, s * 0.65, s * 0.25); c.arc(0, s * 0.25, s * 0.65, 0, Math.PI); c.bezierCurveTo(-s * 0.65, -s * 0.15, -s * 0.3, -s * 0.5, 0, -s); fs(c, a, lw);
+    c.beginPath(); c.ellipse(-s * 0.25, s * 0.05, s * 0.1, s * 0.2, -0.4, 0, TAU); c.fillStyle = b; c.fill();
+  } else if (k === 'terre') {
+    c.beginPath(); c.moveTo(-s * 0.7, s * 0.55); c.lineTo(-s * 0.72, -s * 0.05); c.lineTo(-s * 0.25, -s * 0.45); c.lineTo(s * 0.45, -s * 0.35); c.lineTo(s * 0.72, s * 0.2); c.lineTo(s * 0.45, s * 0.6); c.closePath(); fs(c, a, lw);
+    c.beginPath(); c.moveTo(-s * 0.1, -s * 0.42); c.quadraticCurveTo(-s * 0.55, -s * 1.05, -s * 0.05, -s * 1.0); c.quadraticCurveTo(s * 0.1, -s * 0.7, -s * 0.1, -s * 0.42); fs(c, b, lw * 0.8);
+    c.beginPath(); c.moveTo(0, -s * 0.42); c.quadraticCurveTo(s * 0.5, -s * 0.9, s * 0.45, -s * 0.55); c.quadraticCurveTo(s * 0.3, -s * 0.4, 0, -s * 0.42); fs(c, b, lw * 0.8);
+  } else if (k === 'vent') {
+    c.beginPath(); c.arc(0, 0, s * 0.62, 0, TAU); fs(c, a, lw);
+    c.beginPath(); c.arc(s * 0.05, 0, s * 0.36, 0.4, Math.PI * 1.75); c.lineWidth = lw * 1.1; c.strokeStyle = b; c.stroke();
+    c.beginPath(); c.arc(s * 0.1, 0, s * 0.14, 0.4, Math.PI * 1.6); c.stroke();
+  } else if (k === 'foudre') {
+    c.beginPath(); c.moveTo(s * 0.25, -s); c.lineTo(-s * 0.5, s * 0.12); c.lineTo(-s * 0.02, s * 0.12); c.lineTo(-s * 0.25, s); c.lineTo(s * 0.55, -s * 0.18); c.lineTo(s * 0.07, -s * 0.18); c.closePath(); fs(c, a, lw);
+  } else {
+    c.beginPath(); c.moveTo(0, -s); c.lineTo(s * 0.58, -s * 0.38); c.lineTo(s * 0.58, s * 0.38); c.lineTo(0, s); c.lineTo(-s * 0.58, s * 0.38); c.lineTo(-s * 0.58, -s * 0.38); c.closePath();
+    const g = c.createLinearGradient(-s, -s, s, s); g.addColorStop(0, b); g.addColorStop(1, a); fs(c, g, lw);
+    c.beginPath(); c.moveTo(0, -s * 0.7); c.lineTo(0, s * 0.7); c.moveTo(-s * 0.35, -s * 0.2); c.lineTo(s * 0.35, s * 0.2); c.lineWidth = lw * 0.6; c.strokeStyle = 'rgba(255,255,255,.95)'; c.stroke();
+  }
+  c.restore();
+}
+// Moitié arrière (front = false, dessinée avant Yglou) ou avant de l'atome : orbites en pointillés puis électrons
+function yAtom(c, x, y, s, t, front) {
+  const lw = Math.max(1, s * 0.018), pt = (g, a) => { const ex = Math.cos(a) * s * g.rx, ey = Math.sin(a) * s * g.ry; return [x + ex * Math.cos(g.tilt) - ey * Math.sin(g.tilt), y + s * g.cy + ex * Math.sin(g.tilt) + ey * Math.cos(g.tilt)]; };
+  const items = [];
+  c.save(); c.lineWidth = Math.max(1, s * 0.008); c.strokeStyle = front ? 'rgba(42,27,61,.35)' : 'rgba(42,27,61,.18)'; c.setLineDash([s * 0.02, s * 0.02]);
+  YATOM.forEach((g, ri) => {
+    c.beginPath(); for (let j = 0; j <= 32; j++) { const [px, py] = pt(g, (front ? 0 : Math.PI) + j * Math.PI / 32); j ? c.lineTo(px, py) : c.moveTo(px, py); } c.stroke();
+    g.ks.forEach((k, i) => {
+      const a = t * g.sp + i * Math.PI + ri * 1.1, sn = Math.sin(a);
+      if ((sn >= 0) !== front) return;
+      const [px, py] = pt(g, a);
+      items.push({ k, px, py: py + Math.sin(t * 3 + i + ri) * s * 0.01, z: sn, sc: 0.78 + 0.11 * (sn + 1) });
+    });
+  });
+  c.restore();
+  items.sort((p, q) => p.z - q.z);
+  for (const it of items) {
+    const sz = s * 0.07 * it.sc, gr = c.createRadialGradient(it.px, it.py, 0, it.px, it.py, sz * 1.9);
+    c.save(); c.globalAlpha = front ? 1 : 0.8;
+    gr.addColorStop(0, YEL[it.k][0] + '99'); gr.addColorStop(1, YEL[it.k][0] + '00');
+    c.fillStyle = gr; c.beginPath(); c.arc(it.px, it.py, sz * 1.9, 0, TAU); c.fill();
+    elemMotif(c, it.k, it.px, it.py, sz, lw * it.sc); c.restore();
+  }
 }
 // La maison à protéger (décorée selon l'événement)
 function drawBase(c, x, y, s, t, hit) {

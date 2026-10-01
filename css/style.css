@@ -523,7 +523,7 @@ button:disabled{cursor:default}
 .upcoming em{font-style:normal;font-weight:700;color:var(--muted);font-size:13px;text-align:right}
 /* Yglou, la mascotte */
 #tYglou{display:block;width:120px;height:120px;margin:4px auto -34px;position:relative;z-index:2;cursor:pointer;-webkit-tap-highlight-color:transparent}
-#oYglou{display:block;width:130px;height:130px;margin:0 auto -14px}
+#oYglou{display:block;width:170px;height:130px;margin:0 auto -14px}
 .ybub{display:flex;align-items:center;gap:8px}
 .ybub canvas{flex:none;width:72px;height:72px}
 .ybub p{flex:1;min-width:0;text-align:left;margin:0}
@@ -533,7 +533,7 @@ button:disabled{cursor:default}
 #sTitle{overflow-y:auto}
 #sTitle .tinner{min-height:100%;justify-content:space-evenly;gap:clamp(6px,1.4vh,14px);padding-block:clamp(2px,1vh,10px)}
 /* Le cadre de Yglou déborde vers le haut (35 % de sa taille) : il peut sauter sans que son chapeau soit coupé */
-#sTitle #tYglou{width:auto;height:calc(clamp(88px,15vh,140px) * 1.35);aspect-ratio:9/13.5;margin:calc(clamp(88px,15vh,140px) * -0.35) auto calc(clamp(88px,15vh,140px) * -0.26);z-index:4;position:relative}
+#sTitle #tYglou{width:auto;height:calc(clamp(88px,15vh,140px) * 1.35);aspect-ratio:12/13.5;margin:calc(clamp(88px,15vh,140px) * -0.35) auto calc(clamp(88px,15vh,140px) * -0.26);z-index:4;position:relative}
 #sTitle .logo{margin:0}
 #sTitle .logo .l1{font-size:clamp(40px,min(13vw,8vh),86px)}
 #sTitle .logo .l2{font-size:clamp(20px,min(6.5vw,4vh),38px);margin-top:4px}
