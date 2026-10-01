@@ -84,7 +84,7 @@ function statChips(t) {
 function selectTower(t) {
   G.selTower = t; G.selType = null; G.ghost = null; refreshPalette();
   showPanel('info'); hudCache.info = null; refreshInfo();
-  if (!G.drag && fusionPartners(t).some(o => o.ok)) hint('Fais glisser ' + TOWERS[t.type].name + ' sur une tour entourée de rose pour fusionner', 2800);
+  if (!G.drag && fusionPartners(t).some(o => o.ok)) hint('Pour fusionner, touche une tour entourée de rose (ou fais-y glisser ' + TOWERS[t.type].name + ')', 2800);
 }
 function refreshInfo() {
   const t = G && G.selTower; if (!t) return;
@@ -107,7 +107,7 @@ function refreshInfo() {
   $('#iMode').hidden = D.kind === 'onde';
   iCtx.clearRect(0, 0, 44, 48); drawTower(iCtx, t.type, 22, 27, 37, t.lvl, 1, 0, 0.3, 0, false, t.br);
 }
-function deselect() { if (!G) return; G.selTower = null; G.selType = null; G.ghost = null; showPanel('palette'); refreshPalette(); }
+function deselect() { if (!G) return; if (typeof closeRadial === 'function') closeRadial(); G.selTower = null; G.selType = null; G.ghost = null; showPanel('palette'); refreshPalette(); }
 $('#iClose').addEventListener('click', deselect);
 // En coop, seul le propriétaire d'une tour peut la modifier
 const notMine = t => { if (!G.coop || !t.own || t.own === coopMe()) return false; hint('Tour de ' + coopName(t.own) + ' : seul son propriétaire peut la modifier', 2200); Snd.play('no'); return true; };
@@ -128,7 +128,7 @@ function refreshHUD() {
   setText(elLives, 'l', String(Math.max(0, G.lives)));
   setText(elGold, 'g', fmtK(G.gold));
   const nwk = (G.over ? 'x' : G.nextWave ? G.nextWave.n : '-') + G.weather; if (hudCache.nw !== nwk) { hudCache.nw = nwk; renderNextWave(); }
-  setText($('#hBank'), 'bk', '🐷 ' + fmtK(meta.bank || 0)); $('#hBank').hidden = !!G.duel;
+  setText($('#hBank'), 'bk', '🐷 ' + fmtK(meta.bank || 0)); $('#hBank').hidden = !!(G.duel || G.coop);
   let ic = '▶', sm = 'Vague', big, cls, bonus = 0;
   const cap = G.endless ? '' : '/' + G.maxw;
   if (G.over || G.spawnQ.length) { ic = ''; big = G.wave + cap; cls = 'idle'; }
@@ -170,7 +170,12 @@ function tapCell(q, r, isMouse) {
   if (!G || G.over) return;
   if (!inside(q, r)) { deselect(); return; }
   const tw = towerAt(q, r);
-  if (tw) { selectTower(tw); return; }
+  if (tw) {
+    // Une tour est déjà choisie et l'autre peut fusionner avec elle : menu radial « fusionner / sélectionner »
+    const s = G.selTower;
+    if (s && s !== tw && fusionKey(s.type, tw.type) && !TOWERS[s.type].fusion && !TOWERS[tw.type].fusion && !(G.coop && (s.own !== coopMe() || tw.own !== coopMe()))) { openRadial(s, tw); return; }
+    selectTower(tw); return;
+  }
   if (G.selType) {
     const D = TOWERS[G.selType];
     if (!canBuild(q, r)) { G.bad = { c: q, r, t: 0.45 }; Snd.play('no'); hint((terrainAt(q, r) || {}).block ? 'Impossible de construire sur un obstacle' : 'Impossible de construire sur le chemin'); return; }
@@ -658,7 +663,7 @@ function fuseCheck(src, dst) {
   if (!fusionUnlocked(k)) return { k, why: F.name + ' : à débloquer dans l’Atelier (' + F.unlock + ' éclats)' };
   if (src.lvl < 2 || dst.lvl < 2) return { k, why: F.name + ' : les deux tours doivent être au niveau 2' };
   if (G.gold < F.fee) return { k, why: F.name + ' : il faut ' + F.fee + ' or' };
-  if (G.coop && (src.own !== coopMe() || dst.own !== coopMe())) return { k, why: 'En coop, tu ne peux fusionner que tes propres tours' };
+  if (G.coop && (src.own !== coopActor() || dst.own !== coopActor())) return { k, why: 'En coop, tu ne peux fusionner que tes propres tours' };
   return { k, ok: true };
 }
 function fusionPartners(t) {
@@ -670,6 +675,33 @@ function fusionPartners(t) {
   }
   return out;
 }
+// Menu radial de fusion : deux boutons autour de la tour touchée
+const radial = $('#radial'), rFuse = $('#rFuse');
+let rad = null;
+function openRadial(src, dst) {
+  const r = fuseCheck(src, dst), k = r.k, F = TOWERS[k];
+  rad = { src, dst, ok: !!r.ok, why: r.why };
+  const [x, y] = toScreen(dst.x, dst.y), cs = L.cs, d = Math.max(40, cs * 1.2);
+  // Les deux boutons au-dessus de la tour touchée (en dessous si elle est tout en haut), sans sortir de l'écran
+  const bx = clamp(x, d + 30, L.w - d - 30), by = y - cs * 0.55 - 44 < 34 ? y + cs * 0.5 + 34 : y - cs * 0.55 - 34;
+  radial.style.left = bx + 'px'; radial.style.top = by + 'px'; radial.style.setProperty('--d', d + 'px');
+  const c = prepMini(rFuse.querySelector('canvas'), 40, 44); drawTower(c, k, 20, 27, 34, 1, 0.5, 0, 0.3, 0, false);
+  rFuse.querySelector('.rc').innerHTML = COIN + F.fee;
+  rFuse.classList.toggle('no', !r.ok); rFuse.setAttribute('aria-label', 'Fusionner en ' + F.name + (r.ok ? '' : ' (' + r.why + ')'));
+  radial.hidden = false; radial.classList.remove('pop'); void radial.offsetWidth; radial.classList.add('pop');
+  hint(r.ok ? F.name + ' : touche l’icône de gauche pour fusionner (' + F.fee + ' or)' : r.why, 2600);
+  Snd.play('build');
+}
+function closeRadial() { rad = null; radial.hidden = true; }
+rFuse.addEventListener('click', ev => {
+  ev.stopPropagation(); if (!rad || !G) return;
+  const { src, dst } = rad; closeRadial();
+  if (!G.towers.includes(src) || !G.towers.includes(dst)) return;
+  tryFuse(src, dst);
+});
+$('#rSel').addEventListener('click', ev => { ev.stopPropagation(); if (!rad || !G) return; const t = rad.dst; closeRadial(); if (G.towers.includes(t)) selectTower(t); });
+// Toucher ailleurs ferme le menu
+document.addEventListener('pointerdown', ev => { if (rad && !ev.target.closest('#radial')) closeRadial(); }, true);
 function tryFuse(src, dst) {
   const r = fuseCheck(src, dst);
   if (!r.ok) { Snd.play('no'); hint(r.why, 2800); return; }
@@ -783,7 +815,7 @@ const TUTO = [
     what: 'Quand une rafale de Zéphyr frappe un ennemi en feu, les flammes sautent sur tous ses voisins proches.',
     tips: ['Idéal contre les longues files de Gloop', 'Magmo, lui, ne brûle jamais'] },
   { kind: 'spec', title: 'Spécialisations', tag: 'Niveaux 3 et 4', html: '<p style="margin:0">Au niveau 2, chaque tour posée peut se spécialiser contre les ennemis au sol, les volants ou les Kaiju. Le choix vaut pour <b>cette tour uniquement</b>, et il est définitif : les deux autres branches se ferment. Deux Braise peuvent donc avoir des spécialisations différentes.</p>' },
-  { kind: 'fusion', demo: 'fus', title: 'Fusions', tag: 'Deux éléments, une tour', html: '<p style="margin:0">Fais glisser une tour sur une autre tour d’élément compatible, toutes deux au niveau 2 ou plus : elles deviennent une seule tour, plus puissante, avec son propre effet, à la place de celle sur laquelle tu l’as lâchée. Chaque fusion se débloque une par une dans l’Atelier. Ici, une Tornade de feu.</p>' },
+  { kind: 'fusion', demo: 'fus', title: 'Fusions', tag: 'Deux éléments, une tour', html: '<p style="margin:0">Touche une tour, puis une autre tour d’élément compatible (entourée de rose), toutes deux au niveau 2 ou plus : un menu propose de les fusionner. Tu peux aussi faire glisser l’une sur l’autre. Elles deviennent une seule tour, plus puissante, avec son propre effet, à la place de la seconde. Chaque fusion se débloque une par une dans l’Atelier. Ici, une Tornade de feu.</p>' },
   { kind: 'terrain', title: 'Terrains', tag: 'Bonus et malus', html: '<p style="margin:0">Certaines cases changent la puissance des tours posées dessus. Une Ondine sur l’eau frappe 40 % plus fort, mais perd 40 % sur le sable. L’eau et la lave ont les effets les plus forts, le marécage des effets plus doux. Une fusion prend la moyenne de ses deux éléments : un Volcan sur l’eau a donc un malus. Quand tu choisis une tour, les cases s’affichent en vert (bonus) ou en rouge (malus). Chaque carte a aussi un biome qui renforce ou affaiblit certains éléments sur toute la carte. Le tableau complet est dans l’Aide.</p>' },
   { kind: 'end', title: 'À toi de jouer !', tag: 'Récap', html: '<ul>'
     + '<li>Commence avec Ondine et Braise près d’un virage : les ennemis y restent plus longtemps à portée.</li>'

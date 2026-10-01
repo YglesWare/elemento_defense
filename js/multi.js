@@ -98,10 +98,11 @@ function mapPickHTML(canPick) {
 }
 function rulesHTML() {
   if (DUEL.lobbyMode === 'coop') return '<details class="mp-manual"><summary>Règles de la coop</summary><ul class="tips">'
-    + '<li>Tout le monde défend la même carte, avec ses propres améliorations de l’Atelier. Chaque tour porte un anneau de la couleur de son joueur : seul son propriétaire peut l’améliorer, la vendre ou la fusionner.</li>'
+    + '<li>Tout le monde défend la même carte et repart de zéro, comme en duel : Braise et Ondine, 0 éclat. Ta progression solo n’est pas touchée.</li>'
+    + '<li>Les éclats gagnés à chaque vague servent dans l’Atelier (bouton violet), qui ne met pas le jeu en pause. Chaque tour porte un anneau de la couleur de son joueur : seul son propriétaire peut l’améliorer, la vendre ou la fusionner.</li>'
     + '<li>Les vies sont communes. Les ennemis ont plus de PV et sont plus nombreux selon le nombre de joueurs, et leur or est partagé à parts égales.</li>'
     + '<li>Touche un coéquipier dans le bandeau du haut pour lui donner 50 or. Appui long sur la carte : un ping visible par tous.</li>'
-    + '<li>Seul l’hôte peut accélérer ou mettre en pause. Fin de partie comme en solo : tout l’or en cas de victoire, la moitié en cas de K.O., rien si tu quittes.</li></ul></details>';
+    + '<li>Seul l’hôte peut accélérer ou mettre en pause.</li></ul></details>';
   return '<details class="mp-manual"><summary>Règles du duel</summary><ul class="tips">'
     + '<li>Mode infini, tout le monde repart de zéro : Braise et Ondine, 200 or, 0 éclat. Ta progression solo n’est pas touchée.</li>'
     + '<li>Une vague part toutes les 25 s pour tout le monde. Pas de pause ni d’accélération.</li>'

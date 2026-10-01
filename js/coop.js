@@ -1,6 +1,7 @@
 // Élémento Defense : coop multijoueur (2 à 4 joueurs sur la même carte).
 // L'hôte simule la partie et fait foi ; les invités envoient leurs actions et affichent l'état reçu ~8 fois par seconde.
-// Chaque joueur garde ses propres améliorations de l'Atelier, l'or des ennemis est partagé à parts égales.
+// Comme en duel, tout le monde repart de zéro (Atelier vierge, progression solo intacte) ; l'or des ennemis est partagé à parts égales.
+// Chacun achète ses propres améliorations pendant la partie : les tours suivent l'Atelier (temporaire) de leur propriétaire.
 'use strict';
 
 const COOP = { on: false, ids: [], names: {}, lvs: {}, gold: {}, frac: {}, actor: null, gone: new Set(), snapT: 0, lastSnap: 0, towerSig: '', pingHold: null, pings: [] };
@@ -49,20 +50,18 @@ function beginCoop(msg) {
   Object.assign(COOP, { on: true, ids: msg.ids, names: msg.names, gold: {}, frac: {}, gone: new Set(), snapT: 0, lastSnap: performance.now(), towerSig: '', pings: [] });
   if (msg.rnd) msg.map = makeRandom(msg.rnd.size, msg.rnd.seed);
   const host = Net.role === 'host';
+  enterDuelMeta(); COOP.lvs = {}; COOP.lvSent = '{}';
   newGame(msg.map, null, msg.diff);
   Object.assign(G, { coop: true, coopGuest: !host, coopN: msg.ids.length, coopHp: 1 + 0.5 * (msg.ids.length - 1), speed: 1 });
   if (host) {
-    // Or de départ de chacun, selon son Atelier (« Trésor de départ »)
-    for (const id of msg.ids) if (id !== coopMe()) COOP.gold[id] = DIFFS[G.diff].gold + (coopLv(id).gold || 0) * 25;
+    for (const id of msg.ids) if (id !== coopMe()) COOP.gold[id] = DIFFS[G.diff].gold;
     prepNextWave();
-  } else {
-    G.towers = []; G.nextWave = null; G.spawnQ = [];
-    Net.send(hostOf(), { k: 'clv', lv: meta.lv });
-  }
+  } else { G.towers = []; G.nextWave = null; G.spawnQ = []; }
   $('#bSpeed').hidden = !host; $('#bSpeed').textContent = 'x1';
+  $('#stage').classList.add('duel'); resize();
   renderCoopBar();
   banner('COOP !', COOP.ids.length + ' joueurs · ' + MAPS[G.map].name + ' · ' + DIFFS[G.diff].name);
-  hint('Vos tours ont un anneau de votre couleur. L’or des ennemis est partagé. Touche un coéquipier en haut pour lui donner 50 or. Appui long sur la carte : ping.', 6000);
+  hint('Tout le monde repart de zéro. Vos tours ont un anneau de votre couleur et l’or des ennemis est partagé. Touche un coéquipier en haut pour lui donner 50 or. Appui long sur la carte : ping.', 6500);
 }
 const hostOf = () => { const h = Net.players.find(p => p.host); return h ? h.id : 'host'; };
 
@@ -204,7 +203,11 @@ function coopTick(dt) {
   if (!G.coopGuest) {
     const sig = towerSig(); if (sig !== COOP.towerSig) { COOP.towerSig = sig; sendTowers(); }
     COOP.snapT -= dt; if (COOP.snapT <= 0 && !G.over) { COOP.snapT = 0.125; sendSnapshot(); }
-  } else if (!G.over && now - COOP.lastSnap > 8000) coopFinish(false, 'La connexion avec l’hôte est perdue. La partie s’arrête (règles du K.O.).');
+  } else {
+    if (!G.over && now - COOP.lastSnap > 8000) coopFinish(false, 'La connexion avec l’hôte est perdue. La partie s’arrête.');
+    // Achats dans l'Atelier pendant la partie : l'hôte en a besoin pour calculer nos tours
+    const lv = JSON.stringify(meta.lv); if (lv !== COOP.lvSent) { COOP.lvSent = lv; Net.send(hostOf(), { k: 'clv', lv: meta.lv }); }
+  }
   COOP.pings = COOP.pings.filter(p => (p.t += dt) < 2.4);
   COOP.uiT = (COOP.uiT || 0) - dt; if (COOP.uiT <= 0) { COOP.uiT = 0.3; renderCoopBar(); }
 }
@@ -260,15 +263,16 @@ function coopFinish(win, text, quit) {
   if (!G || !G.coop || G.coopDone) return;
   G.coopDone = true; G.over = true; G.won = !!win; G.paused = true;
   Snd.play(win ? 'win' : quit ? 'clear' : 'ko');
-  let award = null, bank, lost = 0;
-  if (quit) { lost = revokeShards(); bank = bankGold(0); }
-  else { award = awardShards(); bank = bankGold(win ? 1 : 0.5); }
   setTimeout(() => {
     if (!G || !G.coop) return;
-    showOver(!!win, null, award, bank, !!quit, lost);
+    // Partie coop : comme en duel, rien n'est versé à la progression solo
+    showOver(!!win, { wave: G.wave }, null, { gain: 0, total: soloMeta ? soloMeta.bank || 0 : meta.bank || 0 }, !!quit, 0);
     $('#oRetry').hidden = true; $('#oEndless').hidden = true;
     $('#oWord').textContent = quit ? 'ABANDON' : win ? 'VICTOIRE !!' : 'K.O. !';
-    $('#oText').textContent = text || (win ? 'Toute l’équipe a tenu : bravo !' : quit ? 'Tu as quitté la partie coop : elle ne te rapporte ni or ni éclats.' : 'La maison est tombée. Retentez votre chance ensemble !');
+    $('#oText').textContent = text || (win ? 'Toute l’équipe a tenu : bravo !' : quit ? 'Tu as quitté la partie coop.' : 'La maison est tombée. Retentez votre chance ensemble !');
+    $('#oBank').textContent = '—'; $('#oShards').textContent = '—';
+    $('#oBankDetail').textContent = 'Partie coop : tout le monde repart de zéro, ta cagnotte et ton Atelier solo ne changent pas.';
+    $('#oGainDetail').textContent = 'Les éclats gagnés pendant la partie ne servaient qu’à cette partie.';
     $('#oMenu').textContent = 'Retour au salon';
   }, win ? 300 : 1100);
 }
@@ -276,7 +280,7 @@ function coopQuit() {
   if (!G || !G.coop || G.over) return;
   if (G.coopGuest) { Net.send(hostOf(), { k: 'cquit' }); coopFinish(false, null, true); return; }
   // L'hôte quitte : la partie s'arrête pour tout le monde (les invités gardent les règles du K.O.)
-  Net.send('all', { k: 'cend', win: false, text: coopName(coopMe()) + ' (l’hôte) a arrêté la partie. Règles du K.O. : la moitié de ton or rejoint la cagnotte.' });
+  Net.send('all', { k: 'cend', win: false, text: coopName(coopMe()) + ' (l’hôte) a arrêté la partie.' });
   coopFinish(false, null, true);
 }
 function playerGone(id) {
@@ -287,7 +291,7 @@ function playerGone(id) {
   coopNotice(coopName(id) + ' a quitté la partie' + (v ? ' : son or (' + v + ') est partagé' : '') + '. Ses tours continuent de tirer.');
 }
 function leaveCoop() {
-  COOP.on = false; clearTimeout(COOP.pingHold);
+  COOP.on = false; clearTimeout(COOP.pingHold); exitDuelMeta(); $('#stage').classList.remove('duel');
   $('#bSpeed').hidden = false; $('#duelBar').hidden = true; $('#duelBar')._h = '';
   $('#oRetry').hidden = false; $('#oMenu').textContent = 'Menu';
   G = null;
@@ -303,7 +307,7 @@ document.addEventListener('click', ev => {
   if (!COOP.on || !G || !G.coop || !ev.target.closest('#pCash')) return;
   ev.stopPropagation(); ev.preventDefault();
   const b = $('#pCash');
-  if (!COOP.quitArm) { COOP.quitArm = true; b.textContent = G.coopGuest ? 'Sûr ? Tu quittes sans rien gagner' : 'Sûr ? La partie s’arrête pour tous'; return; }
+  if (!COOP.quitArm) { COOP.quitArm = true; b.textContent = G.coopGuest ? 'Sûr ? Touche encore pour quitter' : 'Sûr ? La partie s’arrête pour tous'; return; }
   COOP.quitArm = false; coopQuit();
 }, true);
 function coopPauseUI() {
@@ -311,6 +315,7 @@ function coopPauseUI() {
   COOP.quitArm = false;
   $('#pQuit').hidden = true; $('#pAuto').hidden = G.coopGuest; $('#pCash').hidden = false;
   $('#pCash').textContent = G.coopGuest ? 'Quitter la partie coop' : 'Arrêter la partie (pour tous)';
+  $('#pCash').classList.add('pink'); $('#pCash').classList.remove('alt');
   $('#pSave').textContent = 'Partie coop · ' + COOP.ids.length + ' joueurs · ' + MAPS[G.map].name + ' · ' + DIFFS[G.diff].name
     + (MAPS[G.map].random ? ' · graine ' + seedCode(MAPS[G.map].rnd) : '') + '. ' + (G.coopGuest ? 'Le jeu continue pendant ce menu : seul l’hôte peut mettre tout le monde en pause.' : 'Ta pause met tout le monde en pause.');
 }
@@ -320,11 +325,11 @@ Net.on('msg', ({ from, data }) => {
   if (!data || !data.k || data.k[0] !== 'c') return;
   switch (data.k) {
     case 'clv': if (Net.role === 'host') {
-      const before = coopLv(from).gold || 0; COOP.lvs[from] = data.lv || {};
+      const old = coopLv(from); COOP.lvs[from] = data.lv || {};
       if (isHostCoop()) {
         for (const t of G.towers) if (t.own === from) { t.s = towerStats(t); healTower(t); }
-        // Améliorations reçues après le lancement : on ajuste l'or de départ tant que la 1re vague n'est pas partie
-        if (G.wave === 0) COOP.gold[from] = (COOP.gold[from] || 0) + ((data.lv || {}).gold || 0) * 25 - before * 25;
+        // Comme en solo, « Trésor de départ » acheté en cours de partie donne tout de suite son or
+        const dg = ((data.lv || {}).gold || 0) - (old.gold || 0); if (dg > 0) COOP.gold[from] = (COOP.gold[from] || 0) + dg * 25;
       }
     } break;
     case 'cstart': if (Net.role !== 'host') beginCoop(data); break;

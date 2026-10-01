@@ -74,8 +74,9 @@ function resize() {
   L.portrait = L.h > L.w * 1.08;
   const vc = L.portrait ? ROWS : COLS, vr = L.portrait ? COLS : ROWS;
   const NW = 36; // place réservée sous la carte pour l'aperçu de la prochaine vague
-  L.cs = Math.max(8, Math.min((L.w - 32) / vc, (L.h - 24 - NW) / vr));
-  L.ox = (L.w - vc * L.cs) / 2; L.oy = Math.max(8, (L.h - NW - vr * L.cs) / 2);
+  const TB = G && (G.duel || G.coop) ? 34 : 0; // et au-dessus pour le bandeau des joueurs (duel, coop)
+  L.cs = Math.max(8, Math.min((L.w - 32) / vc, (L.h - 24 - NW - TB) / vr));
+  L.ox = (L.w - vc * L.cs) / 2; L.oy = TB + Math.max(8, (L.h - NW - TB - vr * L.cs) / 2);
   if (G) { buildBg(); for (const e of G.enemies) setPos(e); }
 }
 function dotPattern(c, col, step) {

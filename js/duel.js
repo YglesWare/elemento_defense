@@ -71,7 +71,7 @@ function beginDuel(msg) {
   DUEL.map = msg.map;
   newGame(msg.map, null, 'infini');
   G.duel = true; G.sendQ = []; G.sendT = 0; G.speed = 1;
-  $('#bSpeed').hidden = true; $('#stage').classList.add('duel');
+  $('#bSpeed').hidden = true; $('#stage').classList.add('duel'); resize();
   DUEL.nextAt = dnow() + (msg.prep || DUEL.cfg.prep);
   buildSendPanel(); showPanel('palette'); renderDuelBar();
   banner('DUEL !', 'Prépare tes défenses : 1re vague dans ' + Math.round((msg.prep || DUEL.cfg.prep) / 1000) + ' s');
