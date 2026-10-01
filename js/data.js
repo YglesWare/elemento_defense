@@ -78,13 +78,37 @@ const MAPS = [
     deco: ['flocon', 'herbe'], obstacle: 'sapin',
     pts: [[-1, 3], [6, 3], [6, 6], [14, 6]],
     terrain: ['NNXXNNLLNNXXNN', 'N.RN..LL.KK.XN', 'XN.NLL..N.R.NN', '.......N.X.RNN', 'NRN.X.....N..X', 'N.LL.N.RXN.LLN', 'XN.NN.........', 'NNX.W.RLL.N.XN', 'XXNNXXNNNNXXNN'] },
-  // Carte saisonnière : gratuite, jouable du 1er octobre au 10 novembre (toujours en dernier dans la liste)
+  // Cartes d'événement : gratuites, jouables seulement pendant leur saison (toujours en fin de liste)
   { id: 'halloween', name: 'Manoir Citrouille', price: 0, hpMul: 1.25, shards: 1.5, season: 'halloween', blurb: 'Événement Halloween : citrouilles, brume hantée et potions. Fantômes, chats noirs, spectres et le Roi Citrouille rôdent, et tes tours se déguisent !',
     ground: '#6f5d91', ground2: '#68568a', path: '#d4b089', pathEdge: '#8f6a4c', frame: '#2b1f40', dot: 'rgba(255,170,60,.2)',
     deco: ['citrouille', 'bougie', 'champinuit', 'os', 'citrouille'], obstacle: 'tombe',
     best: { feu: 'P', terre: 'P', foudre: 'H', vent: 'H', eau: 'B', glace: 'B' },
     pts: [[-1, 4], [2, 4], [2, 1], [6, 1], [6, 7], [9, 7], [9, 2], [12, 2], [12, 5], [14, 5]],
     terrain: ['XXPPP.HHH..XXX', 'XP.....P.HH..X', 'PP..BB.PP.....', '...BBB..X.HH.X', '....X..PP.HH..', 'HH.C..B......X', 'HHX..BB..CPP..', 'X.......X..PPX', 'XXBBXX.HHXXPPX'] },
+  { id: 'noel', name: 'Village Sucre d’Orge', price: 0, hpMul: 1.3, shards: 1.5, season: 'noel', blurb: 'Événement Noël : lac gelé, pain d’épices et guirlandes. Bonshommes de neige, lutins, cadeaux surprises et le Yéti débarquent, et tes tours mettent leur bonnet !',
+    ground: '#e4eef6', ground2: '#dae6f0', path: '#d9b98f', pathEdge: '#9a7652', frame: '#1f4a3a', dot: 'rgba(255,255,255,.4)',
+    deco: ['sucredorge', 'boule', 'bonhomme', 'flocon', 'cadeaumini'], obstacle: 'sapinnoel',
+    best: { feu: 'G', terre: 'G', glace: 'J', eau: 'J', foudre: 'E', vent: 'E' },
+    pts: [[-1, 1], [4, 1], [4, 7], [8, 7], [8, 3], [11, 3], [11, 6], [14, 6]],
+    terrain: ['XXJJJ....GG.XX', 'X....EE..GG..X', 'JJ...EE.....JJ', 'J..GG..X.....J', '..GGG...C..EE.', 'EE..X.JJ...EE.', 'EE...JJJ.GG...', 'X..C......GGXX', 'XXEEXXJJXXGGXX'] },
+  { id: 'paques', name: 'Jardin Chocolat', price: 0, hpMul: 1.2, shards: 1.5, season: 'paques', blurb: 'Événement Pâques : fontaines de chocolat, ruisseaux pastel et prés fleuris. Poussins, abeilles, lapins sauteurs et le Lapin en chocolat géant envahissent le jardin !',
+    ground: '#a6e27f', ground2: '#9dda76', path: '#f7e3b5', pathEdge: '#d4b077', frame: '#f2a7cf', dot: 'rgba(255,255,255,.4)',
+    deco: ['tulipe', 'oeufmini', 'carotte', 'fleur', 'tulipe'], obstacle: 'oeufgeant',
+    best: { feu: 'O', terre: 'O', eau: 'Y', glace: 'Y', vent: 'Z', foudre: 'Z' },
+    pts: [[-1, 6], [3, 6], [3, 2], [7, 2], [7, 6], [10, 6], [10, 1], [14, 1]],
+    terrain: ['ZZOO..YYY..XXZ', 'Z..OO.YY.....X', 'YY.......ZZ..Z', 'YY..ZZ.....OO.', '...ZZZ..X..OO.', 'X..C....OO...Y', '....YY.......Y', 'ZZ..YY..XC..ZZ', 'XXOOXXZZXXYYXX'] },
+  { id: 'valentin', name: 'Vallée Guimauve', price: 0, hpMul: 1.2, shards: 1.5, season: 'valentin', blurb: 'Événement Saint-Valentin : roseraies, fontaines des vœux et nuages de barbe à papa. Guimauves, Cupidons, Câlinous et la Reine des Cœurs arrivent, et tes tours sont amoureuses !',
+    ground: '#f7cfe0', ground2: '#f2c6d9', path: '#fff1e2', pathEdge: '#dda0b8', frame: '#b93d72', dot: 'rgba(255,255,255,.4)',
+    deco: ['coeurmini', 'rose', 'fleur', 'coeurmini', 'rose'], obstacle: 'coeurbuisson',
+    best: { feu: 'A', terre: 'A', eau: 'I', glace: 'I', vent: 'Q', foudre: 'Q' },
+    pts: [[-1, 3], [3, 3], [3, 7], [7, 7], [7, 1], [10, 1], [10, 5], [14, 5]],
+    terrain: ['AAII..QQQ..XXA', 'A..II.......XA', 'II.....QQ....A', 'I..AA.....QQ..', '...AAA.....QQ.', 'X..C.QQ.......', '....II.....AAA', 'QQ..II..XC..AA', 'XXAAXXQQXXIIXX'] },
+  { id: 'nouvelan', name: 'Quartier Dim Sum', price: 0, hpMul: 1.25, shards: 1.5, season: 'nouvelan', blurb: 'Événement Nouvel An chinois : lanternes, jardins de thé et pics de jade. Raviolis, lions dansants, enveloppes rouges pleines d’or et le Dragon défilent dans les rues !',
+    ground: '#ecd3a0', ground2: '#e6cb96', path: '#f8e6bf', pathEdge: '#b8864a', frame: '#a31e2e', dot: 'rgba(255,210,63,.3)',
+    deco: ['lanternemini', 'petard', 'bambou', 'mandarine', 'lanternemini'], obstacle: 'pagode',
+    best: { feu: 'D', foudre: 'D', terre: 'T', eau: 'T', vent: 'U', glace: 'U' },
+    pts: [[-1, 7], [2, 7], [2, 2], [5, 2], [5, 6], [9, 6], [9, 1], [12, 1], [12, 7], [14, 7]],
+    terrain: ['DDTT..UUU..XXD', 'D..TT.UU.....X', 'UU.......DD..D', 'UU..DD.....TT.', '...DDD..X..TT.', 'X..C....TT...U', '....UU.......U', 'TT..UU..XC..TT', 'XXDDXXTTXXUUXX'] },
 ];
 const DORDER = ['facile', 'moyen', 'difficile', 'infini'];
 const DIFFS = {
@@ -120,6 +144,11 @@ const WEATHERS = {
   blizzard: { name: 'Blizzard', icon: '❄', mods: { glace: 0.2, feu: -0.15 }, desc: 'Givrette +20 %, Braise −15 %, ennemis ralentis' },
   thunder: { name: 'Orage', icon: '⛈', mods: { foudre: 0.25 }, desc: 'Voltie +25 %, des éclairs frappent les ennemis' },
   fog: { name: 'Brouillard', icon: '🌫', mods: {}, range: -0.4, desc: 'portée de toutes les tours −0,4' },
+  aurora: { name: 'Aurore boréale', icon: '🌌', mods: { foudre: 0.15, vent: 0.15, glace: 0.1 }, desc: 'Voltie +15 %, Zéphyr +15 %, Givrette +10 %' },
+  shower: { name: 'Giboulées', icon: '🌦', mods: { eau: 0.2, vent: 0.1, feu: -0.1 }, desc: 'Ondine +20 %, Zéphyr +10 %, Braise −10 %, ennemis mouillés' },
+  rainbow: { name: 'Arc-en-ciel', icon: '🌈', mods: { feu: 0.1, eau: 0.1, terre: 0.1, vent: 0.1, foudre: 0.1, glace: 0.1 }, desc: 'toutes les tours +10 %' },
+  petals: { name: 'Pluie de pétales', icon: '🌸', mods: { vent: 0.15, feu: 0.1 }, desc: 'Zéphyr +15 %, Braise +10 %' },
+  fireworks: { name: 'Feux d’artifice', icon: '🎆', mods: { feu: 0.15, foudre: 0.15, eau: -0.1 }, desc: 'Braise +15 %, Voltie +15 %, Ondine −10 %, des fusées frappent les ennemis' },
   moon: { name: 'Pleine lune', icon: '🌕', mods: { foudre: 0.15, glace: 0.15 }, desc: 'Voltie +15 %, Givrette +15 %, les spectres restent intangibles moins longtemps' },
 };
 const WEATHER_POOL = {
@@ -128,6 +157,10 @@ const WEATHER_POOL = {
   canyon: ['storm', 'heat', 'fog', 'clear'], volcan: ['heat', 'thunder', 'fog', 'clear'], pic: ['blizzard', 'blizzard', 'fog', 'storm', 'clear'],
   toundra: ['blizzard', 'blizzard', 'fog', 'storm'],
   halloween: ['moon', 'fog', 'thunder', 'moon', 'rain'],
+  noel: ['blizzard', 'aurora', 'fog', 'aurora', 'clear'],
+  paques: ['rainbow', 'shower', 'clear', 'shower', 'storm'],
+  valentin: ['petals', 'clear', 'rainbow', 'petals', 'fog'],
+  nouvelan: ['fireworks', 'clear', 'fog', 'fireworks', 'rain'],
 };
 const BIOMES = {
   prairie: { name: 'Tempéré', mods: {} },
@@ -141,19 +174,42 @@ const BIOMES = {
   pic: { name: 'Alpin', mods: { glace: 0.15, vent: 0.1, feu: -0.15 } },
   toundra: { name: 'Polaire', mods: { glace: 0.2, foudre: 0.1, feu: -0.2 } },
   halloween: { name: 'Hanté', mods: { feu: 0.1, foudre: 0.1, eau: -0.1 } },
+  noel: { name: 'Festif', mods: { glace: 0.15, foudre: 0.1, feu: -0.1 } },
+  paques: { name: 'Printanier', mods: { vent: 0.1, eau: 0.1, glace: -0.1 } },
+  valentin: { name: 'Romantique', mods: { feu: 0.1, vent: 0.1, glace: -0.1 } },
+  nouvelan: { name: 'Impérial', mods: { feu: 0.15, foudre: 0.1, glace: -0.1 } },
 };
 MAPS.forEach(m => { m.biome = BIOMES[m.id]; });
 function biomeText(B) {
   const e = Object.entries(B.mods).sort((a, b) => b[1] - a[1]);
   return e.length ? e.map(([k, v]) => ELNAME[k] + ' ' + fmtAff(v)).join(', ') : 'aucun effet sur les tours';
 }
-// Événements saisonniers : Halloween du 1er octobre au 10 novembre (?halloween dans l'adresse pour l'essayer hors saison)
+// Événements saisonniers (?halloween, ?noel ou ?paques dans l'adresse pour les essayer hors saison)
+function easter(y) {
+  const a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const n = h + l - 7 * m + 114; return new Date(y, Math.floor(n / 31) - 1, (n % 31) + 1);
+}
+const DAY = 864e5, frDate = d => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
+const SEASONS = {
+  halloween: { name: 'Halloween', icon: '🎃', on: d => d.getMonth() === 9 || (d.getMonth() === 10 && d.getDate() <= 10), until: () => 'jusqu’au 10 novembre', back: 'Revient en octobre' },
+  noel: { name: 'Noël', icon: '🎄', on: d => d.getMonth() === 11 || (d.getMonth() === 0 && d.getDate() <= 6), until: () => 'jusqu’au 6 janvier', back: 'Revient en décembre' },
+  paques: { name: 'Pâques', icon: '🐣', on: d => Math.abs(d - easter(d.getFullYear())) <= 14 * DAY,
+    until: () => 'jusqu’au ' + frDate(new Date(+easter(new Date().getFullYear()) + 14 * DAY)), back: 'Revient pour Pâques' },
+  valentin: { name: 'Saint-Valentin', icon: '💘', on: d => d.getMonth() === 1 && d.getDate() <= 20, until: () => 'jusqu’au 20 février', back: 'Revient en février' },
+  nouvelan: { name: 'Nouvel An chinois', icon: '🏮', on: d => { const n = lunarNY(d.getFullYear()); return d >= n - 7 * DAY && d <= +n + 15 * DAY; },
+    until: () => 'jusqu’au ' + frDate(new Date(+lunarNY(new Date().getFullYear()) + 15 * DAY)), back: 'Revient pour le Nouvel An chinois' },
+};
+// Nouvel An chinois : la date suit le calendrier lunaire (fin janvier ou février selon les années)
+const LUNAR = { 2025: '01-29', 2026: '02-17', 2027: '02-06', 2028: '01-26', 2029: '02-13', 2030: '02-03', 2031: '01-23', 2032: '02-11', 2033: '01-31', 2034: '02-19', 2035: '02-08', 2036: '01-28', 2037: '02-15', 2038: '02-04', 2039: '01-24', 2040: '02-12' };
+function lunarNY(y) { const [m, d] = (LUNAR[y] || '02-05').split('-').map(Number); return new Date(y, m - 1, d); }
 function inSeason(m) {
   if (!m || !m.season) return true;
-  const d = new Date(), mo = d.getMonth();
-  return mo === 9 || (mo === 10 && d.getDate() <= 10) || /halloween/.test(location.search);
+  return SEASONS[m.season].on(new Date()) || new RegExp('[?&]' + m.season + '\\b').test(location.search);
 }
-const spooky = () => !!(G && !G.demo && MAPS[G.map] && MAPS[G.map].season === 'halloween');
+// Événement de la partie en cours (null sur les cartes normales)
+const evt = () => (G && !G.demo && MAPS[G.map] && MAPS[G.map].season) || null;
+const spooky = () => evt() === 'halloween';
 const mapReqOk = i => {
   if (i === 0) return true;
   if (MAPS[i].season) return inSeason(MAPS[i]);
@@ -175,9 +231,21 @@ const TERRAINS = {
   N: { name: 'Neige', color: '#f7fbff', color2: '#ebf3fb', mods: { glace: 0.4, eau: 0.2, vent: 0.2, feu: -0.4 } },
   W: { name: 'Crête venteuse', color: '#bfe6dc', color2: '#b3ddd2', mods: { vent: 0.4, feu: 0.2, terre: -0.4, eau: -0.2 } },
   K: { name: 'Cristaux', color: '#cdb8f2', color2: '#c2abec', mods: { foudre: 0.4, glace: 0.2, vent: -0.4, feu: -0.2 } },
-  P: { name: 'Champ de citrouilles', color: '#c07a3e', color2: '#b8733a', season: 1, mods: { feu: 0.3, terre: 0.15, glace: -0.2 } },
-  H: { name: 'Brume hantée', color: '#b4a6e2', color2: '#ab9cdc', season: 1, mods: { foudre: 0.3, vent: 0.15, feu: -0.2 } },
-  B: { name: 'Potion bouillonnante', color: '#86de6e', color2: '#7dd665', season: 1, mods: { eau: 0.3, glace: 0.15, feu: -0.25 } },
+  P: { name: 'Champ de citrouilles', color: '#c07a3e', color2: '#b8733a', season: 'halloween', mods: { feu: 0.3, terre: 0.15, glace: -0.2 } },
+  H: { name: 'Brume hantée', color: '#b4a6e2', color2: '#ab9cdc', season: 'halloween', mods: { foudre: 0.3, vent: 0.15, feu: -0.2 } },
+  B: { name: 'Potion bouillonnante', color: '#86de6e', color2: '#7dd665', season: 'halloween', mods: { eau: 0.3, glace: 0.15, feu: -0.25 } },
+  G: { name: 'Pain d’épices', color: '#c9874a', color2: '#c07f43', season: 'noel', mods: { feu: 0.3, terre: 0.15, glace: -0.2 } },
+  J: { name: 'Lac gelé', color: '#a9dcf5', color2: '#a0d4ef', season: 'noel', mods: { glace: 0.3, eau: 0.15, feu: -0.25 } },
+  E: { name: 'Guirlandes', color: '#3f8a5a', color2: '#398253', season: 'noel', mods: { foudre: 0.3, vent: 0.15, eau: -0.2 } },
+  O: { name: 'Fontaine de chocolat', color: '#8a5a3c', color2: '#835436', season: 'paques', mods: { feu: 0.3, terre: 0.15, glace: -0.2 } },
+  Y: { name: 'Ruisseau pastel', color: '#a6e0ff', color2: '#9dd8fa', season: 'paques', mods: { eau: 0.3, glace: 0.15, feu: -0.2 } },
+  Z: { name: 'Pré fleuri', color: '#d6f5a8', color2: '#cdee9e', season: 'paques', mods: { vent: 0.3, foudre: 0.15, terre: -0.2 } },
+  A: { name: 'Roseraie', color: '#e8587e', color2: '#e05077', season: 'valentin', mods: { feu: 0.3, terre: 0.15, glace: -0.2 } },
+  I: { name: 'Fontaine des vœux', color: '#a8dcff', color2: '#9fd4fa', season: 'valentin', mods: { eau: 0.3, glace: 0.15, feu: -0.2 } },
+  Q: { name: 'Barbe à papa', color: '#f6d6ff', color2: '#efcbfa', season: 'valentin', mods: { vent: 0.3, foudre: 0.15, terre: -0.2 } },
+  D: { name: 'Lanternes', color: '#e8443a', color2: '#df3c33', season: 'nouvelan', mods: { feu: 0.3, foudre: 0.15, eau: -0.2 } },
+  T: { name: 'Jardin de thé', color: '#7fbf5a', color2: '#77b753', season: 'nouvelan', mods: { terre: 0.3, eau: 0.15, vent: -0.2 } },
+  U: { name: 'Pics de jade', color: '#7fd6b4', color2: '#76ceab', season: 'nouvelan', mods: { vent: 0.3, glace: 0.15, feu: -0.2 } },
   C: { name: 'Colline', color: '#b3ea88', color2: '#a8e27c', range: 0.6, mods: {} },
   X: { name: 'Obstacle', block: true },
 };
@@ -285,9 +353,14 @@ const ETYPES = {
   boss: { name: 'Kaiju', hp: 650, speed: 0.42, reward: 45, size: 0.42, color: '#ff4f6e', light: '#ffa3b3', mood: 'grr', angry: true, armor: 5, lifeCost: 10, boss: true, desc: 'Boss des vagues 10, 20, 30. Ses coups de patte abîment les tours.' },
   spectre: { name: 'Spectre', hp: 50, speed: 1.15, reward: 5, size: 0.24, color: '#e6e0ff', light: '#ffffff', mood: 'open', season: 'halloween', desc: 'Halloween : devient intangible par moments, aucune attaque ne le touche alors.' },
   potiron: { name: 'Potiron', hp: 70, speed: 1.3, reward: 3, size: 0.2, color: '#ff8a2b', light: '#ffc27a', mood: 'grr', angry: true, season: 'halloween', desc: 'Halloween : trois Potirons s’échappent du Roi Citrouille quand il tombe.' },
+  cadeau: { name: 'Cadeau surprise', hp: 90, speed: 0.75, reward: 6, size: 0.26, color: '#e8344e', light: '#ff9aa8', mood: 'grr', angry: true, armor: 2, season: 'noel', desc: 'Noël : en s’ouvrant, il libère deux Lutins.' },
+  lapin: { name: 'Lapin sauteur', hp: 45, speed: 0.9, reward: 5, size: 0.22, color: '#f2ece8', light: '#ffffff', mood: 'happy', season: 'paques', desc: 'Pâques : fait un grand bond en avant toutes les 3 secondes.' },
+  calinou: { name: 'Câlinou', hp: 60, speed: 0.8, reward: 6, size: 0.25, color: '#ff9ac6', light: '#ffd6ea', mood: 'happy', season: 'valentin', desc: 'Saint-Valentin : soigne les ennemis autour de lui toutes les 3 secondes.' },
+  hongbao: { name: 'Enveloppe rouge', hp: 35, speed: 1.7, reward: 16, size: 0.21, color: '#e8344e', light: '#ff8f9a', mood: 'open', lifeCost: 0, season: 'nouvelan', desc: 'Nouvel An chinois : très rapide et pleine d’or. Elle ne coûte pas de vie si elle s’échappe.' },
 };
-// Déguisements d'Halloween : même comportement, autre allure et autre nom sur le Manoir Citrouille
-const HSKIN = {
+// Déguisements des événements : même comportement, autre allure et autre nom sur la carte de l'événement
+const SKINS = {};
+SKINS.halloween = {
   gloop: { name: 'Fantôme', color: '#ece8ff', light: '#ffffff' },
   zip: { name: 'Chat noir', color: '#3b3150', light: '#6d6188' },
   flappy: { name: 'Chauve-souris', color: '#4a3d63', light: '#7f71a0' },
@@ -298,7 +371,54 @@ const HSKIN = {
   malefik: { name: 'Sorcière', color: '#7cc65a', light: '#c4f0a6' },
   boss: { name: 'Roi Citrouille', color: '#ff8a2b', light: '#ffc27a' },
 };
-const eName = k => (spooky() && HSKIN[k] ? HSKIN[k].name : ETYPES[k].name);
+SKINS.noel = {
+  gloop: { name: 'Bonhomme de neige', color: '#eef5ff', light: '#ffffff' },
+  zip: { name: 'Lutin', color: '#5cc85a', light: '#b8f0a0' },
+  flappy: { name: 'Harfang', color: '#e8f0fb', light: '#ffffff' },
+  tonk: { name: 'Casse-noisette', color: '#d93a4a', light: '#ff8f9a' },
+  magma: { name: 'Pudding', color: '#9a5a3a', light: '#d29a6e' },
+  gresil: { name: 'Ampoule', color: '#ffd23f', light: '#fff4b0' },
+  crachou: { name: 'Renne grognon', color: '#b07a4e', light: '#e2b48a' },
+  malefik: { name: 'Père Fouettard', color: '#4a4560', light: '#8a84a6' },
+  boss: { name: 'Yéti', color: '#dfeefc', light: '#ffffff' },
+};
+SKINS.paques = {
+  gloop: { name: 'Poussin', color: '#ffe066', light: '#fff6c0' },
+  zip: { name: 'Coccinelle', color: '#ff4f5e', light: '#ffa3ab' },
+  flappy: { name: 'Papillon', color: '#ff9ad0', light: '#ffd6ec' },
+  tonk: { name: 'Œuf blindé', color: '#9fd8ff', light: '#e2f5ff' },
+  magma: { name: 'Chocolat', color: '#8a5a3c', light: '#c8936a' },
+  gresil: { name: 'Abeille', color: '#ffcf3a', light: '#fff0a8' },
+  crachou: { name: 'Grenouille', color: '#6fcf6a', light: '#c0f0b0' },
+  malefik: { name: 'Lapin magicien', color: '#b8a2ff', light: '#e4dbff' },
+  boss: { name: 'Lapin en chocolat', color: '#7a4a2c', light: '#b8805a' },
+};
+SKINS.valentin = {
+  gloop: { name: 'Guimauve', color: '#ffc2dc', light: '#ffeaf3' },
+  zip: { name: 'Cupidon', color: '#ffd9b0', light: '#fff1de' },
+  flappy: { name: 'Colombe', color: '#f4f2ff', light: '#ffffff' },
+  tonk: { name: 'Ours en peluche', color: '#c48a5a', light: '#e8bc92' },
+  magma: { name: 'Bonbon cœur', color: '#ff5a8a', light: '#ffb0c8' },
+  gresil: { name: 'Luciole', color: '#e2f55a', light: '#f8ffc0' },
+  crachou: { name: 'Crapaud charmant', color: '#7bd06a', light: '#c4f0b4' },
+  malefik: { name: 'Cœur brisé', color: '#9a3a6a', light: '#d884b0' },
+  boss: { name: 'Reine des Cœurs', color: '#ff4f81', light: '#ffa8c2' },
+};
+SKINS.nouvelan = {
+  gloop: { name: 'Ravioli', color: '#fff1dc', light: '#ffffff' },
+  zip: { name: 'Souris', color: '#a8a0b8', light: '#dcd6e8' },
+  flappy: { name: 'Cerf-volant', color: '#ff5a4a', light: '#ffa89a' },
+  tonk: { name: 'Lion dansant', color: '#ffc23a', light: '#fff0a0' },
+  magma: { name: 'Pétard', color: '#e8344e', light: '#ff8f9a' },
+  gresil: { name: 'Lanterne', color: '#ff6a3d', light: '#ffc08a' },
+  crachou: { name: 'Crapaud doré', color: '#e8b83a', light: '#fff0a0' },
+  malefik: { name: 'Renard à neuf queues', color: '#ff9a4d', light: '#ffd2a8' },
+  boss: { name: 'Dragon', color: '#e8344e', light: '#ff9aa8' },
+};
+const skinOf = k => { const e = evt(); return e && SKINS[e] ? SKINS[e][k] || null : null; };
+const eName = k => (skinOf(k) || ETYPES[k]).name;
+const BOSSNAME = { halloween: 'ROI CITROUILLE', noel: 'YÉTI', paques: 'LAPIN GÉANT', valentin: 'REINE DES CŒURS', nouvelan: 'DRAGON' };
+const BOSSAPP = { halloween: 'Le Roi Citrouille approche...', noel: 'Le Yéti approche...', paques: 'Le Lapin en chocolat approche...', valentin: 'La Reine des Cœurs approche...', nouvelan: 'Le Dragon approche...' };
 const hpMul = w => 1 + (w - 1) * 0.16 + (w - 1) * (w - 1) * 0.011;
 
 function statsOf(type, lvl, br) {

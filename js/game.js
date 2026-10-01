@@ -234,13 +234,22 @@ function sell(t) {
 }
 
 // ---------- Vagues ----------
+const EVMOB = {
+  halloween: { type: 'spectre', from: 5, label: 'Nuit des Spectres !' },
+  noel: { type: 'cadeau', from: 6, label: 'Hotte renversée !' },
+  paques: { type: 'lapin', from: 4, label: 'Course aux lapins !' },
+  valentin: { type: 'calinou', from: 6, label: 'Câlins en série !' },
+  nouvelan: { type: 'hongbao', from: 3, label: 'Pluie d’enveloppes rouges !' },
+};
 function makeWave(w) {
   const pool = ['gloop', 'gloop'];
   if (w >= 3) pool.push('zip'); if (w >= 4) pool.push('flappy'); if (w >= 6) pool.push('tonk'); if (w >= 8) pool.push('magma'); if (w >= 7) pool.push('gresil'); if (w >= 9) pool.push('crachou');
-  const hw = spooky(); if (hw && w >= 5) pool.push('spectre', 'spectre');
+  // Monstre propre à chaque événement, et sa vague spéciale (15, 25, 35…)
+  const ev = evt(), EV = ev && EVMOB[ev];
+  if (EV && w >= EV.from) pool.push(EV.type, EV.type);
   let theme = null, label = '';
-  if (w % 10 === 0) label = hw ? 'Le Roi Citrouille approche...' : 'Un Kaiju approche...';
-  else if (hw && w >= 5 && w % 10 === 5) { theme = 'spectre'; label = 'Nuit des Spectres !'; }
+  if (w % 10 === 0) label = BOSSAPP[ev] || 'Un Kaiju approche...';
+  else if (EV && w >= 5 && w % 10 === 5) { theme = EV.type; label = EV.label; }
   else if (w >= 4 && w % 5 === 4) { theme = 'flappy'; label = 'Nuée de Flappy !'; }
   else if (w >= 7 && w % 7 === 0) { theme = 'zip'; label = 'Ruée de Zippy !'; }
   else if (w >= 6 && w % 6 === 0) { theme = 'tonk'; label = 'Parade de Tonk !'; }
@@ -289,11 +298,12 @@ function setWeather(k) {
 function weatherTick(dt) {
   const k = G.weather; if (G.demo) return;
   G.wp = G.wp || [];
-  const want = { rain: 90, thunder: 90, blizzard: 70, storm: 34 }[k] || 0;
+  const want = { rain: 90, thunder: 90, shower: 60, blizzard: 70, storm: 34, petals: 40 }[k] || 0;
   while (G.wp.length < want) G.wp.push({ x: Math.random(), y: Math.random(), s: rand(0.7, 1.3) });
   if (G.wp.length > want) G.wp.length = want;
   for (const p of G.wp) {
-    if (k === 'rain' || k === 'thunder') { p.y += 1.1 * dt * p.s; p.x += 0.12 * dt; }
+    if (k === 'rain' || k === 'thunder' || k === 'shower') { p.y += 1.1 * dt * p.s; p.x += 0.12 * dt; }
+    else if (k === 'petals') { p.y += 0.1 * dt * p.s; p.x += 0.06 * dt + Math.sin(G.time * 2 + p.s * 7) * 0.04 * dt; }
     else if (k === 'blizzard') { p.y += 0.12 * dt * p.s; p.x += Math.sin(G.time * 1.5 + p.s * 9) * 0.03 * dt + 0.03 * dt; }
     else if (k === 'storm') { p.x += 1.4 * dt * p.s; p.y += 0.05 * dt; }
     if (p.y > 1.05) { p.y = -0.05; p.x = Math.random(); } if (p.x > 1.05) { p.x = -0.05; p.y = Math.random(); }
@@ -301,7 +311,15 @@ function weatherTick(dt) {
   if (G.flashT > 0) G.flashT -= dt;
   if (!k || k === 'clear') return;
   G.wT = (G.wT || 0) - dt;
-  if (k === 'rain' && G.wT <= 0) { G.wT = 1.5; for (const e of G.enemies) if (!e.dead) e.wet = Math.max(e.wet, 1.6); }
+  if ((k === 'rain' || k === 'shower') && G.wT <= 0) { G.wT = 1.5; for (const e of G.enemies) if (!e.dead) e.wet = Math.max(e.wet, 1.6); }
+  if (k === 'fireworks' && G.wT <= 0) {
+    G.wT = 2.6; const al = G.enemies.filter(e => !e.dead);
+    if (al.length) {
+      const e = pick(al), up = (e.flying ? FLY : 0) + 0.2;
+      burst(e.x, e.y, up + 0.4, 18, ['#ffd23f', '#ff4f6e', '#7fd6ff', '#ffffff'], 3, 0.09, 1, 0.7, 'star');
+      hurt(e, 16 + G.wave * 2.5, 'feu'); ono('BOUM!', e.x, e.y, '#ffd23f', 0.5, 0.5, up + 0.7); Snd.play('boom');
+    }
+  }
   if (k === 'thunder' && G.wT <= 0) {
     G.wT = 3.2; const al = G.enemies.filter(e => !e.dead);
     if (al.length) {
@@ -316,6 +334,21 @@ function drawWeather(c) {
   c.save();
   if (k === 'heat') { c.fillStyle = 'rgba(255,150,50,.10)'; c.fillRect(0, 0, L.w, L.h); }
   if (k === 'thunder') { c.fillStyle = 'rgba(30,30,70,.14)'; c.fillRect(0, 0, L.w, L.h); }
+  if (k === 'aurora') {
+    c.save(); c.globalAlpha = 0.28;
+    for (let i = 0; i < 3; i++) {
+      const g = c.createLinearGradient(0, 0, L.w, 0); g.addColorStop(0, 'rgba(90,255,180,0)'); g.addColorStop(0.5, ['#5affb4', '#7fd6ff', '#c79bff'][i]); g.addColorStop(1, 'rgba(90,255,180,0)');
+      c.beginPath(); for (let x = 0; x <= L.w; x += 12) { const y = 40 + i * 26 + Math.sin(x * 0.012 + G.time * 0.6 + i * 2) * 18; x ? c.lineTo(x, y) : c.moveTo(x, y); }
+      c.lineWidth = 18 - i * 4; c.strokeStyle = g; c.stroke();
+    }
+    c.restore();
+  }
+  if (k === 'rainbow') {
+    c.save(); c.globalAlpha = 0.3; const cx = L.w * 0.5, cy = L.h * 0.95, R = Math.max(L.w, L.h) * 0.75;
+    ['#ff4f6e', '#ff9a3d', '#ffd23f', '#5cd86a', '#6cc6ff', '#b57bff'].forEach((col, i) => { c.beginPath(); c.arc(cx, cy, R - i * 9, Math.PI, TAU); c.lineWidth = 9; c.strokeStyle = col; c.stroke(); });
+    c.restore();
+  }
+  if (k === 'fireworks') { c.fillStyle = 'rgba(30,10,40,.12)'; c.fillRect(0, 0, L.w, L.h); }
   if (k === 'moon') {
     c.fillStyle = 'rgba(20,10,50,.16)'; c.fillRect(0, 0, L.w, L.h);
     const mx = L.w - 34, my = 34, g = c.createRadialGradient(mx, my, 6, mx, my, 70); g.addColorStop(0, 'rgba(255,240,190,.5)'); g.addColorStop(1, 'rgba(255,240,190,0)');
@@ -335,7 +368,8 @@ function drawWeather(c) {
   c.lineCap = 'round';
   for (const p of G.wp || []) {
     const x = p.x * L.w, y = p.y * L.h;
-    if (k === 'rain' || k === 'thunder') { c.beginPath(); c.moveTo(x, y); c.lineTo(x - 3, y - 12 * p.s); c.lineWidth = 1.6; c.strokeStyle = 'rgba(200,230,255,.6)'; c.stroke(); }
+    if (k === 'petals') { c.save(); c.translate(x, y); c.rotate(G.time * 2 + p.s * 5); c.beginPath(); c.ellipse(0, 0, 4 * p.s, 2.4 * p.s, 0, 0, TAU); c.fillStyle = 'rgba(255,170,205,.85)'; c.fill(); c.restore(); }
+    else if (k === 'rain' || k === 'thunder' || k === 'shower') { c.beginPath(); c.moveTo(x, y); c.lineTo(x - 3, y - 12 * p.s); c.lineWidth = 1.6; c.strokeStyle = 'rgba(200,230,255,.6)'; c.stroke(); }
     else if (k === 'blizzard') { c.beginPath(); c.arc(x, y, 1.6 + p.s, 0, TAU); c.fillStyle = 'rgba(255,255,255,.85)'; c.fill(); }
     else if (k === 'storm') { c.beginPath(); c.moveTo(x, y); c.lineTo(x - 40 * p.s, y - 2); c.lineWidth = 2; c.strokeStyle = 'rgba(255,255,255,.4)'; c.stroke(); }
   }
@@ -393,13 +427,18 @@ function spawn(type) {
   const D = ETYPES[type], w = G.wave, m = hpMul(w) * MAPS[G.map].hpMul * (G.hpd || 1);
   const e = { id: ++G.eid, type, hp: D.hp * m, maxHp: D.hp * m, speed: D.speed * rand(0.95, 1.05) * (G.spd || 1),
     armor: D.armor ? D.armor + Math.floor(w / 10) : 0, flying: !!D.flying, d: 1, x: 0, y: 0, sdx: 1, sdy: 0,
-    slowA: 0, slowT: 0, wet: 0, burn: 0, burnT: 0, frozen: 0, stun: 0, flash: 0, phase: rand(TAU), dead: false, lifeCost: D.lifeCost || 1, abT: 1.2 };
+    slowA: 0, slowT: 0, wet: 0, burn: 0, burnT: 0, frozen: 0, stun: 0, flash: 0, phase: rand(TAU), dead: false, lifeCost: D.lifeCost ?? 1, abT: 1.2 };
   if (type === 'spectre') { e.gcy = rand(1, 2.5); e.ghost = 0; }
+  if (type === 'lapin') e.jT = rand(1.5, 3);
+  if (type === 'calinou') e.abT = rand(1, 2.5);
   setPos(e); G.enemies.push(e);
   if (D.boss) {
     G.speedLines = 1.5; G.shake = Math.max(G.shake, 0.5);
-    banner(spooky() ? 'ROI CITROUILLE !!' : 'KAIJU !!', 'Le boss débarque', true); Snd.play('boss');
+    banner((BOSSNAME[evt()] || 'KAIJU') + ' !!', 'Le boss débarque', true); Snd.play('boss');
   }
+}
+function spawnAt(type, k, d) {
+  for (let i = 0; i < k; i++) { const n = G.enemies.length; spawn(type); const p = G.enemies[n]; if (p) { p.d = Math.max(1, d - i * 0.35); setPos(p); } }
 }
 function setPos(e) {
   const [x, y, dx, dy] = pathAt(e.d); e.x = x; e.y = y;
@@ -446,7 +485,7 @@ function enemyAbility(e, dt) {
     e.abT = 7;
   } else {
     const ts = nearTowers(e, 1.6); if (!ts.length) { e.abT = 0.5; return; }
-    for (const t of ts) damageTower(t, 30 * pw);
+    for (const t of ts) { damageTower(t, 30 * pw); if (evt() === 'noel') t.stun = Math.max(t.stun || 0, 1.5); }
     G.fx.push({ kind: 'ring', gx: e.x, gy: e.y, r0: 0.3, r1: 1.6, t: 0, dur: 0.5, color: '#ff4f6e' });
     G.shake = Math.max(G.shake, 0.35); ono('STOMP!', e.x, e.y, '#ff4f6e', 0.6, 0.5, 1.0); Snd.play('terre');
     e.abT = 6;
@@ -464,6 +503,17 @@ function updateEProjs(dt) {
 }
 function updateEnemy(e, dt) {
   enemyAbility(e, dt);
+  if (e.type === 'lapin' && !G.demo && !(e.frozen > 0 || e.stun > 0) && (e.jT -= dt) <= 0) {
+    e.jT = 3; e.hopT = 0.35; e.d = Math.min(P.goal - 0.3, e.d + 1.6);
+    ono('BOING!', e.x, e.y, '#ffffff', 0.4, 0.4, 0.8);
+  }
+  if (e.hopT > 0) e.hopT -= dt;
+  if (e.type === 'calinou' && !G.demo && !(e.frozen > 0 || e.stun > 0) && (e.abT -= dt) <= 0) {
+    e.abT = 3; let n = 0;
+    for (const o of G.enemies) if (!o.dead && o !== e && (o.x - e.x) ** 2 + (o.y - e.y) ** 2 < 1.6 * 1.6 && o.hp < o.maxHp) { o.hp = Math.min(o.maxHp, o.hp + o.maxHp * 0.12); n++; }
+    G.fx.push({ kind: 'ring', gx: e.x, gy: e.y, r0: 0.2, r1: 1.6, t: 0, dur: 0.45, color: '#ff9ac6' });
+    if (n) ono('♥ CÂLIN !', e.x, e.y, '#ff6fa8', 0.42, 0.4, 0.8);
+  }
   if (e.type === 'spectre' && !G.demo) {
     if (e.ghost > 0) e.ghost -= dt;
     else if ((e.gcy -= dt) <= 0) { e.ghost = G.weather === 'moon' ? 0.8 : 1.4; e.gcy = 2.6; e.burnT = 0; ono('BOUH!', e.x, e.y, '#e6e0ff', 0.4, 0.4, 0.8); }
@@ -487,6 +537,7 @@ function updateEnemy(e, dt) {
 }
 function reachBase(e) {
   if (G.demo) { e.dead = true; return; }
+  if (!e.lifeCost) { e.dead = true; ono('FILÉE !', P.base[0], P.base[1], '#ffd23f', 0.5, 0.2, 1.1); return; }
   e.dead = true; G.lives -= e.lifeCost; G.shake = Math.max(G.shake, 0.45); G.hurtT = 0.5; G.baseHit = 0.4;
   ono(e.lifeCost > 1 ? '-' + e.lifeCost + ' ♥' : 'AÏE!', P.base[0], P.base[1], '#ff4f6e', 0.6, 0.2, 1.1);
   Snd.play('hurt');
@@ -534,8 +585,9 @@ function kill(e) {
   if (D.boss) {
     G.bossKills++; ono('K.O. !!', e.x, e.y, '#ff4f81', 1.1, 0, 0.9); G.shake = 0.7; Snd.play('boom');
     // Le Roi Citrouille libère trois Potirons en tombant
-    if (spooky()) for (let i = 0; i < 3; i++) { const n = G.enemies.length; spawn('potiron'); const p = G.enemies[n]; if (p) { p.d = Math.max(1, e.d - i * 0.35); setPos(p); } }
+    if (spooky()) spawnAt('potiron', 3, e.d);
   }
+  if (e.type === 'cadeau') { spawnAt('zip', 2, e.d); ono('SURPRISE !', e.x, e.y, '#ffd23f', 0.5, 0.3, 0.9); }
   else { if (Math.random() < 0.18) ono(pick(['POP!', 'PAF!', 'BLOP!', 'SPLOTCH!']), e.x, e.y, '#ffffff', 0.45, 0.35, up + 0.4); Snd.play('pop'); }
 }
 function slowE(e, a, t) { const f = ETYPES[e.type].boss ? 0.6 : 1; e.slowA = Math.max(e.slowA, a * f); e.slowT = Math.max(e.slowT, t); }

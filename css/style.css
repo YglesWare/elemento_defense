@@ -454,3 +454,13 @@ button:disabled{cursor:default}
 .mapc.season .req.ok{background:#ffd9a8}
 .mapc.season .medal:not(.on){background:rgba(255,255,255,.15);color:#fff}
 .mapc .evt{align-self:flex-start;font-size:11px;font-weight:800;letter-spacing:.3px;background:#ff8a2b;color:var(--ink);border:2px solid var(--ink);border-radius:999px;padding:1px 8px}
+.mapc.season.noel{background:linear-gradient(160deg,#2f6b4a,#1f4a3a);box-shadow:0 4px 0 var(--ink),0 0 0 3px #e8344e inset}
+.mapc.season.noel .sbtn,.mapc.season.noel .evt{background:#e8344e;color:#fff}
+.mapc.season.paques{background:linear-gradient(160deg,#ffd6ec,#c8eeb0);color:var(--ink);box-shadow:0 4px 0 var(--ink),0 0 0 3px #ff9ad0 inset}
+.mapc.season.paques .bio-l{color:#7a5a8a}.mapc.season.paques .sbtn,.mapc.season.paques .evt{background:#ffb3cf}
+.mapc.season.paques .medal:not(.on){background:rgba(255,255,255,.6);color:var(--ink)}
+.mapc.season.valentin{background:linear-gradient(160deg,#c2457a,#7a2050);box-shadow:0 4px 0 var(--ink),0 0 0 3px #ff9ac6 inset}
+.mapc.season.valentin .sbtn,.mapc.season.valentin .evt{background:#ff9ac6}
+.mapc.season.nouvelan{background:linear-gradient(160deg,#c0392b,#7a1420);box-shadow:0 4px 0 var(--ink),0 0 0 3px #ffd23f inset}
+.mapc.season.nouvelan .sbtn,.mapc.season.nouvelan .evt{background:#ffd23f}
+.mapc.season.locked{grid-column:auto}

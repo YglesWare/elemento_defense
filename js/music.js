@@ -17,12 +17,41 @@ const TRACKS = {
     mel: ['0 . 4 . 7 - 4 . 9 - 7 . 4 . 2 .', '2 . 7 . 11 - 7 . 14 - 11 . 7 - . .', '4 . 9 . 12 - 9 . 16 - 12 . 9 . 7 .', '5 . 9 . 12 - 14 - 12 - 9 - 7 - . .'],
     bass: 'r.r.f.r.r.r.f.o.', kick: 'x...x...x...x...', snare: '....x.......x...', hat: '..x...x...x...x.', arp: true, lead: 0.06,
   },
-  // Manoir Citrouille : valse mystérieuse en mineur, clavecin et écho
-  spooky: {
+  // Morceaux des événements (joués pendant les parties sur leur carte)
+  // Halloween : valse mystérieuse en mineur, avec écho
+  halloween: {
     bpm: 104, root: 57, vol: 0.9, chords: [[0, 3, 7], [-4, 0, 3], [-7, -4, 0], [-1, 2, 8]],
     mel: ['12 - 11 - 12 - 7 - 8 - 7 - 3 - - -', '8 - 7 - 8 - 3 - 5 - 3 - 0 - - -', '5 - 3 - 5 - 0 - 3 - 2 - -1 - - -', '2 - 3 - 5 - 8 - 11 - - - . . . .'],
     bass: 'r.......f.......', kick: 'x.......x.......', snare: '................', hat: '....x.......x...',
-    arp: true, arpEvery: 2, arpType: 'sawtooth', arpVol: 0.018, lead: 0.05, leadType: 'triangle', leadLp: 2200, echo: true, bassType: 'sine', bassVol: 0.12,
+    arp: true, arpEvery: 2, arpType: 'triangle', arpVol: 0.022, arpOct: 0, arpEcho: false, lead: 0.05, leadType: 'triangle', leadLp: 2200, echo: true, echoSteps: 4, bassType: 'sine', bassVol: 0.12,
+  },
+  // Noël : clochettes et grelots, en majeur
+  noel: {
+    bpm: 118, root: 62, vol: 0.8, chords: [[0, 4, 7], [5, 9, 12], [7, 11, 14], [0, 4, 7]],
+    mel: ['7 . 7 . 9 . 7 . 4 . 2 . 4 - - -', '5 . 5 . 9 . 12 . 11 . 9 . 7 - - -', '9 . 11 . 12 . 11 . 9 . 7 . 4 . 2 .', '4 . 2 . 0 - - - 7 . 4 . 0 - - -'],
+    bass: 'r...f...r...f...', kick: 'x.......x.......', snare: '................', hat: 'x.x.x.x.x.x.x.x.',
+    arp: true, arpEvery: 2, arpType: 'sine', arpVol: 0.018, arpOct: 24, arpEcho: false, lead: 0.055, leadType: 'sine', leadAtt: 0.005, echo: true, echoSteps: 3, bassType: 'sine', bassVol: 0.13,
+  },
+  // Pâques : ritournelle champêtre, comme une flûte
+  paques: {
+    bpm: 96, root: 65, vol: 0.85, chords: [[0, 4, 7], [-3, 0, 4], [5, 9, 12], [7, 11, 14]],
+    mel: ['12 - 9 - 7 - 9 - 12 - 14 - 12 - - -', '9 - 7 - 4 - 7 - 9 - 12 - 9 - - -', '10 - 9 - 7 - 5 - 7 - 9 - 10 - - -', '11 - 12 - 14 - 11 - 7 - - - . . . .'],
+    bass: 'r.......f.......', kick: 'x.......x.......', snare: '................', hat: '..x...x...x...x.',
+    arp: true, arpEvery: 2, arpType: 'triangle', arpVol: 0.02, arpOct: 0, lead: 0.05, leadType: 'triangle', leadAtt: 0.03, leadLp: 3000, bassType: 'sine', bassVol: 0.12,
+  },
+  // Saint-Valentin : ballade douce et lente
+  valentin: {
+    bpm: 84, root: 64, vol: 0.85, chords: [[0, 4, 7, 11], [-3, 0, 4, 7], [-7, -3, 0, 4], [-5, -1, 2, 5]],
+    mel: ['7 - - - 11 - 12 - 11 - - - 7 - - -', '4 - - - 7 - 9 - 7 - - - 4 - - -', '5 - - - 9 - 12 - 11 - - - 9 - - -', '7 - - - - - 5 - 2 - - - . . . .'],
+    bass: 'r.......r.......', kick: '................', snare: '................', hat: '................',
+    arp: true, arpEvery: 2, arpType: 'sine', arpVol: 0.022, arpOct: 0, lead: 0.05, leadType: 'sine', leadAtt: 0.04, leadLp: 1800, echo: true, echoSteps: 4, arpEcho: false, bassType: 'sine', bassVol: 0.1,
+  },
+  // Nouvel An chinois : gamme pentatonique et gros tambour
+  nouvelan: {
+    bpm: 116, root: 62, vol: 0.85, chords: [[0, 4, 7], [-3, 2, 7], [2, 7, 9], [0, 4, 9]],
+    mel: ['9 . 7 . 4 . 7 . 9 - 12 - 9 - - -', '7 . 4 . 2 . 4 . 7 - 9 - 7 - - -', '12 . 14 . 12 . 9 . 7 . 9 . 12 - - -', '9 . 7 . 4 . 2 . 0 - - - . . . .'],
+    bass: 'r...r...r...r...', kick: 'x...x...x..xx...', snare: '........x.......', hat: '..x...x...x...x.',
+    arp: false, lead: 0.055, leadType: 'square', leadLp: 1800, leadAtt: 0.005, echo: true, echoSteps: 2, bassType: 'sine', bassVol: 0.14,
   },
   tension: {
     bpm: 124, root: 57, chords: [[0, 3, 7], [8, 12, 15], [3, 7, 10], [10, 14, 17]],
@@ -67,7 +96,7 @@ const Music = {
       const ratio = G.lives / (G.startLives || 20);
       if (ratio <= 0.25) return 'danger';
       if (ratio <= 0.5 || G.enemies.some(e => ETYPES[e.type].boss)) return 'tension';
-      return spooky() ? 'spooky' : 'level';
+      const ev = evt(); return ev && TRACKS[ev] ? ev : 'level';
     }
     return 'menu';
   },
@@ -79,7 +108,7 @@ const Music = {
     if (this.nextT < ac.currentTime - 0.25) this.nextT = ac.currentTime + 0.05;
     if (!on) { this.nextT = Math.max(this.nextT, ac.currentTime); return; }
     while (this.nextT < ac.currentTime + 0.15) {
-      if (this.step % 16 === 0) this.track = this.want();
+      if (this.step % 16 === 0) { this.track = this.want(); const T = TRACKS[this.track]; this.echo.delayTime.setValueAtTime(T.echoSteps ? T.echoSteps * 60 / T.bpm / 4 : 0.42, this.nextT); }
       this.play(TRACKS[this.track], this.step, this.nextT);
       this.nextT += 60 / TRACKS[this.track].bpm / 4; this.step++;
     }
@@ -90,7 +119,7 @@ const Music = {
     const b = T.bass[s];
     if (b !== '.') this.voice(T.bassType || 'triangle', midiHz(T.root - 12 + ch[0] + (b === 'f' ? 7 : b === 'o' ? 12 : 0)), t, sd * (T.bassType === 'sine' ? 12 : 0.9), T.bassVol || 0.2, T.bassType === 'sine' ? 0.2 : 0.005);
     const ev = T.arpEvery || 1;
-    if (T.arp && s % ev === 0) this.voice(T.arpType || 'triangle', midiHz(T.root + 12 + ch[(s / ev) % ch.length]), t, sd * ev * 0.9, T.arpVol || 0.035, 0.005, 0, T.echo);
+    if (T.arp && s % ev === 0) this.voice(T.arpType || 'triangle', midiHz(T.root + (T.arpOct ?? 12) + ch[(s / ev) % ch.length]), t, sd * ev * 0.9, T.arpVol || 0.035, 0.005, 0, T.echo && T.arpEcho !== false);
     const n = T.notes[bar][s];
     if (n) this.voice(T.leadType || 'square', midiHz(T.root + 12 + n.n), t, sd * n.d * 0.92, T.lead, T.leadAtt || 0.01, T.leadLp || 2600, T.echo);
     if (T.kick[s] === 'x') this.kick(t);
