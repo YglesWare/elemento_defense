@@ -116,7 +116,7 @@ $('#iMode').addEventListener('click', () => {
 
 // HUD
 const fmtK = n => n >= 100000 ? Math.round(n / 1000) + 'k' : n >= 10000 ? fr((n / 1000).toFixed(1)) + 'k' : String(n);
-function bankHint(ms) { if (G) hint('Or de la partie : ' + G.gold + '. À la fin, il rejoint la cagnotte 🐷 (' + (meta.bank || 0) + ' or), qui sert à acheter des cartes : tout en cas de victoire, la moitié en cas de K.O., rien si tu abandonnes.', ms || 5000); }
+function bankHint(ms) { if (G) hint('Or de la partie : ' + G.gold + '. À la fin, il rejoint la cagnotte 🐷 (' + (meta.bank || 0) + ' or), qui sert à acheter des cartes : tout en cas de victoire, la moitié en cas de K.O. Un abandon ne rapporte rien (ni or, ni éclats).', ms || 5000); }
 $('#hGoldChip').addEventListener('click', () => bankHint());
 const elLives = $('#hLives'), elGold = $('#hGold'), bWave = $('#bWave');
 function refreshHUD() {
@@ -251,7 +251,7 @@ function pause() {
   $('#pSave').textContent = MAPS[G.map].name + ' · ' + DIFFS[G.diff].name + '. ' + (G.checkpoint && G.checkpoint.wave ? 'Partie sauvegardée à la fin de la vague ' + G.checkpoint.wave + '.' : 'La partie se sauvegarde à chaque fin de vague.')
     + ' Biome ' + MAPS[G.map].biome.name.toLowerCase() + ' : ' + biomeText(MAPS[G.map].biome) + '.'
     + ' Météo : ' + (WEATHERS[G.weather] || WEATHERS.clear).name.toLowerCase() + ((WEATHERS[G.weather] || WEATHERS.clear).desc !== 'aucun effet' ? ' (' + WEATHERS[G.weather].desc + ')' : '') + '.'
-    + ' Cagnotte : ' + (meta.bank || 0) + ' or. En fin de partie, elle reçoit tout l’or restant en cas de victoire, la moitié en cas de K.O., et rien si tu abandonnes.';
+    + ' Cagnotte : ' + (meta.bank || 0) + ' or. En fin de partie, elle reçoit tout l’or restant en cas de victoire, la moitié en cas de K.O. Un abandon ne rapporte rien : ni or, ni éclats.';
   cashArm = false; refreshCash();
   refreshOptBtns();
   if (typeof duelPauseUI === 'function') duelPauseUI(!!G.duel);
@@ -260,14 +260,15 @@ let cashArm = false;
 function refreshCash() {
   if (!G) return;
   const v = Math.max(0, G.gold - (G.banked || 0)), b = $('#pCash');
-  b.textContent = cashArm ? 'Sûr ? Touche encore : fin de la partie, tes ' + v + ' or sont perdus' : 'Abandonner la partie';
+  const sh = Math.max(0, G.shardsPaid - (G.shardsWon || 0));
+  b.textContent = cashArm ? 'Sûr ? Touche encore : tu perds tes ' + v + ' or' + (sh ? ' et les ' + sh + ' éclats gagnés' : '') : 'Abandonner la partie';
   b.classList.toggle('alt', cashArm); b.classList.toggle('pink', !cashArm);
 }
 function cashOut() {
   if (!G || G.over) return;
   G.over = true; G.paused = true; Snd.play('clear');
-  const best = recordBest(), award = awardShards(), bank = bankGold(0); store.del(SAVE);
-  showOver(false, best, award, bank, true);
+  const lost = revokeShards(), bank = bankGold(0), best = ((store.get(BEST2) || {})[MAPS[G.map].id] || {})[G.diff]; store.del(SAVE);
+  showOver(false, best, null, bank, true, lost);
 }
 $('#pCash').addEventListener('click', () => { if (!G || G.over) return; if (!cashArm) { cashArm = true; refreshCash(); return; } cashArm = false; cashOut(); });
 function resume() { if (!G) return; G.paused = false; show('game'); keepAwake(); }
@@ -297,7 +298,7 @@ $('#oRetry').addEventListener('click', () => { if (G) newGame(G.map, null, G.dif
 $('#oEndless').addEventListener('click', () => { G.endless = true; G.paused = false; saveCheckpoint(); show('game'); banner('MODE INFINI', 'Jusqu’où iras-tu ?'); if (opts.auto) G.autoT = 3; });
 $('#tContinue').addEventListener('click', () => { const s = store.get(SAVE), i = saveMapIndex(s); if (i >= 0) newGame(i, s); });
 
-function showOver(win, best, award, bank, quit) {
+function showOver(win, best, award, bank, quit, lostShards) {
   const bk = bank || { gain: 0, total: meta.bank || 0 };
   $('#oBank').textContent = '+' + bk.gain;
   const nextMap = MAPS.findIndex((mm, i) => !mapOwned(i));
@@ -305,18 +306,18 @@ function showOver(win, best, award, bank, quit) {
   $('#oBankDetail').textContent = why + ' Cagnotte : ' + bk.total + ' or, pour acheter des cartes.' + (nextMap >= 0 ? ' Prochaine carte : ' + MAPS[nextMap].name + ', ' + MAPS[nextMap].price + ' or' + (mapReqOk(nextMap) ? (win && !quit && G.diff !== 'facile' && G.diff !== 'infini' && nextMap === G.map + 1 ? '. Elle est maintenant achetable !' : '.') : ', après avoir réussi ' + MAPS[nextMap - 1].name + ' en Moyen.') : '');
   $('#oWord').textContent = quit ? 'ABANDON' : win ? 'VICTOIRE !!' : 'K.O. !';
   $('#oWord').classList.toggle('win', win);
-  $('#oText').textContent = quit ? 'Partie abandonnée. Tu gardes tes éclats, mais pas ton or.' : win ? 'Les ' + G.maxw + ' vagues sont repoussées. La petite maison est sauve !' : 'Les slimes ont envahi la petite maison. Retente ta chance !';
+  $('#oText').textContent = quit ? 'Partie abandonnée : elle ne rapporte ni or ni éclats.' : win ? 'Les ' + G.maxw + ' vagues sont repoussées. La petite maison est sauve !' : 'Les slimes ont envahi la petite maison. Retente ta chance !';
   $('#oWave').textContent = G.wave; $('#oScore').textContent = G.score;
   $('#oBest').textContent = best ? best.wave : G.wave;
   $('#oEndless').hidden = !win;
   const a = award || { gain: 0, parts: { wave: 0, score: 0, boss: 0, win: 0 }, mult: 1, before: 0 }, p = a.parts;
-  $('#oShards').textContent = '+' + G.shardsPaid;
+  $('#oShards').textContent = quit ? (lostShards ? '−' + lostShards : '0') : '+' + G.shardsPaid;
   const bits = ['Vagues +' + p.wave, 'Score +' + p.score];
   if (p.boss) bits.push('Kaiju +' + p.boss);
   if (p.win) bits.push('Victoire +' + p.win);
   if (a.mult > 1) bits.push('Terrain ×' + fr(a.mult));
   $('#oShop').classList.toggle('ping', canBuyAnything());
-  $('#oGainDetail').textContent = bits.join(' · ') + '. Tu as maintenant ' + meta.shards + ' éclats.';
+  $('#oGainDetail').textContent = (quit ? 'Abandon : ' + (lostShards ? lostShards + ' éclat' + (lostShards > 1 ? 's' : '') + ' gagné' + (lostShards > 1 ? 's' : '') + ' pendant la partie ' + (lostShards > 1 ? 'sont repris' : 'est repris') : 'aucun éclat repris') : bits.join(' · ')) + '. Tu as maintenant ' + meta.shards + ' éclats.';
   show('over');
 }
 

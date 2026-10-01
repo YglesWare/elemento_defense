@@ -152,7 +152,7 @@ function baseState(mi, save, diff) {
   const m = MAPS[mi]; diff = (save && save.diff) || diff || 'moyen'; const Df = DIFFS[diff];
   return { map: mi, diff, startLives: Df.lives + M('lives') * 2, maxw: Df.waves, hpd: Df.hp, spd: Df.speed, bm: Df.bonus, mm: Df.malus, banked: save ? save.banked || 0 : 0,
     terrain: m.terrain ? diffTerrain(mi, diff) : null, gold: save ? save.gold : Df.gold + M('gold') * 25, lives: save ? save.lives : Df.lives + M('lives') * 2, wave: save ? save.wave : 0, score: save ? save.score : 0,
-    weather: (save && save.weather) || 'clear', bossKills: save ? save.bossKills || 0 : 0, shardsPaid: save ? save.shardsPaid || 0 : 0, won: save ? !!save.won : false, reviveUsed: save ? !!save.reviveUsed : false,
+    weather: (save && save.weather) || 'clear', bossKills: save ? save.bossKills || 0 : 0, shardsPaid: save ? save.shardsPaid || 0 : 0, shardsWon: save ? save.shardsWon || 0 : 0, won: save ? !!save.won : false, reviveUsed: save ? !!save.reviveUsed : false,
     endless: save ? !!save.endless : diff === 'infini', towers: [], enemies: [], projs: [], fx: [], parts: [], texts: [], zones: [], tors: [], eprojs: [], spawnQ: [], spawnT: 0,
     waveActive: false, speed: 1, paused: false, over: false, time: 0, shake: 0, speedLines: 0, hurtT: 0, baseHit: 0, eid: 0, onoCd: {},
     selType: null, selTower: null, hover: null, ghost: null, bad: null, autoT: 0, checkpoint: null };
@@ -178,7 +178,7 @@ function newGame(mi, save, diff) {
 function saveCheckpoint() {
   if (G.duel || duelOn) return;
   G.checkpoint = { grid: COLS, map: G.map, mapId: MAPS[G.map].id, diff: G.diff, banked: G.banked, gold: G.gold, lives: G.lives, wave: G.wave, score: G.score, endless: G.endless,
-    bossKills: G.bossKills, shardsPaid: G.shardsPaid, won: G.won, reviveUsed: G.reviveUsed,
+    bossKills: G.bossKills, shardsPaid: G.shardsPaid, shardsWon: G.shardsWon, won: G.won, reviveUsed: G.reviveUsed,
     weather: G.weather, towers: G.towers.map(t => ({ type: t.type, c: t.c, r: t.r, lvl: t.lvl, mode: t.mode, inv: t.inv, br: t.br })) };
   store.set(SAVE, G.checkpoint);
 }
@@ -434,10 +434,16 @@ function awardShards() {
   G.shardsPaid += gain; meta.shards += gain; meta.earned += gain; saveMeta();
   return { gain, parts, mult, before };
 }
+// Abandon : la partie ne rapporte rien, on reprend les éclats versés à chaque vague (sauf ceux acquis par une victoire)
+function revokeShards() {
+  const lost = Math.max(0, G.shardsPaid - (G.shardsWon || 0)), taken = Math.min(lost, meta.shards);
+  meta.shards -= taken; meta.earned = Math.max(0, (meta.earned || 0) - lost); G.shardsPaid -= lost; saveMeta();
+  return taken; // jamais plus que ce qu'il reste : le compteur d'éclats ne passe pas sous 0
+}
 function victory() {
   if (!G || G.over) return;
   G.paused = true; G.won = true; G.endless = true; Snd.play('win');
-  const best = recordBest(), award = awardShards(), bank = bankGold(); saveCheckpoint();
+  const best = recordBest(), award = awardShards(), bank = bankGold(); G.shardsWon = G.shardsPaid; saveCheckpoint();
   showOver(true, best, award, bank);
 }
 function gameOver() {
