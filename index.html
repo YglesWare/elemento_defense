@@ -52,21 +52,31 @@
 </div>
 
 <section class="screen" id="sTitle">
-  <div class="inner">
+  <button class="profchip" id="tProfile" type="button" aria-label="Profil et options"><canvas id="tProfCv" aria-hidden="true"></canvas><span id="tProfName">Profil</span></button>
+  <div class="inner tinner">
     <canvas id="tYglou" aria-label="Yglou, la mascotte : touche-le !" role="img"></canvas>
     <div class="logo"><span class="l1">ÉLÉMENTO</span><span class="l2">DEFENSE</span></div>
     <div id="tShow"></div>
-    <div class="bubble">Six gardiens élémentaires contre une armée de slimes. Protège le nid de Yglou !</div>
-    <button class="btn" id="tPlay" type="button" style="font-size:30px">Jouer !</button>
+    <div class="bubble">Six gardiens élémentaires contre une armée de slimes. Protège la petite maison !</div>
+    <button class="btn" id="tPlay" type="button">Jouer !</button>
     <button class="btn mpbtn" id="tMulti" type="button">Multijoueur · 2 à 4 joueurs</button>
     <button class="btn green" id="tContinue" type="button" hidden>Continuer</button>
     <button class="btn pink" id="tShop" type="button">L’Atelier</button>
-    <div class="row tight">
-      <button class="btn alt" id="tTuto" type="button">Tutoriel</button>
-      <button class="btn alt" id="tHelp" type="button">Aide</button>
+  </div>
+</section>
+
+<section class="screen" id="sProfile" hidden>
+  <div class="inner">
+    <div class="panelbox col prof">
+      <div class="profhead"><canvas id="prCv" aria-hidden="true"></canvas><div><h2 class="ptitle" style="margin:0">Profil</h2><p class="fine" id="prStats"></p></div></div>
+      <label class="mp-label" for="prName">Ton pseudo (utilisé en multijoueur)</label>
+      <input id="prName" class="mp-input" maxlength="12" autocomplete="nickname" placeholder="Ex. Ygles">
       <button class="btn alt" id="tSound" type="button">Son : oui</button>
+      <button class="btn alt" id="tTuto" type="button">Tutoriel animé</button>
+      <button class="btn alt" id="tHelp" type="button">Aide et règles</button>
+      <p class="fine">Tu commences avec deux gardiens. Chaque vague gagnée rapporte des éclats pour en débloquer d’autres dans l’Atelier.</p>
     </div>
-    <p class="fine">Tu commences avec deux gardiens. Chaque vague gagnée rapporte des éclats pour en débloquer d’autres dans l’Atelier.</p>
+    <button class="btn stickyb" id="prBack" type="button">Retour</button>
   </div>
 </section>
 
@@ -113,7 +123,7 @@
       <h2 class="ptitle">Astuces</h2>
       <ul class="tips">
         <li>Choisis une tour en bas, puis touche une case d'herbe. Sur téléphone, touche deux fois la même case pour confirmer.</li>
-        <li>Certaines cartes ont plusieurs portails, des chemins qui se séparent ou plusieurs nids (les vies sont communes). Une flèche jaune clignote au-dessus des portails d’où sortira la prochaine vague, et l’aperçu sous la carte indique combien seront actifs.</li>
+        <li>Certaines cartes ont plusieurs portails, des chemins qui se séparent ou plusieurs maisons (les vies sont communes). Une flèche jaune clignote au-dessus des portails d’où sortira la prochaine vague, et l’aperçu sous la carte indique combien seront actifs.</li>
         <li>Touche une tour posée pour l'améliorer, la vendre ou changer sa cible. Au niveau 2, elle choisit une spécialisation : Sol, Air ou Boss. Ce choix est définitif pour cette tour.</li>
         <li>Pour fusionner deux tours compatibles (toutes deux au niveau 2 ou plus), touche la première, puis la seconde : choisis l’icône de fusion dans le petit menu. Tu peux aussi faire glisser l’une sur l’autre. La fusion prend la place de la seconde tour. Chaque fusion se débloque une par une dans l’Atelier.</li>
         <li>Lancer la vague suivante pendant qu'il reste des ennemis rapporte un bonus d'audace.</li>

@@ -1022,7 +1022,7 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
       if (dg) c.restore();
     }
     else if (k === 1) drawEnemy(c, o.type, x, y, cs, T, o);
-    else drawBase(c, x, y - cs * 0.15, cs * 1.45, T, G.hitBase && Math.hypot(G.hitBase[0] - o[0], G.hitBase[1] - o[1]) < 0.1 ? G.baseHit : 0);
+    else drawBase(c, x, y, cs, T, G.hitBase && Math.hypot(G.hitBase[0] - o[0], G.hitBase[1] - o[1]) < 0.1 ? G.baseHit : 0);
   }
   if (gc && inside(gc.c, gc.r) && !towerAt(gc.c, gc.r)) {
     const [x, y] = cellXY(gc.c + 0.5, gc.r + 0.5);

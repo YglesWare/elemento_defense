@@ -471,7 +471,7 @@ const UPGRADES = [
   { id: 'bouclier', name: 'Bouclier', max: 3, base: 15, fx: l => 'Chaque tour commence la vague avec un bouclier de ' + l * 15 + ' % de ses PV' },
   { id: 'paratonnerre', name: 'Paratonnerre', max: 3, base: 12, fx: l => 'Paralysie des Grésillons −' + l * 25 + ' %' },
   { id: 'talisman', name: 'Talisman', max: 3, base: 14, fx: l => 'Perversion des Maléfik −' + l * 25 + ' % de durée' },
-  { id: 'revive', name: 'Seconde chance', max: 1, base: 60, fx: () => 'Une fois par partie, le nid repart avec 5 vies' },
+  { id: 'revive', name: 'Seconde chance', max: 1, base: 60, fx: () => 'Une fois par partie, la maison repart avec 5 vies' },
   ...TORDER.map(t => ({ id: 'm_' + t, tower: t, name: 'Maîtrise ' + MASTERY[t], max: 5, base: 10,
     fx: l => TOWERS[t].name + ' : +' + l * 10 + ' % de dégâts' + (l >= 5 ? ', +0,3 de portée' : '') })),
 ];

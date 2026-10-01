@@ -7,8 +7,10 @@ const EGG_KEY = 'elemento.yglouEgg';
 const liveCostume = () => { const now = new Date(); for (const k in SEASONS) if (SEASONS[k].on(now)) return k; return null; };
 function paintYglou(cv, w, h, mood, t, o = {}) {
   if (!cv || !cv.offsetParent) return;
-  const c = prepMini(cv, w, h);
-  drawYglou(c, w / 2, h * 0.6 - (o.jump || 0), h * 0.82, mood, t, Object.assign({ costume: liveCostume() }, o));
+  const c = prepMini(cv, w, h), oo = Object.assign({ costume: liveCostume() }, o);
+  // Avec un chapeau, Yglou est un peu plus petit et plus bas pour que le chapeau tienne dans le cadre
+  const hat = !!oo.costume, sz = h * (hat ? 0.66 : 0.8), cy = h * (hat ? 0.67 : 0.6);
+  drawYglou(c, w / 2, cy - (o.jump || 0), sz, mood, t, oo);
 }
 function mascotTick(t) {
   const dt = Math.min(0.1, Math.max(0, t - (MASCOT.lastT || t))); MASCOT.lastT = t;
@@ -18,8 +20,11 @@ function mascotTick(t) {
   MASCOT.lastShards = meta.shards;
   if (curScreen === 'title') {
     const j = MASCOT.jumpT > 0 ? Math.sin((0.6 - MASCOT.jumpT) / 0.6 * Math.PI) * 18 : 0;
-    paintYglou($('#tYglou'), 120, 120, MASCOT.jumpT > 0 ? 'party' : (t % 7) < 0.6 ? 'wink' : 'happy', t, { jump: j });
+    const cv = $('#tYglou'), hh = cv.clientHeight || 130;
+    paintYglou(cv, Math.round(hh * 0.9), hh, MASCOT.jumpT > 0 ? 'party' : (t % 7) < 0.6 ? 'wink' : 'happy', t, { jump: j * hh / 130 });
+    if (!MASCOT.chipT || t - MASCOT.chipT > 1) { MASCOT.chipT = t; paintYglou($('#tProfCv'), 30, 30, 'happy', 0, { noShadow: true, noConfetti: true, costume: null }); }
   } else if (curScreen === 'over') paintYglou($('#oYglou'), 130, 130, MASCOT.overMood, t);
+  else if (curScreen === 'profile') paintYglou($('#prCv'), 70, 70, (t % 5) < 0.6 ? 'wink' : 'happy', t, { noConfetti: true });
   else if (curScreen === 'shop') paintYglou($('#sYglou'), 72, 72, MASCOT.shopParty > 0 ? 'party' : (t % 6) < 0.6 ? 'wink' : 'happy', t, { noConfetti: true });
   const gb = document.querySelector('#guideBox:not([hidden]) .gy');
   if (gb && typeof GUIDE !== 'undefined') paintYglou(gb, 56, 56, GUIDE.i === 0 ? 'wink' : GUIDE.i === GSTEPS.length - 1 ? 'party' : 'happy', t, { noConfetti: true, noShadow: true });
@@ -34,3 +39,17 @@ $('#tYglou').addEventListener('click', () => {
     Snd.play('win'); refreshTitle();
   }
 });
+
+// ---------- Profil : pseudo, son, tutoriel et aide ----------
+function refreshProfileChip() { const n = (store.get('elemento.pseudo') || '').trim(); $('#tProfName').textContent = n || 'Profil'; }
+function openProfile() {
+  Snd.init(); show('profile'); screens.profile.scrollTop = 0;
+  $('#prName').value = store.get('elemento.pseudo') || '';
+  const best = store.get(BEST2) || {}, owned = MAPS.filter((m, i) => !m.season && !m.random && mapOwned(i)).length, wins = Object.values(best).reduce((n, r) => n + Object.values(r).filter(x => x && x.won).length, 0);
+  $('#prStats').textContent = (meta.shards || 0) + ' éclats · ' + (meta.earned || 0) + ' gagnés en tout · cagnotte ' + (meta.bank || 0) + ' or · ' + owned + '/10 cartes · ' + wins + ' victoire' + (wins > 1 ? 's' : '');
+}
+$('#tProfile').addEventListener('click', openProfile);
+$('#prName').addEventListener('input', ev => { store.set('elemento.pseudo', ev.target.value.trim().slice(0, 12)); refreshProfileChip(); });
+$('#prName').addEventListener('keydown', ev => ev.stopPropagation());
+$('#prBack').addEventListener('click', () => show('title'));
+refreshProfileChip();

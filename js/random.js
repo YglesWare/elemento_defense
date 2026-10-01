@@ -143,7 +143,7 @@ function showRandPreview() {
   const m = MAPS[RI], P2 = withGrid(m, () => buildPath(m)), w = 300, h = Math.round(w * m.rows / m.cols);
   $('#rPrev').hidden = false;
   drawMapMini(prepMini($('#rCv'), w, h), RI, w, h, 'moyen');
-  $('#rInfo').textContent = RSIZES[m.rnd.size].name + ' · ' + P2.portals.length + ' portail' + (P2.portals.length > 1 ? 's' : '') + ' · ' + P2.bases.length + ' nid' + (P2.bases.length > 1 ? 's' : '');
+  $('#rInfo').textContent = RSIZES[m.rnd.size].name + ' · ' + P2.portals.length + ' portail' + (P2.portals.length > 1 ? 's' : '') + ' · ' + P2.bases.length + ' maison' + (P2.bases.length > 1 ? 's' : '');
   $('#rTheme').textContent = 'Thème ' + MAPS.find(x => x.id === m.wid).name + ' · biome ' + m.biome.name.toLowerCase();
   $('#rSeed').textContent = seedCode(m.rnd);
   $('#rPlay').disabled = false; $('#rErr').hidden = true;

@@ -1,4 +1,4 @@
-// Élémento Defense : Dessin des sprites : tours, ennemis, décors, obstacles, portail, Yglou et son nid.
+// Élémento Defense : Dessin des sprites : tours, ennemis, décors, obstacles, portail, maison et Yglou.
 'use strict';
 // ================= Primitives de dessin =================
 function fs(c, fill, lw) { c.fillStyle = fill; c.fill(); c.lineWidth = lw; c.strokeStyle = INK; c.stroke(); }
@@ -1094,20 +1094,23 @@ function drawYglou(c, x, y, s, mood = 'happy', t = 0, o = {}) {
   c.restore();
   if (mood === 'party' && !o.noConfetti) { const cols = ['#ff4f81', '#ffd23f', '#3fa9ff', '#4fd36a']; for (let i = 0; i < 10; i++) { const a = i * 2.4 + t * 0.8, d = s * (0.42 + (i % 3) * 0.06); c.save(); c.translate(x + Math.cos(a) * d, y - s * 0.14 + Math.sin(a) * d * 0.7); c.rotate(a + t * 3); c.fillStyle = cols[i % 4]; c.fillRect(-s * 0.015, -s * 0.03, s * 0.03, s * 0.06); c.restore(); } }
 }
-// Le nid de Yglou, à protéger (remplace la maison) : il s'affole quand un ennemi entre, s'inquiète quand les vies baissent, fête la fin des vagues
+// La maison à protéger (décorée selon l'événement)
 function drawBase(c, x, y, s, t, hit) {
-  const lw = Math.max(1.5, s * 0.05), jig = hit > 0 ? Math.sin(t * 60) * s * 0.04 : 0, g = typeof G !== 'undefined' && G && !G.demo ? G : null;
-  const mood = hit > 0 ? 'shock' : g && g.partyUntil > g.time ? 'party' : g && g.lives <= (g.startLives || 20) * 0.25 ? 'sad' : 'happy';
-  c.save(); c.translate(x + jig, y); c.lineJoin = 'round'; c.lineCap = 'round';
-  c.fillStyle = 'rgba(42,27,61,.25)'; c.beginPath(); c.ellipse(0, s * 0.34, s * 0.46, s * 0.1, 0, 0, TAU); c.fill();
-  const twig = (yy, w, col) => { c.beginPath(); c.ellipse(0, yy, w, s * 0.13, 0, 0, TAU); fs(c, col, lw); c.lineWidth = lw * 0.7; c.strokeStyle = 'rgba(42,27,61,.35)'; for (let i = 0; i < 7; i++) { const a = -0.9 + i * 0.3; c.beginPath(); c.moveTo(Math.cos(Math.PI + a) * w * 0.9, yy + Math.sin(a) * s * 0.06); c.lineTo(Math.cos(Math.PI + a) * w * 0.9 + w * 0.35, yy + Math.sin(a) * s * 0.06 + s * 0.04); c.stroke(); } };
-  twig(s * 0.12, s * 0.42, '#8a5a34');
-  drawYglou(c, 0, -s * 0.05, s * 0.78, mood, t, { noShadow: true, noConfetti: true, costume: typeof evt === 'function' ? evt() : null, seed: x * 0.01 });
-  // avant du nid (cache le bas de Yglou) avec deux œufs
-  c.beginPath(); c.moveTo(-s * 0.44, s * 0.14); c.quadraticCurveTo(0, s * 0.46, s * 0.44, s * 0.14); c.quadraticCurveTo(0, s * 0.26, -s * 0.44, s * 0.14); c.closePath(); fs(c, '#a8703f', lw);
-  c.lineWidth = lw * 0.7; c.strokeStyle = '#6e4630';
-  for (let i = 0; i < 6; i++) { const a = -s * 0.36 + i * s * 0.14; c.beginPath(); c.moveTo(a, s * 0.2 + Math.abs(a) * 0.12); c.lineTo(a + s * 0.12, s * 0.26 + Math.abs(a) * 0.08); c.stroke(); }
-  for (const [ex, col] of [[-s * 0.3, '#fff6e6'], [s * 0.3, '#e8f4ff']]) { c.beginPath(); c.ellipse(ex, s * 0.12, s * 0.07, s * 0.09, ex > 0 ? 0.3 : -0.3, 0, TAU); fs(c, col, lw * 0.7); }
+  const lw = Math.max(1.5, s * 0.05), jig = hit > 0 ? Math.sin(t * 60) * s * 0.04 : 0;
+  c.save(); c.translate(x + jig, y); c.lineJoin = 'round';
+  c.fillStyle = 'rgba(42,27,61,.25)'; c.beginPath(); c.ellipse(0, s * 0.35, s * 0.44, s * 0.1, 0, 0, TAU); c.fill();
+  rr(c, -s * 0.33, -s * 0.08, s * 0.66, s * 0.43, s * 0.06); fs(c, '#fff6e6', lw);
+  c.beginPath(); c.moveTo(-s * 0.08, s * 0.35); c.lineTo(-s * 0.08, s * 0.16); c.arc(0, s * 0.16, s * 0.08, Math.PI, TAU); c.lineTo(s * 0.08, s * 0.35); c.closePath(); fs(c, '#a86a42', lw * 0.8);
+  c.beginPath(); c.moveTo(-s * 0.46, -s * 0.04); c.quadraticCurveTo(0, -s * 0.62, s * 0.46, -s * 0.04); c.quadraticCurveTo(0, -s * 0.2, -s * 0.46, -s * 0.04); c.closePath(); fs(c, ROOFC[evt()] || '#ff4f81', lw);
+  const ev = evt();
+  if (ev === 'halloween') pumpkin(c, s * 0.38, s * 0.28, s * 0.11, s * 0.08, lw * 0.7, true);
+  else if (ev === 'noel') { c.beginPath(); c.moveTo(-s * 0.4, -s * 0.1); c.quadraticCurveTo(0, -s * 0.52, s * 0.4, -s * 0.1); for (let i = 0; i < 5; i++) c.quadraticCurveTo(s * (0.32 - i * 0.16), -s * 0.02, s * (0.24 - i * 0.16), -s * 0.12); c.closePath(); fs(c, '#ffffff', lw * 0.6); }
+  else if (ev === 'paques') { c.beginPath(); c.ellipse(s * 0.4, s * 0.25, s * 0.07, s * 0.1, 0, 0, TAU); fs(c, '#9fd8ff', lw * 0.6); }
+  else if (ev === 'nouvelan') lantern(c, s * 0.4, s * 0.12, s * 0.12, lw * 0.5);
+  c.beginPath(); c.arc(-s * 0.2, s * 0.06, s * 0.055, 0, TAU); c.arc(s * 0.2, s * 0.06, s * 0.055, 0, TAU); c.fillStyle = INK; c.fill();
+  const hb = 1 + Math.sin(t * 5) * 0.08 * (hit > 0 ? 3 : 1);
+  c.translate(0, -s * 0.52 + Math.sin(t * 3) * s * 0.03); c.scale(hb, hb);
+  heart(c, 0, 0, s * 0.13); fs(c, '#ff4f6e', lw * 0.8);
   c.restore();
 }
 

@@ -4,7 +4,7 @@
 const COIN = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#ffd23f" stroke="#2a1b3d" stroke-width="3"/></svg>';
 const GEM = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l7 7-7 13L5 9z" fill="#c59bff" stroke="#2a1b3d" stroke-width="2.2" stroke-linejoin="round"/><path d="M5 9h14M12 2L9 9l3 13 3-13z" fill="none" stroke="#2a1b3d" stroke-width="1.3" stroke-linejoin="round"/></svg>';
 const LOCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="11" rx="3" fill="#ffd23f" stroke="#2a1b3d" stroke-width="2.2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke="#2a1b3d" stroke-width="2.4"/><circle cx="12" cy="16" r="1.6" fill="#2a1b3d"/></svg>';
-const screens = { title: $('#sTitle'), help: $('#sHelp'), pause: $('#sPause'), over: $('#sOver'), shop: $('#sShop'), tuto: $('#sTuto'), tree: $('#sTree'), maps: $('#sMaps'), diff: $('#sDiff') };
+const screens = { profile: $('#sProfile'), title: $('#sTitle'), help: $('#sHelp'), pause: $('#sPause'), over: $('#sOver'), shop: $('#sShop'), tuto: $('#sTuto'), tree: $('#sTree'), maps: $('#sMaps'), diff: $('#sDiff') };
 let curScreen = 'title', helpFrom = 'title', shopFrom = 'title', hudCache = {};
 function show(name) { for (const k in screens) screens[k].hidden = k !== name; curScreen = name; if (name === 'title') refreshTitle(); }
 function setText(el, key, v) { if (hudCache[key] !== v) { hudCache[key] = v; el.textContent = v; } }
@@ -238,6 +238,7 @@ document.addEventListener('keydown', ev => {
   if ((curScreen === 'help' || curScreen === 'shop') && (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft')) { (curScreen === 'help' ? helpTabs : shopTabs).step(ev.key === 'ArrowRight' ? 1 : -1); return; }
   if (ev.key === 'Escape') {
     if (curScreen === 'help') { $('#hBack').click(); return; }
+    if (curScreen === 'profile') { $('#prBack').click(); return; }
     if (curScreen === 'shop') { $('#sBack').click(); return; }
     if (curScreen === 'maps') { $('#mBack').click(); return; }
     if (curScreen === 'diff') { $('#dfBack').click(); return; }
@@ -304,7 +305,7 @@ $('#pSound').addEventListener('click', toggleSound);
 $('#tSound').addEventListener('click', toggleSound);
 $('#pAuto').addEventListener('click', () => { opts.auto = !opts.auto; store.set(OPTS, opts); refreshOptBtns(); if (G && opts.auto && !G.waveActive && !G.autoT) G.autoT = 3; if (G && !opts.auto) G.autoT = 0; });
 $('#pHelp').addEventListener('click', () => { helpFrom = 'pause'; show('help'); screens.help.scrollTop = 0; });
-$('#tHelp').addEventListener('click', () => { helpFrom = 'title'; show('help'); screens.help.scrollTop = 0; store.set('elemento.seen', true); });
+$('#tHelp').addEventListener('click', () => { helpFrom = curScreen === 'profile' ? 'profile' : 'title'; show('help'); screens.help.scrollTop = 0; store.set('elemento.seen', true); });
 $('#hBack').addEventListener('click', () => show(helpFrom));
 $('#pQuit').addEventListener('click', () => { G = null; show('title'); });
 $('#oMenu').addEventListener('click', () => { G = null; show('title'); });
@@ -322,7 +323,7 @@ function showOver(win, best, award, bank, quit, lostShards) {
   $('#oBankDetail').textContent = why + ' Cagnotte : ' + bk.total + ' or, pour acheter des cartes.' + (nextMap >= 0 ? ' Prochaine carte : ' + MAPS[nextMap].name + ', ' + MAPS[nextMap].price + ' or' + (mapReqOk(nextMap) ? (win && !quit && G.diff !== 'facile' && G.diff !== 'infini' && nextMap === G.map + 1 ? '. Elle est maintenant achetable !' : '.') : ', après avoir réussi ' + MAPS[nextMap - 1].name + ' en Moyen.') : '');
   $('#oWord').textContent = quit ? 'ABANDON' : win ? 'VICTOIRE !!' : 'K.O. !';
   $('#oWord').classList.toggle('win', win);
-  $('#oText').textContent = quit ? 'Partie abandonnée : elle ne rapporte ni or ni éclats.' : win ? 'Les ' + G.maxw + ' vagues sont repoussées. Le nid de Yglou est sauvé !' : 'Les slimes ont envahi le nid de Yglou. Retente ta chance !';
+  $('#oText').textContent = quit ? 'Partie abandonnée : elle ne rapporte ni or ni éclats.' : win ? 'Les ' + G.maxw + ' vagues sont repoussées. La petite maison est sauve !' : 'Les slimes ont envahi la petite maison. Retente ta chance !';
   $('#oWave').textContent = G.wave; $('#oScore').textContent = G.score;
   $('#oBest').textContent = best ? best.wave : G.wave;
   $('#oEndless').hidden = !win;
@@ -515,12 +516,12 @@ $('#bShop').addEventListener('click', () => { Snd.init(); if (G && !G.over && cu
 
 // Titre
 const showCvs = [];
-TORDER.forEach(type => { const c = document.createElement('canvas'); $('#tShow').appendChild(c); showCvs.push({ type, c: prepMini(c, 58, 62) }); });
+TORDER.forEach(type => { const c = document.createElement('canvas'); $('#tShow').appendChild(c); showCvs.push({ type, c: prepMini(c, 48, 52) }); });
 function drawShowcase(t) {
   showCvs.forEach((o, i) => {
-    o.c.clearRect(0, 0, 58, 62);
+    o.c.clearRect(0, 0, 48, 52);
     const rc = Math.pow(Math.max(0, Math.sin(t * 2.2 + i * 1.3)), 10);
-    drawTower(o.c, o.type, 29, 37, 50, 1, t + i * 0.7, Math.sin(t * 1.3 + i), 0.2, rc, ((t + i * 0.9) % 4) < 0.12);
+    drawTower(o.c, o.type, 24, 31, 42, 1, t + i * 0.7, Math.sin(t * 1.3 + i), 0.2, rc, ((t + i * 0.9) % 4) < 0.12);
   });
 }
 function drawMapMini(c, mi, w, h, diff) { withGrid(MAPS[mi], () => drawMapMini2(c, mi, w, h, diff)); }
@@ -810,7 +811,7 @@ const DEMOS = {
 };
 const TUTO = [
   { kind: 'intro', demo: 'intro', title: 'Bienvenue !', tag: 'Les bases', html: '<ul>'
-    + '<li>Les slimes sortent du portail violet et suivent le chemin jusqu’au nid de Yglou. Chaque slime qui entre te coûte une vie (2 pour Tonk, 10 pour un Kaiju).</li>'
+    + '<li>Les slimes sortent du portail violet et suivent le chemin jusqu’à la petite maison. Chaque slime qui entre te coûte une vie (2 pour Tonk, 10 pour un Kaiju).</li>'
     + '<li>Pose des tours sur l’herbe avec ton or. Chaque ennemi vaincu en rapporte, chaque vague terminée aussi.</li>'
     + '<li>Une tour attaque tout ce qui passe dans son cercle de portée. Touche une tour posée pour voir ce cercle, l’améliorer ou la vendre.</li>'
     + '<li>Tu commences avec Braise et Ondine. Les quatre autres gardiens se débloquent dans l’Atelier, avec les éclats gagnés à chaque vague. Les pages suivantes les présentent tous.</li></ul>' },
