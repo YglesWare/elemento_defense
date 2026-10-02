@@ -276,6 +276,7 @@ const EN = {
 "aucun effet sur les tours": "no effect on towers",
 "aucun effet": "no effect",
 "Annuler": "Cancel",
+"⬆ Mise à jour ": "⬆ Update ",
 "Parties sur ce Wi-Fi": "Games on this Wi-Fi",
 "Rejoindre ": "Join ",
 "Ton ami scanne ce QR avec l’appareil photo de son téléphone, ou touche « Rejoindre une partie » dans le jeu. Il te rejoint aussitôt.": "Your friend scans this QR with their phone’s camera, or taps “Join a game” in the game. They join you right away.",

@@ -319,6 +319,23 @@ if (NATIVE) {
     if (curScreen === 'title') App.exitApp();
     else document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
   });
+  // Mises à jour : l'APK installé à la main regarde la dernière release GitHub ; si elle est plus récente,
+  // un bouton sur l'écran titre télécharge le nouvel APK (à installer par-dessus, même signature)
+  checkUpdate();
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - (checkUpdate.at || 0) > 3600e3) checkUpdate(); });
+}
+async function checkUpdate(current = BUILD) {
+  checkUpdate.at = Date.now();
+  try {
+    const r = await fetch('https://api.github.com/repos/YglesWare/elemento_defense/releases/latest', { cache: 'no-store' });
+    if (!r.ok) return;
+    const rel = await r.json(), m = /(\d+)\.(\d+)\.(\d+)$/.exec(rel.tag_name || ''), apk = (rel.assets || []).find(a => /\.apk$/i.test(a.name));
+    if (!m || !apk || +m[3] <= current) return;
+    const b = $('#tUpdate');
+    b.textContent = T('⬆ Mise à jour ') + m[1] + '.' + m[2] + '.' + m[3];
+    b.onclick = () => { Snd.init(); location.href = apk.browser_download_url; };
+    b.hidden = false;
+  } catch (e) { /* hors ligne : on réessaiera au prochain retour dans l'app */ }
 }
 if (!NATIVE && 'serviceWorker' in navigator && location.protocol === 'https:' && !/claude/.test(location.hostname)) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
