@@ -2,8 +2,13 @@
 'use strict';
 
 const GH_URL = 'https://yglesware.github.io/elemento_defense/';
+// Application Android (Capacitor)
+const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
 const MP = { state: 'home', err: '', info: '', code: '', hostName: '', scanFor: null, busyText: '', manual: false, camFail: false, cam: null, facing: (store.get('elemento.mpFacing') === 'environment' ? 'environment' : 'user') };
 screens.multi = $('#sMulti');
+// Pseudo par défaut au hasard (Yglou + 4 chiffres), en attendant que le joueur choisisse le sien
+const randomPseudo = () => 'Yglou' + (1000 + Math.floor(Math.random() * 9000));
+if (!(store.get('elemento.pseudo') || '').trim()) store.set('elemento.pseudo', randomPseudo());
 const mpName = () => (store.get('elemento.pseudo') || '').slice(0, 12);
 const esc = t => String(t).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 
@@ -44,7 +49,7 @@ async function startScan(onCode, facing = 'environment', stream = null) {
         }
       } catch (e) {}
       busy = false;
-      if (txt && isSignalText(txt)) { cancelAnimationFrame(camRaf); const keep = camStream; camStream = null; try { navigator.vibrate && navigator.vibrate(30); } catch (e) {} onCode(txt, keep); return; }
+      if (txt && (isSignalText(txt) || lanInfo(txt))) { cancelAnimationFrame(camRaf); const keep = camStream; camStream = null; try { navigator.vibrate && navigator.vibrate(30); } catch (e) {} onCode(txt, keep); return; }
     }
     camRaf = requestAnimationFrame(loop);
   };
@@ -65,9 +70,26 @@ function camError(e) {
   return (e && e.message) || T('La caméra ne s’est pas lancée.');
 }
 
+// ---------- Parties trouvées sur le Wi-Fi (invité dans l'app) ----------
+let foundTimer = 0;
+const MPF = new Map();
+function foundHTML() {
+  const now = Date.now(), list = [...MPF.values()].filter(f => now - f.t < 4000);
+  if (!list.length) return '';
+  return '<p class="mp-label">' + T('Parties sur ce Wi-Fi') + '</p>' + list.map(f => '<button class="btn green" type="button" data-a="lan-join" data-url="' + esc(f.url) + '"' + (f.n >= f.max ? ' disabled' : '') + '>'
+    + T('Rejoindre ') + esc(f.host) + ' · ' + f.n + '/' + f.max + '</button>').join('');
+}
+function startFound() {
+  MPF.clear();
+  const paint = () => { const el = $('#mpFound'); if (el) el.innerHTML = foundHTML(); };
+  if (!Net.discover(f => { const had = MPF.has(f.url); MPF.set(f.url, { ...f, t: Date.now() }); if (!had) paint(); })) return;
+  foundTimer = setInterval(paint, 1000);
+}
+function stopFound() { clearInterval(foundTimer); foundTimer = 0; MPF.clear(); Net.stopDiscover(); }
+
 // ---------- États de l'écran ----------
 function mpGo(state, extra) {
-  stopScan(); clearTimeout(mpTimer);
+  stopScan(); clearTimeout(mpTimer); stopFound();
   Object.assign(MP, { state, err: '', info: '', manual: false, camFail: false, cam: null }, extra || {});
   renderMP();
 }
@@ -140,6 +162,12 @@ function renderMP() {
       + '<button class="btn" type="button" data-a="launch"' + (Net.players.length < 2 ? ' disabled' : '') + '>' + (Net.players.length < 2 ? T('Invite au moins 1 joueur') : T('Lancer la partie !')) + '</button>'
       + rulesHTML()
       + T('<button class="btn pink" type="button" data-a="leave">Fermer la partie</button>');
+  } else if (S === 'invite' && MP.lan) {
+    // Hôte dans l'app : un seul QR, valable pour tous les invités (navigateur ou app)
+    h += '<canvas class="mp-qr" id="mpQr"></canvas>'
+      + '<p class="mp-step">' + T('Ton ami scanne ce QR avec l’appareil photo de son téléphone, ou touche « Rejoindre une partie » dans le jeu. Il te rejoint aussitôt.') + '</p>'
+      + '<p class="fine">' + T('Sur le même Wi-Fi ou sur ton partage de connexion. Adresse : ') + esc(MP.code.replace(/\/\?j=.*/, '')) + '</p>'
+      + T('<button class="btn alt" type="button" data-a="cancel">Retour au salon</button>');
   } else if (S === 'invite') {
     // Un seul écran : le QR de l'invitation, et la caméra qui attend déjà la réponse de l'invité
     h += '<canvas class="mp-qr" id="mpQr"></canvas>'
@@ -149,10 +177,11 @@ function renderMP() {
       + manualHTML(MP.code) + T('<button class="btn alt" type="button" data-a="cancel">Annuler</button>');
   } else if (S === 'scan') {
     h += '<h3 class="mp-h">' + (MP.scanFor === 'answer' ? T('Vise le QR de réponse de ton ami') : T('Vise le QR code affiché par l’hôte')) + '</h3>'
+      + (MP.scanFor !== 'answer' ? '<div id="mpFound">' + foundHTML() + '</div>' : '')
       + (MP.facing === 'user' && MP.scanFor !== 'answer' ? '<p class="mp-step">' + T('Mets ton téléphone <b>écran contre écran</b> avec celui de l’hôte, dans le même sens, à 15–20 cm.') + '</p>' : '')
       + camHTML()
       + manualHTML(null)
-      + '<button class="btn alt" type="button" data-a="' + (MP.scanFor === 'answer' ? 'back-invite' : 'cancel') + '">Annuler</button>';
+      + '<button class="btn alt" type="button" data-a="' + (MP.scanFor === 'answer' ? 'back-invite' : 'cancel') + '">' + T('Annuler') + '</button>';
   } else if (S === 'answer') {
     h += T('<canvas class="mp-qr" id="mpQr"></canvas><p class="mp-busy">En attente de connexion…</p>')
       + '<p class="mp-step">' + T('Garde ton écran face à celui de ') + esc(MP.hostName) + T(' : sa caméra lit ta réponse et la connexion se fait toute seule.') + '</p>'
@@ -167,17 +196,18 @@ function renderMP() {
   b.innerHTML = h;
   b.querySelectorAll('canvas.mp-yg').forEach(cv => drawYglou(prepMini(cv, 34, 34), 17, 19, 30, 'happy', 0, { crest: ['#ff4f81', '#3fa9ff', '#4fd36a', '#ffb03d'][+cv.dataset.i % 4], noShadow: true }));
   const qr = $('#mpQr'); if (qr && MP.code) { try { drawQR(qr, MP.code); } catch (e) { MP.err = T('Impossible de dessiner le QR code.'); } }
-  if (S === 'invite' && !MP.camFail) { const st = MP.cam; MP.cam = null; startScan(hostGotAnswer, MP.facing, st).catch(e => { if (MP.state !== 'invite') return; stopScan(); MP.camFail = true; MP.manual = true; MP.err = camError(e); renderMP(); }); }
+  if (S === 'scan' && MP.scanFor !== 'answer' && !foundTimer) startFound();
+  if (S === 'invite' && !MP.camFail && !MP.lan) { const st = MP.cam; MP.cam = null; startScan(hostGotAnswer, MP.facing, st).catch(e => { if (MP.state !== 'invite') return; stopScan(); MP.camFail = true; MP.manual = true; MP.err = camError(e); renderMP(); }); }
   if (S === 'scan' && !MP.camFail) startScan((txt, cam) => MP.scanFor === 'answer' ? hostGotAnswer(txt, cam) : guestGotOffer(txt, cam), MP.facing).catch(e => { if (MP.state !== 'scan') return; stopScan(); MP.camFail = true; MP.manual = true; MP.err = camError(e); renderMP(); });
 }
 
 // ---------- Actions ----------
 function needName() {
-  const inp = $('#mpName'), v = (inp ? inp.value : mpName()).trim().slice(0, 12);
-  if (!v) { MP.err = T('Choisis un pseudo pour que les autres te reconnaissent.'); renderMP(); return null; }
+  const inp = $('#mpName'), v = (inp ? inp.value : mpName()).trim().slice(0, 12) || randomPseudo();
   store.set('elemento.pseudo', v); return v;
 }
 async function hostInvite() {
+  if (Net.lan) { mpGo('invite', { code: Net.lan.url, lan: true }); return; }
   mpGo('busy', { busyText: T('Préparation de l’invitation…') });
   let cam = null;
   try {
@@ -196,7 +226,16 @@ async function hostGotAnswer(txt, cam) {
     mpTimer = setTimeout(() => { if (MP.state === 'busy') mpGo('host', { err: T('La connexion n’a pas abouti. Vérifiez que les téléphones sont sur le même Wi-Fi ou partage de connexion, puis recommencez l’invitation.') }); }, 20000);
   } catch (e) { mpGo('host', { err: e.message || String(e) }); }
 }
+// Rejoindre un hôte de l'app : dans l'app, connexion directe ; dans un navigateur, on ouvre le jeu servi par l'hôte
+function joinLanGame(url) {
+  if (!NATIVE && location.origin + location.pathname + location.search !== url) { location.href = url; return; }
+  mpGo('busy', { busyText: T('Connexion à la partie…'), lanJoin: true });
+  try { Net.joinLan(mpName() || randomPseudo(), url); }
+  catch (e) { mpGo('home', { err: e.message || String(e) }); return; }
+  mpTimer = setTimeout(() => { if (MP.state === 'busy') { Net.reset(); mpGo('home', { err: T('Impossible de joindre la partie. Vérifiez que les téléphones sont sur le même Wi-Fi ou partage de connexion.') }); } }, 12000);
+}
 async function guestGotOffer(txt, cam) {
+  if (lanInfo(txt)) { closeCamera(cam); joinLanGame(lanInfo(txt).url); return; }
   const name = mpName() || T('Joueur');
   mpGo('busy', { busyText: T('Préparation de ta réponse…') });
   try {
@@ -231,6 +270,7 @@ $('#mpBody').addEventListener('click', ev => {
   else if (a === 'create') { const n = needName(); if (!n) return; Net.host(n); keepAwake(); mpGo('host'); }
   else if (a === 'join') { const n = needName(); if (!n) return; keepAwake(); mpGo('scan', { scanFor: 'offer' }); }
   else if (a === 'invite') hostInvite();
+  else if (a === 'lan-join') joinLanGame(el.dataset.url);
   else if (a === 'scan-answer') mpGo('scan', { scanFor: 'answer', code: MP.code });
   else if (a === 'flip') { MP.facing = MP.facing === 'user' ? 'environment' : 'user'; store.set('elemento.mpFacing', MP.facing); stopScan(); MP.camFail = false; renderMP(); }
   else if (a === 'back-invite') mpGo('invite', { code: MP.code });
@@ -245,7 +285,7 @@ $('#mpBody').addEventListener('click', ev => {
 $('#mpBody').addEventListener('toggle', ev => { if (ev.target.classList && ev.target.classList.contains('mp-manual')) MP.manual = ev.target.open; }, true);
 
 Net.on('roster', () => {
-  if (MP.state === 'answer' && Net.role === 'guest') { mpGo('lobby'); Snd.play('clear'); return; }
+  if ((MP.state === 'answer' || (MP.state === 'busy' && MP.lanJoin)) && Net.role === 'guest') { mpGo('lobby'); Snd.play('clear'); return; }
   if (MP.state === 'host' || MP.state === 'lobby') renderMP();
 });
 Net.on('join', id => {
@@ -254,6 +294,8 @@ Net.on('join', id => {
   if (Net.role === 'host') mpGo('host', { info: (p ? p.name : T('Un joueur')) + T(' a rejoint la partie !') });
 });
 Net.on('leave', () => { if (MP.state === 'host') renderMP(); });
+// Le serveur local de l'hôte vient de démarrer : l'écran d'invitation passe au QR d'adresse
+Net.on('lan', lan => { if (MP.state === 'invite' && !MP.lan) mpGo('invite', { code: lan.url, lan: true }); });
 Net.on('closed', msg => mpGo('home', { err: msg }));
 Net.on('error', msg => mpGo('home', { err: msg }));
 
@@ -264,14 +306,15 @@ function openMulti() {
   else mpGo(ok ? 'home' : 'unsupported');
 }
 $('#tMulti').addEventListener('click', () => { Snd.init(); openMulti(); });
+// Page ouverte depuis le QR d'un hôte de l'app (jeu servi par son téléphone) : on rejoint sa partie tout de suite
+if (lanInfo(location.href)) { show('multi'); joinLanGame(lanInfo(location.href).url); }
 document.addEventListener('keydown', ev => { if (curScreen === 'multi' && ev.key === 'Escape') mpCancel(); });
 
 // ---------- Jeu installable hors ligne ----------
 // Application Android (Capacitor) : le jeu est déjà dans l'APK, pas besoin du service worker
-const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
 if (NATIVE) {
   // Bouton retour d'Android : même effet que la touche Échap (pause, retour au menu…) ; sur l'écran titre, il quitte le jeu
-  const App = (window.Capacitor.Plugins && window.Capacitor.Plugins.App) || window.Capacitor.registerPlugin('App');
+  const App = window.Capacitor.Plugins.App;
   App.addListener('backButton', () => {
     if (curScreen === 'title') App.exitApp();
     else document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));

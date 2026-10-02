@@ -95,8 +95,19 @@ function waitIce(pc, ms = 4000) {
 }
 const newPC = () => new RTCPeerConnection({ iceServers: [] });
 
+// ---------- Réseau local de l'application Android ----------
+// L'hôte sur l'APK ouvre un serveur sur le Wi-Fi : son QR est une simple adresse (http://IP:port/?j=jeton).
+// L'invité l'ouvre dans son navigateur (le jeu est servi par le téléphone de l'hôte) ou la scanne depuis l'app :
+// un seul scan. Les messages passent par WebSocket, avec les mêmes messages que WebRTC.
+// Une connexion LAN imite le couple (pc, dc) de WebRTC pour que le reste de Net ne voie pas la différence.
+const lanPlugin = () => (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.LanServer) || null;
+function lanInfo(text) {
+  const m = /^http:\/\/(\d{1,3}(?:\.\d{1,3}){3}:\d{2,5})\/\?j=([a-z0-9]{4,16})$/i.exec(String(text || '').trim());
+  return m ? { url: m[0], ws: 'ws://' + m[1] + '/ws?t=' + m[2], token: m[2] } : null;
+}
+
 const Net = {
-  role: null, me: null, peers: new Map(), pending: null, players: [], handlers: {}, timer: 0,
+  role: null, me: null, peers: new Map(), lanConns: new Map(), lan: null, pending: null, players: [], handlers: {}, timer: 0,
   supported() { return typeof RTCPeerConnection !== 'undefined' && typeof DecompressionStream !== 'undefined'; },
   on(type, fn) { (this.handlers[type] = this.handlers[type] || []).push(fn); },
   emit(type, data) { for (const fn of this.handlers[type] || []) { try { fn(data); } catch (e) { console.error(e); } } },
@@ -107,6 +118,57 @@ const Net = {
     this.players = [{ ...this.me, ping: 0 }];
     this.timer = setInterval(() => this.hostTick(), 2000);
     this.emit('roster', this.players);
+    this.lanStart();
+  },
+  // Hôte sur l'APK : serveur local ; sans Wi-Fi (ou hors de l'app), on reste sur les invitations WebRTC
+  async lanStart() {
+    const L = lanPlugin(); if (!L) return;
+    if (!this.lanWired) {
+      this.lanWired = true;
+      const conn = id => { for (const p of this.peers.values()) if (p.pc.lan === id) return p; return this.lanConns.get(id); };
+      L.addListener('open', ev => {
+        if (this.role !== 'host' || !this.lan || !new URLSearchParams(ev.query).get('t') || new URLSearchParams(ev.query).get('t') !== this.lan.token) { L.kick({ id: ev.id }); return; }
+        const pc = { lan: ev.id, close: () => L.kick({ id: ev.id }) }, dc = { readyState: 'open', send: s => L.send({ id: ev.id, data: s }) };
+        this.lanConns.set(ev.id, { pc, dc });
+      });
+      L.addListener('message', ev => { const c = conn(ev.id); if (!c) return; let msg; try { msg = JSON.parse(ev.data); } catch (e) { return; } this.receive(c.pc, c.dc, msg); });
+      L.addListener('close', ev => { const c = conn(ev.id); this.lanConns.delete(ev.id); if (c) { c.dc.readyState = 'closed'; this.dropPc(c.pc); } });
+    }
+    const token = rid() + rid();
+    try {
+      const r = await L.start({ port: 8080 });
+      if (this.role !== 'host') { L.stop(); return; }
+      if (r.ip) { this.lan = { token, url: 'http://' + r.ip + ':' + r.port + '/?j=' + token }; this.lanAnnounce(); this.emit('lan', this.lan); }
+    } catch (e) { this.lan = null; }
+  },
+  // Annonce de la partie sur le Wi-Fi, pour les invités qui ont l'app (mise à jour à chaque changement de joueurs)
+  lanAnnounce() {
+    const L = lanPlugin(); if (!L || !this.lan || this.role !== 'host') return;
+    L.announce({ text: this.inGame() ? '' : JSON.stringify({ g: 'eld', v: NET_VER, url: this.lan.url, host: this.me.name, n: this.players.length, max: NET_MAX }) });
+  },
+  inGame() { return typeof G !== 'undefined' && !!G && !!(G.duel || G.coop) && !G.over; },
+  // Invité dans l'app : écoute les parties annoncées sur le Wi-Fi ; onFound({ url, host, n, max })
+  discover(onFound) {
+    const L = lanPlugin(); if (!L) return false;
+    this.stopDiscover();
+    this.discoL = L.addListener('found', ev => { let m; try { m = JSON.parse(ev.text); } catch (e) { return; } if (m && m.g === 'eld' && lanInfo(m.url) && !(this.lan && this.lan.url === m.url)) onFound(m); });
+    L.discover().catch(() => {});
+    return true;
+  },
+  stopDiscover() {
+    const L = lanPlugin(); if (!L || !this.discoL) return;
+    Promise.resolve(this.discoL).then(h => h && h.remove && h.remove()); this.discoL = null; L.stopDiscover();
+  },
+  // Invité : rejoint un hôte de l'application par son adresse locale (QR scanné ou page servie par l'hôte)
+  joinLan(name, text) {
+    const info = lanInfo(text); if (!info) throw new Error(T('Ce QR code ne vient pas d’Élémento Defense.'));
+    this.reset(); this.role = 'guest'; this.me = { id: rid(), name, host: false };
+    const ws = new WebSocket(info.ws), pc = { close: () => { try { ws.close(); } catch (e) {} } };
+    const dc = { get readyState() { return ws.readyState === 1 ? 'open' : 'closed'; }, send: s => ws.send(s) };
+    this.hostPc = pc;
+    ws.onopen = () => { this.peers.set('host', { pc, dc }); this.sendTo('host', { t: 'hello', id: this.me.id, name: this.me.name, v: NET_VER }); };
+    ws.onmessage = ev => { let msg; try { msg = JSON.parse(ev.data); } catch (e) { return; } this.receive(pc, dc, msg); };
+    ws.onclose = () => { if (this.hostPc === pc && !this.peers.has('host')) { this.emit('error', T('Impossible de joindre la partie. Vérifiez que les téléphones sont sur le même Wi-Fi ou partage de connexion.')); this.reset(); } else this.dropPc(pc); };
   },
   // Hôte : prépare une invitation pour un nouveau joueur (QR à faire scanner)
   async createInvite() {
@@ -157,6 +219,8 @@ const Net = {
     if (this.role === 'host') {
       if (msg.t === 'hello') {
         if (this.peers.size + 1 >= NET_MAX) { try { dc.send(JSON.stringify({ t: 'full' })); } catch (e) {} setTimeout(() => pc.close(), 300); return; }
+        if (pc.lan && this.inGame()) { try { dc.send(JSON.stringify({ t: 'ingame' })); } catch (e) {} setTimeout(() => pc.close(), 300); return; }
+        if (msg.v && msg.v !== NET_VER) { try { dc.send(JSON.stringify({ t: 'ver' })); } catch (e) {} setTimeout(() => pc.close(), 300); return; }
         this.peers.set(msg.id, { pc, dc, name: String(msg.name || T('Joueur')).slice(0, 12), ping: 0 });
         this.syncRoster(); this.emit('join', msg.id); return;
       }
@@ -169,6 +233,8 @@ const Net = {
       if (msg.t === 'ping') { this.sendTo('host', { t: 'pong', ts: msg.ts }); return; }
       if (msg.t === 'roster') { this.players = msg.players; this.emit('roster', this.players); return; }
       if (msg.t === 'full') { this.emit('error', T('La partie est déjà complète.')); return; }
+      if (msg.t === 'ingame') { this.emit('error', T('La partie a déjà commencé.')); this.reset(); return; }
+      if (msg.t === 'ver') { this.emit('error', T('Versions du jeu différentes : mettez le jeu à jour sur les deux téléphones.')); this.reset(); return; }
       if (msg.t === 'bye') { this.emit('closed', T('L’hôte a fermé la partie.')); this.reset(); return; }
       if (msg.t === 'relay') { this.emit('msg', { from: msg.from, data: msg.data }); return; }
       this.emit('msg', { from: 'host', data: msg });
@@ -203,6 +269,7 @@ const Net = {
   syncRoster() {
     this.players = [{ ...this.me, ping: 0 }, ...[...this.peers].map(([id, p]) => ({ id, name: p.name, host: false, ping: p.ping }))];
     this.broadcast({ t: 'roster', players: this.players });
+    this.lanAnnounce();
     this.emit('roster', this.players);
   },
   leave() {
@@ -214,6 +281,7 @@ const Net = {
     for (const p of this.peers.values()) { try { p.pc.close(); } catch (e) {} }
     if (this.pending) { try { this.pending.pc.close(); } catch (e) {} }
     if (this.hostPc) { try { this.hostPc.close(); } catch (e) {} }
-    this.peers = new Map(); this.pending = null; this.hostPc = null; this.role = null; this.players = [];
+    if (this.lan) { const L = lanPlugin(); if (L) L.stop(); }
+    this.peers = new Map(); this.lanConns = new Map(); this.lan = null; this.pending = null; this.hostPc = null; this.role = null; this.players = [];
   },
 };

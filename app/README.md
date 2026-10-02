@@ -20,6 +20,11 @@ export ANDROID_HOME=$HOME/Library/Android/sdk
 
 Le numéro de version de l'app est `BUILD` dans `js/data.js` (à augmenter avec `CACHE` dans `sw.js` à chaque mise en ligne).
 
+## Multijoueur
+
+- Hôte dans l'app : serveur local (module natif `LanServerPlugin`, port 8080) qui sert le jeu et relaie les messages par WebSocket. Son QR est une adresse `http://IP:8080/?j=jeton` : un seul scan, depuis un navigateur ou l'app. La partie est aussi annoncée sur le Wi-Fi (UDP 41234) : les invités de l'app la voient dans « Rejoindre une partie ».
+- Hôte dans un navigateur : WebRTC, avec les 2 QR codes.
+
 ## Signature
 
 La clé est hors du dépôt : `~/.android-keystores/elemento-release.jks` et ses mots de passe dans `~/.android-keystores/elemento.properties`.

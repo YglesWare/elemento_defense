@@ -53,6 +53,8 @@ function openProfile() {
 $('#tProfile').addEventListener('click', openProfile);
 $('#prName').addEventListener('input', ev => { store.set('elemento.pseudo', ev.target.value.trim().slice(0, 12)); refreshProfileChip(); });
 $('#prName').addEventListener('keydown', ev => ev.stopPropagation());
+// Champ laissé vide : on redonne un pseudo au hasard
+$('#prName').addEventListener('change', ev => { if (!ev.target.value.trim()) { ev.target.value = randomPseudo(); store.set('elemento.pseudo', ev.target.value); refreshProfileChip(); } });
 $('#prBack').addEventListener('click', () => show('title'));
 refreshProfileChip();
 $('#tBuild').textContent = 'build ' + BUILD;
