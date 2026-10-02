@@ -282,7 +282,7 @@ function refreshCash() {
 function cashOut() {
   if (!G || G.over) return;
   G.over = true; G.paused = true; Snd.play('clear');
-  const lost = revokeShards(), bank = bankGold(0), best = ((store.get(BEST2) || {})[recId(MAPS[G.map])] || {})[G.diff]; store.del(SAVE);
+  const lost = revokeShards(), bank = bankGold(0), best = ((store.get(BEST2) || {})[recId(MAPS[G.map])] || {})[G.diff]; store.del(SAVE); stats.quits++; saveStats();
   showOver(false, best, null, bank, true, lost);
 }
 $('#pCash').addEventListener('click', () => { if (!G || G.over) return; if (!cashArm) { cashArm = true; refreshCash(); return; } cashArm = false; cashOut(); });
@@ -991,7 +991,7 @@ function frame(now) {
   if (G) {
     // Duel et coop ne s'arrêtent pas quand on ouvre un menu (en coop, seule la pause de l'hôte arrête tout le monde)
     const run = G.duel ? !G.over : G.coop ? !G.over && !(G.coopGuest ? G.hostPause : G.paused) : curScreen === 'game' && !G.paused && !G.over;
-    if (run) for (let i = 0; i < G.speed; i++) update(dt);
+    if (run) { for (let i = 0; i < G.speed; i++) update(dt); stats.time += dt; }
     else if (G.over) update(dt);
     if (G.duel && typeof duelTick === 'function') duelTick(dt);
     if (G.coop && typeof coopTick === 'function') coopTick(dt);

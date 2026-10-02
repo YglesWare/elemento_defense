@@ -70,7 +70,7 @@
 <section class="screen" id="sProfile" hidden>
   <div class="inner">
     <div class="panelbox col prof">
-      <div class="profhead"><canvas id="prCv" aria-hidden="true"></canvas><div><h2 class="ptitle" style="margin:0">Profil</h2><p class="fine" id="prStats"></p></div></div>
+      <div class="profhead"><canvas id="prCv" aria-hidden="true"></canvas><div><h2 class="ptitle" style="margin:0">Profil</h2><p class="fine" id="prStats"></p><p class="fine" id="prStats2"></p></div></div>
       <label class="mp-label" for="prName">Ton pseudo (utilisé en multijoueur)</label>
       <input id="prName" class="mp-input" maxlength="12" autocomplete="nickname" placeholder="Ton pseudo">
       <span class="mp-label">Langue · Language</span>
@@ -310,17 +310,6 @@
   </div>
 </section>
 
-<script src="js/i18n.js"></script>
-<script src="js/data.js"></script>
-<script src="js/draw.js"></script>
-<script src="js/game.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/vendor/qrcode.min.js"></script>
-<script src="js/net.js"></script>
-<script src="js/multi.js"></script>
-<script src="js/duel.js"></script>
-<script src="js/music.js"></script>
-<script src="js/guide.js"></script>
-  <script src="js/random.js"></script>
-  <script src="js/coop.js"></script>
-  <script src="js/mascot.js"></script>
+<!-- Les données du joueur (IndexedDB) sont chargées d'abord, puis les scripts du jeu, dans cet ordre -->
+<script src="js/storage.js"></script>
+<script>store.boot(['js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js']);</script>

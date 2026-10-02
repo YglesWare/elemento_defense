@@ -3,7 +3,7 @@
 'use strict';
 
 const LANG_KEY = 'elemento.lang';
-const LANG_PREF = (() => { try { return JSON.parse(localStorage.getItem(LANG_KEY)) || 'auto'; } catch (e) { return 'auto'; } })();
+const LANG_PREF = store.get(LANG_KEY) || 'auto';
 const LANG = LANG_PREF === 'fr' || LANG_PREF === 'en' ? LANG_PREF
   : ((navigator.languages && navigator.languages[0]) || navigator.language || 'fr').toLowerCase().startsWith('fr') ? 'fr' : 'en';
 const IS_EN = LANG === 'en';
@@ -276,6 +276,13 @@ const EN = {
 "aucun effet sur les tours": "no effect on towers",
 "aucun effet": "no effect",
 "Annuler": "Cancel",
+" partie · ": " game · ",
+" ennemi vaincu · ": " enemy defeated · ",
+" tour posée · ": " tower built · ",
+" parties · ": " games · ",
+" ennemis vaincus · ": " enemies defeated · ",
+" tours posées · ": " towers built · ",
+" de jeu": " played",
 "⬆ Mise à jour ": "⬆ Update ",
 "Parties sur ce Wi-Fi": "Games on this Wi-Fi",
 "Rejoindre ": "Join ",
@@ -919,4 +926,4 @@ function translateDOM(root) {
   });
 }
 translateDOM(document.body);
-function setLang(v) { try { localStorage.setItem(LANG_KEY, JSON.stringify(v)); } catch (e) {} location.reload(); }
+function setLang(v) { store.set(LANG_KEY, v); store.flush().then(() => location.reload()); }

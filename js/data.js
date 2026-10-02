@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 35;
+const BUILD = 36;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -19,11 +19,7 @@ const pick = a => a[Math.floor(Math.random() * a.length)];
 const lerp = (a, b, t) => a + (b - a) * t;
 const RM = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)').matches : false;
 function mulberry(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
-const store = {
-  get(k) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; } catch (e) { return null; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
-  del(k) { try { localStorage.removeItem(k); } catch (e) {} },
-};
+// store (lecture/écriture des données du joueur) : voir js/storage.js
 const opts = Object.assign({ sound: true, music: true, auto: false }, store.get(OPTS) || {});
 const META = 'elemento.meta';
 const meta = Object.assign({ shards: 0, earned: 0, lv: {} }, store.get(META) || {});
@@ -35,6 +31,12 @@ const Mo = (t, id) => (G && G.coop && t && t.own && t.own !== coopMe() ? (coopLv
 // Pendant un duel, la progression est temporaire : on n'écrit jamais dans la sauvegarde solo
 let duelOn = false;
 const saveMeta = () => { if (!duelOn) store.set(META, meta); };
+// Stats du joueur (profil) : compteurs cumulés, enregistrés à chaque vague, fin de partie et quand on quitte l'appli
+const STATS = 'elemento.stats';
+const stats = Object.assign({ games: 0, wins: 0, ko: 0, quits: 0, waves: 0, kills: 0, bosses: 0, towers: 0, time: 0 }, store.get(STATS) || {});
+const saveStats = () => store.set(STATS, stats);
+addEventListener('pagehide', () => { saveStats(); store.flush(); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { saveStats(); store.flush(); } });
 const fr = n => (IS_EN ? String(n) : String(n).replace('.', ','));
 
 // ================= Données =================

@@ -228,7 +228,7 @@ async function hostGotAnswer(txt, cam) {
 }
 // Rejoindre un hôte de l'app : dans l'app, connexion directe ; dans un navigateur, on ouvre le jeu servi par l'hôte
 function joinLanGame(url) {
-  if (!NATIVE && location.origin + location.pathname + location.search !== url) { location.href = url; return; }
+  if (!NATIVE && location.origin + location.pathname + location.search !== url) { store.flush().then(() => { location.href = url; }); return; }
   mpGo('busy', { busyText: T('Connexion à la partie…'), lanJoin: true });
   try { Net.joinLan(mpName() || randomPseudo(), url); }
   catch (e) { mpGo('home', { err: e.message || String(e) }); return; }
@@ -341,7 +341,7 @@ if (!NATIVE && 'serviceWorker' in navigator && location.protocol === 'https:' &&
   navigator.serviceWorker.register('sw.js').catch(() => {});
   // Nouvelle version installée : on recharge pour l'utiliser tout de suite, mais jamais en pleine partie
   if (navigator.serviceWorker.controller) navigator.serviceWorker.addEventListener('controllerchange', () => {
-    const go = () => { if (curScreen !== 'game') location.reload(); else setTimeout(go, 2000); };
+    const go = () => { if (curScreen !== 'game') store.flush().then(() => location.reload()); else setTimeout(go, 2000); };
     go();
   });
 }

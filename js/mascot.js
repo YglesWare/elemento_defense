@@ -48,6 +48,9 @@ function openProfile() {
   Snd.init(); show('profile'); screens.profile.scrollTop = 0;
   $('#prName').value = store.get('elemento.pseudo') || '';
   const best = store.get(BEST2) || {}, owned = MAPS.filter((m, i) => !m.season && !m.random && mapOwned(i)).length, wins = Object.values(best).reduce((n, r) => n + Object.values(r).filter(x => x && x.won).length, 0);
+  const n = v => (IS_EN ? v.toLocaleString('en-US') : v.toLocaleString('fr-FR')), h = Math.floor(stats.time / 3600), mn = Math.floor(stats.time / 60) % 60;
+  const pl = (v, one, many) => n(v) + T(v === 1 ? one : many);
+  $('#prStats2').textContent = pl(stats.games, ' partie · ', ' parties · ') + pl(stats.kills, ' ennemi vaincu · ', ' ennemis vaincus · ') + n(stats.bosses) + (IS_EN && stats.bosses !== 1 ? ' bosses · ' : ' boss · ') + pl(stats.towers, ' tour posée · ', ' tours posées · ') + (h ? h + ' h ' + String(mn).padStart(2, '0') : mn + ' min') + T(' de jeu');
   $('#prStats').textContent = (meta.shards || 0) + T(' éclats · ') + (meta.earned || 0) + T(' gagnés en tout · cagnotte ') + (meta.bank || 0) + T(' or · ') + owned + T('/10 cartes · ') + wins + (IS_EN ? ' win' + (wins === 1 ? '' : 's') : ' victoire' + (wins > 1 ? 's' : ''));
 }
 $('#tProfile').addEventListener('click', openProfile);

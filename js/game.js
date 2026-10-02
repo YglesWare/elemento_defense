@@ -163,6 +163,7 @@ function newGame(mi, save, diff) {
   const m = MAPS[mi]; useGrid(m);
   G = baseState(mi, save, diff);
   P = buildPath(m); G.deco = genDeco(mi);
+  if (!save) { stats.games++; saveStats(); }
   if (save) for (const t of save.towers) addTower(t.type, t.c, t.r, t.lvl >= 3 && !t.br && !TOWERS[t.type].fusion ? 2 : t.lvl, t.mode, t.inv, t.br);
   saveCheckpoint();
   hudCache = {};
@@ -230,7 +231,7 @@ function addTower(type, q, r, lvl = 1, mode = 'premier', inv, br) {
 }
 function build(type, q, r) {
   const D = TOWERS[type], cost = costOf(type); G.gold -= cost;
-  const t = addTower(type, q, r); t.recoil = 1;
+  const t = addTower(type, q, r); t.recoil = 1; if (!G.demo) stats.towers++;
   burst(t.x, t.y, 0.1, 12, ['#ffffff', '#f1eafa', D.color], 2.2, 0.09, 3, 0.5, 'star');
   ono('POP!', t.x, t.y, '#fff', 0.45, 0.1, 0.9);
   Snd.play('build'); G.ghost = null;
@@ -433,7 +434,7 @@ function waveDone() {
   const aw = awardShards();
   hint(T('Vague ') + G.wave + ' : +' + bonus + T(' or') + (aw.gain ? ', +' + aw.gain + T(' éclats') : '') + (canBuyAnything() ? T(' · achat possible dans l’Atelier') : ''), 3200);
   Snd.play('clear');
-  saveCheckpoint(); recordBest();
+  saveCheckpoint(); recordBest(); stats.waves++; saveStats();
   if (G.wave >= G.maxw && !G.endless) { setTimeout(() => victory(), 700); return; }
   if (opts.auto) G.autoT = 3;
 }
@@ -455,14 +456,14 @@ function victory() {
   if (!G || G.over) return;
   if (G.coop) { coopEnd(true); return; }
   G.paused = true; G.won = true; G.endless = true; Snd.play('win');
-  const best = recordBest(), award = awardShards(), bank = bankGold(); G.shardsWon = G.shardsPaid; saveCheckpoint();
+  const best = recordBest(), award = awardShards(), bank = bankGold(); G.shardsWon = G.shardsPaid; saveCheckpoint(); stats.wins++; saveStats();
   showOver(true, best, award, bank);
 }
 function gameOver() {
   if (G.duel) { duelDead('ko'); return; }
   if (G.coop) { if (!G.coopGuest) coopEnd(false); return; }
   G.over = true; G.lives = 0; Snd.play('ko');
-  const best = recordBest(), award = awardShards(), bank = bankGold(0.5); store.del(SAVE);
+  const best = recordBest(), award = awardShards(), bank = bankGold(0.5); store.del(SAVE); stats.ko++; saveStats();
   setTimeout(() => { if (G && G.over) showOver(false, best, award, bank); }, 1300);
 }
 
@@ -625,7 +626,8 @@ function hurt(e, dmg, elem, s) {
 function kill(e) {
   if (e.dead || G.coopGuest) return;
   e.dead = true;
-  const D = ETYPES[e.type], up = (e.flying ? FLY : 0) + 0.25;
+  const D = ETYPES[e.type]; if (!G.demo) { stats.kills++; if (D.boss) stats.bosses++; }
+  const up = (e.flying ? FLY : 0) + 0.25;
   const rw = G.coop ? coopLoot(D.reward * (1 + G.wave * 0.01)) : Math.round(D.reward * (1 + G.wave * 0.01) * (1 + 0.06 * M('loot')));
   if (!G.coop) G.gold += rw; G.score += rw * 10;
   burst(e.x, e.y, up, D.boss ? 40 : 10, [D.color, D.light, '#ffffff'], D.boss ? 4 : 2.4, D.boss ? 0.14 : 0.09, 4, 0.6);
