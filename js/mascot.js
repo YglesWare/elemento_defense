@@ -55,6 +55,7 @@ $('#prName').addEventListener('input', ev => { store.set('elemento.pseudo', ev.t
 $('#prName').addEventListener('keydown', ev => ev.stopPropagation());
 $('#prBack').addEventListener('click', () => show('title'));
 refreshProfileChip();
+$('#tBuild').textContent = 'build ' + BUILD;
 
 // Langue : auto (celle du téléphone), français ou anglais ; changer recharge le jeu
 document.querySelectorAll('#prLang [data-lang]').forEach(b => {
