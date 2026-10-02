@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Équilibrage Élémento</title>
+<style>
+:root { --bg: #f4f1fb; --ink: #2a1b3d; --paper: #fff; --ok: #2f9e44; --ko: #c92a2a }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #1d1530; --ink: #f4eefb; --paper: #2c2244 } }
+:root[data-theme="dark"] { --bg: #1d1530; --ink: #f4eefb; --paper: #2c2244 }
+body { margin: 0; padding: 16px; background: var(--bg); color: var(--ink); font: 15px/1.4 system-ui, sans-serif }
+textarea { width: 100%; box-sizing: border-box; font: 13px ui-monospace, monospace }
+table { border-collapse: collapse; margin-top: 12px; background: var(--paper) }
+td, th { border: 1px solid #8884; padding: 3px 8px; text-align: right }
+.w { color: var(--ok); font-weight: 700 } .l { color: var(--ko) }
+iframe { width: 1px; height: 1px; border: 0; position: absolute; left: -10px }
+</style></head>
+<body>
+<h1>Équilibrage · joueur automatique</h1>
+<p>Réglages <code>ECO</code> à essayer (voir js/data.js), puis lance une campagne : le bot part de zéro et joue comme un joueur. La vraie progression n'est jamais touchée.</p>
+<textarea id="eco" rows="3">{}</textarea>
+<p><button id="run">Lancer la campagne</button> <span id="st"></span></p>
+<div id="out"></div>
+<script>
+// Le jeu chargé dans une iframe repère cette variable : données en mémoire, réglages ECO pris dans l'adresse
+window.BALANCE = true;
+function loadGame(eco) {
+  return new Promise(ok => {
+    const f = document.createElement('iframe');
+    f.src = '../index.html?eco=' + encodeURIComponent(JSON.stringify(eco || {}));
+    document.body.appendChild(f);
+    const wait = () => {
+      const w = f.contentWindow;
+      if (!w || !w.document || w.document.readyState !== 'complete' || typeof w.eval !== 'function' || w.eval('typeof mascotTick') !== 'function') return setTimeout(wait, 100);
+      w.requestAnimationFrame = () => 0;
+      const s = w.document.createElement('script'); s.src = '../tools/bot.js?' + Date.now(); s.onload = () => ok({ frame: f, win: w }); w.document.body.appendChild(s);
+    };
+    wait();
+  });
+}
+async function campaign(eco, maxGames = 80) {
+  const { frame, win } = await loadGame(eco);
+  try { return win.botCampaign(maxGames); } finally { frame.remove(); }
+}
+function table(log) {
+  return '<table><tr><th>#</th><th>Carte</th><th>Difficulté</th><th>Résultat</th><th>Vague</th><th>+ éclats</th><th>+ cagnotte</th><th>Éclats investis</th></tr>'
+    + log.map(r => '<tr><td>' + r.g + '</td><td>' + r.map + '</td><td>' + r.diff + '</td><td class="' + (r.won ? 'w">victoire' : 'l">perdu') + '</td><td>' + r.wave + '</td><td>' + r.shards + '</td><td>' + r.bank + '</td><td>' + r.invested + '</td></tr>').join('') + '</table>';
+}
+document.getElementById('run').onclick = async () => {
+  const st = document.getElementById('st'); st.textContent = 'Campagne en cours…';
+  const t0 = performance.now(), log = await campaign(JSON.parse(document.getElementById('eco').value || '{}'));
+  st.textContent = log.length + ' parties en ' + Math.round((performance.now() - t0) / 1000) + ' s';
+  document.getElementById('out').innerHTML = table(log);
+};
+</script>
+</body></html>

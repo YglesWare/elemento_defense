@@ -80,6 +80,8 @@ const store = {
     return Promise.race([idbReq(req), new Promise((ok, ko) => setTimeout(() => ko(new Error('IndexedDB bloquée')), 3000))]);
   },
   async init() {
+    // Outil d'équilibrage (tools/balance.html) : données en mémoire seulement, la vraie progression n'est jamais touchée
+    if (window.parent !== window && window.parent.BALANCE) { this.mode = 'memory'; return; }
     try {
       this.db = await this.open(); this.mode = 'idb';
       this.db.onversionchange = () => this.db.close();

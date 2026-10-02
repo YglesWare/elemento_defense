@@ -3,7 +3,7 @@
 // La mise en relation se fait par QR codes : l'hôte montre une invitation, l'invité répond avec un autre QR.
 'use strict';
 
-const NET_VER = 5, NET_MAX = 4, QR_PREFIX = 'ELD' + NET_VER;
+const NET_VER = 6, NET_MAX = 4, QR_PREFIX = 'ELD' + NET_VER;
 
 // ---------- Encodage des invitations (compression + base64url) ----------
 const b64u = {

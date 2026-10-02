@@ -121,7 +121,7 @@ $('#iMode').addEventListener('click', () => {
 
 // HUD
 const fmtK = n => n >= 100000 ? Math.round(n / 1000) + 'k' : n >= 10000 ? fr((n / 1000).toFixed(1)) + 'k' : String(n);
-function bankHint(ms) { if (G) hint(T('Or de la partie : ') + G.gold + T('. À la fin, il rejoint la cagnotte 🐷 (') + (meta.bank || 0) + T(' or), qui sert à acheter des cartes : tout en cas de victoire, la moitié en cas de K.O. Un abandon ne rapporte rien (ni or, ni éclats).'), ms || 5000); }
+function bankHint(ms) { if (G) hint(T('Or de la partie : ') + G.gold + T('. À la fin, il rejoint la cagnotte 🐷 (') + (meta.bank || 0) + T(' or), qui sert à acheter des cartes : ') + bankShares() + T('. Un abandon ne rapporte rien (ni or, ni éclats).'), ms || 5000); }
 $('#hGoldChip').addEventListener('click', () => bankHint());
 const elLives = $('#hLives'), elGold = $('#hGold'), bWave = $('#bWave');
 function refreshHUD() {
@@ -265,7 +265,7 @@ function pause() {
     + (MAPS[G.map].random ? T(' Graine de la carte : ') + seedCode(MAPS[G.map].rnd) + '.' : '')
     + ' Biome ' + MAPS[G.map].biome.name.toLowerCase() + T(' : ') + biomeText(MAPS[G.map].biome) + '.'
     + T(' Météo : ') + (WEATHERS[G.weather] || WEATHERS.clear).name.toLowerCase() + ((WEATHERS[G.weather] || WEATHERS.clear).desc !== 'aucun effet' ? ' (' + WEATHERS[G.weather].desc + ')' : '') + '.'
-    + T(' Cagnotte : ') + (meta.bank || 0) + T(' or. En fin de partie, elle reçoit tout l’or restant en cas de victoire, la moitié en cas de K.O. Un abandon ne rapporte rien : ni or, ni éclats.');
+    + T(' Cagnotte : ') + (meta.bank || 0) + T(' or. En fin de partie, elle reçoit ') + bankShares() + T('. Un abandon ne rapporte rien : ni or, ni éclats.');
   cashArm = false; refreshCash();
   refreshOptBtns();
   if (typeof duelPauseUI === 'function') duelPauseUI(!!G.duel);
@@ -319,8 +319,8 @@ function showOver(win, best, award, bank, quit, lostShards) {
   const bk = bank || { gain: 0, total: meta.bank || 0 };
   $('#oBank').textContent = '+' + bk.gain;
   const nextMap = MAPS.findIndex((mm, i) => !mapOwned(i));
-  const why = quit ? T('Abandon : ton or restant (') + (bk.lost || 0) + T(') est perdu.') : bk.rate < 1 ? T('K.O. : seule la moitié de ton or restant rejoint la cagnotte (') + (bk.lost || 0) + T(' or perdus).') : T('Victoire : tout ton or restant rejoint la cagnotte.');
-  $('#oBankDetail').textContent = why + T(' Cagnotte : ') + bk.total + T(' or, pour acheter des cartes.') + (nextMap >= 0 ? T(' Prochaine carte : ') + MAPS[nextMap].name + ', ' + MAPS[nextMap].price + T(' or') + (mapReqOk(nextMap) ? (win && !quit && G.diff !== 'facile' && G.diff !== 'infini' && nextMap === G.map + 1 ? T('. Elle est maintenant achetable !') : '.') : T(', après avoir réussi ') + MAPS[nextMap - 1].name + T(' en Moyen.')) : '');
+  const why = quit ? T('Abandon : ton or restant (') + (bk.lost || 0) + T(') est perdu.') : !win ? T('K.O. : seulement ') + pct(bk.rate) + T(' de ton or restant rejoint la cagnotte (') + (bk.lost || 0) + T(' or perdus).') : pct(bk.rate) + T(' de ton or restant rejoint la cagnotte.');
+  $('#oBankDetail').textContent = why + T(' Cagnotte : ') + bk.total + T(' or, pour acheter des cartes.') + (nextMap >= 0 ? T(' Prochaine carte : ') + MAPS[nextMap].name + ', ' + MAPS[nextMap].price + T(' or') + (mapReqOk(nextMap) ? (win && !quit && G.diff !== 'infini' && nextMap === G.map + 1 ? T('. Elle est maintenant achetable !') : '.') : T(', après avoir réussi ') + MAPS[nextMap - 1].name + T(' en Facile.')) : '');
   $('#oWord').textContent = quit ? 'ABANDON' : win ? T('VICTOIRE !!') : 'K.O. !';
   $('#oWord').classList.toggle('win', win);
   $('#oText').textContent = quit ? T('Partie abandonnée : elle ne rapporte ni or ni éclats.') : win ? T('Les ') + G.maxw + T(' vagues sont repoussées. La petite maison est sauve !') : T('Les slimes ont envahi la petite maison. Retente ta chance !');
@@ -464,28 +464,30 @@ function renderShop(boughtId) {
   for (const [box, list] of [[$('#sBase'), UPGRADES.filter(u => !u.tower)], [$('#sMast'), UPGRADES.filter(u => u.tower)]]) {
     box.innerHTML = '';
     for (const u of list) {
-      const l = M(u.id), maxed = l >= u.max, price = upPrice(u), d = document.createElement('div'), lockT = u.tower && !unlocked(u.tower);
+      const l = upLv(u), maxed = l >= u.max, price = upPrice(u), d = document.createElement('div'), lockT = u.tower && !unlocked(u.tower);
       d.className = 'up' + (u.id === 'revive' ? ' wide' : '') + (maxed ? ' maxed' : '') + (lockT ? ' lockd' : '') + (boughtId === u.id ? ' bought' : '');
-      let pips = ''; for (let i = 0; i < u.max; i++) pips += '<span class="pip' + (i < l ? ' on' : '') + '"></span>';
+      // Jusqu'à 10 paliers : des pastilles ; au-delà, une jauge
+      let pips = ''; if (u.max <= 10) for (let i = 0; i < u.max; i++) pips += '<span class="pip' + (i < l ? ' on' : '') + '"></span>';
+      else pips = '<span class="upbar"><i style="width:' + Math.round(l * 100 / u.max) + '%"></i></span><span class="upn">' + l + '/' + u.max + '</span>';
       d.innerHTML = '<canvas></canvas><span class="un">' + u.name + T('</span><span class="pips" aria-label="Niveau ') + l + T(' sur ') + u.max + '">' + pips + '</span>'
-        + '<p>' + (l ? u.fx(l) : T('Pas encore acheté')) + (maxed ? '' : T('<br><span class="nx">Niveau ') + (l + 1) + T(' : ') + u.fx(l + 1) + '</span>') + '</p>'
+        + '<p>' + (l ? u.fx(l / u.k) : T('Pas encore acheté')) + (maxed ? '' : T('<br><span class="nx">Niveau ') + (l + 1) + T(' : ') + u.fx((l + 1) / u.k) + '</span>') + '</p>'
         + '<button class="sbtn buy" type="button"' + (maxed || lockT || meta.shards < price ? ' disabled' : '') + '>' + (lockT ? T('Débloque ') + TOWERS[u.tower].name + T(' d’abord') : maxed ? T('Niveau max') : T('Acheter ') + GEM + price) + '</button>';
       box.appendChild(d);
       const c = prepMini(d.querySelector('canvas'), 44, 48);
-      if (u.tower) drawTower(c, u.tower, 22, 27, 37, l ? Math.min(3, Math.ceil(l * 3 / 5)) : 1, 0.5, 0, 0.3, 0, false);
+      if (u.tower) drawTower(c, u.tower, 22, 27, 37, l ? Math.min(3, Math.ceil(l / u.k * 3 / 5)) : 1, 0.5, 0, 0.3, 0, false);
       else drawUpIcon(c, u.id, 22, 25, 40);
       d.querySelector('button').addEventListener('click', () => buyUp(u));
     }
   }
 }
 function buyUp(u) {
-  const l = M(u.id), price = upPrice(u);
+  const l = upLv(u), price = upPrice(u);
   if (l >= u.max || (u.tower && !unlocked(u.tower))) return;
   if (meta.shards < price) { Snd.play('no'); return; }
   meta.shards -= price; meta.lv[u.id] = l + 1; saveMeta();
   if (G && shopFrom === 'game') {
-    if (u.id === 'gold') G.gold += 25;
-    if (u.id === 'lives') G.lives += 2;
+    if (u.id === 'gold') G.gold += Math.round(25 / u.k);
+    if (u.id === 'lives') G.lives += Math.round(2 / u.k);
     for (const t of G.towers) { t.s = towerStats(t); const f = t.hp / (t.maxHp || 1); t.maxHp = towerMaxHp(t); t.hp = Math.round(t.maxHp * f); if (u.id === 'bouclier') refillShield(t); }
     if (!G.waveActive) saveCheckpoint();
     else if (G.checkpoint) { if (u.id === 'gold') G.checkpoint.gold += 25; if (u.id === 'lives') G.checkpoint.lives += 2; store.set(SAVE, G.checkpoint); }
@@ -563,7 +565,7 @@ function renderMaps(boughtId) {
     d.className = 'mapc' + (own ? '' : ' locked') + (boughtId === m.id ? ' bought' : '');
     const med = medalsHTML(rec);
     d.innerHTML = '<canvas></canvas><span class="nm">' + (i + 1) + '. ' + m.name + '</span><span class="bio-l">Biome ' + m.biome.name.toLowerCase() + '</span><span class="medals">' + med + '</span>'
-      + (own ? '' : mapReqOk(i) ? '<span class="req ok">✓ ' + MAPS[i - 1].name + T(' réussie en Moyen</span>') : T('<span class="req">Réussis d’abord ') + MAPS[i - 1].name + T(' en Moyen</span>'))
+      + (own ? '' : mapReqOk(i) ? '<span class="req ok">✓ ' + MAPS[i - 1].name + T(' réussie</span>') : T('<span class="req">Réussis d’abord ') + MAPS[i - 1].name + T(' en Facile</span>'))
       + (own ? T('<button class="sbtn" type="button">Jouer ▸</button>')
         : '<button class="sbtn" type="button"' + ((meta.bank || 0) < m.price || !mapReqOk(i) ? ' disabled' : '') + '>' + LOCK + T('Acheter · ') + m.price + T(' or</button>'));
     box.appendChild(d);
@@ -631,10 +633,14 @@ function openDiff(i) {
   for (const k of DORDER) {
     const Df = DIFFS[k], r = m.random ? null : rec[k], d = document.createElement('div'); d.className = 'df';
     const rt = m.random ? T('Carte unique') : !r ? T('Jamais jouée') : k === 'infini' ? T('Record : vague ') + r.wave : r.won ? T('✓ Réussie · record vague ') + r.wave : T('Record : vague ') + r.wave;
-    d.innerHTML = '<canvas></canvas><div><b>' + Df.name + '</b><p>' + Df.desc + '</p><span class="st">' + rt + T(' · éclats ×') + fr(+(m.shards * Df.shards).toFixed(2)) + '</span></div><button class="btn ' + k + T('" type="button">Jouer</button>');
+    // Difficulté pas encore ouverte : il faut réussir la précédente sur cette carte
+    const open = diffOpen(i, k), prev = DIFFS[DORDER[DORDER.indexOf(k) - 1]];
+    if (!open) d.classList.add('locked');
+    d.innerHTML = '<canvas></canvas><div><b>' + Df.name + '</b><p>' + Df.desc + '</p><span class="st">' + rt + T(' · éclats ×') + fr(+(m.shards * Df.shards * ECO.shards).toFixed(2)) + '</span></div>'
+      + (open ? '<button class="btn ' + k + T('" type="button">Jouer</button>') : '<button class="btn alt" type="button" disabled>' + LOCK + T('Réussis d’abord ') + prev.name + '</button>');
     box.appendChild(d);
     drawMapMini(prepMini(d.querySelector('canvas'), 112, 72), i, 112, 72, k);
-    d.querySelector('button').addEventListener('click', () => newGame(i, null, k));
+    if (open) d.querySelector('button').addEventListener('click', () => newGame(i, null, k));
   }
 }
 $('#tPlay').addEventListener('click', () => { Snd.init(); renderMaps(); show('maps'); screens.maps.scrollTop = 0; });

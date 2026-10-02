@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 36;
+const BUILD = 37;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -24,10 +24,17 @@ const opts = Object.assign({ sound: true, music: true, auto: false }, store.get(
 const META = 'elemento.meta';
 const meta = Object.assign({ shards: 0, earned: 0, lv: {} }, store.get(META) || {});
 if (!meta.lv) meta.lv = {};
-const M = id => meta.lv[id] || 0;
+// Améliorations de l'Atelier en petits paliers : k paliers par niveau d'origine (effet et prix divisés d'autant).
+// meta.lv garde le nombre de paliers achetés ; M(id) rend le niveau équivalent (fractionnaire) utilisé par le jeu.
+const UPK = { gold: 5, lives: 2, loot: 3, bonus: 4, cheap: 4, resell: 5, remparts: 4, bouclier: 3, paratonnerre: 5, talisman: 5, revive: 1 };
+const upK = id => UPK[id] || (id.startsWith('m_') ? 5 : 1);
+const lvOf = (lv, id) => ((lv && lv[id]) || 0) / upK(id);
+// Progression d'avant le découpage : un niveau acheté vaut k paliers
+if ((meta.lvv || 1) < 2) { for (const id in meta.lv) meta.lv[id] *= upK(id); meta.lvv = 2; store.set('elemento.meta', meta); }
+const M = id => lvOf(meta.lv, id);
 // Améliorations d'un autre profil le temps d'un calcul (coop : chaque tour suit l'Atelier de son propriétaire)
 function withLv(lv, fn) { const s = meta.lv; meta.lv = lv || {}; try { return fn(); } finally { meta.lv = s; } }
-const Mo = (t, id) => (G && G.coop && t && t.own && t.own !== coopMe() ? (coopLv(t.own)[id] || 0) : M(id));
+const Mo = (t, id) => (G && G.coop && t && t.own && t.own !== coopMe() ? lvOf(coopLv(t.own), id) : M(id));
 // Pendant un duel, la progression est temporaire : on n'écrit jamais dans la sauvegarde solo
 let duelOn = false;
 const saveMeta = () => { if (!duelOn) store.set(META, meta); };
@@ -38,6 +45,18 @@ const saveStats = () => store.set(STATS, stats);
 addEventListener('pagehide', () => { saveStats(); store.flush(); });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { saveStats(); store.flush(); } });
 const fr = n => (IS_EN ? String(n) : String(n).replace('.', ','));
+// Part de l'or restant mise en cagnotte, en texte (aide, conseils, fin de partie)
+const pct = v => Math.round(v * 100) + (IS_EN ? '%' : ' %');
+const bankShares = () => IS_EN ? pct(ECO.bankWin) + ' of the remaining gold if you win, ' + pct(ECO.bankKo) + ' if you get K.O.’d' : pct(ECO.bankWin) + ' de l’or restant en cas de victoire, ' + pct(ECO.bankKo) + ' en cas de K.O.';
+
+// ================= Économie =================
+// Tous les réglages de progression au même endroit (calibrés avec tools/balance.html) :
+// shards : éclats gagnés · bankWin / bankKo : part de l'or restant mise en cagnotte · mapPrice / atelier / unlock : prix
+// des cartes, des améliorations et des tours et fusions de l'Atelier · hp : PV des ennemis par difficulté (solo ; la coop garde coopHp)
+// Si on change hp, bankWin ou bankKo, mettre à jour les textes des difficultés (DIFFS) et de l'aide (index.html).
+const ECO = Object.assign({ shards: 0.4, bankWin: 0.85, bankKo: 0.4, mapPrice: 1.1, atelier: 1.5, unlock: 1.5, hp: { facile: 0.8, moyen: 1.3, difficile: 2.3 } },
+  // Outil d'équilibrage seulement : la page tools/balance.html essaie d'autres réglages dans une iframe
+  (() => { try { return window.parent !== window && window.parent.BALANCE ? JSON.parse(new URLSearchParams(location.search).get('eco') || '{}') : {}; } catch (e) { return {}; } })());
 
 // ================= Données =================
 const MAPS = [
@@ -128,12 +147,15 @@ const DIFFS = {
   facile: { name: T('Facile'), waves: 20, hp: 0.8, speed: 1, lives: 30, gold: 260, shards: 0.75, bonus: 1.25, malus: 0.5,
     desc: T('20 vagues · ennemis −20 % de PV · 30 vies · moins d’obstacles et plus de collines · bonus de terrain renforcés, malus adoucis') },
   moyen: { name: T('Moyen'), waves: 30, hp: 1, speed: 1, lives: 20, gold: 200, shards: 1, bonus: 1, malus: 1, timer: 30,
-    desc: T('30 vagues · 20 vies · la carte telle quelle · vague suivante automatique 30 s après la sortie du dernier ennemi') },
+    desc: T('30 vagues · ennemis +30 % de PV · 20 vies · la carte telle quelle · vague suivante automatique 30 s après la sortie du dernier ennemi') },
   difficile: { name: T('Difficile'), waves: 30, hp: 1.35, speed: 1.1, lives: 12, gold: 170, shards: 1.5, bonus: 0.75, malus: 1.5, timer: 15,
-    desc: T('30 vagues · ennemis +35 % de PV et plus rapides · 12 vies · plus d’obstacles, aucune colline · malus de terrain renforcés · vague suivante automatique après 15 s') },
+    desc: T('30 vagues · ennemis +130 % de PV et plus rapides · 12 vies · plus d’obstacles, aucune colline · malus de terrain renforcés · vague suivante automatique après 15 s') },
   infini: { name: T('Infini'), waves: Infinity, hp: 1, speed: 1, lives: 20, gold: 200, shards: 1.25, bonus: 1, malus: 1, timer: w => w < 10 ? null : Math.max(15, 30 - Math.floor((w - 10) / 5)),
     desc: T('Vagues sans fin, de plus en plus dures · 20 vies · vagues 1 à 10 sans chrono, puis vague suivante automatique après 30 s, un délai qui raccourcit jusqu’à 15 s · bats ton record') },
 };
+// PV des ennemis en solo selon ECO ; la coop garde ses PV d'origine (tout le monde y part de zéro)
+for (const k of ['facile', 'moyen', 'difficile']) { DIFFS[k].coopHp = DIFFS[k].hp; if (ECO.hp && ECO.hp[k]) DIFFS[k].hp = ECO.hp[k]; }
+for (const m of MAPS) if (m.price) m.price = Math.round(m.price * ECO.mapPrice / 50) * 50;
 const BEST2 = 'elemento.best2';
 // Clé des records d'une carte (les cartes d'événement ont des records par édition annuelle)
 const recId = m => m.rid || m.id;
@@ -236,12 +258,22 @@ function inSeason(m) {
 // Événement de la partie en cours (null sur les cartes normales)
 const evt = () => (G && !G.demo && MAPS[G.map] && MAPS[G.map].season) || null;
 const spooky = () => evt() === 'halloween';
+// Carte suivante achetable dès que la précédente est réussie en Facile (ou plus dur)
 const mapReqOk = i => {
   if (i === 0 || TEST_ALL) return true;
   if (MAPS[i].season) return inSeason(MAPS[i]);
   const rec = (store.get(BEST2) || {})[MAPS[i - 1].id] || {};
-  return !!((rec.moyen && rec.moyen.won) || (rec.difficile && rec.difficile.won));
+  return ['facile', 'moyen', 'difficile'].some(k => rec[k] && rec[k].won);
 };
+// Difficultés débloquées une à une sur chaque carte : Facile, puis Moyen (Facile réussi), Difficile (Moyen réussi),
+// Infini (Difficile réussi). Ce qui a déjà été réussi ou joué en Infini reste ouvert ; cartes aléatoires : tout est ouvert.
+function diffOpen(i, k) {
+  const m = MAPS[i], n = DORDER.indexOf(k);
+  if (TEST_ALL || !m || m.random || n <= 0) return true;
+  const rec = (store.get(BEST2) || {})[recId(m)] || {}, won = d => !!(rec[d] && rec[d].won);
+  if (k === 'infini' && rec.infini && rec.infini.wave) return true;
+  return DORDER.slice(n - 1).some(won);
+}
 const mapOwned = i => TEST_ALL || !MAPS[i].price || M('map_' + MAPS[i].id) > 0;
 function saveMapIndex(sv) {
   if (!sv || sv.grid !== GRIDV) return -1; // sauvegarde faite sur l'ancienne grille : plus utilisable
@@ -479,13 +511,18 @@ const UPGRADES = [
   ...TORDER.map(t => ({ id: 'm_' + t, tower: t, name: T('Maîtrise ') + MASTERY[t], max: 5, base: 10,
     fx: l => TOWERS[t].name + ' : +' + l * 10 + T(' % de dégâts') + (l >= 5 ? T(', +0,3 de portée') : '') })),
 ];
-const upPrice = u => u.base * (M(u.id) + 1);
+// Paliers : u.k par niveau d'origine, u.max paliers en tout ; prix d'un palier ≈ prix d'origine du niveau / k (même total à ECO.atelier = 1)
+for (const u of UPGRADES) { u.k = upK(u.id); u.max *= u.k; }
+const upLv = u => meta.lv[u.id] || 0;
+const upPrice = u => Math.max(1, Math.round(u.base * ECO.atelier * (upLv(u) + 1) / (u.k * u.k)));
 const UNLOCK = { terre: 15, vent: 20, glace: 30, foudre: 40 };
+for (const t in UNLOCK) UNLOCK[t] = Math.round(UNLOCK[t] * ECO.unlock);
+for (const k in FUSIONS) FUSIONS[k].unlock = Math.round(FUSIONS[k].unlock * ECO.unlock);
 const unlocked = type => !UNLOCK[type] || M('u_' + type) > 0;
 function canBuyAnything() {
   for (const t in UNLOCK) if (!unlocked(t) && meta.shards >= UNLOCK[t]) return true;
   for (const k in FUSIONS) if (!fusionUnlocked(k) && FUSIONS[k].parents.every(unlocked) && meta.shards >= FUSIONS[k].unlock) return true;
-  return UPGRADES.some(u => M(u.id) < u.max && (!u.tower || unlocked(u.tower)) && meta.shards >= upPrice(u));
+  return UPGRADES.some(u => upLv(u) < u.max && (!u.tower || unlocked(u.tower)) && meta.shards >= upPrice(u));
 }
 
 // ================= Son (synthétisé) =================

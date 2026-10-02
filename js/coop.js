@@ -25,7 +25,7 @@ function addGold(id, v) {
 function coopLoot(base) {
   const ids = coopActive(), n = Math.max(1, ids.length), share = base * (1 + 0.5 * (G.coopN - 1)) / n;
   let mine = 0;
-  for (const id of ids) { const v = share * (1 + 0.06 * (coopLv(id).loot || 0)); addGold(id, v); if (id === coopMe()) mine = v; }
+  for (const id of ids) { const v = share * (1 + 0.06 * lvOf(coopLv(id), 'loot')); addGold(id, v); if (id === coopMe()) mine = v; }
   return Math.max(1, Math.round(mine));
 }
 function coopGiveAll(v) { for (const id of coopActive()) addGold(id, v); }
@@ -52,7 +52,7 @@ function beginCoop(msg) {
   const host = Net.role === 'host';
   enterDuelMeta(); COOP.lvs = {}; COOP.lvSent = '{}';
   newGame(msg.map, null, msg.diff);
-  Object.assign(G, { coop: true, coopGuest: !host, coopN: msg.ids.length, coopHp: 1 + 0.5 * (msg.ids.length - 1), speed: 1 });
+  Object.assign(G, { hpd: DIFFS[G.diff].coopHp || DIFFS[G.diff].hp, coop: true, coopGuest: !host, coopN: msg.ids.length, coopHp: 1 + 0.5 * (msg.ids.length - 1), speed: 1 });
   if (host) {
     for (const id of msg.ids) if (id !== coopMe()) COOP.gold[id] = DIFFS[G.diff].gold;
     prepNextWave();
@@ -141,7 +141,7 @@ function coopNextWave() {
 function coopWaveStart(early, label) { Net.send('all', { k: 'cws', n: G.wave, early, label, portals: G.curPortals }); }
 // Fin de vague : chacun reçoit sa prime selon son Atelier ; les éclats sont calculés sur chaque téléphone
 function coopWaveDone() {
-  for (const id of coopActive()) if (id !== coopMe()) addGold(id, Math.round((10 + G.wave) * (1 + 0.2 * (coopLv(id).bonus || 0))));
+  for (const id of coopActive()) if (id !== coopMe()) addGold(id, Math.round((10 + G.wave) * (1 + 0.2 * lvOf(coopLv(id), 'bonus'))));
   Net.send('all', { k: 'cwd', n: G.wave, sc: G.score + G.wave * 50, bk: G.bossKills });
 }
 

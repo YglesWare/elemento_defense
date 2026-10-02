@@ -192,6 +192,9 @@ button:disabled{cursor:default}
 .up .un{font-family:var(--display);font-size:17px;letter-spacing:.4px;line-height:1.05;align-self:end}
 .pips{display:flex;gap:3px;align-self:start}
 .pip{width:13px;height:8px;border:2px solid var(--ink);border-radius:4px;background:var(--paper)}
+.upbar{display:block;width:64px;height:10px;border:2px solid var(--ink);border-radius:5px;background:var(--paper);overflow:hidden;align-self:center}
+.upbar i{display:block;height:100%;background:var(--leaf)}
+.upn{font:800 11px/1 "Baloo 2",system-ui,sans-serif;color:var(--ink);opacity:.75;align-self:center}
 .pip.on{background:var(--sun)}
 .up p{grid-column:1/3;align-self:start;margin:0;font-size:12.5px;font-weight:600;line-height:1.3}
 .up p .nx{color:var(--muted)}
@@ -324,6 +327,9 @@ button:disabled{cursor:default}
 .medal{font-size:11px;font-weight:800;line-height:1.3;border:2px solid var(--ink);border-radius:99px;padding:0 6px;background:var(--paper);color:var(--muted)}
 .medal.on{background:var(--sun);color:var(--ink)}
 .dfs{display:flex;flex-direction:column;gap:10px}
+.df.locked{opacity:.72}
+.df.locked canvas{filter:grayscale(.8)}
+.df .btn svg{width:18px;height:18px;vertical-align:-3px;margin-right:4px}
 .df{display:grid;grid-template-columns:112px minmax(0,1fr) auto;gap:10px;align-items:center;border:3px solid var(--ink);border-radius:14px;background:var(--mist);padding:8px}
 .df canvas{width:112px;height:72px;border:2px solid var(--ink);border-radius:8px;display:block}
 .df b{font-family:var(--display);font-weight:400;font-size:22px;letter-spacing:.5px;line-height:1}

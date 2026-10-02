@@ -152,8 +152,8 @@ function genDeco(mi) {
 }
 function baseState(mi, save, diff) {
   const m = MAPS[mi]; diff = (save && save.diff) || diff || 'moyen'; const Df = DIFFS[diff];
-  return { map: mi, diff, startLives: Df.lives + M('lives') * 2, maxw: Df.waves, hpd: Df.hp, spd: Df.speed, bm: Df.bonus, mm: Df.malus, banked: save ? save.banked || 0 : 0,
-    terrain: m.terrain ? diffTerrain(mi, diff) : null, gold: save ? save.gold : Df.gold + M('gold') * 25, lives: save ? save.lives : Df.lives + M('lives') * 2, wave: save ? save.wave : 0, score: save ? save.score : 0,
+  return { map: mi, diff, startLives: Df.lives + Math.round(M('lives') * 2), maxw: Df.waves, hpd: Df.hp, spd: Df.speed, bm: Df.bonus, mm: Df.malus, banked: save ? save.banked || 0 : 0,
+    terrain: m.terrain ? diffTerrain(mi, diff) : null, gold: save ? save.gold : Df.gold + Math.round(M('gold') * 25), lives: save ? save.lives : Df.lives + Math.round(M('lives') * 2), wave: save ? save.wave : 0, score: save ? save.score : 0,
     weather: (save && save.weather) || 'clear', bossKills: save ? save.bossKills || 0 : 0, shardsPaid: save ? save.shardsPaid || 0 : 0, shardsWon: save ? save.shardsWon || 0 : 0, won: save ? !!save.won : false, reviveUsed: save ? !!save.reviveUsed : false,
     endless: save ? !!save.endless : diff === 'infini', towers: [], enemies: [], projs: [], fx: [], parts: [], texts: [], zones: [], tors: [], eprojs: [], spawnQ: [], spawnT: 0,
     waveActive: false, speed: 1, paused: false, over: false, time: 0, shake: 0, speedLines: 0, hurtT: 0, baseHit: 0, eid: 0, onoCd: {},
@@ -193,7 +193,7 @@ function recordBest() {
   rec[G.diff] = cur; store.set(BEST2, b);
   return cur;
 }
-// Or envoyé dans la cagnotte en fin de partie : tout en cas de victoire, la moitié en cas de K.O., rien en cas d'abandon
+// Or envoyé dans la cagnotte en fin de partie : ECO.bankWin en cas de victoire, ECO.bankKo en cas de K.O., rien en cas d'abandon
 function bankGold(rate = 1) {
   const left = Math.max(0, G.gold - (G.banked || 0)), gain = Math.floor(left * rate);
   G.banked = Math.max(G.banked || 0, G.gold);
@@ -441,7 +441,7 @@ function waveDone() {
 function awardShards() {
   const mult = MAPS[G.map].shards * DIFFS[G.diff || 'moyen'].shards;
   const parts = { wave: G.wave * 2, score: Math.floor(G.score / 400), boss: G.bossKills * 5, win: G.won ? 30 : 0 };
-  const total = Math.round((parts.wave + parts.score + parts.boss + parts.win) * mult);
+  const total = Math.round((parts.wave + parts.score + parts.boss + parts.win) * mult * ECO.shards);
   const gain = Math.max(0, total - G.shardsPaid), before = G.shardsPaid;
   G.shardsPaid += gain; meta.shards += gain; meta.earned += gain; saveMeta();
   return { gain, parts, mult, before };
@@ -456,14 +456,14 @@ function victory() {
   if (!G || G.over) return;
   if (G.coop) { coopEnd(true); return; }
   G.paused = true; G.won = true; G.endless = true; Snd.play('win');
-  const best = recordBest(), award = awardShards(), bank = bankGold(); G.shardsWon = G.shardsPaid; saveCheckpoint(); stats.wins++; saveStats();
+  const best = recordBest(), award = awardShards(), bank = bankGold(ECO.bankWin); G.shardsWon = G.shardsPaid; saveCheckpoint(); stats.wins++; saveStats();
   showOver(true, best, award, bank);
 }
 function gameOver() {
   if (G.duel) { duelDead('ko'); return; }
   if (G.coop) { if (!G.coopGuest) coopEnd(false); return; }
   G.over = true; G.lives = 0; Snd.play('ko');
-  const best = recordBest(), award = awardShards(), bank = bankGold(0.5); store.del(SAVE); stats.ko++; saveStats();
+  const best = recordBest(), award = awardShards(), bank = bankGold(ECO.bankKo); store.del(SAVE); stats.ko++; saveStats();
   setTimeout(() => { if (G && G.over) showOver(false, best, award, bank); }, 1300);
 }
 
