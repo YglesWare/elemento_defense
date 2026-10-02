@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 38;
+const BUILD = 39;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -491,7 +491,7 @@ function statsOf(type, lvl, br) {
   return st;
 }
 const costOf = type => Math.round(TOWERS[type].cost * (1 - 0.04 * M('cheap')));
-function upCost(t) { if (t.lvl >= (TOWERS[t.type].fusion ? 3 : 4)) return 0; return Math.round(TOWERS[t.type].cost * [0.9, 1.6, 2.4][t.lvl - 1] * (1 - 0.04 * M('cheap')) / 5) * 5; }
+function upCost(t, lvl = t.lvl) { if (lvl >= (TOWERS[t.type].fusion ? 3 : 4)) return 0; return Math.round(TOWERS[t.type].cost * [0.9, 1.6, 2.4][lvl - 1] * (1 - 0.04 * M('cheap')) / 5) * 5; }
 const sellValue = t => Math.floor(t.inv * (0.7 + 0.05 * M('resell')));
 
 // Améliorations permanentes (Atelier)

@@ -775,11 +775,12 @@ function renderTree() {
     for (let r = 1; r <= 2; r++) {
       const lvl = r + 2, done = t.br === key && t.lvl >= lvl;
       const next = !closed && t.lvl === lvl - 1 && (r === 1 ? !t.br : t.br === key);
-      let foot;
+      // Prix sur sa propre ligne, pour qu'il reste lisible sur les petits écrans ; rangs à venir : prix indiqué aussi
+      let foot; const price = upCost(t, lvl - 1), tag = '<span class="pr">' + COIN + price + '</span>';
       if (done) foot = '<span class="st">✓ Acquis</span>';
-      else if (next) foot = '<button class="sbtn" type="button" data-br="' + key + '"' + (G.gold < cost ? ' disabled' : '') + '>' + (r === 1 ? T('Choisir') : T('Améliorer')) + ' · ' + cost + '</button>';
+      else if (next) foot = '<button class="sbtn tbuy" type="button" data-br="' + key + '"' + (G.gold < cost ? ' disabled' : '') + '><span>' + (r === 1 ? T('Choisir') : T('Améliorer')) + '</span>' + tag + '</button>';
       else if (closed) foot = T('<span class="st">Branche fermée</span>');
-      else foot = '<span class="st">' + (r === 1 ? T('Dès le niveau 2') : T('Après le rang I')) + '</span>';
+      else foot = '<span class="st">' + (r === 1 ? T('Dès le niveau 2') : T('Après le rang I')) + ' · ' + tag + '</span>';
       html += '<div class="rk' + (done ? ' done' : '') + '"><span class="rn">Rang ' + (r === 1 ? 'I' : 'II') + '</span><p>' + rankText(key, r, t.type) + '</p>' + foot + '</div>';
     }
     d.innerHTML = html + '</div>';
