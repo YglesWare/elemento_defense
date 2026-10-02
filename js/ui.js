@@ -103,17 +103,18 @@ function refreshInfo() {
   const mine = !(G.coop && t.own && t.own !== coopMe());
   $('#iStars').textContent = (D.fusion ? '★'.repeat(t.lvl) + '☆'.repeat(3 - t.lvl) + ' · Fusion' : '★'.repeat(t.lvl) + '☆'.repeat(4 - t.lvl) + (t.br ? ' · ' + BRANCH[t.br].short : '')) + ' · ' + KIND[D.kind];
   const ic = $('#iStats'); ic.innerHTML = statChips(t); ic.scrollLeft = 0; ic.classList.toggle('more', ic.scrollWidth > ic.clientWidth + 2);
-  const up = $('#iUp');
-  if (D.fusion) { if (cost) { up.textContent = T('Améliorer ') + cost; up.disabled = G.gold < cost; } else { up.textContent = T('Niveau max'); up.disabled = true; } }
-  else if (t.lvl === 2 && !t.br) { up.textContent = T('Spécialiser ▸'); up.disabled = false; }
-  else if (t.lvl >= 4) { up.textContent = T('Arbre ▸'); up.disabled = false; }
-  else { up.textContent = (t.br ? BRANCH[t.br].short + ' II · ' : T('Améliorer ')) + cost; up.disabled = G.gold < cost; }
-  $('#iSell').textContent = T('Vendre ') + sellValue(t);
+  // Boutons sur deux lignes : l'action en petit, le prix dessous (jamais coupé, même avec 4 boutons)
+  const up = $('#iUp'), two = (el, label, price, coin = true) => { el.classList.toggle('two', price != null); el.innerHTML = price != null ? '<span class="bl">' + label + '</span><span class="bp">' + (coin ? COIN : '') + price + '</span>' : label; };
+  if (D.fusion) { if (cost) { two(up, T('Améliorer'), cost); up.disabled = G.gold < cost; } else { two(up, T('Niveau max')); up.disabled = true; } }
+  else if (t.lvl === 2 && !t.br) { two(up, T('Spécialiser ▸'), cost); up.disabled = false; }
+  else if (t.lvl >= 4) { two(up, T('Arbre ▸')); up.disabled = false; }
+  else { two(up, t.br ? BRANCH[t.br].short + ' II' : T('Améliorer'), cost); up.disabled = G.gold < cost; }
+  two($('#iSell'), T('Vendre'), sellValue(t));
   if (!mine) { up.disabled = true; $('#iSell').disabled = true; } else $('#iSell').disabled = false;
   // Difficile : soin payant (une tour détruite ne se soigne pas : elle n'existe plus)
   const hb = $('#iHeal'); hb.hidden = !hardMode();
-  if (hardMode()) { hb.textContent = hc ? T('Soigner ') + hc : T('PV au max'); hb.disabled = !mine || !hc || G.gold < hc || t.ko > 0; }
-  $('#iMode').textContent = MODE_LABEL[t.mode];
+  if (hardMode()) { if (hc) two(hb, T('Soigner'), hc); else two(hb, T('PV au max')); hb.disabled = !mine || !hc || G.gold < hc || t.ko > 0; }
+  two($('#iMode'), T('Cible'), MODE_SHORT[t.mode], false);
   $('#iMode').hidden = D.kind === 'onde';
   iCtx.clearRect(0, 0, 44, 48); drawTower(iCtx, t.type, 22, 27, 37, t.lvl, 1, 0, 0.3, 0, false, t.br);
 }

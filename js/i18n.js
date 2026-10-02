@@ -276,6 +276,11 @@ const EN = {
 "aucun effet sur les tours": "no effect on towers",
 "aucun effet": "no effect",
 "Annuler": "Cancel",
+"Cible": "Target",
+"1er": "first",
+"costaud": "strongest",
+"proche": "closest",
+
 "Le slime de base : lent et sans pouvoir. Une Braise ou une Ondine en vient facilement à bout.": "The basic slime: slow and powerless. An Ember or an Undine takes care of it easily.",
 "Minuscule et très rapide : il file entre les tirs. Les ralentissements d’Ondine et de Givrette l’arrêtent net.": "Tiny and very fast: it slips between shots. The slows from Undine and Frosty stop it cold.",
 "Il vole au-dessus du chemin : Rocaille ne peut pas l’atteindre. Zéphyr lui fait 2,5 fois plus de dégâts.": "It flies over the path: Rocky can’t reach it. Zephyr deals 2.5× damage to it.",

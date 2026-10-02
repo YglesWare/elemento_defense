@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 39;
+const BUILD = 40;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -399,6 +399,7 @@ function fusionKey(a, b) {
   return null;
 }
 const MODES = ['premier', 'fort', 'proche'], MODE_LABEL = { premier: T('Cible : 1er'), fort: T('Cible : costaud'), proche: T('Cible : proche') };
+const MODE_SHORT = { premier: T('1er'), fort: T('costaud'), proche: T('proche') };
 
 const ETYPES = {
   gloop: { name: 'Gloop', hp: 30, speed: 1.0, reward: 3, size: 0.24, color: '#b57bff', light: '#e2caff', mood: 'happy', desc: T('Le slime de base.') },
