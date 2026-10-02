@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 37;
+const BUILD = 38;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -149,7 +149,7 @@ const DIFFS = {
   moyen: { name: T('Moyen'), waves: 30, hp: 1, speed: 1, lives: 20, gold: 200, shards: 1, bonus: 1, malus: 1, timer: 30,
     desc: T('30 vagues · ennemis +30 % de PV · 20 vies · la carte telle quelle · vague suivante automatique 30 s après la sortie du dernier ennemi') },
   difficile: { name: T('Difficile'), waves: 30, hp: 1.35, speed: 1.1, lives: 12, gold: 170, shards: 1.5, bonus: 0.75, malus: 1.5, timer: 15,
-    desc: T('30 vagues · ennemis +130 % de PV et plus rapides · 12 vies · plus d’obstacles, aucune colline · malus de terrain renforcés · vague suivante automatique après 15 s') },
+    desc: T('30 vagues · ennemis +130 % de PV et plus rapides · 12 vies · plus d’obstacles, aucune colline · malus de terrain renforcés · vague suivante automatique après 15 s · une tour à 0 PV est détruite et laisse des ruines ; pas de soin gratuit entre les vagues, mais un soin payant et une petite régénération pendant les vagues · un ennemi n’attaque chaque tour qu’une fois') },
   infini: { name: T('Infini'), waves: Infinity, hp: 1, speed: 1, lives: 20, gold: 200, shards: 1.25, bonus: 1, malus: 1, timer: w => w < 10 ? null : Math.max(15, 30 - Math.floor((w - 10) / 5)),
     desc: T('Vagues sans fin, de plus en plus dures · 20 vies · vagues 1 à 10 sans chrono, puis vague suivante automatique après 30 s, un délai qui raccourcit jusqu’à 15 s · bats ton record') },
 };

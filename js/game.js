@@ -155,7 +155,7 @@ function baseState(mi, save, diff) {
   return { map: mi, diff, startLives: Df.lives + Math.round(M('lives') * 2), maxw: Df.waves, hpd: Df.hp, spd: Df.speed, bm: Df.bonus, mm: Df.malus, banked: save ? save.banked || 0 : 0,
     terrain: m.terrain ? diffTerrain(mi, diff) : null, gold: save ? save.gold : Df.gold + Math.round(M('gold') * 25), lives: save ? save.lives : Df.lives + Math.round(M('lives') * 2), wave: save ? save.wave : 0, score: save ? save.score : 0,
     weather: (save && save.weather) || 'clear', bossKills: save ? save.bossKills || 0 : 0, shardsPaid: save ? save.shardsPaid || 0 : 0, shardsWon: save ? save.shardsWon || 0 : 0, won: save ? !!save.won : false, reviveUsed: save ? !!save.reviveUsed : false,
-    endless: save ? !!save.endless : diff === 'infini', towers: [], enemies: [], projs: [], fx: [], parts: [], texts: [], zones: [], tors: [], eprojs: [], spawnQ: [], spawnT: 0,
+    endless: save ? !!save.endless : diff === 'infini', ruins: save ? (save.ruins || []).slice() : [], towers: [], enemies: [], projs: [], fx: [], parts: [], texts: [], zones: [], tors: [], eprojs: [], spawnQ: [], spawnT: 0,
     waveActive: false, speed: 1, paused: false, over: false, time: 0, shake: 0, speedLines: 0, hurtT: 0, baseHit: 0, eid: 0, onoCd: {},
     selType: null, selTower: null, hover: null, ghost: null, bad: null, autoT: 0, checkpoint: null };
 }
@@ -164,7 +164,7 @@ function newGame(mi, save, diff) {
   G = baseState(mi, save, diff);
   P = buildPath(m); G.deco = genDeco(mi);
   if (!save) { stats.games++; saveStats(); }
-  if (save) for (const t of save.towers) addTower(t.type, t.c, t.r, t.lvl >= 3 && !t.br && !TOWERS[t.type].fusion ? 2 : t.lvl, t.mode, t.inv, t.br);
+  if (save) for (const t of save.towers) { const nt = addTower(t.type, t.c, t.r, t.lvl >= 3 && !t.br && !TOWERS[t.type].fusion ? 2 : t.lvl, t.mode, t.inv, t.br); if (hardMode() && t.hp > 0) nt.hp = Math.min(nt.maxHp, t.hp); }
   saveCheckpoint();
   hudCache = {};
   resize(); refreshCosts(); showPanel('palette'); refreshPalette();
@@ -182,7 +182,7 @@ function saveCheckpoint() {
   if (G.duel || duelOn || G.coop) return;
   G.checkpoint = { grid: GRIDV, rnd: MAPS[G.map].rnd || null, map: G.map, mapId: MAPS[G.map].id, diff: G.diff, banked: G.banked, gold: G.gold, lives: G.lives, wave: G.wave, score: G.score, endless: G.endless,
     bossKills: G.bossKills, shardsPaid: G.shardsPaid, shardsWon: G.shardsWon, won: G.won, reviveUsed: G.reviveUsed,
-    weather: G.weather, towers: G.towers.map(t => ({ type: t.type, c: t.c, r: t.r, lvl: t.lvl, mode: t.mode, inv: t.inv, br: t.br })) };
+    weather: G.weather, ruins: G.ruins, towers: G.towers.map(t => ({ type: t.type, c: t.c, r: t.r, lvl: t.lvl, mode: t.mode, inv: t.inv, br: t.br, hp: Math.round(t.hp) })) };
   store.set(SAVE, G.checkpoint);
 }
 function recordBest() {
@@ -204,7 +204,28 @@ function bankGold(rate = 1) {
 // ---------- Tours ----------
 const towerAt = (q, r) => G.towers.find(t => t.c === q && t.r === r);
 const inside = (q, r) => q >= 0 && r >= 0 && q < COLS && r < ROWS;
-const canBuild = (q, r) => inside(q, r) && !P.cells.has(q + ',' + r) && !towerAt(q, r) && !(terrainAt(q, r) || {}).block;
+const canBuild = (q, r) => inside(q, r) && !P.cells.has(q + ',' + r) && !towerAt(q, r) && !ruinAt(q, r) && !(terrainAt(q, r) || {}).block;
+// Difficile : une tour à 0 PV est détruite (ruines qui bloquent la case), on la soigne en or, elle se régénère un peu pendant les vagues
+const hardMode = () => !!G && G.diff === 'difficile' && !G.demo;
+const ruinAt = (q, r) => !!(G && G.ruins && G.ruins.some(u => u.c === q && u.r === r));
+const REGEN = 0.01; // part des PV max régénérée par seconde pendant une vague
+const healCost = t => (t.dead || t.hp >= t.maxHp ? 0 : Math.max(5, Math.round((1 - t.hp / t.maxHp) * t.inv * 0.5)));
+function healPaid(t) {
+  const cost = healCost(t); if (!cost || !hardMode()) return;
+  if (G.gold < cost) { hint(T('Pas assez d’or pour soigner')); Snd.play('no'); return; }
+  if (G.coopGuest) { coopAct({ a: 'heal', id: t.id }); return; }
+  G.gold -= cost; t.hp = t.maxHp;
+  burst(t.x, t.y, 0.4, 12, ['#5cd86a', '#ffffff', '#b8f5c0'], 2.2, 0.08, 2, 0.6, 'star'); ono(T('SOIGNÉE !'), t.x, t.y, '#5cd86a', 0.45, 0, 0.9); Snd.play('up');
+  if (typeof refreshInfo === 'function') { hudCache.info = null; refreshInfo(); }
+}
+function destroyTower(t) {
+  t.hp = 0; t.dead = true; G.towers = G.towers.filter(x => x !== t); G.ruins.push({ c: t.c, r: t.r, type: t.type });
+  if (G.selTower === t && typeof deselect === 'function') deselect();
+  if (G.drag && G.drag.t === t) G.drag = null;
+  ono(T('DÉTRUITE !'), t.x, t.y, '#ff4f6e', 0.55, 0, 1.1); Snd.play('hurt'); G.shake = Math.max(G.shake, 0.3);
+  burst(t.x, t.y, 0.3, 18, ['#8e8aa0', '#cdbfe0', TOWERS[t.type].color], 2.6, 0.1, 3, 0.7);
+  hint(TOWERS[t.type].name + T(' est détruite : ses ruines bloquent la case.'), 2600);
+}
 function terrainAt(q, r) {
   if (!G || !G.terrain || !inside(q, r) || P.cells.has(q + ',' + r)) return null;
   return TERRAINS[G.terrain[r][q]] || null;
@@ -243,7 +264,7 @@ function upgrade(t, br) {
   if (br && t.br && br !== t.br) return;
   if (G.gold < cost) { hint(T('Pas assez d’or pour améliorer')); Snd.play('no'); return; }
   if (G.coopGuest) { coopAct({ a: 'up', id: t.id, br: br || null }); return; }
-  G.gold -= cost; t.lvl++; if (t.lvl >= 3 && !t.br) t.br = br; t.inv += cost; t.s = towerStats(t); t.recoil = 1; if (!(t.ko > 0)) healTower(t, true);
+  G.gold -= cost; t.lvl++; if (t.lvl >= 3 && !t.br) t.br = br; t.inv += cost; t.s = towerStats(t); t.recoil = 1; if (!(t.ko > 0)) healTower(t, !hardMode());
   burst(t.x, t.y, 0.4, 16, ['#ffd23f', '#ffffff', t.br ? BRANCH[t.br].color : TOWERS[t.type].color], 2.6, 0.1, 2, 0.7, 'star');
   ono(t.br ? BRANCH[t.br].short.toUpperCase() + (t.lvl === 3 ? ' I !' : ' II !') : 'LEVEL UP!', t.x, t.y, '#ffd23f', 0.5, 0, 1.0);
   Snd.play('up'); refreshInfo();
@@ -411,6 +432,8 @@ function drawWeather(c) {
 }
 function startWave(forced) {
   if (!G || G.over || G.spawnQ.length || G.duel) return;
+  // Dernière vague déjà lancée : on attend la fin de la partie (victoire, puis choix des vagues infinies)
+  if (!G.endless && G.wave >= G.maxw) return;
   if (G.coopGuest) { if (!forced) coopAct({ a: 'wave' }); return; }
   let early = 0;
   if (!forced && G.waveActive && G.enemies.length) { early = 5 + Math.floor(G.wave / 2); if (G.coop) coopGiveAll(early); else G.gold += early; }
@@ -427,7 +450,7 @@ function startWave(forced) {
 function waveDone() {
   if (G.duel) { G.waveActive = false; return; }
   G.waveActive = false;
-  for (const t of G.towers) { healTower(t, true); t.ko = 0; t.stun = 0; t.evil = 0; refillShield(t); }
+  for (const t of G.towers) { healTower(t, !hardMode()); t.ko = 0; t.stun = 0; t.evil = 0; t.hitBy = null; refillShield(t); }
   const bonus = Math.round((10 + G.wave) * (1 + 0.2 * M('bonus'))); G.gold += bonus; G.score += G.wave * 50;
   if (G.coop) coopWaveDone();
   G.partyUntil = G.time + 2.4;
@@ -480,6 +503,7 @@ function spawn(type, pi) {
   if (type === 'lapin') e.jT = rand(1.5, 3);
   if (type === 'calinou') e.abT = rand(1, 2.5);
   setPos(e); G.enemies.push(e);
+  if (typeof introMob === 'function' && !G.coopGuest) introMob(type);
   if (D.boss) {
     G.speedLines = 1.5; G.shake = Math.max(G.shake, 0.5);
     banner((BOSSNAME[evt()] || 'KAIJU') + ' !!', T('Le boss débarque'), true); Snd.play('boss');
@@ -496,11 +520,15 @@ const THP = { feu: 100, eau: 100, terre: 160, vent: 90, foudre: 110, glace: 120 
 const towerMaxHp = t => Math.round((THP[t.type] || 180) * (1 + 0.25 * (t.lvl - 1)) * (1 + 0.2 * Mo(t, 'remparts')));
 function refillShield(t) { t.shield = Math.round(t.maxHp * 0.15 * Mo(t, 'bouclier')); }
 function healTower(t, full) { t.maxHp = towerMaxHp(t); if (full || t.hp == null) t.hp = t.maxHp; else t.hp = Math.min(t.hp, t.maxHp); }
-function damageTower(t, dmg) {
-  if (t.ko > 0 || G.demo || G.coopGuest) return;
+// src : ennemi à l'origine du coup (en Difficile, un même ennemi n'attaque une tour qu'une seule fois)
+function damageTower(t, dmg, src) {
+  if (t.ko > 0 || t.dead || G.demo || G.coopGuest) return;
+  if (hardMode() && src != null) { const h = t.hitBy || (t.hitBy = new Set()); if (h.has(src)) return; h.add(src); }
+  if (typeof introTower === 'function') introTower(t);
   if (t.shield > 0) { const a = Math.min(t.shield, dmg); t.shield -= a; dmg -= a; }
   t.hp -= dmg; t.hitT = 0.25;
   if (t.hp <= 0) {
+    if (hardMode()) { destroyTower(t); return; }
     t.hp = 0; t.ko = 8; t.stun = 0;
     ono('K.O. !', t.x, t.y, '#ff4f6e', 0.5, 0, 0.9); Snd.play('hurt');
     burst(t.x, t.y, 0.3, 10, ['#cdbfe0', '#ffffff', '#ff4f6e'], 2.2, 0.08, 3, 0.5);
@@ -519,9 +547,9 @@ function enemyAbility(e, dt) {
     ono('BZZT!', e.x, e.y, '#e6ff5a', 0.45, 0.4, 0.8); Snd.play('foudre');
     e.abT = 3.5;
   } else if (e.type === 'crachou') {
-    const ts = nearTowers(e, 2.0); if (!ts.length) { e.abT = 0.3; return; }
+    const ts = nearTowers(e, 2.0).filter(t => !hardMode() || !(t.hitBy && t.hitBy.has(e.id))); if (!ts.length) { e.abT = 0.3; return; }
     let tg = ts[0], bd = Infinity; for (const t of ts) { const d2 = (t.x - e.x) ** 2 + (t.y - e.y) ** 2; if (d2 < bd) { bd = d2; tg = t; } }
-    G.eprojs.push({ sx: e.x, sy: e.y, t: tg, p: 0, dur: 0.45, dmg: 12 * pw });
+    G.eprojs.push({ sx: e.x, sy: e.y, t: tg, p: 0, dur: 0.45, dmg: 12 * pw, src: e.id });
     e.abT = 1.8;
   } else if (e.type === 'malefik') {
     const ts = nearTowers(e, 2.2).filter(t => !(t.evil > 0)); if (!ts.length) { e.abT = 0.4; return; }
@@ -532,7 +560,7 @@ function enemyAbility(e, dt) {
     e.abT = 7;
   } else {
     const ts = nearTowers(e, 1.6); if (!ts.length) { e.abT = 0.5; return; }
-    for (const t of ts) { damageTower(t, 30 * pw); if (evt() === 'noel') t.stun = Math.max(t.stun || 0, 1.5); }
+    for (const t of ts) { damageTower(t, 30 * pw, e.id); if (evt() === 'noel') t.stun = Math.max(t.stun || 0, 1.5); }
     G.fx.push({ kind: 'ring', gx: e.x, gy: e.y, r0: 0.3, r1: 1.6, t: 0, dur: 0.5, color: '#ff4f6e' });
     G.shake = Math.max(G.shake, 0.35); ono('STOMP!', e.x, e.y, '#ff4f6e', 0.6, 0.5, 1.0); Snd.play('terre');
     e.abT = 6;
@@ -543,7 +571,7 @@ function updateEProjs(dt) {
     p.p += dt / p.dur;
     if (p.p >= 1) {
       p.done = true;
-      if (G.towers.includes(p.t)) { damageTower(p.t, p.dmg); burst(p.t.x, p.t.y, 0.35, 6, ['#b57bff', '#e2caff'], 2, 0.07, 3, 0.4); Snd.play('thit'); }
+      if (G.towers.includes(p.t)) { damageTower(p.t, p.dmg, p.src); burst(p.t.x, p.t.y, 0.35, 6, ['#b57bff', '#e2caff'], 2, 0.07, 3, 0.4); Snd.play('thit'); }
     }
   }
   G.eprojs = G.eprojs.filter(p => !p.done);
@@ -650,6 +678,8 @@ function knock(e, k, s) {
 
 // ---------- Tir ----------
 function updateTower(t, dt) {
+  if (t.dead) return;
+  if (hardMode() && G.waveActive && !G.coopGuest && t.hp < t.maxHp) t.hp = Math.min(t.maxHp, t.hp + t.maxHp * REGEN * dt);
   if (t.recoil > 0) t.recoil = Math.max(0, t.recoil - dt * 5);
   t.blink -= dt; if (t.blink < -0.13) t.blink = rand(2, 5);
   if (t.hitT > 0) t.hitT -= dt;
@@ -660,9 +690,9 @@ function updateTower(t, dt) {
     if (t.evil <= 0) { t.evil = 0; ono(T('LIBÉRÉE !'), t.x, t.y, '#5cd86a', 0.42, 0, 0.9); return; }
     t.cd -= dt; if (t.cd > 0) return;
     const cx = t.x, cy = t.y, R2 = t.s.range * t.s.range; let tg = null, bd = Infinity;
-    for (const o of G.towers) { if (o === t || o.ko > 0) continue; const d2 = (o.x - cx) ** 2 + (o.y - cy) ** 2; if (d2 <= R2 && d2 < bd) { bd = d2; tg = o; } }
+    for (const o of G.towers) { if (o === t || o.ko > 0 || (hardMode() && o.hitBy && o.hitBy.has(t.evilBy))) continue; const d2 = (o.x - cx) ** 2 + (o.y - cy) ** 2; if (d2 <= R2 && d2 < bd) { bd = d2; tg = o; } }
     if (!tg) { t.cd = 0.2; return; }
-    G.eprojs.push({ sx: cx, sy: cy, t: tg, p: 0, dur: 0.35, dmg: t.s.dmg * 0.6, evil: true });
+    G.eprojs.push({ sx: cx, sy: cy, t: tg, p: 0, dur: 0.35, dmg: t.s.dmg * 0.6, evil: true, src: t.evilBy });
     t.cd = 1 / Math.max(0.4, t.s.rate); t.recoil = 1;
     const ddx = tg.x - cx, ddy = tg.y - cy, [a, b] = L.portrait ? [ddy, ddx] : [ddx, ddy], l = Math.hypot(a, b) || 1; t.lx = a / l; t.ly = b / l;
     return;
@@ -991,6 +1021,7 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
     c.beginPath(); c.moveTo(x - k, y - k); c.lineTo(x + k, y + k); c.moveTo(x + k, y - k); c.lineTo(x - k, y + k);
     c.lineCap = 'round'; c.lineWidth = cs * 0.16; c.strokeStyle = INK; c.stroke(); c.lineWidth = cs * 0.09; c.strokeStyle = '#ff4f6e'; c.stroke();
   }
+  for (const u of G.ruins || []) { const [x, y] = toScreen(...cellW(u.c, u.r)); drawRuin(c, x, y, cs, u.type); }
   const dl = [];
   for (const t of G.towers) { const [x, y] = toScreen(t.x, t.y); dl.push([y + cs * 0.3, 0, t, x, y]); }
   for (const e of G.enemies) { if (e.flying) continue; const [x, y] = toScreen(e.x, e.y); dl.push([y + cs * 0.2, 1, e, x, y + cs * 0.2]); }

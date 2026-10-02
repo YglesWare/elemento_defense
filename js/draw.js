@@ -1155,6 +1155,18 @@ function yAtom(c, x, y, s, t, front) {
     elemMotif(c, it.k, it.px, it.py, sz, lw * it.sc); c.restore();
   }
 }
+// Ruines d'une tour détruite (Difficile) : socle fissuré, moignon aux couleurs de l'élément, gravats
+function drawRuin(c, x, y, s, type) {
+  const lw = Math.max(1.2, s * 0.04), col = (TOWERS[type] || {}).color || '#9a92b0';
+  c.save(); c.translate(x, y); c.lineJoin = 'round';
+  c.fillStyle = 'rgba(42,27,61,.22)'; c.beginPath(); c.ellipse(0, s * 0.28, s * 0.38, s * 0.11, 0, 0, TAU); c.fill();
+  c.beginPath(); c.moveTo(-s * 0.32, s * 0.24); c.lineTo(-s * 0.3, s * 0.08); c.lineTo(-s * 0.08, s * 0.04); c.lineTo(0, s * 0.12); c.lineTo(s * 0.1, s * 0.03); c.lineTo(s * 0.31, s * 0.07); c.lineTo(s * 0.33, s * 0.24); c.closePath(); fs(c, '#b7b0c8', lw);
+  c.beginPath(); c.moveTo(-s * 0.14, s * 0.1); c.lineTo(-s * 0.15, -s * 0.1); c.lineTo(-s * 0.05, -s * 0.02); c.lineTo(0, -s * 0.17); c.lineTo(s * 0.07, -s * 0.04); c.lineTo(s * 0.14, -s * 0.09); c.lineTo(s * 0.15, s * 0.1); c.closePath();
+  c.fillStyle = col; c.fill(); c.fillStyle = 'rgba(42,27,61,.45)'; c.fill(); c.lineWidth = lw; c.strokeStyle = INK; c.stroke();
+  for (const [dx, dy, r] of [[-0.24, 0.2, 0.07], [0.22, 0.19, 0.06], [0.05, 0.23, 0.05], [-0.06, 0.17, 0.04]]) { c.beginPath(); c.ellipse(s * dx, s * dy, s * r, s * r * 0.75, 0.4, 0, TAU); fs(c, '#8e8aa0', lw * 0.8); }
+  c.beginPath(); c.moveTo(-s * 0.02, -s * 0.12); c.lineTo(s * 0.03, -s * 0.02); c.lineTo(-s * 0.01, s * 0.06); c.lineWidth = lw * 0.7; c.strokeStyle = INK; c.stroke();
+  c.restore();
+}
 // La maison à protéger (décorée selon l'événement)
 function drawBase(c, x, y, s, t, hit) {
   const lw = Math.max(1.5, s * 0.05), jig = hit > 0 ? Math.sin(t * 60) * s * 0.04 : 0;

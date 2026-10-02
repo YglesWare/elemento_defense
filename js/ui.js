@@ -35,7 +35,14 @@ TORDER.forEach((type, i) => {
 });
 function selectType(type) {
   if (!G || G.over) return;
-  if (!unlocked(type)) { Snd.play('no'); hint(TOWERS[type].name + T(' se débloque dans l’Atelier (') + UNLOCK[type] + T(' éclats)'), 2600); return; }
+  // Tour verrouillée : achat rapide (un toucher pour proposer, un second pour acheter), sans passer par l'Atelier
+  if (!unlocked(type)) {
+    const price = UNLOCK[type], name = TOWERS[type].name, now = performance.now();
+    if (meta.shards < price) { Snd.play('no'); hint(name + T(' se débloque avec ') + price + T(' éclats : il t’en manque ') + (price - meta.shards) + '.', 2600); return; }
+    if (!selectType.arm || selectType.arm.type !== type || now - selectType.arm.at > 4000) { selectType.arm = { type, at: now }; hint(T('Touche encore pour débloquer ') + name + ' · ' + price + T(' éclats'), 3000); return; }
+    selectType.arm = null; buyUnlock(type); refreshPalette(); hint(name + T(' est débloquée !'), 2200);
+    return;
+  }
   G.selTower = null; G.ghost = null; showPanel('palette');
   G.selType = G.selType === type ? null : type;
   if (G.selType) {
@@ -89,7 +96,7 @@ function selectTower(t) {
 function refreshInfo() {
   const t = G && G.selTower; if (!t) return;
   const D = TOWERS[t.type], cost = upCost(t);
-  const key = [t.type, t.lvl, t.br, t.mode, G.gold >= cost, Math.ceil(t.hp), Math.ceil(t.shield || 0), Math.ceil(t.ko || 0), t.stun > 0, Math.ceil(t.evil || 0)].join('|');
+  const hc = healCost(t), key = [t.type, t.lvl, t.br, t.mode, G.gold >= cost, G.gold >= hc, Math.ceil(t.hp), Math.ceil(t.shield || 0), Math.ceil(t.ko || 0), t.stun > 0, Math.ceil(t.evil || 0)].join('|');
   if (hudCache.info === key) return;
   hudCache.info = key;
   $('#iName').textContent = D.name + (G.coop && t.own && t.own !== coopMe() ? ' · ' + coopName(t.own) : '');
@@ -103,6 +110,9 @@ function refreshInfo() {
   else { up.textContent = (t.br ? BRANCH[t.br].short + ' II · ' : T('Améliorer ')) + cost; up.disabled = G.gold < cost; }
   $('#iSell').textContent = T('Vendre ') + sellValue(t);
   if (!mine) { up.disabled = true; $('#iSell').disabled = true; } else $('#iSell').disabled = false;
+  // Difficile : soin payant (une tour détruite ne se soigne pas : elle n'existe plus)
+  const hb = $('#iHeal'); hb.hidden = !hardMode();
+  if (hardMode()) { hb.textContent = hc ? T('Soigner ') + hc : T('PV au max'); hb.disabled = !mine || !hc || G.gold < hc || t.ko > 0; }
   $('#iMode').textContent = MODE_LABEL[t.mode];
   $('#iMode').hidden = D.kind === 'onde';
   iCtx.clearRect(0, 0, 44, 48); drawTower(iCtx, t.type, 22, 27, 37, t.lvl, 1, 0, 0.3, 0, false, t.br);
@@ -113,6 +123,7 @@ $('#iClose').addEventListener('click', deselect);
 const notMine = t => { if (!G.coop || !t.own || t.own === coopMe()) return false; hint(T('Tour de ') + coopName(t.own) + T(' : seul son propriétaire peut la modifier'), 2200); Snd.play('no'); return true; };
 $('#iUp').addEventListener('click', () => { if (G && G.selTower && !notMine(G.selTower)) evolve(G.selTower); });
 $('#iSell').addEventListener('click', () => { if (G && G.selTower && !notMine(G.selTower)) sell(G.selTower); });
+$('#iHeal').addEventListener('click', () => { if (G && G.selTower && !notMine(G.selTower)) healPaid(G.selTower); });
 $('#iMode').addEventListener('click', () => {
   const t = G && G.selTower; if (!t || notMine(t)) return;
   t.mode = MODES[(MODES.indexOf(t.mode) + 1) % MODES.length]; refreshInfo();
@@ -131,11 +142,12 @@ function refreshHUD() {
   setText($('#hBank'), 'bk', '🐷 ' + fmtK(meta.bank || 0)); $('#hBank').hidden = !!(G.duel || G.coop);
   let ic = '▶', sm = T('Vague'), big, cls, bonus = 0;
   const cap = G.endless ? '' : '/' + G.maxw;
-  if (G.over || G.spawnQ.length) { ic = ''; big = G.wave + cap; cls = 'idle'; }
+  const lastDone = !G.endless && G.wave >= G.maxw;
+  if (G.over || G.spawnQ.length || lastDone) { ic = ''; big = G.wave + cap; cls = 'idle'; if (lastDone && !G.over) sm = T('Dernière'); }
   else if (!G.waveActive && G.autoT > 0) { ic = '⏱'; sm = T('Vague ') + (G.wave + 1); big = Math.ceil(G.autoT) + ' s'; cls = ''; }
   else if (!G.waveActive) { big = String(G.wave + 1); cls = 'go'; }
   else { big = String(G.wave + 1); cls = ''; bonus = 5 + Math.floor(G.wave / 2); }
-  if (G.chronoT != null && !G.over && !G.spawnQ.length && !(G.autoT > 0 && !G.waveActive)) { sm = T('Dans ') + Math.ceil(G.chronoT) + ' s'; if (G.chronoT <= 5) cls = (cls + ' urgent').trim(); }
+  if (G.chronoT != null && !G.over && !lastDone && !G.spawnQ.length && !(G.autoT > 0 && !G.waveActive)) { sm = T('Dans ') + Math.ceil(G.chronoT) + ' s'; if (G.chronoT <= 5) cls = (cls + ' urgent').trim(); }
   if (G.duel && typeof duelWaveLabel === 'function') [ic, sm, big, cls, bonus] = duelWaveLabel();
   setHTML(bWave, 'wv', (ic ? '<span class="wi">' + ic + '</span>' : '') + '<span class="wt"><small>' + sm + '</small><b>' + big + '</b></span>' + (bonus ? '<span class="bonus">+' + bonus + '</span>' : ''));
   if (hudCache.wc !== cls) { hudCache.wc = cls; bWave.className = cls; bWave.disabled = cls === 'idle'; }
@@ -178,7 +190,7 @@ function tapCell(q, r, isMouse) {
   }
   if (G.selType) {
     const D = TOWERS[G.selType];
-    if (!canBuild(q, r)) { G.bad = { c: q, r, t: 0.45 }; Snd.play('no'); hint((terrainAt(q, r) || {}).block ? T('Impossible de construire sur un obstacle') : T('Impossible de construire sur le chemin')); return; }
+    if (!canBuild(q, r)) { G.bad = { c: q, r, t: 0.45 }; Snd.play('no'); hint(ruinAt(q, r) ? T('Des ruines bloquent cette case') : (terrainAt(q, r) || {}).block ? T('Impossible de construire sur un obstacle') : T('Impossible de construire sur le chemin')); return; }
     if (G.gold < costOf(G.selType)) { Snd.play('no'); hint(T('Pas assez d’or : ') + D.name + T(' coûte ') + costOf(G.selType)); return; }
     if (!isMouse && !(G.ghost && G.ghost.c === q && G.ghost.r === r)) { G.ghost = { c: q, r }; hint(T('Touche encore pour poser ') + D.name); return; }
     if (G.coopGuest) { G.ghost = null; coopAct({ a: 'build', type: G.selType, q, r }); return; }

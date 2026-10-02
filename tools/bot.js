@@ -31,6 +31,8 @@ function botPickType(n) {
 // Réglages de jeu du bot : nombre de tours visé (base + par vague, plafond) et choix des améliorations
 const BOT = { base: 5, per: 1 / 2, cap: 20, upBest: false };
 function botSpend(cells, st) {
+  // Difficile : on soigne d'abord les tours sous 60 % de PV
+  if (hardMode()) for (const t of G.towers.filter(t => t.hp < t.maxHp * 0.6).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)) if (G.gold >= healCost(t)) healPaid(t);
   for (let guard = 0; guard < 40; guard++) {
     const want = Math.min(BOT.base + Math.floor(G.wave * BOT.per), BOT.cap), free = cells.filter(c => canBuild(c.q, c.r));
     // upBest : on monte d'abord les tours les mieux placées (les premières construites), sinon la moins chère

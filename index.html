@@ -45,6 +45,7 @@
       <div id="iActions">
         <button class="sbtn up" id="iUp" type="button">Améliorer</button>
         <button class="sbtn sell" id="iSell" type="button">Vendre</button>
+        <button class="sbtn heal" id="iHeal" type="button" hidden>Soigner</button>
         <button class="sbtn" id="iMode" type="button">Premier</button>
       </div>
     </div>
@@ -310,6 +311,17 @@
   </div>
 </section>
 
+<!-- Fenêtre d'explication : nouveau monstre, première tour attaquée (js/intro.js) -->
+<div class="intro" id="intro" role="dialog" aria-modal="true" aria-labelledby="introTitle" hidden>
+  <div class="intro-card">
+    <span class="intro-tag" id="introTag">Nouveau monstre</span>
+    <canvas id="introCv" aria-hidden="true"></canvas>
+    <h2 id="introTitle"></h2>
+    <p id="introText"></p>
+    <p class="intro-tip" id="introTip"></p>
+    <div class="intro-foot"><canvas id="introYg" aria-hidden="true"></canvas><button class="btn" id="introOk" type="button">Compris !</button></div>
+  </div>
+</div>
 <!-- Les données du joueur (IndexedDB) sont chargées d'abord, puis les scripts du jeu, dans cet ordre -->
 <script src="js/storage.js"></script>
-<script>store.boot(['js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js']);</script>
+<script>store.boot(['js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js']);</script>

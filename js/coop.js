@@ -96,13 +96,17 @@ function hostAction(pid, a) {
       const fus = TOWERS[t.type].fusion;
       if (t.lvl === 2 && !t.br && !fus && !BRANCH[a.br]) return;
       if (a.br && t.br && a.br !== t.br) return;
-      G.gold -= cost; t.lvl++; if (t.lvl >= 3 && !t.br && !fus) t.br = a.br; t.inv += cost; t.s = towerStats(t); t.recoil = 1; if (!(t.ko > 0)) healTower(t, true);
+      G.gold -= cost; t.lvl++; if (t.lvl >= 3 && !t.br && !fus) t.br = a.br; t.inv += cost; t.s = towerStats(t); t.recoil = 1; if (!(t.ko > 0)) healTower(t, !hardMode());
       burst(t.x, t.y, 0.4, 16, ['#ffd23f', '#ffffff', TOWERS[t.type].color], 2.6, 0.1, 2, 0.7, 'star'); Snd.play('up');
     } else if (a.a === 'sell') {
       const t = tw(a.id); if (!own(t)) return;
       G.gold += sellValue(t); G.towers = G.towers.filter(x => x !== t);
       if (G.selTower === t) deselect();
       burst(t.x, t.y, 0.3, 12, ['#cdbfe0', '#ffffff', '#ffd23f'], 2, 0.09, 3, 0.5); Snd.play('sell');
+    } else if (a.a === 'heal') {
+      const t = tw(a.id); if (!own(t)) return;
+      const cost = healCost(t); if (!cost || G.gold < cost || !hardMode()) return;
+      G.gold -= cost; t.hp = t.maxHp; burst(t.x, t.y, 0.4, 12, ['#5cd86a', '#ffffff', '#b8f5c0'], 2.2, 0.08, 2, 0.6, 'star'); Snd.play('up');
     } else if (a.a === 'mode') {
       const t = tw(a.id); if (own(t) && MODES.includes(a.mode)) t.mode = a.mode;
     } else if (a.a === 'fuse') {
@@ -120,9 +124,9 @@ function hostAction(pid, a) {
 function coopNotice(txt) { hint(txt, 2200); Net.send('all', { k: 'cmsg', txt }); }
 
 // ---------- État envoyé par l'hôte ----------
-const towerSig = () => G.towers.map(t => [t.id, t.type, t.lvl, t.br || '', t.mode, t.own].join(':')).join('|');
+const towerSig = () => G.towers.map(t => [t.id, t.type, t.lvl, t.br || '', t.mode, t.own].join(':')).join('|') + '#' + (G.ruins || []).length;
 function sendTowers() {
-  Net.send('all', { k: 'ct', t: G.towers.map(t => ({ id: t.id, type: t.type, c: t.c, r: t.r, lvl: t.lvl, br: t.br, mode: t.mode, inv: t.inv, own: t.own, rg: +t.s.range.toFixed(2), rt: +t.s.rate.toFixed(3), air: !!t.s.air })) });
+  Net.send('all', { k: 'ct', t: G.towers.map(t => ({ id: t.id, type: t.type, c: t.c, r: t.r, lvl: t.lvl, br: t.br, mode: t.mode, inv: t.inv, own: t.own, rg: +t.s.range.toFixed(2), rt: +t.s.rate.toFixed(3), air: !!t.s.air })), ru: G.ruins || [] });
 }
 function sendSnapshot() {
   const fl = e => (e.frozen > 0 ? 1 : 0) | (e.stun > 0 ? 2 : 0) | (e.burnT > 0 ? 4 : 0) | (e.wet > 0 ? 8 : 0) | (e.ghost > 0 ? 16 : 0);
@@ -335,7 +339,7 @@ Net.on('msg', ({ from, data }) => {
     case 'cstart': if (Net.role !== 'host') beginCoop(data); break;
     case 'cact': if (Net.role === 'host') hostAction(from, data); break;
     case 'cquit': if (Net.role === 'host') playerGone(from); break;
-    case 'ct': if (G && G.coopGuest) applyTowers(data.t); break;
+    case 'ct': if (G && G.coopGuest) { applyTowers(data.t); G.ruins = data.ru || []; } break;
     case 'cs': if (G && G.coopGuest && !G.over) applySnapshot(data); break;
     case 'cnw': if (G && G.coopGuest) { G.nextWave = data.nw; hudCache.nw = null; } break;
     case 'cws': if (G && G.coopGuest) { G.curPortals = data.portals; banner(T('VAGUE ') + data.n, data.early ? T('Bonus d’audace +') + data.early : data.label || '', false); Snd.play('wave'); } break;
