@@ -916,14 +916,14 @@ function pill(c, txt, x, y, ok, bg, fg) {
   c.restore();
 }
 function render(c = ctx, bg = (G && G.bg) || bgCv) {
-  const cs = L.cs, T = G.time, lw = Math.max(1.4, cs * 0.045);
+  const cs = L.cs, TM = G.time, lw = Math.max(1.4, cs * 0.045);
   c.setTransform(L.dpr, 0, 0, L.dpr, 0, 0);
   c.drawImage(bg, 0, 0, L.w, L.h);
   let sx = 0, sy = 0;
   if (G.shake > 0 && !RM) { sx = (Math.random() * 2 - 1) * G.shake * 9; sy = (Math.random() * 2 - 1) * G.shake * 9; }
   c.save(); c.translate(sx, sy);
   P.portals.forEach((pt, i) => {
-    const [ppx, ppy] = toScreen(pt[0], pt[1]); drawPortal(c, ppx, ppy, cs, T);
+    const [ppx, ppy] = toScreen(pt[0], pt[1]); drawPortal(c, ppx, ppy, cs, TM);
     // Flèche au-dessus des portails d'où sortira la prochaine vague
     // (pendant qu'une vague sort encore : ses propres portails)
     const act = G.spawnQ.length ? G.curPortals : G.nextWave && G.nextWave.portals;
@@ -932,7 +932,7 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
     const vw = (L.portrait ? ROWS : COLS) * cs, vh = (L.portrait ? COLS : ROWS) * cs, cx0 = L.ox + vw / 2, cy0 = L.oy + vh / 2;
     let ux = cx0 - ppx, uy = cy0 - ppy; const ul = Math.hypot(ux, uy) || 1; ux /= ul; uy /= ul;
     if (Math.abs(ux) > Math.abs(uy)) { ux = Math.sign(ux); uy = 0; } else { uy = Math.sign(uy); ux = 0; }
-    const pul = Math.abs(Math.sin(T * 4)), dd = cs * (0.95 + 0.15 * pul), ax = ppx + ux * dd, ay = ppy + uy * dd, w = cs * 0.26;
+    const pul = Math.abs(Math.sin(TM * 4)), dd = cs * (0.95 + 0.15 * pul), ax = ppx + ux * dd, ay = ppy + uy * dd, w = cs * 0.26;
     c.save(); c.lineJoin = 'round';
     c.beginPath(); c.arc(ppx, ppy, cs * (0.55 + 0.08 * pul), 0, TAU); c.lineWidth = Math.max(2.5, cs * 0.1); c.strokeStyle = 'rgba(255,210,63,' + (0.55 + 0.4 * pul) + ')'; c.stroke();
     c.translate(ax, ay); c.rotate(Math.atan2(-uy, -ux));
@@ -944,14 +944,14 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
     c.save(); c.globalAlpha = k > 0.8 ? (1 - k) / 0.2 : 1;
     c.beginPath(); c.arc(x, y, R, 0, TAU); c.fillStyle = lava ? '#ff6a2b' : '#7a6a34'; c.fill(); c.lineWidth = 2.5; c.strokeStyle = INK; c.stroke();
     c.beginPath(); c.arc(x - R * 0.2, y - R * 0.15, R * 0.45, 0, TAU); c.fillStyle = lava ? '#ffd23f' : '#9c8a4a'; c.fill();
-    for (let i = 0; i < 3; i++) { const bt = (T * 1.3 + i * 0.33) % 1; c.beginPath(); c.arc(x + Math.cos(i * 2.1) * R * 0.5, y + Math.sin(i * 2.1) * R * 0.4, cs * 0.06 * bt + 1, 0, TAU); c.lineWidth = 1.5; c.strokeStyle = 'rgba(255,255,255,.8)'; c.stroke(); }
+    for (let i = 0; i < 3; i++) { const bt = (TM * 1.3 + i * 0.33) % 1; c.beginPath(); c.arc(x + Math.cos(i * 2.1) * R * 0.5, y + Math.sin(i * 2.1) * R * 0.4, cs * 0.06 * bt + 1, 0, TAU); c.lineWidth = 1.5; c.strokeStyle = 'rgba(255,255,255,.8)'; c.stroke(); }
     c.restore();
   }
-  if (G.selTower && !G.drag) { const t = G.selTower; rangeCircle(c, t.x, t.y, t.s.range, true, T); }
+  if (G.selTower && !G.drag) { const t = G.selTower; rangeCircle(c, t.x, t.y, t.s.range, true, TM); }
   const ft = G.drag ? G.drag.t : G.selTower;
   if (ft) for (const o of fusionPartners(ft)) {
     const [x, y] = toScreen(o.o.x, o.o.y), hov = G.drag && G.drag.over === o.o;
-    c.beginPath(); c.arc(x, y, cs * (hov ? 0.52 : 0.47), 0, TAU); c.setLineDash(hov ? [] : [cs * 0.12, cs * 0.1]); c.lineDashOffset = T * 20;
+    c.beginPath(); c.arc(x, y, cs * (hov ? 0.52 : 0.47), 0, TAU); c.setLineDash(hov ? [] : [cs * 0.12, cs * 0.1]); c.lineDashOffset = TM * 20;
     c.lineWidth = hov ? 5 : 3; c.strokeStyle = o.ok ? '#ff6ad5' : 'rgba(255,255,255,.85)'; c.stroke(); c.setLineDash([]);
   }
   if (G.selType && G.terrain) {
@@ -973,14 +973,14 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
     const [x, y] = cellXY(gc.c, gc.r);
     rr(c, x + 2, y + 2, cs - 4, cs - 4, cs * 0.18); c.fillStyle = ghostOk ? 'rgba(255,255,255,.35)' : 'rgba(255,79,110,.35)'; c.fill();
     c.lineWidth = 2.5; c.strokeStyle = ghostOk ? '#ffffff' : '#ff4f6e'; c.stroke();
-    rangeCircle(c, ...cellW(gc.c, gc.r), TOWERS[G.selType].range, ghostOk, T);
+    rangeCircle(c, ...cellW(gc.c, gc.r), TOWERS[G.selType].range, ghostOk, TM);
   }
   G.tpill = null;
   if (gc && inside(gc.c, gc.r)) {
     const Tt = terrainAt(gc.c, gc.r);
     if (Tt) {
       const a = affinity(G.selType, Tt), [x, y] = cellXY(gc.c + 0.5, gc.r + 0.5);
-      const txt = Tt.block ? T('Obstacle : impossible de construire') : Tt.name + T(' : ') + (a ? fmtAff(a) + T(' de puissance') : Tt.range ? T('+0,6 de portée') : 'aucun effet') + (a && Tt.range ? T(', +0,6 de portée') : '');
+      const txt = Tt.block ? T('Obstacle : impossible de construire') : Tt.name + T(' : ') + (a ? fmtAff(a) + T(' de puissance') : Tt.range ? T('+0,6 de portée') : T('aucun effet')) + (a && Tt.range ? T(', +0,6 de portée') : '');
       G.tpill = [txt, x, y - cs * 0.55, Tt.block || a < 0 ? '#ffe0e6' : a > 0 || Tt.range ? '#dcf7d6' : '#ffffff'];
     }
   }
@@ -999,10 +999,10 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
       const dg = G.drag && G.drag.t === o; if (dg) { c.save(); c.globalAlpha = 0.35; }
       const ko = o.ko > 0; if (ko) { c.save(); c.globalAlpha *= 0.45; }
       if (G.coop && o.own) { c.beginPath(); c.ellipse(x, y + cs * 0.33, cs * 0.4, cs * 0.12, 0, 0, TAU); c.lineWidth = Math.max(2, cs * 0.09); c.strokeStyle = coopColor(o.own); c.stroke(); }
-      drawTower(c, o.type, x, y, cs, o.lvl, T, o.lx, o.ly, o.recoil, o.blink < 0, o.br);
-      if (ko) { c.restore(); for (let i = 0; i < 3; i++) { const a = T * 4 + i * TAU / 3; star(c, x + Math.cos(a) * cs * 0.28, y - cs * 0.45 + Math.sin(a) * cs * 0.08, cs * 0.08, cs * 0.035); fs(c, '#ffd23f', 1.2); } }
+      drawTower(c, o.type, x, y, cs, o.lvl, TM, o.lx, o.ly, o.recoil, o.blink < 0, o.br);
+      if (ko) { c.restore(); for (let i = 0; i < 3; i++) { const a = TM * 4 + i * TAU / 3; star(c, x + Math.cos(a) * cs * 0.28, y - cs * 0.45 + Math.sin(a) * cs * 0.08, cs * 0.08, cs * 0.035); fs(c, '#ffd23f', 1.2); } }
       if (o.evil > 0 && !ko) {
-        c.save(); c.globalAlpha *= 0.3 + 0.12 * Math.sin(T * 7); c.beginPath(); c.arc(x, y - cs * 0.1, cs * 0.48, 0, TAU); c.fillStyle = '#6a2fb0'; c.fill(); c.restore();
+        c.save(); c.globalAlpha *= 0.3 + 0.12 * Math.sin(TM * 7); c.beginPath(); c.arc(x, y - cs * 0.1, cs * 0.48, 0, TAU); c.fillStyle = '#6a2fb0'; c.fill(); c.restore();
         const hy = y - cs * 0.52; for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(x + sg * cs * 0.1, hy + cs * 0.06); c.lineTo(x + sg * cs * 0.2, hy - cs * 0.14); c.lineTo(x + sg * cs * 0.24, hy + cs * 0.06); c.closePath(); fs(c, '#3b2458', 1.5); }
       }
       if (o.stun > 0 && !ko) {
@@ -1011,7 +1011,7 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
         c.font = Math.round(cs * 0.28) + 'px Bangers, Impact, sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = INK; c.strokeText('ZZZ', x + cs * 0.28, y - cs * 0.5); c.fillStyle = '#e6ff5a'; c.fillText('ZZZ', x + cs * 0.28, y - cs * 0.5);
         c.restore();
       }
-      if (o.shield > 0 && !ko) { c.save(); c.globalAlpha *= 0.35 + 0.1 * Math.sin(T * 4); c.beginPath(); c.arc(x, y - cs * 0.08, cs * 0.46, 0, TAU); c.fillStyle = '#9fdcff'; c.fill(); c.globalAlpha = 0.8; c.lineWidth = 2; c.strokeStyle = '#ffffff'; c.stroke(); c.restore(); }
+      if (o.shield > 0 && !ko) { c.save(); c.globalAlpha *= 0.35 + 0.1 * Math.sin(TM * 4); c.beginPath(); c.arc(x, y - cs * 0.08, cs * 0.46, 0, TAU); c.fillStyle = '#9fdcff'; c.fill(); c.globalAlpha = 0.8; c.lineWidth = 2; c.strokeStyle = '#ffffff'; c.stroke(); c.restore(); }
       if (o.hitT > 0) { c.save(); c.globalAlpha = Math.min(0.6, o.hitT * 3); c.beginPath(); c.arc(x, y - cs * 0.1, cs * 0.4, 0, TAU); c.fillStyle = '#ff4f6e'; c.fill(); c.restore(); }
       if ((o.hp < o.maxHp || ko) && !G.demo) {
         const bw = cs * 0.62, bh = Math.max(4, cs * 0.075), bx0 = x - bw / 2, by0 = y + cs * 0.37, k = clamp(o.hp / o.maxHp, 0, 1);
@@ -1021,12 +1021,12 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
       if (o.s.aff) { const up = o.s.aff > 0, mx = x - cs * 0.33, my = y + cs * 0.14, k2 = cs * 0.09; c.beginPath(); if (up) { c.moveTo(mx - k2, my + k2 * 0.6); c.lineTo(mx + k2, my + k2 * 0.6); c.lineTo(mx, my - k2); } else { c.moveTo(mx - k2, my - k2 * 0.6); c.lineTo(mx + k2, my - k2 * 0.6); c.lineTo(mx, my + k2); } c.closePath(); fs(c, up ? '#5cd86a' : '#ff4f6e', 1.5); }
       if (dg) c.restore();
     }
-    else if (k === 1) drawEnemy(c, o.type, x, y, cs, T, o);
-    else drawBase(c, x, y, cs, T, G.hitBase && Math.hypot(G.hitBase[0] - o[0], G.hitBase[1] - o[1]) < 0.1 ? G.baseHit : 0);
+    else if (k === 1) drawEnemy(c, o.type, x, y, cs, TM, o);
+    else drawBase(c, x, y, cs, TM, G.hitBase && Math.hypot(G.hitBase[0] - o[0], G.hitBase[1] - o[1]) < 0.1 ? G.baseHit : 0);
   }
   if (gc && inside(gc.c, gc.r) && !towerAt(gc.c, gc.r)) {
     const [x, y] = cellXY(gc.c + 0.5, gc.r + 0.5);
-    c.save(); c.globalAlpha = 0.6; drawTower(c, G.selType, x, y, cs, 1, T, 0, 0.3, 0, false); c.restore();
+    c.save(); c.globalAlpha = 0.6; drawTower(c, G.selType, x, y, cs, 1, TM, 0, 0.3, 0, false); c.restore();
   }
   for (const o of G.tors) {
     const [gx, gy] = pathAt(o.d, o.pi), [x, y] = toScreen(gx, gy);
@@ -1038,7 +1038,7 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
     }
     c.restore();
   }
-  for (const e of G.enemies) { if (!e.flying) continue; const [x, y] = toScreen(e.x, e.y); drawEnemy(c, e.type, x, y + cs * 0.2, cs, T, e); }
+  for (const e of G.enemies) { if (!e.flying) continue; const [x, y] = toScreen(e.x, e.y); drawEnemy(c, e.type, x, y + cs * 0.2, cs, TM, e); }
   for (const t of G.towers) {
     if (t.type !== 'plasma' || !t.beam || t.beam.dead) continue;
     const e = t.beam, [x0, y0] = toScreen(t.x, t.y), [x1, y1] = toScreen(e.x, e.y);
@@ -1127,12 +1127,12 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
     const d = G.drag;
     let gx = d.px, gy = d.py - (d.mouse ? 0 : cs * 0.75), tx = 0, ty = 0;
     if (d.over) {
-      [tx, ty] = toScreen(d.over.x, d.over.y); gx = tx; gy = ty - cs * 0.78 + Math.sin(T * 8) * cs * 0.03;
-      c.save(); c.setLineDash([cs * 0.1, cs * 0.08]); c.lineDashOffset = -T * 30; c.lineCap = 'round';
+      [tx, ty] = toScreen(d.over.x, d.over.y); gx = tx; gy = ty - cs * 0.78 + Math.sin(TM * 8) * cs * 0.03;
+      c.save(); c.setLineDash([cs * 0.1, cs * 0.08]); c.lineDashOffset = -TM * 30; c.lineCap = 'round';
       c.beginPath(); c.moveTo(d.px, d.py); c.lineTo(gx, gy + cs * 0.2); c.lineWidth = 5; c.strokeStyle = INK; c.stroke(); c.lineWidth = 3; c.strokeStyle = '#ff6ad5'; c.stroke();
       c.restore();
     }
-    c.save(); c.globalAlpha = d.over ? 0.85 : 0.9; drawTower(c, d.t.type, gx, gy, cs * (d.over ? 0.8 : 1.1), d.t.lvl, T, 0, 0.3, 0.3, false, d.t.br); c.restore();
+    c.save(); c.globalAlpha = d.over ? 0.85 : 0.9; drawTower(c, d.t.type, gx, gy, cs * (d.over ? 0.8 : 1.1), d.t.lvl, TM, 0, 0.3, 0.3, false, d.t.br); c.restore();
     if (d.over) {
       const r = fuseCheck(d.t, d.over), Tt = terrainAt(d.over.c, d.over.r), a = r.ok && Tt ? affinity(r.k, Tt) : 0;
       pill(c, r.ok ? '= ' + TOWERS[r.k].name + ' · ' + TOWERS[r.k].fee + T(' or') + (a ? ' · ' + Tt.name + ' ' + fmtAff(a) : '') : r.why, tx, ty - cs * 1.3, r.ok);
