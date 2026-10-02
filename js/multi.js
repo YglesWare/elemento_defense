@@ -269,4 +269,9 @@ document.addEventListener('keydown', ev => { if (curScreen === 'multi' && ev.key
 // ---------- Jeu installable hors ligne ----------
 if ('serviceWorker' in navigator && location.protocol === 'https:' && !/claude/.test(location.hostname)) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
+  // Nouvelle version installée : on recharge pour l'utiliser tout de suite, mais jamais en pleine partie
+  if (navigator.serviceWorker.controller) navigator.serviceWorker.addEventListener('controllerchange', () => {
+    const go = () => { if (curScreen !== 'game') location.reload(); else setTimeout(go, 2000); };
+    go();
+  });
 }
