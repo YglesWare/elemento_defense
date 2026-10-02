@@ -267,7 +267,17 @@ $('#tMulti').addEventListener('click', () => { Snd.init(); openMulti(); });
 document.addEventListener('keydown', ev => { if (curScreen === 'multi' && ev.key === 'Escape') mpCancel(); });
 
 // ---------- Jeu installable hors ligne ----------
-if ('serviceWorker' in navigator && location.protocol === 'https:' && !/claude/.test(location.hostname)) {
+// Application Android (Capacitor) : le jeu est déjà dans l'APK, pas besoin du service worker
+const NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+if (NATIVE) {
+  // Bouton retour d'Android : même effet que la touche Échap (pause, retour au menu…) ; sur l'écran titre, il quitte le jeu
+  const App = (window.Capacitor.Plugins && window.Capacitor.Plugins.App) || window.Capacitor.registerPlugin('App');
+  App.addListener('backButton', () => {
+    if (curScreen === 'title') App.exitApp();
+    else document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  });
+}
+if (!NATIVE && 'serviceWorker' in navigator && location.protocol === 'https:' && !/claude/.test(location.hostname)) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
   // Nouvelle version installée : on recharge pour l'utiliser tout de suite, mais jamais en pleine partie
   if (navigator.serviceWorker.controller) navigator.serviceWorker.addEventListener('controllerchange', () => {

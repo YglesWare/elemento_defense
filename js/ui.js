@@ -291,7 +291,7 @@ const soundLabel = () => T('Son : ') + (opts.sound && opts.music !== false ? T('
 function refreshOptBtns() {
   $('#pSound').textContent = soundLabel();
   $('#tSound').textContent = soundLabel();
-  $('#pAuto').textContent = T('Vagues auto : ') + (opts.auto ? 'oui' : 'non');
+  $('#pAuto').textContent = T('Vagues auto : ') + (opts.auto ? T('oui') : T('non'));
 }
 // Trois réglages : tout (effets + musique) → effets seuls → coupé → tout
 function toggleSound() {

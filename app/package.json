@@ -1,0 +1,19 @@
+{
+  "name": "elemento-defense-app",
+  "private": true,
+  "description": "Application Android d'Élémento Defense (Capacitor) : le jeu du dossier parent est embarqué dans l'APK",
+  "scripts": {
+    "www": "node scripts/build-www.mjs",
+    "sync": "npm run www && npx cap sync android",
+    "apk": "npm run sync && cd android && ./gradlew assembleRelease",
+    "aab": "npm run sync && cd android && ./gradlew bundleRelease"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.2",
+    "@capacitor/app": "8.1.1",
+    "@capacitor/core": "8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.2"
+  }
+}

@@ -275,6 +275,8 @@ const EN = {
 "au sol": "ground only",
 "aucun effet sur les tours": "no effect on towers",
 "aucun effet": "no effect",
+"oui": "on",
+"non": "off",
 "de la glace": "of ice",
 "de la terre": "of earth",
 "de l’eau": "of water",

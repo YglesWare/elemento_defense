@@ -1,0 +1,6 @@
+{
+  "appId": "io.github.yglesware.elemento",
+  "appName": "Élémento Defense",
+  "webDir": "www",
+  "android": { "backgroundColor": "#7fd3ff" }
+}
