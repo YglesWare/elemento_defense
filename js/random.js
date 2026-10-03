@@ -114,12 +114,36 @@ MAPS.forEach((m, i) => {
 });
 // La carte aléatoire occupe toujours la dernière place de MAPS (jamais affichée dans la liste)
 const RI = MAPS.push(genRandomMap('moyenne', 1)) - 1;
-function makeRandom(size, seed) {
+function makeRandom(size, seed, daily) {
   MAPS[RI] = genRandomMap(size, seed);
+  if (daily) dailyDress(MAPS[RI], daily);
   for (const k in terrCache) if (k.startsWith('r')) delete terrCache[k];
   return RI;
 }
-const loadRandom = rnd => makeRandom(rnd.size, rnd.seed);
+const loadRandom = rnd => makeRandom(rnd.size, rnd.seed, rnd.daily);
+
+// ---------- Carte du jour ----------
+// La même pour tout le monde le même jour : graine tirée de « daily » + la date (AAAAMMJJ, heure locale) ;
+// la taille tourne d'un jour à l'autre. Ses records sont gardés jour par jour.
+const DAILY_KEY = 'elemento.daily';
+const dayKey = (d = new Date()) => d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+function dailyRnd(key = dayKey()) {
+  const n = Math.floor(new Date(+key.slice(0, 4), +key.slice(4, 6) - 1, +key.slice(6, 8)).getTime() / 864e5);
+  return { size: ['petite', 'moyenne', 'grande'][((n % 3) + 3) % 3], seed: hashStr('daily' + key) % 60466175 + 1, daily: key };
+}
+function dailyDress(m, key) {
+  const d = new Date(+key.slice(0, 4), +key.slice(4, 6) - 1, +key.slice(6, 8));
+  m.daily = key; m.rnd.daily = key;
+  m.name = T('Carte du jour · ') + d.toLocaleDateString(IS_EN ? 'en-US' : 'fr-FR', { day: 'numeric', month: 'long' });
+  m.blurb = T('La même carte pour tout le monde aujourd’hui, sur le thème « ') + (MAPS.find(x => x.id === m.wid) || {}).name + T(' ». Demain, une nouvelle !');
+}
+const dailyRecs = () => store.get(DAILY_KEY) || {};
+// Temps restant avant la carte de demain
+function dailyLeft() {
+  const now = new Date(), next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1), mn = Math.max(1, Math.round((next - now) / 60000));
+  return mn >= 60 ? Math.floor(mn / 60) + ' h ' + String(mn % 60).padStart(2, '0') : mn + ' min';
+}
+function playDaily() { const r = dailyRnd(); makeRandom(r.size, r.seed, r.daily); openDiff(RI); }
 // ui.js a déjà affiché l'écran titre : on le rafraîchit pour proposer de reprendre une partie sur carte aléatoire
 if (typeof refreshTitle === 'function') refreshTitle();
 

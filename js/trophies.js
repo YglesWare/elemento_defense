@@ -31,6 +31,7 @@ const TROPHIES = [
   { id: 'duel_win', icon: '⚡', name: T('Dernier debout'), desc: T('Gagner un duel.'), r: 5 },
   { id: 'bonus_use', icon: '🎁', name: T('Coup de pouce'), desc: T('Utiliser un bonus pendant une partie.'), r: 2 },
   { id: 'time_5h', icon: '⏳', name: T('Passionné'), desc: T('Jouer 5 heures.'), r: 8 },
+  { id: 'daily_7', icon: '📅', name: T('Fidèle au poste'), desc: T('Réussir la carte du jour 7 jours différents.'), r: 8 },
   { id: 'rich', icon: '🐷', name: T('Tirelire pleine'), desc: T('Avoir 5 000 or dans la cagnotte.'), r: 5 },
   // Easter eggs
   { id: 'egg_yglou', icon: '🦅', name: T('Kiiaaa !'), desc: T('Toucher Yglou 10 fois sur l’accueil.'), r: 5, hidden: true, hint: T('Yglou adore qu’on s’occupe de lui…') },
@@ -110,6 +111,8 @@ function trophyWin() {
   if (m.season) trophy('event_win');
   trophyScan();
 }
+// Cartes du jour réussies, tous jours confondus
+function trophyDaily() { const n = Object.values(store.get('elemento.daily') || {}).filter(d => Object.values(d).some(x => x && x.won)).length; if (n >= 7) trophy('daily_7'); }
 // Boss vaincu : on retient sur quelles cartes
 function trophyBoss() {
   if (!G || G.coopGuest || trophyOff()) return;

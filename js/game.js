@@ -186,7 +186,17 @@ function saveCheckpoint() {
   store.set(SAVE, G.checkpoint);
 }
 function recordBest() {
-  if (G.duel || duelOn || G.coop || MAPS[G.map].random) return { wave: G.wave, score: G.score };
+  if (G.duel || duelOn || G.coop) return { wave: G.wave, score: G.score };
+  // Carte du jour : records gardés jour par jour (les autres cartes aléatoires n'en ont pas)
+  if (MAPS[G.map].daily) {
+    const all = store.get(DAILY_KEY) || {}, day = (all[MAPS[G.map].daily] = all[MAPS[G.map].daily] || {}), cur = day[G.diff] || { wave: 0, score: 0, won: false };
+    if (G.wave > cur.wave || (G.wave === cur.wave && G.score > cur.score)) { cur.wave = G.wave; cur.score = G.score; }
+    if (G.won) cur.won = true;
+    day[G.diff] = cur; store.set(DAILY_KEY, all);
+    if (typeof trophyDaily === 'function') trophyDaily();
+    return cur;
+  }
+  if (MAPS[G.map].random) return { wave: G.wave, score: G.score };
   const b = store.get(BEST2) || {}, id = recId(MAPS[G.map]), rec = (b[id] = b[id] || {}), cur = rec[G.diff] || { wave: 0, score: 0, won: false };
   if (G.wave > cur.wave || (G.wave === cur.wave && G.score > cur.score)) { cur.wave = G.wave; cur.score = G.score; }
   if (G.won) cur.won = true;
@@ -312,13 +322,15 @@ function makeWave(w) {
   }
   if (w >= 12) { const k = 1 + Math.floor((w - 12) / 8); for (let i = 0; i < k; i++) list.splice(Math.floor(rand(list.length)), 0, { type: 'malefik', gap: 1.2 }); }
   if (w % 10 === 0) { list[list.length - 1].gap = 2.5; for (let i = 0; i < Math.floor(w / 10); i++) list.push({ type: 'boss', gap: 3 }); }
-  // Portails actifs pour cette vague : un seul au début, de plus en plus ensuite, tous pour les boss
+  // Portails actifs pour cette vague : un seul au début, de plus en plus ensuite, tous pour les boss.
+  // En Facile, le tirage est fixe pour chaque carte (on peut l'apprendre) ; dès le Moyen, il change à chaque partie.
+  const m0 = MAPS[G.map], prng = G.diff === 'facile' && !G.duel && !G.coop ? mulberry(hashStr((m0.rnd ? m0.rnd.seed : m0.id) + ':' + w)) : Math.random;
   const np = P ? P.portals.length : 1, ids = [...Array(np).keys()];
-  for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
-  const k = w % 10 === 0 ? np : w <= 2 ? 1 : clamp(1 + Math.floor(Math.random() * (1 + w / 6)), 1, np), portals = ids.slice(0, k).sort();
+  for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(prng() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
+  const k = w % 10 === 0 ? np : w <= 2 ? 1 : clamp(1 + Math.floor(prng() * (1 + w / 6)), 1, np), portals = ids.slice(0, k).sort();
   const routes = P ? P.paths.map((pa, i) => i).filter(i => portals.includes(P.paths[i].pk || 0)) : [0];
-  const r0 = Math.floor(Math.random() * routes.length);
-  list.forEach((it, i) => { it.pi = it.type === 'boss' ? pick(routes) : routes[(r0 + i) % routes.length]; });
+  const r0 = Math.floor(prng() * routes.length);
+  list.forEach((it, i) => { it.pi = it.type === 'boss' ? routes[Math.floor(prng() * routes.length)] : routes[(r0 + i) % routes.length]; });
   return { list, label, portals };
 }
 // Délai avant la vague suivante (compté à partir de la sortie du dernier ennemi), selon la difficulté ; null = pas de chrono

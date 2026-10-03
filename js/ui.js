@@ -573,7 +573,7 @@ function renderMaps(boughtId) {
   const rank = i => inSeason(MAPS[i]) ? 0 : 1;
   // Les événements inactifs sont masqués : on annonce seulement leur date de retour
   const order = MAPS.map((m, i) => i).filter(i => !MAPS[i].random && !!MAPS[i].season === (tab === 'evt') && (tab !== 'evt' || inSeason(MAPS[i]))).sort((a, b) => rank(a) - rank(b) || a - b);
-  if (tab === 'std') box.appendChild(randomCard());
+  if (tab === 'std') { box.appendChild(dailyCard()); box.appendChild(randomCard()); }
   if (tab === 'evt') box.appendChild(upcomingCard(order.length));
   order.forEach(i => {
     const m = MAPS[i];
@@ -612,6 +612,18 @@ function seasonCard(i, rec) {
 // Carte aléatoire : choix de la taille, puis écran des difficultés (avec « Nouvelle carte »)
 // Card de la carte aléatoire : un aperçu fixe surmonté d'un dé ; elle ouvre l'écran de génération
 let randCardMap = null;
+// Carte du jour : aperçu de la carte d'aujourd'hui, temps restant et records du jour
+function dailyCard() {
+  const d = document.createElement('div'), r = dailyRnd(), rec = dailyRecs()[r.daily] || {}; d.className = 'mapc rand daily';
+  const map = genRandomMap(r.size, r.seed); dailyDress(map, r.daily);
+  d.innerHTML = '<canvas></canvas><span class="nm">' + T('📅 Carte du jour') + '</span><span class="bio-l">' + T('Nouvelle carte dans ') + dailyLeft() + ' · ' + RSIZES[r.size].name + '</span>'
+    + '<span class="medals">' + medalsHTML(rec) + '</span><button class="sbtn" type="button">' + T('Jouer ▸') + '</button>';
+  const cv2 = d.querySelector('canvas'), c = prepMini(cv2, 140, 90), keep = MAPS[RI];
+  MAPS[RI] = map; drawMapMini(c, RI, 140, 90); MAPS[RI] = keep;
+  const open = () => { Snd.init(); playDaily(); };
+  d.querySelector('button').addEventListener('click', open); cv2.addEventListener('click', open);
+  return d;
+}
 function randomCard() {
   const d = document.createElement('div'); d.className = 'mapc rand';
   d.innerHTML = T('<canvas></canvas><span class="nm">🎲 Carte aléatoire</span><span class="bio-l">Une carte unique, générée pour ta partie</span>')
