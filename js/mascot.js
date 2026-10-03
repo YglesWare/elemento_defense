@@ -59,7 +59,17 @@ $('#prName').addEventListener('input', ev => { store.set('elemento.pseudo', ev.t
 $('#prName').addEventListener('keydown', ev => ev.stopPropagation());
 // Champ laissé vide : on redonne un pseudo au hasard
 $('#prName').addEventListener('change', ev => { if (!ev.target.value.trim()) { ev.target.value = randomPseudo(); store.set('elemento.pseudo', ev.target.value); refreshProfileChip(); } });
-$('#prBack').addEventListener('click', () => show('title'));
+$('#prBack').addEventListener('click', () => { $('#prResetBox').hidden = true; show('title'); });
+
+// Réinitialiser la progression : confirmation dans la page, puis effacement (le pseudo, la langue et le son restent)
+const RESET_KEEP = ['elemento.pseudo', 'elemento.lang', 'elemento.opts', 'elemento.mpFacing'];
+$('#prReset').addEventListener('click', () => { const b = $('#prResetBox'); b.hidden = !b.hidden; if (!b.hidden) b.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); });
+$('#prResetNo').addEventListener('click', () => { $('#prResetBox').hidden = true; });
+$('#prResetYes').addEventListener('click', () => {
+  for (const k of [...store.mem.keys()]) if (k.startsWith('elemento.') && !RESET_KEEP.includes(k)) store.del(k);
+  try { for (let i = localStorage.length - 1; i >= 0; i--) { const k = localStorage.key(i); if (k && k.startsWith('elemento.') && !RESET_KEEP.includes(k)) localStorage.removeItem(k); } } catch (e) {}
+  store.flush().then(() => location.reload());
+});
 refreshProfileChip();
 $('#tBuild').textContent = 'build ' + BUILD;
 

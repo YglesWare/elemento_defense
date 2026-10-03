@@ -641,3 +641,8 @@ button:disabled{cursor:default}
 #sTitle .logo.wob{animation:wob .5s ease}
 @keyframes wob{25%{transform:rotate(-4deg) scale(1.04)}50%{transform:rotate(3deg)}75%{transform:rotate(-2deg)}}
 @media (prefers-reduced-motion:reduce){.trophytoast,#sTitle .logo.wob{animation:none}}
+
+/* Réinitialisation de la progression */
+.resetbox{scroll-margin-bottom:90px;border:3px solid var(--pop);border-radius:14px;background:var(--mist);padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.resetbox p{margin:0;font-size:14px;line-height:1.4}
+.sbtn.danger{background:var(--pop);color:var(--paper)}
