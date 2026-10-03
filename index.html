@@ -26,6 +26,9 @@
   <main id="stage">
     <canvas id="cv"></canvas>
     <div id="duelBar" hidden></div>
+    <div id="emoFeed" aria-live="polite"></div>
+    <div id="emoPanel" hidden></div>
+    <button id="bEmo" type="button" aria-label="Émoticônes" hidden>😀</button>
     <div id="radial" hidden><button type="button" class="rb fuse" id="rFuse" aria-label="Fusionner"><canvas></canvas><span class="rc"></span></button><button type="button" class="rb sel" id="rSel" aria-label="Sélectionner cette tour"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="#2a1b3d" stroke-width="2.6"/><circle cx="12" cy="12" r="3" fill="#2a1b3d"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4" stroke="#2a1b3d" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>
     <div id="nextWave" hidden></div>
     <button class="ibtn" id="bBonus" type="button" aria-label="Bonus" hidden>🎁<b>2/2</b></button>
@@ -57,6 +60,7 @@
 <section class="screen" id="sTitle">
   <span class="build" id="tBuild" aria-hidden="true"></span>
   <button class="updchip" id="tUpdate" type="button" hidden></button>
+  <button class="frchip" id="tFriends" type="button" hidden><span aria-hidden="true">👥</span><span>Amis</span><b class="frbadge" id="tFrBadge" hidden></b></button>
   <button class="profchip" id="tProfile" type="button" aria-label="Profil et options"><canvas id="tProfCv" aria-hidden="true"></canvas><span id="tProfName">Profil</span></button>
   <div class="inner tinner">
     <canvas id="tYglou" aria-label="Yglou, la mascotte : touche-le !" role="img"></canvas>
@@ -76,6 +80,7 @@
       <div class="profhead"><canvas id="prCv" aria-hidden="true"></canvas><div><h2 class="ptitle" style="margin:0">Profil</h2></div></div>
       <label class="mp-label" for="prName">Ton pseudo (utilisé en multijoueur)</label>
       <input id="prName" class="mp-input" maxlength="12" autocomplete="nickname" placeholder="Ton pseudo">
+      <p class="fine pa-err" id="prNameWarn" hidden>Ce pseudo n’est pas autorisé : tes amis verront « Joueur ».</p>
       <span class="mp-label">Langue · Language</span>
       <div class="mp-seg" id="prLang"><button class="sbtn" type="button" data-lang="auto">Auto</button><button class="sbtn" type="button" data-lang="fr">Français</button><button class="sbtn" type="button" data-lang="en">English</button></div>
       <button class="btn alt" id="tSound" type="button">Son : oui</button>
@@ -96,6 +101,7 @@
           <div class="mp-seg"><button class="sbtn" id="prEraseNo" type="button">Annuler</button><button class="sbtn danger" id="prEraseYes" type="button">Effacer en ligne</button></div>
         </div>
       </div>
+      <button class="btn alt" id="prParents" type="button">👪 Espace parents</button>
       <div class="mp-seg prbtns"><button class="sbtn" id="prStatsBtn" type="button">📊 Stats</button><button class="sbtn" id="prTrophies" type="button">🏆 Trophées</button></div>
       <button class="btn pink" id="prReset" type="button">Réinitialiser la progression</button>
       <div class="resetbox" id="prResetBox" hidden>
@@ -339,6 +345,40 @@
   </div>
 </section>
 
+<section class="screen" id="sFriends" hidden>
+  <div class="inner">
+    <div class="bigword calm head">MES AMIS</div>
+    <div class="panelbox col fr">
+      <div class="frcode"><div><span class="mp-label">Mon code ami</span><b id="frMyCode">…</b></div><button class="sbtn" id="frQrBtn" type="button">QR</button></div>
+      <p class="fine frtip">Donne-le seulement à des amis que tu connais en vrai.</p>
+      <p class="fine pa-err" id="frState" hidden></p>
+      <button class="btn" id="frAddBtn" type="button">➕ Ajouter un ami</button>
+      <div id="frList"></div>
+    </div>
+    <button class="btn stickyb" id="frBack" type="button">Retour</button>
+  </div>
+</section>
+<section class="screen" id="sFrAdd" hidden>
+  <div class="inner">
+    <div class="bigword calm head">AJOUTER</div>
+    <div class="panelbox col fr">
+      <span class="mp-label">Tape son code ami</span>
+      <div class="fain" id="faIn"></div>
+      <div class="fakeys" id="faKeys"></div>
+      <div class="fares" id="faRes" hidden></div>
+      <button class="btn green" id="faScan" type="button">📷 Scanner son QR</button>
+      <div class="facam" id="faCam" hidden><video id="faVideo" playsinline muted></video></div>
+    </div>
+    <button class="btn stickyb" id="faBack" type="button">Retour</button>
+  </div>
+</section>
+<section class="screen" id="sParents" hidden>
+  <div class="inner">
+    <div class="bigword calm head">PARENTS</div>
+    <div class="panelbox col pa" id="paBody"></div>
+    <button class="btn stickyb" id="paBack" type="button">Retour</button>
+  </div>
+</section>
 <section class="screen" id="sStats" hidden>
   <div class="inner">
     <div class="panelbox col">
@@ -358,6 +398,50 @@
     <button class="btn stickyb" id="trBack" type="button">Retour</button>
   </div>
 </section>
+<!-- Menu d'un ami (js/friends.js) -->
+<div class="intro" id="frMenu" role="dialog" aria-modal="true" aria-labelledby="fmName" hidden>
+  <div class="intro-card">
+    <canvas id="fmAv" aria-hidden="true" style="width:56px;height:56px"></canvas>
+    <h2 id="fmName"></h2>
+    <p class="fine" id="fmSince"></p>
+    <button class="btn" id="fmDuel" type="button" hidden>⚔️ Inviter en duel</button>
+    <button class="btn green" id="fmCoop" type="button" hidden>🤝 Inviter en coop</button>
+    <button class="btn alt" id="fmRemove" type="button">Retirer de mes amis</button>
+    <button class="btn pink" id="fmBlock" type="button">🚫 Bloquer</button>
+    <p class="fine">Bloqué, il ne peut plus te redemander en ami. Il n’est pas prévenu.</p>
+    <button class="btn alt" id="fmClose" type="button">Fermer</button>
+  </div>
+</div>
+<!-- Invitation d'un ami en ligne (js/online.js) -->
+<div class="intro" id="invPop" role="dialog" aria-modal="true" aria-labelledby="ipName" hidden>
+  <div class="intro-card">
+    <canvas id="ipAv" aria-hidden="true" style="width:64px;height:64px"></canvas>
+    <h2 id="ipName"></h2>
+    <div class="ippills" id="ipPills"></div>
+    <div class="ipring" id="ipRing"><b id="ipSecs">60</b></div>
+    <div class="intro-foot"><button class="btn alt" id="ipNo" type="button">Non merci</button><button class="btn green" id="ipYes" type="button">Accepter</button></div>
+  </div>
+</div>
+<!-- Mon QR code ami -->
+<div class="intro" id="frQr" role="dialog" aria-modal="true" aria-labelledby="fqTitle" hidden>
+  <div class="intro-card">
+    <h2 id="fqTitle">Mon code ami</h2>
+    <canvas id="fqCv" class="fqcv" aria-label="QR code de mon code ami"></canvas>
+    <b class="fqcode" id="fqCode"></b>
+    <p class="fine">Ton ami le scanne depuis « Ajouter un ami ». Montre-le seulement à des amis que tu connais en vrai.</p>
+    <button class="btn" id="fqClose" type="button">Fermer</button>
+  </div>
+</div>
+<!-- Limite de temps par jour atteinte (js/parents.js) -->
+<div class="intro" id="timeUp" role="dialog" aria-modal="true" aria-labelledby="tuTitle" hidden>
+  <div class="intro-card">
+    <canvas id="tuYg" aria-hidden="true" style="width:72px;height:72px"></canvas>
+    <h2 id="tuTitle">C’est l’heure de la pause !</h2>
+    <p id="tuText"></p>
+    <p class="intro-tip" id="tuSave">Ta partie est sauvegardée au début de la vague : tu la reprendras avec « Continuer ».</p>
+    <div class="intro-foot"><button class="btn alt" id="tuParent" type="button">Code parent : +15 min</button><button class="btn" id="tuOk" type="button">D’accord</button></div>
+  </div>
+</div>
 <!-- Proposition du micro, après avoir chassé la brume avec les doigts (js/actions.js) -->
 <div class="intro" id="micAsk" role="dialog" aria-modal="true" aria-labelledby="micTitle" hidden>
   <div class="intro-card">
@@ -391,4 +475,4 @@
 </div>
 <!-- Les données du joueur (IndexedDB) sont chargées d'abord, puis les scripts du jeu, dans cet ordre -->
 <script src="js/storage.js"></script>
-<script>store.boot(['js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bonus.js', 'js/trophies.js', 'js/actions.js', 'js/vendor/supabase.js', 'js/cloud.js']);</script>
+<script>store.boot(['js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bonus.js', 'js/trophies.js', 'js/actions.js', 'js/vendor/supabase.js', 'js/cloud.js', 'js/parents.js', 'js/friends.js', 'js/online.js', 'js/emotes.js']);</script>

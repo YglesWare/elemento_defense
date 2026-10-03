@@ -27,8 +27,9 @@ function openCamera(facing = 'environment') {
 }
 const closeCamera = s => { if (s) s.getTracks().forEach(t => t.stop()); };
 // facing : 'user' (caméra avant, téléphones face à face) ou 'environment' (caméra arrière) ; stream : caméra déjà ouverte
-async function startScan(onCode, facing = 'environment', stream = null) {
-  const video = $('#mpVideo'); if (!video) { closeCamera(stream); return; }
+// accept : quels QR codes garder (par défaut, ceux du multijoueur) ; videoSel : la vidéo où montrer la caméra
+async function startScan(onCode, facing = 'environment', stream = null, accept = null, videoSel = '#mpVideo') {
+  const video = $(videoSel); if (!video) { closeCamera(stream); return; }
   camStream = stream || await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: false });
   video.srcObject = camStream; video.setAttribute('playsinline', ''); video.muted = true; await video.play();
   let det = null;
@@ -49,7 +50,7 @@ async function startScan(onCode, facing = 'environment', stream = null) {
         }
       } catch (e) {}
       busy = false;
-      if (txt && (isSignalText(txt) || lanInfo(txt))) { cancelAnimationFrame(camRaf); const keep = camStream; camStream = null; try { navigator.vibrate && navigator.vibrate(30); } catch (e) {} onCode(txt, keep); return; }
+      if (txt && (accept ? accept(txt) : isSignalText(txt) || lanInfo(txt))) { cancelAnimationFrame(camRaf); const keep = camStream; camStream = null; try { navigator.vibrate && navigator.vibrate(30); } catch (e) {} onCode(txt, keep); return; }
     }
     camRaf = requestAnimationFrame(loop);
   };
@@ -147,17 +148,21 @@ function renderMP() {
       + T('<p class="fine" style="text-align:left">Ouvre le jeu depuis cette adresse, sur chaque téléphone :</p><p class="mp-url">') + GH_URL + '</p>'
       + T('<button class="btn alt" type="button" data-a="back">Retour</button>');
   } else if (S === 'home') {
-    h += T('<p class="trnote">De 2 à 4 joueurs, téléphones côte à côte, <b>sans internet</b>. Connectez-vous au même Wi-Fi, ou activez le partage de connexion d’un des téléphones et connectez les autres dessus.</p>')
+    // Deux onglets quand le jeu en ligne est permis : « À côté » (sans internet) et « En ligne » (avec ses amis, js/online.js)
+    const onl = typeof frOn === 'function' && frOn();
+    if (onl) h += '<div class="mp-seg mp-tabs"><button class="sbtn' + (MP.tab !== 'online' ? ' on' : '') + '" type="button" data-a="tab-near">' + T('📶 À côté') + '</button><button class="sbtn' + (MP.tab === 'online' ? ' on' : '') + '" type="button" data-a="tab-online">' + T('🌍 En ligne') + '</button></div>';
+    if (onl && MP.tab === 'online') h += onlineHomeHTML();
+    else h += T('<p class="trnote">De 2 à 4 joueurs, téléphones côte à côte, <b>sans internet</b>. Connectez-vous au même Wi-Fi, ou activez le partage de connexion d’un des téléphones et connectez les autres dessus.</p>')
       + T('<label class="mp-label" for="mpName">Ton pseudo</label><input id="mpName" class="mp-input" maxlength="12" autocomplete="nickname" placeholder="Ex. Léa" value="') + esc(name) + '">'
       + T('<button class="btn" type="button" data-a="create">Créer une partie</button>')
-      + T('<button class="btn green" type="button" data-a="join">Rejoindre une partie</button>')
-      + T('<button class="btn alt" type="button" data-a="back">Retour</button>');
+      + T('<button class="btn green" type="button" data-a="join">Rejoindre une partie</button>');
+    h += T('<button class="btn alt" type="button" data-a="back">Retour</button>');
   } else if (S === 'busy') {
     h += '<p class="mp-busy">' + esc(MP.busyText || T('Un instant…')) + T('</p><button class="btn alt" type="button" data-a="cancel">Annuler</button>');
   } else if (S === 'host') {
     const full = Net.players.length >= NET_MAX;
-    h += T('<h3 class="mp-h">Salon · ') + Net.players.length + '/' + NET_MAX + T(' joueurs</h3>') + rosterHTML()
-      + (full ? T('<p class="fine">La partie est complète.</p>') : T('<button class="btn green" type="button" data-a="invite">Inviter un joueur</button>'))
+    h += (Net.online ? T('<h3 class="mp-h">Salon en ligne · ') : T('<h3 class="mp-h">Salon · ')) + Net.players.length + '/' + NET_MAX + T(' joueurs</h3>') + rosterHTML()
+      + (full ? T('<p class="fine">La partie est complète.</p>') : Net.online ? '<div class="mp-online"><span class="mp-label">' + T('Inviter un ami en ligne') + '</span><div id="onlFriends"></div></div>' : T('<button class="btn green" type="button" data-a="invite">Inviter un joueur</button>'))
       + modePickHTML(true) + mapPickHTML(true)
       + '<button class="btn" type="button" data-a="launch"' + (Net.players.length < 2 ? ' disabled' : '') + '>' + (Net.players.length < 2 ? T('Invite au moins 1 joueur') : T('Lancer la partie !')) + '</button>'
       + rulesHTML()
@@ -195,6 +200,7 @@ function renderMP() {
   }
   b.innerHTML = h;
   b.querySelectorAll('canvas.mp-yg').forEach(cv => drawYglou(prepMini(cv, 34, 34), 17, 19, 30, 'happy', 0, { crest: ['#ff4f81', '#3fa9ff', '#4fd36a', '#ffb03d'][+cv.dataset.i % 4], noShadow: true }));
+  if (S === 'host' && Net.online && typeof paintOnlineFriends === 'function') paintOnlineFriends();
   const qr = $('#mpQr'); if (qr && MP.code) { try { drawQR(qr, MP.code); } catch (e) { MP.err = T('Impossible de dessiner le QR code.'); } }
   if (S === 'scan' && MP.scanFor !== 'answer' && !foundTimer) startFound();
   if (S === 'invite' && !MP.camFail && !MP.lan) { const st = MP.cam; MP.cam = null; startScan(hostGotAnswer, MP.facing, st).catch(e => { if (MP.state !== 'invite') return; stopScan(); MP.camFail = true; MP.manual = true; MP.err = camError(e); renderMP(); }); }
@@ -267,6 +273,8 @@ $('#mpBody').addEventListener('click', ev => {
   }
   const a = el.dataset.a;
   if (a === 'back') { show('title'); }
+  else if (a === 'tab-near' || a === 'tab-online') { MP.tab = a.slice(4); MP.err = ''; renderMP(); if (MP.tab === 'online' && typeof frLoad === 'function') frLoad(true).then(() => { if (MP.state === 'home') renderMP(); }); }
+  else if (a === 'ocreate') { (async () => { mpGo('busy', { busyText: T('Ouverture du salon…') }); if (await onlineCreate()) mpGo('host'); })(); }
   else if (a === 'create') { const n = needName(); if (!n) return; Net.host(n); keepAwake(); mpGo('host'); }
   else if (a === 'join') { const n = needName(); if (!n) return; keepAwake(); mpGo('scan', { scanFor: 'offer' }); }
   else if (a === 'invite') hostInvite();

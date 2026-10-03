@@ -3,7 +3,7 @@
 // La mise en relation se fait par QR codes : l'hôte montre une invitation, l'invité répond avec un autre QR.
 'use strict';
 
-const NET_VER = 6, NET_MAX = 4, QR_PREFIX = 'ELD' + NET_VER;
+const NET_VER = 7, NET_MAX = 4, QR_PREFIX = 'ELD' + NET_VER;
 
 // ---------- Encodage des invitations (compression + base64url) ----------
 const b64u = {
@@ -113,12 +113,13 @@ const Net = {
   emit(type, data) { for (const fn of this.handlers[type] || []) { try { fn(data); } catch (e) { console.error(e); } } },
 
   // Hôte : ouvre la partie
-  host(name) {
-    this.reset(); this.role = 'host'; this.me = { id: rid(), name, host: true };
+  // opts.online : salon en ligne (js/online.js), sans serveur local
+  host(name, opts = {}) {
+    this.reset(); this.role = 'host'; this.online = !!opts.online; this.me = { id: rid(), name, host: true };
     this.players = [{ ...this.me, ping: 0 }];
     this.timer = setInterval(() => this.hostTick(), 2000);
     this.emit('roster', this.players);
-    this.lanStart();
+    if (!this.online) this.lanStart();
   },
   // Hôte sur l'APK : serveur local ; sans Wi-Fi (ou hors de l'app), on reste sur les invitations WebRTC
   async lanStart() {
@@ -221,7 +222,9 @@ const Net = {
         if (this.peers.size + 1 >= NET_MAX) { try { dc.send(JSON.stringify({ t: 'full' })); } catch (e) {} setTimeout(() => pc.close(), 300); return; }
         if (pc.lan && this.inGame()) { try { dc.send(JSON.stringify({ t: 'ingame' })); } catch (e) {} setTimeout(() => pc.close(), 300); return; }
         if (msg.v && msg.v !== NET_VER) { try { dc.send(JSON.stringify({ t: 'ver' })); } catch (e) {} setTimeout(() => pc.close(), 300); return; }
-        this.peers.set(msg.id, { pc, dc, name: String(msg.name || T('Joueur')).slice(0, 12), ping: 0 });
+        // En ligne : le pseudo vient du serveur (celui de l'ami invité), pas de ce que l'invité envoie
+        const nm = (pc.uid && typeof onlineName === 'function' && onlineName(pc.uid)) || String(msg.name || T('Joueur')).slice(0, 12);
+        this.peers.set(msg.id, { pc, dc, name: nm, ping: 0, uid: pc.uid || null });
         this.syncRoster(); this.emit('join', msg.id); return;
       }
       const id = this.idOf(pc); if (!id) return;
@@ -282,6 +285,7 @@ const Net = {
     if (this.pending) { try { this.pending.pc.close(); } catch (e) {} }
     if (this.hostPc) { try { this.hostPc.close(); } catch (e) {} }
     if (this.lan) { const L = lanPlugin(); if (L) L.stop(); }
-    this.peers = new Map(); this.lanConns = new Map(); this.lan = null; this.pending = null; this.hostPc = null; this.role = null; this.players = [];
+    if (typeof onlineClose === 'function') onlineClose();
+    this.peers = new Map(); this.lanConns = new Map(); this.lan = null; this.pending = null; this.hostPc = null; this.role = null; this.players = []; this.online = false;
   },
 };

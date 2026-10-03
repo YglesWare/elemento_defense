@@ -1038,7 +1038,7 @@ function frame(now) {
   if (G) {
     // Duel et coop ne s'arrêtent pas quand on ouvre un menu (en coop, seule la pause de l'hôte arrête tout le monde)
     const run = G.duel ? !G.over : G.coop ? !G.over && !(G.coopGuest ? G.hostPause : G.paused) : curScreen === 'game' && !G.paused && !G.over;
-    if (run) { for (let i = 0; i < G.speed; i++) update(dt); stats.time += dt; }
+    if (run) { for (let i = 0; i < G.speed; i++) update(dt); stats.time += dt; if (typeof playTick === 'function') playTick(dt); }
     else if (G.over) update(dt);
     if (G.duel && typeof duelTick === 'function') duelTick(dt);
     if (G.coop && typeof coopTick === 'function') coopTick(dt);

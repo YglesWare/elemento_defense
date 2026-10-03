@@ -80,7 +80,7 @@ function hostAction(pid, a) {
     const to = a.to, v = Math.min(50, wallet(pid));
     if (!COOP.ids.includes(to) || to === pid || v <= 0 || COOP.gone.has(to)) return;
     setWallet(pid, wallet(pid) - v); setWallet(to, wallet(to) + v);
-    coopNotice(coopName(pid) + ' donne ' + v + T(' or à ') + coopName(to));
+    coopNotice('give', { p: pid, v, to });
     return;
   }
   asPlayer(pid, () => {
@@ -121,7 +121,13 @@ function hostAction(pid, a) {
     }
   });
 }
-function coopNotice(txt) { hint(txt, 2200); Net.send('all', { k: 'cmsg', txt }); }
+// Annonces aux joueurs : un code et des nombres, jamais de texte (chaque téléphone écrit le message lui-même :
+// en ligne, un jeu modifié ne peut pas faire afficher n'importe quoi chez les autres)
+const NOTICE = {
+  give: d => coopName(d.p) + T(' donne ') + d.v + T(' or à ') + coopName(d.to),
+  left: d => coopName(d.p) + T(' a quitté la partie') + (d.v ? T(' : son or (') + d.v + T(') est partagé') : '') + T('. Ses tours continuent de tirer.'),
+};
+function coopNotice(kind, d) { const f = NOTICE[kind]; if (!f) return; hint(f(d), 2200); Net.send('all', { k: 'cmsg', kind, d: { p: d.p, v: Math.round(+d.v || 0), to: d.to } }); }
 
 // ---------- État envoyé par l'hôte ----------
 const towerSig = () => G.towers.map(t => [t.id, t.type, t.lvl, t.br || '', t.mode, t.own].join(':')).join('|') + '#' + (G.ruins || []).length;
@@ -285,7 +291,7 @@ function coopQuit() {
   if (!G || !G.coop || G.over) return;
   if (G.coopGuest) { Net.send(hostOf(), { k: 'cquit' }); coopFinish(false, null, true); return; }
   // L'hôte quitte : la partie s'arrête pour tout le monde (les invités gardent les règles du K.O.)
-  Net.send('all', { k: 'cend', win: false, text: coopName(coopMe()) + T(' (l’hôte) a arrêté la partie.') });
+  Net.send('all', { k: 'cend', win: false, why: 'hostquit', p: coopMe() });
   coopFinish(false, null, true);
 }
 function playerGone(id) {
@@ -293,7 +299,7 @@ function playerGone(id) {
   COOP.gone.add(id);
   const left = coopActive(), v = wallet(id); setWallet(id, 0);
   for (const o of left) addGold(o, v / left.length);
-  coopNotice(coopName(id) + T(' a quitté la partie') + (v ? T(' : son or (') + v + T(') est partagé') : '') + T('. Ses tours continuent de tirer.'));
+  coopNotice('left', { p: id, v });
 }
 function leaveCoop() {
   COOP.on = false; clearTimeout(COOP.pingHold); exitDuelMeta(); $('#stage').classList.remove('duel');
@@ -345,8 +351,8 @@ Net.on('msg', ({ from, data }) => {
     case 'cnw': if (G && G.coopGuest) { G.nextWave = data.nw; hudCache.nw = null; } break;
     case 'cws': if (G && G.coopGuest) { G.curPortals = data.portals; banner(T('VAGUE ') + data.n, data.early ? T('Bonus d’audace +') + data.early : data.label || '', false); Snd.play('wave'); } break;
     case 'cwd': if (G && G.coopGuest) { G.partyUntil = G.time + 2.4; G.wave = data.n; G.score = data.sc; G.bossKills = data.bk; const aw = awardShards(); hint(T('Vague ') + data.n + T(' terminée') + (aw.gain ? ' : +' + aw.gain + T(' éclats') : ''), 2600); Snd.play('clear'); } break;
-    case 'cend': if (G && G.coopGuest) coopFinish(data.win, data.text); break;
-    case 'cmsg': if (G && G.coop) hint(data.txt, 2400); break;
+    case 'cend': if (G && G.coopGuest) coopFinish(data.win, data.why === 'hostquit' ? coopName(data.p) + T(' (l’hôte) a arrêté la partie.') : null); break;
+    case 'cmsg': if (G && G.coop && NOTICE[data.kind]) hint(NOTICE[data.kind](data.d || {}), 2400); break;
     case 'cping': if (G && G.coop) addPing(from, data.x, data.y); break;
   }
 });

@@ -47,7 +47,7 @@ $('#tYglou').addEventListener('click', () => {
 function refreshProfileChip() { const n = (store.get('elemento.pseudo') || '').trim(); $('#tProfName').textContent = n || T('Profil'); }
 function openProfile() {
   Snd.init(); show('profile'); screens.profile.scrollTop = 0; if (typeof refreshTrophyBtn === 'function') refreshTrophyBtn(); if (typeof cloudPaint === 'function') cloudPaint();
-  $('#prName').value = store.get('elemento.pseudo') || '';
+  $('#prName').value = store.get('elemento.pseudo') || ''; nameWarn();
 }
 // Page des stats (depuis le Profil) : une tuile par chiffre
 screens.stats = $('#sStats');
@@ -69,7 +69,9 @@ $('#prStatsBtn').addEventListener('click', () => { Snd.init(); openStats(); });
 $('#stBack').addEventListener('click', () => show('profile'));
 document.addEventListener('keydown', ev => { if (curScreen === 'stats' && ev.key === 'Escape') show('profile'); });
 $('#tProfile').addEventListener('click', openProfile);
-$('#prName').addEventListener('input', ev => { store.set('elemento.pseudo', ev.target.value.trim().slice(0, 12)); refreshProfileChip(); });
+// Pseudo vu par les amis : un gros mot est remplacé par « Joueur » (js/friends.js)
+const nameWarn = () => { $('#prNameWarn').hidden = !(typeof badPseudo === 'function' && badPseudo($('#prName').value)); };
+$('#prName').addEventListener('input', ev => { store.set('elemento.pseudo', ev.target.value.trim().slice(0, 12)); refreshProfileChip(); nameWarn(); });
 $('#prName').addEventListener('keydown', ev => ev.stopPropagation());
 // Champ laissé vide : on redonne un pseudo au hasard
 $('#prName').addEventListener('change', ev => { if (!ev.target.value.trim()) { ev.target.value = randomPseudo(); store.set('elemento.pseudo', ev.target.value); refreshProfileChip(); } });

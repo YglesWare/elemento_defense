@@ -19,7 +19,7 @@ function clearFog(how) {
   const [x, y] = midMap(); ono(how === 'blow' ? T('PFIOUUU !') : T('ZOUH !'), x, y, '#ffffff', 0.7, 0, 1.1); Snd.play('vent');
   trophy(how === 'blow' ? 'egg_blow' : 'egg_fog_swipe');
   // Première fois avec les doigts : Yglou propose de souffler, en expliquant pourquoi il faut le micro
-  if (how === 'swipe' && !store.get(MIC_ASKED) && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) micAsk();
+  if (how === 'swipe' && !store.get(MIC_ASKED) && (typeof parentMic !== 'function' || parentMic()) && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) micAsk();
 }
 function micAsk() {
   store.set(MIC_ASKED, true);
@@ -138,5 +138,5 @@ setInterval(() => {
   if (G.warmT > 0 && live) { G.warmT -= dt; if (G.warmT <= 0) { G.warmT = 0; restat(); } }
   if (live) tiltWind(dt); else if (!G.duel && !G.coop) { G.windS = G.windW = null; }
   // Micro : ouvert seulement pendant un brouillard en cours, si le joueur l'a accepté
-  if (live && G.weather === 'fog' && store.get(MIC_KEY) === 'on') { micOpen(); if (!(G.fogClear > 0)) micBlow(dt); } else micClose();
+  if (live && G.weather === 'fog' && store.get(MIC_KEY) === 'on' && (typeof parentMic !== 'function' || parentMic())) { micOpen(); if (!(G.fogClear > 0)) micBlow(dt); } else micClose();
 }, 50);

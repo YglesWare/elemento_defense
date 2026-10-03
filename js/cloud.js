@@ -154,7 +154,8 @@ function cloudSync(force) {
 
 async function cloudStart() {
   if (cloudOff()) return;
-  CLOUD.sb = supabase.createClient(SUPA_URL, SUPA_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: !NATIVE, flowType: 'pkce' } });
+  // realtime : le multi en ligne peut passer par Supabase quand la liaison directe échoue (une dizaine de messages par seconde)
+  CLOUD.sb = supabase.createClient(SUPA_URL, SUPA_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: !NATIVE, flowType: 'pkce' }, realtime: { params: { eventsPerSecond: 40 } } });
   CLOUD.sb.auth.onAuthStateChange((ev, session) => {
     const u = session ? session.user : null, changed = (u && u.id) !== (CLOUD.user && CLOUD.user.id);
     CLOUD.user = u; cloudPaint();
