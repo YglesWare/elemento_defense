@@ -7,6 +7,7 @@ const EMOTES = [['👍', 'Bien joué !'], ['🔥', 'Trop fort !'], ['😮', 'Oh 
 const EMO = { last: 0, recv: new Map() };
 const emoOn = () => !!G && !!(G.duel || G.coop) && !G.over && Net.role && parent().emotes;
 $('#emoPanel').innerHTML = EMOTES.map(([e, l], i) => '<button type="button" class="emob" data-i="' + i + '"><span>' + e + '</span><small>' + T(l) + '</small></button>').join('');
+drawYglouIcon(prepMini($('#bEmoCv'), 52, 52), 'emote', 52, 52);
 $('#bEmo').addEventListener('click', () => { Snd.init(); $('#emoPanel').hidden = !$('#emoPanel').hidden; });
 $('#emoPanel').addEventListener('click', ev => {
   const b = ev.target.closest('[data-i]'); if (!b || !emoOn()) return;

@@ -213,6 +213,7 @@ function faBack() { stopScan(); $('#faCam').hidden = true; if (FR.from === 'pare
 $('#faBack').addEventListener('click', faBack);
 $('#frAddBtn').addEventListener('click', () => openFrAdd('friends'));
 $('#frBack').addEventListener('click', () => show('title'));
+drawYglouIcon(prepMini($('#tFrCv'), 40, 32), 'friends', 40, 32);
 $('#tFriends').addEventListener('click', openFriends);
 
 // ---------- Espace parents : ses amis ----------

@@ -1368,6 +1368,19 @@ const EN = {
 "⚔️ Inviter en duel": "⚔️ Invite to a duel",
 "🤝 Inviter en coop": "🤝 Invite to co-op",
 "Émoticônes": "Emotes",
+"Version ": "Version ",
+"Yglou s’invite sur les boutons Amis et Émoticônes.": "Yglou now shows up on the Friends and Emotes buttons.",
+"Cette fenêtre ! Après chaque mise à jour, Yglou te montre ce qui a changé.": "This window! After each update, Yglou shows you what’s new.",
+"Ajoute tes amis avec leur code ami (YGL-…) ou leur QR code, depuis le bouton Amis de l’accueil.": "Add your friends with their friend code (YGL-…) or their QR code, from the Friends button on the home screen.",
+"Joue en ligne avec tes amis, même s’ils sont loin : ouvre un salon et invite-les.": "Play online with your friends, even far away: open a lobby and invite them.",
+"Envoie des émoticônes à tes adversaires et coéquipiers pendant les parties à plusieurs.": "Send emotes to your opponents and teammates during multiplayer games.",
+"Un espace parents, protégé par un code, pour régler le jeu en ligne, les amis et le temps de jeu.": "A parents’ corner, protected by a code, to set online play, friends and play time.",
+"Ta progression est sauvegardée en ligne toute seule.": "Your progress is saved online automatically.",
+"Les tours voient un peu moins loin… mais la Longue-vue, nouvelle amélioration de l’Atelier, leur rend leur portée !": "Towers see a little less far… but the Spyglass, a new Workshop upgrade, gives them their range back!",
+"L’écran ne tourne plus quand tu penches le téléphone.": "The screen no longer rotates when you tilt your phone.",
+"Quoi de neuf ?": "What’s new?",
+"Super !": "Great!",
+"🆕 Nouveautés": "🆕 What’s new",
 };
 const T = s => (IS_EN && typeof s === 'string' && EN[s] !== undefined ? EN[s] : s);
 // Textes fixes de la page : nœuds de texte et attributs (placeholder, aria-label, title, alt)

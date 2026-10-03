@@ -28,7 +28,7 @@
     <div id="duelBar" hidden></div>
     <div id="emoFeed" aria-live="polite"></div>
     <div id="emoPanel" hidden></div>
-    <button id="bEmo" type="button" aria-label="Émoticônes" hidden>😀</button>
+    <button id="bEmo" type="button" aria-label="Émoticônes" hidden><canvas id="bEmoCv" aria-hidden="true"></canvas></button>
     <div id="radial" hidden><button type="button" class="rb fuse" id="rFuse" aria-label="Fusionner"><canvas></canvas><span class="rc"></span></button><button type="button" class="rb sel" id="rSel" aria-label="Sélectionner cette tour"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="#2a1b3d" stroke-width="2.6"/><circle cx="12" cy="12" r="3" fill="#2a1b3d"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4" stroke="#2a1b3d" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>
     <div id="nextWave" hidden></div>
     <button class="ibtn" id="bBonus" type="button" aria-label="Bonus" hidden>🎁<b>2/2</b></button>
@@ -60,7 +60,7 @@
 <section class="screen" id="sTitle">
   <span class="build" id="tBuild" aria-hidden="true"></span>
   <button class="updchip" id="tUpdate" type="button" hidden></button>
-  <button class="frchip" id="tFriends" type="button" hidden><span aria-hidden="true">👥</span><span>Amis</span><b class="frbadge" id="tFrBadge" hidden></b></button>
+  <button class="frchip" id="tFriends" type="button" hidden><canvas id="tFrCv" aria-hidden="true"></canvas><span>Amis</span><b class="frbadge" id="tFrBadge" hidden></b></button>
   <button class="profchip" id="tProfile" type="button" aria-label="Profil et options"><canvas id="tProfCv" aria-hidden="true"></canvas><span id="tProfName">Profil</span></button>
   <div class="inner tinner">
     <canvas id="tYglou" aria-label="Yglou, la mascotte : touche-le !" role="img"></canvas>
@@ -102,6 +102,7 @@
         </div>
       </div>
       <button class="btn alt" id="prParents" type="button">👪 Espace parents</button>
+      <button class="btn alt" id="prNews" type="button">🆕 Nouveautés</button>
       <div class="mp-seg prbtns"><button class="sbtn" id="prStatsBtn" type="button">📊 Stats</button><button class="sbtn" id="prTrophies" type="button">🏆 Trophées</button></div>
       <button class="btn pink" id="prReset" type="button">Réinitialiser la progression</button>
       <div class="resetbox" id="prResetBox" hidden>
@@ -422,6 +423,15 @@
     <div class="intro-foot"><button class="btn alt" id="ipNo" type="button">Non merci</button><button class="btn green" id="ipYes" type="button">Accepter</button></div>
   </div>
 </div>
+<!-- Nouveautés après une mise à jour (js/news.js) -->
+<div class="intro" id="newsPop" role="dialog" aria-modal="true" aria-labelledby="newsTitle" hidden>
+  <div class="intro-card">
+    <canvas id="newsYg" aria-hidden="true" style="width:72px;height:72px"></canvas>
+    <h2 id="newsTitle">Quoi de neuf ?</h2>
+    <div class="newslist" id="newsList"></div>
+    <button class="btn" id="newsOk" type="button">Super !</button>
+  </div>
+</div>
 <!-- Mon QR code ami -->
 <div class="intro" id="frQr" role="dialog" aria-modal="true" aria-labelledby="fqTitle" hidden>
   <div class="intro-card">
@@ -475,4 +485,4 @@
 </div>
 <!-- Les données du joueur (IndexedDB) sont chargées d'abord, puis les scripts du jeu, dans cet ordre -->
 <script src="js/storage.js"></script>
-<script>store.boot(['js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bonus.js', 'js/trophies.js', 'js/actions.js', 'js/vendor/supabase.js', 'js/cloud.js', 'js/parents.js', 'js/friends.js', 'js/online.js', 'js/emotes.js']);</script>
+<script>store.boot(['js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bonus.js', 'js/trophies.js', 'js/actions.js', 'js/vendor/supabase.js', 'js/cloud.js', 'js/parents.js', 'js/friends.js', 'js/online.js', 'js/emotes.js', 'js/news.js']);</script>

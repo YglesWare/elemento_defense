@@ -1232,3 +1232,25 @@ function drawBase(c, x, y, s, t, hit) {
   c.restore();
 }
 
+
+// ---------- Icônes Yglou de l'interface ----------
+// 'emote' : Yglou qui fait un clin d'œil, avec une bulle « … » (bouton des émoticônes) ;
+// 'friends' : Yglou devant un ami à crête bleue, avec un petit cœur (bouton Amis). Dessinées pour une taille w × h.
+function drawYglouIcon(c, kind, w, h) {
+  const B = kind === 'friends' ? [200, 160] : [160, 160], k = Math.min(w / B[0], h / B[1]);
+  c.save(); c.translate((w - B[0] * k) / 2, (h - B[1] * k) / 2); c.scale(k, k);
+  const o = { noShadow: true, noConfetti: true };
+  if (kind === 'friends') {
+    drawYglou(c, 128, 88, 104, 'happy', 0.5, Object.assign({ crest: '#3fa9ff' }, o));
+    drawYglou(c, 76, 98, 118, 'happy', 0.5, o);
+    c.save(); c.translate(104, 30); const s = 22; c.beginPath(); c.moveTo(0, s * 0.35); c.bezierCurveTo(-s * 0.9, -s * 0.2, -s * 0.45, -s * 0.85, 0, -s * 0.35); c.bezierCurveTo(s * 0.45, -s * 0.85, s * 0.9, -s * 0.2, 0, s * 0.35);
+    c.fillStyle = '#ff4f81'; c.fill(); c.lineWidth = s * 0.14; c.strokeStyle = INK; c.stroke(); c.restore();
+  } else {
+    const s = 130, r = s * 0.36; drawYglou(c, 72, 92 + r * 0.62, s, 'wink', 0.5, o);
+    const x = 122, y = 40, bw = 44; c.lineWidth = bw * 0.09; c.strokeStyle = INK; c.fillStyle = '#fff';
+    c.beginPath(); c.ellipse(x, y, bw * 0.62, bw * 0.46, 0, 0, TAU); c.moveTo(x - bw * 0.3, y + bw * 0.38); c.lineTo(x - bw * 0.55, y + bw * 0.72); c.lineTo(x - bw * 0.05, y + bw * 0.44); c.fill(); c.stroke();
+    c.beginPath(); c.ellipse(x, y, bw * 0.62, bw * 0.46, 0, 0, TAU); c.fill();
+    c.fillStyle = INK; for (const d of [-1, 0, 1]) { c.beginPath(); c.arc(x + d * bw * 0.26, y, bw * 0.085, 0, TAU); c.fill(); }
+  }
+  c.restore();
+}
