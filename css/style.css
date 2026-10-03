@@ -761,3 +761,53 @@ button:disabled{cursor:default}
 .newsv li{display:flex;align-items:flex-start;gap:8px;background:var(--mist);border:2px solid var(--ink);border-radius:12px;padding:6px 9px;font-weight:700;font-size:14.5px;line-height:1.3}
 .newsic{font-size:20px;line-height:1.1;flex:none}
 #newsPop .intro-card .btn{width:100%}
+
+/* Défis du jour (js/quests.js) */
+.questbtn{position:relative;font-size:19px;padding-block:8px}
+.qlist{display:flex;flex-direction:column;gap:8px;width:100%;text-align:left}
+.qcard{border:2.5px solid var(--ink);border-radius:13px;padding:7px 9px;display:flex;flex-direction:column;gap:6px;background:var(--paper)}
+.qcard.done{background:var(--okbg)}
+.qcard.claimed{background:var(--mist);opacity:.75}
+.qh{display:flex;align-items:center;gap:8px}
+.qic{font-size:22px;flex:none;line-height:1}
+.qt{flex:1;min-width:0;font-weight:800;font-size:14px;line-height:1.25}
+.qr{display:flex;align-items:center;gap:3px;font-weight:800;font-size:13.5px;white-space:nowrap}
+.qr svg,.qclaim svg{width:16px;height:16px}
+.qf{display:flex;align-items:center;gap:8px;font-weight:800;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.qbar{flex:1;height:12px;border:2px solid var(--ink);border-radius:99px;background:var(--paper);overflow:hidden}
+.qbar i{display:block;height:100%;background:var(--leaf)}
+.btn.qclaim{width:100%;font-size:17px;padding:5px 8px}
+.qchest{display:flex;align-items:center;gap:8px;width:100%;border:2.5px dashed var(--ink);border-radius:13px;padding:6px 9px;font-weight:800;font-size:13.5px;background:#fff8d6;text-align:left}
+.qchest.claimed{opacity:.7}
+.qchest .qic{font-size:26px}
+.qct{flex:1;min-width:0;line-height:1.2}
+.qct small{display:flex;align-items:center;gap:3px;color:var(--muted);font-size:12px}
+.qct small svg{width:14px;height:14px}
+.qchest .btn.qclaim{width:auto;flex:none;padding:5px 12px}
+#questPop .intro-card>.btn{width:100%}
+#questToast{position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:9;max-width:calc(100% - 20px);background:var(--paper);border:2.5px solid var(--ink);border-radius:14px;box-shadow:0 3px 0 var(--ink);padding:5px 12px;font-weight:800;font-size:14px;text-align:center;pointer-events:none;transition:opacity .4s}
+#questToast.in{animation:emoIn .25s ease-out}
+#questToast.out{opacity:0}
+.oextra{display:flex;flex-direction:column;gap:6px}
+.oxq{margin:0;background:var(--okbg);border:2px solid var(--ink);border-radius:12px;padding:5px 10px;font-weight:800;font-size:13.5px;text-align:center}
+.oxrank{display:flex;flex-direction:column;align-items:center;gap:3px;background:#fff8d6;border:2.5px solid var(--ink);border-radius:12px;padding:7px 10px;text-align:center}
+.oxrank b{font-weight:800;font-size:15px}
+.oxrank small{font-weight:700;font-size:12.5px;color:var(--muted)}
+.oxrank .sbtn{flex:none;background:var(--sun);padding:6px 14px;font-size:15px;margin-top:2px}
+
+/* Classement de la carte du jour (js/ranking.js) */
+.drank{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.sbtn.drbtn{flex:none;background:var(--sun);padding:5px 9px;font-size:14px}
+.drtxt{font-weight:700;font-size:11.5px;color:var(--muted);line-height:1.2;min-width:0}
+.rktabs{width:100%}
+.rktabs .sbtn{font-size:14px;padding:6px 2px}
+.rktabs .sbtn.on{background:var(--sun)}
+.rklist{display:flex;flex-direction:column;gap:7px;width:100%;max-height:46vh;overflow-y:auto;text-align:left;padding:2px 4px}
+.rkrow{display:flex;align-items:center;gap:8px;min-width:0}
+.rkrow.me{background:#fff8d6;border-radius:12px;outline:2.5px solid var(--ink);padding:3px 6px}
+.rkrow.idle{opacity:.55}
+.rkn{width:28px;height:28px;flex:none;border-radius:50%;border:2.5px solid var(--ink);display:grid;place-items:center;font-weight:800;font-size:13px;background:var(--paper)}
+.rkn.g{background:#ffd23f}.rkn.s{background:#dfe3ea}.rkn.b{background:#e6a76b}
+.rksc{font-weight:800;font-size:13px;text-align:right;line-height:1.15;white-space:nowrap}
+.rksc small{display:block;color:var(--muted);font-size:11px}
+#rankPop .intro-card>.btn{width:100%}

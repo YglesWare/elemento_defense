@@ -146,6 +146,8 @@ function cloudSync(force) {
       const r = await Sync.run();
       if (r && r.pulled) cloudRehydrate();
       await cloudPushLog().catch(() => {});
+      if (typeof cloudPushErrors === 'function') await cloudPushErrors().catch(() => {});
+      if (typeof cloudPushDaily === 'function') await cloudPushDaily().catch(() => {});
       CLOUD.lastSync = Date.now(); CLOUD.state = 'ok'; CLOUD.err = '';
     } catch (e) { CLOUD.state = 'err'; CLOUD.err = (e && e.message) || String(e); }
     finally { CLOUD.syncing = null; cloudPaint(); }

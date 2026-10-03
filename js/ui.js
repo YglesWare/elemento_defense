@@ -351,6 +351,7 @@ function showOver(win, best, award, bank, quit, lostShards) {
   if (p.win) bits.push(T('Victoire +') + p.win);
   if (a.mult > 1) bits.push('Terrain ×' + fr(a.mult));
   $('#oShop').classList.toggle('ping', canBuyAnything());
+  if (typeof overExtra === 'function') overExtra();
   $('#oGainDetail').textContent = (quit ? T('Abandon : ') + (lostShards ? (IS_EN ? lostShards + ' shard' + (lostShards > 1 ? 's' : '') + ' earned during the game ' + (lostShards > 1 ? 'are' : 'is') + ' taken back' : lostShards + ' éclat' + (lostShards > 1 ? 's' : '') + ' gagné' + (lostShards > 1 ? 's' : '') + ' pendant la partie ' + (lostShards > 1 ? 'sont repris' : 'est repris')) : T('aucun éclat repris')) : bits.join(' · ')) + T('. Tu as maintenant ') + meta.shards + T(' éclats.');
   show('over');
 }
@@ -625,6 +626,7 @@ function dailyCard() {
   MAPS[RI] = map; drawMapMini(c, RI, 140, 90); MAPS[RI] = keep;
   const open = () => { Snd.init(); playDaily(); };
   d.querySelector('button').addEventListener('click', open); cv2.addEventListener('click', open);
+  if (typeof rankCard === 'function') rankCard(d, r.daily);
   return d;
 }
 function randomCard() {
@@ -773,6 +775,7 @@ function doFuse(src, dst, k) {
   G.fx.push({ kind: 'ring', gx: dst.x, gy: dst.y, r0: 0.2, r1: 2.2, t: 0, dur: 0.6, color: '#ff6ad5' });
   ono('FUSION !', dst.x, dst.y, '#ff6ad5', 0.8, 0, 1.1);
   if (typeof trophy === 'function' && !G.coopGuest) trophy('first_fusion');
+  if (typeof questEvent === 'function') questEvent('fusion');
   Snd.play('win');
   selectTower(nt);
   banner(F.name.toUpperCase(), F.elem);

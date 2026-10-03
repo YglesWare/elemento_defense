@@ -6,6 +6,11 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  52: [
+    ['🎯', 'Trois défis chaque jour, à retrouver sur l’accueil : ils remplissent ta cagnotte d’or, et un coffre bonus t’attend si tu les réussis tous.'],
+    ['🏆', 'Carte du jour : compare ton score avec celui de tes amis grâce au classement du jour.'],
+    ['🛠️', 'Le jeu nous signale tout seul ses petits bugs, pour qu’on les corrige plus vite.'],
+  ],
   51: [
     ['✨', 'Yglou s’invite sur les boutons Amis et Émoticônes.'],
     ['🆕', 'Cette fenêtre ! Après chaque mise à jour, Yglou te montre ce qui a changé.'],

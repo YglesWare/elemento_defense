@@ -27,6 +27,7 @@
     <canvas id="cv"></canvas>
     <div id="duelBar" hidden></div>
     <div id="emoFeed" aria-live="polite"></div>
+    <div id="questToast" role="status" hidden></div>
     <div id="emoPanel" hidden></div>
     <button id="bEmo" type="button" aria-label="Émoticônes" hidden><canvas id="bEmoCv" aria-hidden="true"></canvas></button>
     <div id="radial" hidden><button type="button" class="rb fuse" id="rFuse" aria-label="Fusionner"><canvas></canvas><span class="rc"></span></button><button type="button" class="rb sel" id="rSel" aria-label="Sélectionner cette tour"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="#2a1b3d" stroke-width="2.6"/><circle cx="12" cy="12" r="3" fill="#2a1b3d"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4" stroke="#2a1b3d" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>
@@ -67,6 +68,7 @@
     <div class="logo"><span class="l1">ÉLÉMENTO</span><span class="l2">DEFENSE</span></div>
     <div id="tShow"></div>
     <div class="bubble">Six gardiens élémentaires contre une armée de slimes. Protège la petite maison !</div>
+    <button class="btn alt questbtn" id="tQuests" type="button" hidden>🎯 Défis du jour · <span id="tqN">0/3</span><b class="frbadge" id="tqBadge" hidden></b></button>
     <button class="btn" id="tPlay" type="button">Jouer !</button>
     <button class="btn mpbtn" id="tMulti" type="button">Multijoueur · 2 à 4 joueurs</button>
     <button class="btn green" id="tContinue" type="button" hidden>Continuer</button>
@@ -209,6 +211,7 @@
         <div><b id="oBest">0</b><span>Record</span></div>
       </div>
       <div class="gain"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l7 7-7 13L5 9z" fill="#c59bff" stroke="#2a1b3d" stroke-width="2.2" stroke-linejoin="round"/><path d="M5 9h14M12 2L9 9l3 13 3-13z" fill="none" stroke="#2a1b3d" stroke-width="1.3" stroke-linejoin="round"/></svg><b id="oShards">+0</b><span>éclats gagnés dans la partie</span></div>
+      <div class="oextra" id="oExtra" hidden></div>
       <p class="fine" id="oGainDetail"></p>
       <div class="gain bank"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#ffd23f" stroke="#2a1b3d" stroke-width="2.2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#e0a800" stroke-width="2"/></svg><b id="oBank">+0</b><span>or dans la cagnotte</span></div>
       <p class="fine" id="oBankDetail"></p>
@@ -432,6 +435,27 @@
     <button class="btn" id="newsOk" type="button">Super !</button>
   </div>
 </div>
+<!-- Défis du jour (js/quests.js) -->
+<div class="intro" id="questPop" role="dialog" aria-modal="true" aria-labelledby="qTitle" hidden>
+  <div class="intro-card">
+    <h2 id="qTitle">Défis du jour</h2>
+    <div class="qlist" id="qList"></div>
+    <div class="qchest" id="qChest"></div>
+    <p class="fine" id="qLeft"></p>
+    <button class="btn alt" id="qClose" type="button">Fermer</button>
+  </div>
+</div>
+<!-- Classement de la carte du jour (js/ranking.js) -->
+<div class="intro" id="rankPop" role="dialog" aria-modal="true" aria-labelledby="rkTitle" hidden>
+  <div class="intro-card">
+    <h2 id="rkTitle">Classement du jour</h2>
+    <p class="fine" id="rkDate"></p>
+    <div class="mp-seg rktabs" id="rkTabs"></div>
+    <div class="rklist" id="rkList"></div>
+    <button class="btn" id="rkPlay" type="button">Jouer la carte du jour</button>
+    <button class="btn alt" id="rkClose" type="button">Fermer</button>
+  </div>
+</div>
 <!-- Mon QR code ami -->
 <div class="intro" id="frQr" role="dialog" aria-modal="true" aria-labelledby="fqTitle" hidden>
   <div class="intro-card">
@@ -485,4 +509,4 @@
 </div>
 <!-- Les données du joueur (IndexedDB) sont chargées d'abord, puis les scripts du jeu, dans cet ordre -->
 <script src="js/storage.js"></script>
-<script>store.boot(['js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bonus.js', 'js/trophies.js', 'js/actions.js', 'js/vendor/supabase.js', 'js/cloud.js', 'js/parents.js', 'js/friends.js', 'js/online.js', 'js/emotes.js', 'js/news.js']);</script>
+<script>store.boot(['js/errors.js', 'js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bonus.js', 'js/trophies.js', 'js/actions.js', 'js/vendor/supabase.js', 'js/cloud.js', 'js/parents.js', 'js/friends.js', 'js/online.js', 'js/emotes.js', 'js/news.js', 'js/quests.js', 'js/ranking.js']);</script>

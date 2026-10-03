@@ -193,6 +193,7 @@ function recordBest() {
     if (G.wave > cur.wave || (G.wave === cur.wave && G.score > cur.score)) { cur.wave = G.wave; cur.score = G.score; }
     if (G.won) cur.won = true;
     day[G.diff] = cur; store.set(DAILY_KEY, all);
+    if (typeof dailyQueue === 'function') dailyQueue(MAPS[G.map].daily, G.diff, cur);
     if (typeof trophyDaily === 'function') trophyDaily();
     return cur;
   }
@@ -264,7 +265,7 @@ function addTower(type, q, r, lvl = 1, mode = 'premier', inv, br) {
 }
 function build(type, q, r) {
   const D = TOWERS[type], cost = costOf(type); G.gold -= cost;
-  const t = addTower(type, q, r); t.recoil = 1; t.builtAt = G.time; if (!G.demo) stats.towers++;
+  const t = addTower(type, q, r); t.recoil = 1; t.builtAt = G.time; if (!G.demo) { stats.towers++; if (typeof questEvent === 'function') questEvent('tower'); }
   burst(t.x, t.y, 0.1, 12, ['#ffffff', '#f1eafa', D.color], 2.2, 0.09, 3, 0.5, 'star');
   ono('POP!', t.x, t.y, '#fff', 0.45, 0.1, 0.9);
   Snd.play('build'); G.ghost = null;
@@ -474,7 +475,7 @@ function waveDone() {
   const aw = awardShards();
   hint(T('Vague ') + G.wave + ' : +' + bonus + T(' or') + (aw.gain ? ', +' + aw.gain + T(' éclats') : '') + (canBuyAnything() ? T(' · achat possible dans l’Atelier') : ''), 3200);
   Snd.play('clear');
-  saveCheckpoint(); recordBest(); stats.waves++; saveStats();
+  saveCheckpoint(); recordBest(); stats.waves++; saveStats(); if (typeof questEvent === 'function') questEvent('wave');
   if (typeof trophy === 'function') { if (G.diff === 'infini' && G.wave >= 30) trophy('inf_30'); if (G.diff === 'infini' && G.wave >= 50) trophy('inf_50'); trophyScan(); }
   if (G.wave >= G.maxw && !G.endless) { setTimeout(() => victory(), 700); return; }
   if (opts.auto) G.autoT = 3;
@@ -499,6 +500,7 @@ function victory() {
   G.paused = true; G.won = true; G.endless = true; Snd.play('win');
   const best = recordBest(), award = awardShards(), bank = bankGold(ECO.bankWin); G.shardsWon = G.shardsPaid; saveCheckpoint(); stats.wins++; saveStats();
   if (typeof logGame === 'function') logGame('won', award);
+  if (typeof questEvent === 'function') { const d = { diff: G.diff, daily: !!MAPS[G.map].daily, types: [...new Set(G.towers.map(t => t.type))], lostLife: !!G.lostLife }; questEvent('win', d); questEvent('end', d); }
   if (typeof trophyWin === 'function') trophyWin();
   showOver(true, best, award, bank);
 }
@@ -508,6 +510,7 @@ function gameOver() {
   G.over = true; G.lives = 0; Snd.play('ko');
   const best = recordBest(), award = awardShards(), bank = bankGold(ECO.bankKo); store.del(SAVE); stats.ko++; saveStats();
   if (typeof logGame === 'function') logGame('ko', award);
+  if (typeof questEvent === 'function') questEvent('end', { daily: !!MAPS[G.map].daily });
   setTimeout(() => { if (G && G.over) showOver(false, best, award, bank); }, 1300);
 }
 
@@ -635,7 +638,7 @@ function reachBase(e) {
   if (G.demo || G.coopGuest) { e.dead = true; return; }
   const B = PP(e).base;
   if (!e.lifeCost) { e.dead = true; ono(T('FILÉE !'), B[0], B[1], '#ffd23f', 0.5, 0.2, 1.1); return; }
-  e.dead = true; G.lives -= e.lifeCost; G.shake = Math.max(G.shake, 0.45); G.hurtT = 0.5; G.baseHit = 0.4; G.hitBase = B;
+  e.dead = true; G.lives -= e.lifeCost; G.lostLife = true; G.shake = Math.max(G.shake, 0.45); G.hurtT = 0.5; G.baseHit = 0.4; G.hitBase = B;
   ono(e.lifeCost > 1 ? '-' + e.lifeCost + ' ♥' : T('AÏE!'), B[0], B[1], '#ff4f6e', 0.6, 0.2, 1.1);
   Snd.play('hurt');
   if (G.lives <= 0) {
@@ -675,7 +678,7 @@ function hurt(e, dmg, elem, s) {
 function kill(e) {
   if (e.dead || G.coopGuest) return;
   e.dead = true;
-  const D = ETYPES[e.type]; if (!G.demo) { stats.kills++; if (D.boss) { stats.bosses++; if (typeof trophyBoss === 'function') trophyBoss(); } }
+  const D = ETYPES[e.type]; if (!G.demo) { stats.kills++; if (typeof questEvent === 'function') questEvent('kill'); if (D.boss) { stats.bosses++; if (typeof trophyBoss === 'function') trophyBoss(); if (typeof questEvent === 'function') questEvent('boss'); } }
   const up = (e.flying ? FLY : 0) + 0.25;
   const rw = G.coop ? coopLoot(D.reward * (1 + G.wave * 0.01)) : Math.round(D.reward * (1 + G.wave * 0.01) * (1 + 0.06 * M('loot')));
   if (!G.coop) G.gold += rw; G.score += rw * 10;
