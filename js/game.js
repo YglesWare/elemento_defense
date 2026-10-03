@@ -237,10 +237,12 @@ function towerStats0(t) {
   let a = 0;
   if (T && !T.block) { st.terr = T; st.aff = affinity(t.type, T); a += st.aff; if (T.range) st.range += T.range; }
   if (B) { st.bio = affinity(t.type, B); a += st.bio; }
-  const Wt = G && !G.demo && G.weather && G.weather !== 'clear' ? WEATHERS[G.weather] : null;
+  const Wt = G && !G.demo && G.weather && G.weather !== 'clear' && !(G.weather === 'fog' && G.fogClear > 0) ? WEATHERS[G.weather] : null;
   if (Wt) { st.wea = affinity(t.type, Wt); a += st.wea; if (Wt.range) st.range = Math.max(1, st.range + Wt.range); }
   a = clamp(a, -0.6, 0.6); st.affTot = a;
   if (a) { const m = Math.max(0.1, 1 + a); st.dmg *= m; for (const k of ['burn', 'lava', 'poison']) if (st[k]) st[k] *= m; }
+  // Tours réchauffées (frotter l'écran pendant un blizzard) : cadence +20 %
+  if (G && G.warmT > 0) st.rate *= 1.2;
   return st;
 }
 function addTower(type, q, r, lvl = 1, mode = 'premier', inv, br) {
@@ -360,8 +362,9 @@ function weatherTick(dt) {
     if (k === 'rain' || k === 'thunder' || k === 'shower') { p.y += 1.1 * dt * p.s; p.x += 0.12 * dt; }
     else if (k === 'petals') { p.y += 0.1 * dt * p.s; p.x += 0.06 * dt + Math.sin(G.time * 2 + p.s * 7) * 0.04 * dt; }
     else if (k === 'blizzard') { p.y += 0.12 * dt * p.s; p.x += Math.sin(G.time * 1.5 + p.s * 9) * 0.03 * dt + 0.03 * dt; }
-    else if (k === 'storm') { p.x += 1.4 * dt * p.s; p.y += 0.05 * dt; }
+    else if (k === 'storm') { const w = G.windS; if (w && w.m > 0.05) { const v = (0.4 + 1.4 * w.m) * dt * p.s; p.x += w.x * v; p.y += w.y * v; } else { p.x += 1.4 * dt * p.s; p.y += 0.05 * dt; } }
     if (p.y > 1.05) { p.y = -0.05; p.x = Math.random(); } if (p.x > 1.05) { p.x = -0.05; p.y = Math.random(); }
+    if (p.y < -0.05) { p.y = 1.05; p.x = Math.random(); } if (p.x < -0.05) { p.x = 1.05; p.y = Math.random(); }
   }
   if (G.flashT > 0) G.flashT -= dt;
   if (!k || k === 'clear') return;
@@ -416,9 +419,10 @@ function drawWeather(c) {
       c.quadraticCurveTo(bx + 7, by - 2, bx + 14, by - f); c.quadraticCurveTo(bx + 7, by - 6 - f, bx, by); c.fillStyle = 'rgba(42,27,61,.75)'; c.fill();
     }
   }
-  if (k === 'fog') {
+  if (k === 'fog' && (G.fogA ?? 1) > 0.01) {
+    c.globalAlpha = G.fogA ?? 1;
     const g = c.createLinearGradient(0, 0, 0, L.h); g.addColorStop(0, 'rgba(245,248,255,.42)'); g.addColorStop(0.5, 'rgba(245,248,255,.22)'); g.addColorStop(1, 'rgba(245,248,255,.4)');
-    c.fillStyle = g; c.fillRect(0, 0, L.w, L.h);
+    c.fillStyle = g; c.fillRect(0, 0, L.w, L.h); c.globalAlpha = 1;
   }
   c.lineCap = 'round';
   for (const p of G.wp || []) {
@@ -426,7 +430,7 @@ function drawWeather(c) {
     if (k === 'petals') { c.save(); c.translate(x, y); c.rotate(G.time * 2 + p.s * 5); c.beginPath(); c.ellipse(0, 0, 4 * p.s, 2.4 * p.s, 0, 0, TAU); c.fillStyle = 'rgba(255,170,205,.85)'; c.fill(); c.restore(); }
     else if (k === 'rain' || k === 'thunder' || k === 'shower') { c.beginPath(); c.moveTo(x, y); c.lineTo(x - 3, y - 12 * p.s); c.lineWidth = 1.6; c.strokeStyle = 'rgba(200,230,255,.6)'; c.stroke(); }
     else if (k === 'blizzard') { c.beginPath(); c.arc(x, y, 1.6 + p.s, 0, TAU); c.fillStyle = 'rgba(255,255,255,.85)'; c.fill(); }
-    else if (k === 'storm') { c.beginPath(); c.moveTo(x, y); c.lineTo(x - 40 * p.s, y - 2); c.lineWidth = 2; c.strokeStyle = 'rgba(255,255,255,.4)'; c.stroke(); }
+    else if (k === 'storm') { const w = G.windS && G.windS.m > 0.05 ? G.windS : { x: 1, y: 0.05, m: 0 }, l = 40 * p.s * (0.7 + w.m); c.beginPath(); c.moveTo(x, y); c.lineTo(x - w.x * l, y - w.y * l); c.lineWidth = 2; c.strokeStyle = 'rgba(255,255,255,' + (0.4 + w.m * 0.3) + ')'; c.stroke(); }
   }
   if (G.flashT > 0) { c.fillStyle = 'rgba(255,255,255,' + Math.min(0.5, G.flashT * 3) + ')'; c.fillRect(0, 0, L.w, L.h); }
   c.restore();
@@ -702,7 +706,7 @@ function updateTower(t, dt) {
   }
   if (t.type === 'plasma') { beamTower(t, dt); return; }
   t.cd -= dt; if (t.cd > 0) return;
-  const s = t.s, cx = t.x, cy = t.y, R2 = s.range * s.range, list = [];
+  const s = t.s, [cx, cy] = windCenter(t), R2 = s.range * s.range, list = [];
   for (const e of G.enemies) { if (e.dead || e.ghost > 0 || (!s.air && e.flying)) continue; const dx = e.x - cx, dy = e.y - cy; if (dx * dx + dy * dy <= R2) list.push(e); }
   if (!list.length) { t.cd = 0.08; return; }
   t.cd = 1 / s.rate; t.recoil = 1;
@@ -752,7 +756,7 @@ function geyserBlast(s, tg) {
   if (Math.random() < 0.3) ono('PSHHH!', x, y, '#dff6ff', 0.5, 0.4, 1.0);
 }
 function beamTower(t, dt) {
-  const s = t.s, cx = t.x, cy = t.y, R2 = s.range * s.range;
+  const s = t.s, [cx, cy] = windCenter(t), R2 = s.range * s.range;
   const ok = e => e && !e.dead && !(e.ghost > 0) && (s.air || !e.flying) && (e.x - cx) ** 2 + (e.y - cy) ** 2 <= R2;
   if (!ok(t.beam)) {
     t.beam = null; t.beamT = 0; let bv = -Infinity;
@@ -936,6 +940,12 @@ function update(dt) {
 }
 
 // ================= Rendu =================
+// Centre de la zone de tir d'une tour : décalé dans le sens du vent pendant une tempête (G.windW : vent en coordonnées du monde)
+function windCenter(t) {
+  const w = G && G.weather === 'storm' ? G.windW : null;
+  if (!w || !(w.m > 0.05)) return [t.x, t.y];
+  const k = Math.min(0.75, t.s.range * 0.3) * w.m; return [t.x + w.x * k, t.y + w.y * k];
+}
 function rangeCircle(c, gx, gy, R, ok, T) {
   const [x, y] = toScreen(gx, gy);
   c.beginPath(); c.arc(x, y, R * L.cs / L.cw, 0, TAU);
@@ -982,7 +992,7 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
     for (let i = 0; i < 3; i++) { const bt = (TM * 1.3 + i * 0.33) % 1; c.beginPath(); c.arc(x + Math.cos(i * 2.1) * R * 0.5, y + Math.sin(i * 2.1) * R * 0.4, cs * 0.06 * bt + 1, 0, TAU); c.lineWidth = 1.5; c.strokeStyle = 'rgba(255,255,255,.8)'; c.stroke(); }
     c.restore();
   }
-  if (G.selTower && !G.drag) { const t = G.selTower; rangeCircle(c, t.x, t.y, t.s.range, true, TM); }
+  if (G.selTower && !G.drag) { const t = G.selTower, [wx, wy] = windCenter(t); rangeCircle(c, wx, wy, t.s.range, true, TM); }
   const ft = G.drag ? G.drag.t : G.selTower;
   if (ft) for (const o of fusionPartners(ft)) {
     const [x, y] = toScreen(o.o.x, o.o.y), hov = G.drag && G.drag.over === o.o;

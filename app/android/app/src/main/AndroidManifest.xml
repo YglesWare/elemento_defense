@@ -42,6 +42,9 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Caméra : lire les QR codes de connexion en multijoueur -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Micro : souffler sur le téléphone pour chasser la brume (seulement si le joueur l'accepte) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <!-- Découverte des parties sur le Wi-Fi (annonces diffusées par l'hôte) -->
     <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />

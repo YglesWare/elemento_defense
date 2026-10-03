@@ -5,6 +5,8 @@
 const TROPHY_KEY = 'elemento.trophies';
 // Secrets des cartes : la décoration à toucher 5 fois sur chaque carte
 const MAP_EGGS = { prairie: 'champi', plage: 'etoile', marais: 'buisson', foret: 'fleur', desert: 'roche', ile: 'coquillage', canyon: 'roche', volcan: 'cristal', pic: 'sapinet', toundra: 'flocon' };
+// Indices des secrets de carte : vagues exprès
+const MAP_HINTS = { prairie: T('Un champignon de la Prairie est un peu magique.'), plage: T('Une étoile est tombée sur la plage.'), marais: T('Un buisson du marais frémit.'), foret: T('Une fleur de la forêt aime les caresses.'), desert: T('Un rocher du désert sonne creux.'), ile: T('Un coquillage de l’île chante.'), canyon: T('Une pierre du canyon cache quelque chose.'), volcan: T('Un cristal du volcan scintille.'), pic: T('Un petit sapin du Pic a froid.'), toundra: T('Un flocon de la toundra est unique.') };
 const TROPHIES = [
   { id: 'first_win', icon: '🏁', name: T('Première victoire'), desc: T('Gagner une partie solo.'), r: 2 },
   { id: 'win_moyen', icon: '🥈', name: T('Ça se corse'), desc: T('Gagner une partie en Moyen.'), r: 5 },
@@ -31,16 +33,21 @@ const TROPHIES = [
   { id: 'time_5h', icon: '⏳', name: T('Passionné'), desc: T('Jouer 5 heures.'), r: 8 },
   { id: 'rich', icon: '🐷', name: T('Tirelire pleine'), desc: T('Avoir 5 000 or dans la cagnotte.'), r: 5 },
   // Easter eggs
-  { id: 'egg_yglou', icon: '🦅', name: T('Kiiaaa !'), desc: T('Toucher Yglou 10 fois sur l’accueil.'), r: 5, hidden: true },
-  { id: 'egg_house', icon: '🏠', name: T('Maison chatouilleuse'), desc: T('Toucher 10 fois la maison pendant une partie.'), r: 5, hidden: true },
-  { id: 'egg_logo', icon: '✨', name: T('Logo en folie'), desc: T('Toucher 7 fois le logo de l’accueil.'), r: 5, hidden: true },
-  { id: 'egg_ygles', icon: '🧑‍🎨', name: T('Bonjour, créateur !'), desc: T('Prendre « Ygles » comme pseudo.'), r: 5, hidden: true },
-  { id: 'egg_night', icon: '🌙', name: T('Oiseau de nuit'), desc: T('Lancer une partie entre minuit et 5 h.'), r: 5, hidden: true },
-  { id: 'egg_close', icon: '😅', name: T('Sur le fil'), desc: T('Gagner une partie avec une seule vie.'), r: 5, hidden: true },
-  { id: 'egg_regret', icon: '🙃', name: T('Finalement non'), desc: T('Revendre une tour juste après l’avoir posée.'), r: 5, hidden: true },
-  { id: 'egg_fire', icon: '🔥', name: T('Tout feu tout flamme'), desc: T('Avoir 10 ennemis en feu en même temps.'), r: 5, hidden: true },
-  { id: 'egg_konami', icon: '🎮', name: T('Code secret'), desc: T('Le code Konami : au clavier, ou en glissant le doigt sur l’accueil (puis B à gauche, A à droite).'), r: 5, hidden: true },
-  ...Object.entries(MAP_EGGS).map(([m, d]) => ({ id: 'map_' + m, icon: '🔍', name: T('Secret de la carte ') + (MAPS.find(x => x.id === m) || {}).name, desc: T('Toucher 5 fois une décoration cachée de la carte.'), r: 5, hidden: true, map: m, deco: d })),
+  { id: 'egg_yglou', icon: '🦅', name: T('Kiiaaa !'), desc: T('Toucher Yglou 10 fois sur l’accueil.'), r: 5, hidden: true, hint: T('Yglou adore qu’on s’occupe de lui…') },
+  { id: 'egg_house', icon: '🏠', name: T('Maison chatouilleuse'), desc: T('Toucher 10 fois la maison pendant une partie.'), r: 5, hidden: true, hint: T('Même une maison peut être chatouilleuse.') },
+  { id: 'egg_logo', icon: '✨', name: T('Logo en folie'), desc: T('Toucher 7 fois le logo de l’accueil.'), r: 5, hidden: true, hint: T('Le titre a du ressort.') },
+  { id: 'egg_ygles', icon: '🧑‍🎨', name: T('Bonjour, créateur !'), desc: T('Prendre « Ygles » comme pseudo.'), r: 5, hidden: true, hint: T('Le créateur a un nom… et un bec.') },
+  { id: 'egg_night', icon: '🌙', name: T('Oiseau de nuit'), desc: T('Lancer une partie entre minuit et 5 h.'), r: 5, hidden: true, hint: T('Les hiboux jouent tard.') },
+  { id: 'egg_close', icon: '😅', name: T('Sur le fil'), desc: T('Gagner une partie avec une seule vie.'), r: 5, hidden: true, hint: T('Gagner de justesse a du charme.') },
+  { id: 'egg_regret', icon: '🙃', name: T('Finalement non'), desc: T('Revendre une tour juste après l’avoir posée.'), r: 5, hidden: true, hint: T('Tout le monde peut changer d’avis.') },
+  { id: 'egg_fire', icon: '🔥', name: T('Tout feu tout flamme'), desc: T('Avoir 10 ennemis en feu en même temps.'), r: 5, hidden: true, hint: T('Que ça brûle de partout !') },
+  { id: 'egg_konami', icon: '🎮', name: T('Code secret'), desc: T('Le code Konami : au clavier, ou en glissant le doigt sur l’accueil (puis B à gauche, A à droite).'), r: 5, hidden: true, hint: T('Haut, haut… un vieux code de joueur.') },
+  { id: 'egg_fog_swipe', icon: '🌫️', name: T('Coup de balai'), desc: T('Chasser le brouillard en le balayant du doigt.'), r: 5, hidden: true, hint: T('La brume n’aime pas qu’on la dérange.') },
+  { id: 'egg_blow', icon: '🌬️', name: T('Grand souffle'), desc: T('Souffler sur le téléphone pour chasser le brouillard.'), r: 5, hidden: true, hint: T('Un petit souffle, et pfiou !') },
+  { id: 'egg_tilt', icon: '🌪️', name: T('Maître du vent'), desc: T('Pencher le téléphone pendant une tempête pour orienter le vent.'), r: 5, hidden: true, hint: T('Quand la tempête souffle, penche-toi.') },
+  { id: 'egg_shake', icon: '🌋', name: T('Tremblement de terre'), desc: T('Secouer le téléphone pendant une vague.'), r: 5, hidden: true, hint: T('Secoue-toi, la terre tremblera.') },
+  { id: 'egg_rub', icon: '🔥', name: T('Chauffe, Marcel !'), desc: T('Frotter l’écran pendant un blizzard pour réchauffer les tours.'), r: 5, hidden: true, hint: T('Le froid ? Frotte-toi les mains !') },
+  ...Object.entries(MAP_EGGS).map(([m, d]) => ({ id: 'map_' + m, icon: '🔍', name: T('Secret de la carte ') + (MAPS.find(x => x.id === m) || {}).name, desc: T('Toucher 5 fois une décoration cachée de la carte.'), r: 5, hidden: true, hint: MAP_HINTS[m], map: m, deco: d })),
 ];
 const trophyData = () => store.get(TROPHY_KEY) || {};
 const trophyHas = id => !!trophyData()[id];
@@ -162,7 +169,7 @@ function openTrophies() {
   $('#trCount').textContent = got + ' / ' + TROPHIES.length;
   list.innerHTML = TROPHIES.map(t => {
     const ok = !!data[t.id], secret = t.hidden && !ok;
-    return '<li class="tr' + (ok ? ' ok' : '') + (secret ? ' secret' : '') + '"><span class="tr-ico">' + (secret ? '❔' : t.icon) + '</span><span class="tr-txt"><b>' + (secret ? '???' : t.name) + '</b><span>' + (secret ? T('Trophée caché : à toi de le trouver !') : t.desc) + '</span></span><span class="tr-r">' + (ok ? '✓' : GEM + t.r) + '</span></li>';
+    return '<li class="tr' + (ok ? ' ok' : '') + (secret ? ' secret' : '') + '"><span class="tr-ico">' + (secret ? '❔' : t.icon) + '</span><span class="tr-txt"><b>' + (secret ? '???' : t.name) + '</b><span>' + (secret ? '💡 ' + (t.hint || T('Trophée caché : à toi de le trouver !')) : t.desc) + '</span></span><span class="tr-r">' + (ok ? '✓' : GEM + t.r) + '</span></li>';
   }).join('');
   show('trophies'); screens.trophies.scrollTop = 0;
 }

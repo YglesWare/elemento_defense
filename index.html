@@ -334,6 +334,16 @@
     <button class="btn stickyb" id="trBack" type="button">Retour</button>
   </div>
 </section>
+<!-- Proposition du micro, après avoir chassé la brume avec les doigts (js/actions.js) -->
+<div class="intro" id="micAsk" role="dialog" aria-modal="true" aria-labelledby="micTitle" hidden>
+  <div class="intro-card">
+    <canvas id="micYg" aria-hidden="true" style="width:72px;height:72px"></canvas>
+    <h2 id="micTitle">Bien vu !</h2>
+    <p>Tu as chassé la brume en la balayant. Tu peux aussi <b>souffler sur ton téléphone</b> pour la dissiper !</p>
+    <p class="intro-tip">Pour ça, le jeu a besoin du micro. Il ne s’en sert que pendant le brouillard, pour sentir ton souffle : rien n’est enregistré ni envoyé.</p>
+    <div class="intro-foot"><button class="btn alt" id="micNo" type="button">Non merci</button><button class="btn" id="micYes" type="button">Activer le micro</button></div>
+  </div>
+</div>
 <div class="trophytoast" id="trophyToast" role="status" aria-live="polite" hidden></div>
 <!-- Fenêtre d'explication : nouveau monstre, première tour attaquée (js/intro.js) -->
 <div class="intro" id="intro" role="dialog" aria-modal="true" aria-labelledby="introTitle" hidden>
@@ -348,4 +358,4 @@
 </div>
 <!-- Les données du joueur (IndexedDB) sont chargées d'abord, puis les scripts du jeu, dans cet ordre -->
 <script src="js/storage.js"></script>
-<script>store.boot(['js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bonus.js', 'js/trophies.js']);</script>
+<script>store.boot(['js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bonus.js', 'js/trophies.js', 'js/actions.js']);</script>
