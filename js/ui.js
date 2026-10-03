@@ -6,7 +6,7 @@ const GEM = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l7 7-7 13
 const LOCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="11" rx="3" fill="#ffd23f" stroke="#2a1b3d" stroke-width="2.2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke="#2a1b3d" stroke-width="2.4"/><circle cx="12" cy="16" r="1.6" fill="#2a1b3d"/></svg>';
 const screens = { profile: $('#sProfile'), title: $('#sTitle'), help: $('#sHelp'), pause: $('#sPause'), over: $('#sOver'), shop: $('#sShop'), tuto: $('#sTuto'), tree: $('#sTree'), maps: $('#sMaps'), diff: $('#sDiff') };
 let curScreen = 'title', helpFrom = 'title', shopFrom = 'title', hudCache = {};
-function show(name) { for (const k in screens) screens[k].hidden = k !== name; curScreen = name; if (name === 'title') { refreshTitle(); if (typeof trophyScan === 'function') { trophyPay(); trophyScan(); } } }
+function show(name) { for (const k in screens) screens[k].hidden = k !== name; curScreen = name; if (name === 'title') { refreshTitle(); if (typeof trophyScan === 'function') { trophyPay(); trophyScan(); } if (typeof cloudSync === 'function') cloudSync(); } }
 function setText(el, key, v) { if (hudCache[key] !== v) { hudCache[key] = v; el.textContent = v; } }
 function setHTML(el, key, v) { if (hudCache[key] !== v) { hudCache[key] = v; el.innerHTML = v; } }
 
@@ -299,6 +299,7 @@ function cashOut() {
   if (!G || G.over) return;
   G.over = true; G.paused = true; Snd.play('clear');
   const lost = revokeShards(), bank = bankGold(0), best = ((store.get(BEST2) || {})[recId(MAPS[G.map])] || {})[G.diff]; store.del(SAVE); stats.quits++; saveStats();
+  if (typeof logGame === 'function') logGame('quit');
   showOver(false, best, null, bank, true, lost);
 }
 $('#pCash').addEventListener('click', () => { if (!G || G.over) return; if (!cashArm) { cashArm = true; refreshCash(); return; } cashArm = false; cashOut(); });
@@ -491,6 +492,8 @@ function renderShop(boughtId) {
       box.appendChild(d);
       const c = prepMini(d.querySelector('canvas'), 44, 48);
       if (u.tower) drawTower(c, u.tower, 22, 27, 37, l ? Math.min(3, Math.ceil(l / u.k * 3 / 5)) : 1, 0.5, 0, 0.3, 0, false);
+      // Longue-vue : un cercle de portée en pointillés autour de la tour
+      if (u.range) { c.save(); c.setLineDash([3, 3]); c.lineWidth = 1.5; c.strokeStyle = TOWERS[u.tower].color; c.globalAlpha = 0.9; c.beginPath(); c.arc(22, 26, 19 + l / u.max * 2, 0, Math.PI * 2); c.stroke(); c.restore(); }
       else drawUpIcon(c, u.id, 22, 25, 40);
       d.querySelector('button').addEventListener('click', () => buyUp(u));
     }
@@ -960,7 +963,7 @@ function gotoTuto(i) {
     drawEmblem(ic, 'sol', 16, 44, 13); drawEmblem(ic, 'air', 32, 24, 13); drawEmblem(ic, 'boss', 48, 44, 13);
   } else if (pg.kind === 'terrain') {
     name = pg.title; tag = pg.tag; what = pg.html;
-    gb = gbox('good', T('Le terrain préféré de chaque tour'), [T('Braise : lave +40 %'), T('Ondine : eau +40 %'), T('Rocaille : roche +40 %'), T('Zéphyr : crête venteuse +40 %'), T('Voltie : cristaux +40 %'), T('Givrette : neige +40 %'), T('Colline : +0,6 de portée pour tous')]) + gbox('bad', T('Leurs pires terrains'), [T('Braise : eau et neige −40 %'), T('Ondine : sable −40 %, lave −50 %'), T('Rocaille : crête venteuse −40 %'), T('Zéphyr : cristaux −40 %'), T('Voltie : sable −40 %'), T('Givrette : sable −40 %, lave −50 %'), T('Obstacles : impossible de construire')]);
+    gb = gbox('good', T('Le terrain préféré de chaque tour'), [T('Braise : lave +40 %'), T('Ondine : eau +40 %'), T('Rocaille : roche +40 %'), T('Zéphyr : crête venteuse +40 %'), T('Voltie : cristaux +40 %'), T('Givrette : neige +40 %'), T('Colline : +0,4 de portée pour tous')]) + gbox('bad', T('Leurs pires terrains'), [T('Braise : eau et neige −40 %'), T('Ondine : sable −40 %, lave −50 %'), T('Rocaille : crête venteuse −40 %'), T('Zéphyr : cristaux −40 %'), T('Voltie : sable −40 %'), T('Givrette : sable −40 %, lave −50 %'), T('Obstacles : impossible de construire')]);
     [['L', 8, 8], ['W', 34, 8], ['V', 8, 34], ['K', 34, 34]].forEach(([k, x, y]) => { rr(ic, x, y, 22, 22, 5); fs(ic, TERRAINS[k].color, 2.5); });
   } else if (pg.kind === 'fusion') {
     name = pg.title; tag = pg.tag; what = pg.html;

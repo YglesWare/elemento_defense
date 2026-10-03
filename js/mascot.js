@@ -46,7 +46,7 @@ $('#tYglou').addEventListener('click', () => {
 // ---------- Profil : pseudo, son, tutoriel et aide ----------
 function refreshProfileChip() { const n = (store.get('elemento.pseudo') || '').trim(); $('#tProfName').textContent = n || T('Profil'); }
 function openProfile() {
-  Snd.init(); show('profile'); screens.profile.scrollTop = 0; if (typeof refreshTrophyBtn === 'function') refreshTrophyBtn();
+  Snd.init(); show('profile'); screens.profile.scrollTop = 0; if (typeof refreshTrophyBtn === 'function') refreshTrophyBtn(); if (typeof cloudPaint === 'function') cloudPaint();
   $('#prName').value = store.get('elemento.pseudo') || '';
 }
 // Page des stats (depuis le Profil) : une tuile par chiffre

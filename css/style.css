@@ -654,3 +654,14 @@ button:disabled{cursor:default}
 .st-ic{font-size:22px;line-height:1}
 .st b{font-family:var(--display);font-weight:400;font-size:26px;letter-spacing:.5px;line-height:1.1;font-variant-numeric:tabular-nums}
 .st span:last-child{font-size:13px;line-height:1.2;color:var(--muted)}
+/* Compte en ligne (Profil) */
+.cloudbox{display:flex;flex-direction:column;gap:6px;border:2.5px solid var(--ink);border-radius:14px;background:var(--mist);padding:10px 12px}
+.cloudwho{margin:0;font:800 16px/1.2 "Baloo 2",system-ui,sans-serif}
+.cloudbox .fine{margin:0}
+.linkbtn{background:none;border:0;padding:4px;font:700 13px "Baloo 2",system-ui,sans-serif;color:var(--muted);text-decoration:underline;cursor:pointer;align-self:center}
+
+.cloudid{opacity:.7;font-variant-numeric:tabular-nums}
+.ccards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%}
+.ccard{display:flex;flex-direction:column;gap:3px;padding:8px;border:2.5px solid var(--ink);border-radius:12px;background:var(--mist);text-align:left;font-size:13px;line-height:1.25;min-width:0}
+.ccard b{font-family:var(--display);font-weight:400;font-size:17px;letter-spacing:.3px}
+.ccard small{opacity:.7;margin-top:2px}

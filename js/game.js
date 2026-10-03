@@ -498,6 +498,7 @@ function victory() {
   if (G.coop) { coopEnd(true); return; }
   G.paused = true; G.won = true; G.endless = true; Snd.play('win');
   const best = recordBest(), award = awardShards(), bank = bankGold(ECO.bankWin); G.shardsWon = G.shardsPaid; saveCheckpoint(); stats.wins++; saveStats();
+  if (typeof logGame === 'function') logGame('won', award);
   if (typeof trophyWin === 'function') trophyWin();
   showOver(true, best, award, bank);
 }
@@ -506,6 +507,7 @@ function gameOver() {
   if (G.coop) { if (!G.coopGuest) coopEnd(false); return; }
   G.over = true; G.lives = 0; Snd.play('ko');
   const best = recordBest(), award = awardShards(), bank = bankGold(ECO.bankKo); store.del(SAVE); stats.ko++; saveStats();
+  if (typeof logGame === 'function') logGame('ko', award);
   setTimeout(() => { if (G && G.over) showOver(false, best, award, bank); }, 1300);
 }
 
@@ -1037,7 +1039,7 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
     const Tt = terrainAt(gc.c, gc.r);
     if (Tt) {
       const a = affinity(G.selType, Tt), [x, y] = cellXY(gc.c + 0.5, gc.r + 0.5);
-      const txt = Tt.block ? T('Obstacle : impossible de construire') : Tt.name + T(' : ') + (a ? fmtAff(a) + T(' de puissance') : Tt.range ? T('+0,6 de portée') : T('aucun effet')) + (a && Tt.range ? T(', +0,6 de portée') : '');
+      const txt = Tt.block ? T('Obstacle : impossible de construire') : Tt.name + T(' : ') + (a ? fmtAff(a) + T(' de puissance') : Tt.range ? T('+0,4 de portée') : T('aucun effet')) + (a && Tt.range ? T(', +0,4 de portée') : '');
       G.tpill = [txt, x, y - cs * 0.55, Tt.block || a < 0 ? '#ffe0e6' : a > 0 || Tt.range ? '#dcf7d6' : '#ffffff'];
     }
   }

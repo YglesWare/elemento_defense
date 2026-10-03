@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 48;
+const BUILD = 49;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -27,7 +27,7 @@ if (!meta.lv) meta.lv = {};
 // Améliorations de l'Atelier en petits paliers : k paliers par niveau d'origine (effet et prix divisés d'autant).
 // meta.lv garde le nombre de paliers achetés ; M(id) rend le niveau équivalent (fractionnaire) utilisé par le jeu.
 const UPK = { gold: 5, lives: 2, loot: 3, bonus: 4, cheap: 4, resell: 5, remparts: 4, bouclier: 3, paratonnerre: 5, talisman: 5, revive: 1 };
-const upK = id => UPK[id] || (id.startsWith('m_') ? 5 : 1);
+const upK = id => UPK[id] || (id.startsWith('m_') ? 5 : id.startsWith('p_') ? 2 : 1);
 const lvOf = (lv, id) => ((lv && lv[id]) || 0) / upK(id);
 // Progression d'avant le découpage : un niveau acheté vaut k paliers
 if ((meta.lvv || 1) < 2) { for (const id in meta.lv) meta.lv[id] *= upK(id); meta.lvv = 2; store.set('elemento.meta', meta); }
@@ -56,7 +56,7 @@ const bankShares = () => IS_EN ? pct(ECO.bankWin) + ' of the remaining gold if y
 // Si on change hp, bankWin ou bankKo, mettre à jour les textes des difficultés (DIFFS) et de l'aide (index.html).
 // mapHp / mapShards : PV des ennemis ×mapHp et éclats +mapShards à chaque carte suivante (cartes 1 à 10) ;
 // mapHpDiff : part de cette hausse de PV gardée selon la difficulté (en Difficile, les PV de base sont déjà très hauts)
-const ECO = Object.assign({ shards: 0.4, bankWin: 0.85, bankKo: 0.4, mapPrice: 1.1, atelier: 4.5, unlock: 2.5, mapHp: 1.1, mapShards: 0.15, mapHpDiff: { facile: 1, moyen: 0.75, difficile: 0.5 }, hp: { facile: 0.8, moyen: 1.3, difficile: 2.3 }, diffShards: { facile: 0.35 } },
+const ECO = Object.assign({ shards: 0.4, bankWin: 0.85, bankKo: 0.4, mapPrice: 1.1, atelier: 4.5, unlock: 2.5, mapHp: 1.1, mapShards: 0.15, mapHpDiff: { facile: 1, moyen: 0.75, difficile: 0.5 }, range: 0.8, hp: { facile: 0.8, moyen: 1.3, difficile: 2.3 }, diffShards: { facile: 0.35 } },
   // Outil d'équilibrage seulement : la page tools/balance.html essaie d'autres réglages dans une iframe
   (() => { try { return window.parent !== window && window.parent.BALANCE ? JSON.parse(new URLSearchParams(location.search).get('eco') || '{}') : {}; } catch (e) { return {}; } })());
 
@@ -313,7 +313,7 @@ const TERRAINS = {
   D: { name: T('Lanternes'), color: '#e8443a', color2: '#df3c33', season: 'nouvelan', mods: { feu: 0.3, foudre: 0.15, eau: -0.2 } },
   T: { name: T('Jardin de thé'), color: '#7fbf5a', color2: '#77b753', season: 'nouvelan', mods: { terre: 0.3, eau: 0.15, vent: -0.2 } },
   U: { name: T('Pics de jade'), color: '#7fd6b4', color2: '#76ceab', season: 'nouvelan', mods: { vent: 0.3, glace: 0.15, feu: -0.2 } },
-  C: { name: T('Colline'), color: '#b3ea88', color2: '#a8e27c', range: 0.6, mods: {} },
+  C: { name: T('Colline'), color: '#b3ea88', color2: '#a8e27c', range: 0.4, mods: {} },
   X: { name: 'Obstacle', block: true },
 };
 const ELNAME = { feu: T('Feu'), eau: T('Eau'), terre: T('Terre'), vent: T('Vent'), foudre: T('Éclair'), glace: T('Glace') };
@@ -333,10 +333,10 @@ const TOWERS = {
   eau: { name: T('Ondine'), elem: T('Eau'), cost: 50, range: 2.6, rate: 0.9, dmg: 6, air: true, kind: 'zone', color: '#3aa0ff',
     desc: T('Éclaboussure de zone qui ralentit et mouille.'),
     lv: [{ slow: 0.3, splash: 0.9 }, { slow: 0.38, splash: 1.0 }, { slow: 0.46, splash: 1.15 }] },
-  terre: { name: T('Rocaille'), elem: T('Terre'), cost: 80, range: 3.5, rate: 0.45, dmg: 34, air: false, kind: 'zone', color: '#c08a58',
+  terre: { name: T('Rocaille'), elem: T('Terre'), cost: 80, range: 3.0, rate: 0.45, dmg: 34, air: false, kind: 'zone', color: '#c08a58',
     desc: T('Gros rochers de zone. Ne touche pas les volants.'),
     lv: [{ splash: 1.0, stun: 0 }, { splash: 1.1, stun: 0.12 }, { splash: 1.25, stun: 0.25 }] },
-  vent: { name: T('Zéphyr'), elem: T('Vent'), cost: 70, range: 3.2, rate: 0.7, dmg: 7, air: true, kind: 'mono', color: '#5fe0bd', airBonus: 2.5,
+  vent: { name: T('Zéphyr'), elem: T('Vent'), cost: 70, range: 2.9, rate: 0.7, dmg: 7, air: true, kind: 'mono', color: '#5fe0bd', airBonus: 2.5,
     desc: T('Rafales qui repoussent. Dégâts ×2,5 sur les volants.'),
     lv: [{ knock: 0.6 }, { knock: 0.8 }, { knock: 1.1 }] },
   foudre: { name: T('Voltie'), elem: T('Éclair'), cost: 100, range: 2.5, rate: 0.8, dmg: 15, air: true, kind: 'chaine', color: '#ffd23f',
@@ -346,13 +346,13 @@ const TOWERS = {
     desc: T('Onde glacée autour d’elle : ralentit, puis gèle.'),
     lv: [{ slow: 0.4, every: 4, freeze: 0.8 }, { slow: 0.48, every: 3, freeze: 1.0 }, { slow: 0.55, every: 2, freeze: 1.2 }] },
 };
-const LVL = { dmg: [1, 1.7, 2.6, 3.6], range: [0, 0.3, 0.5, 0.7], rate: [1, 1.15, 1.3, 1.45] };
+const LVL = { dmg: [1, 1.7, 2.6, 3.6], range: [0, 0.2, 0.35, 0.5], rate: [1, 1.15, 1.3, 1.45] };
 const BRANCHES = ['sol', 'air', 'boss'];
 const BRANCH = {
   sol: { name: T('Écrase-sol'), short: T('Sol'), color: '#8fdc6a', target: T('Contre les ennemis au sol'), vs: T('au sol'), mul: [1.5, 2.0],
     ranks: [T('Dégâts ×1,5 contre les ennemis au sol'), T('Dégâts ×2 au sol, et 15 % de chances d’étourdir')] },
   air: { name: T('Chasse-ciel'), short: 'Air', color: '#7fd3ff', target: T('Contre les volants'), vs: T('en vol'), mul: [1.8, 2.6],
-    ranks: [T('Dégâts ×1,8 contre les volants, +0,3 de portée'), T('Dégâts ×2,6 contre les volants, +0,6 de portée')] },
+    ranks: [T('Dégâts ×1,8 contre les volants, +0,2 de portée'), T('Dégâts ×2,6 contre les volants, +0,4 de portée')] },
   boss: { name: T('Tueur de Kaiju'), short: 'Boss', color: '#ff4f6e', target: T('Contre les boss'), vs: T('sur boss'), mul: [1.7, 2.5],
     ranks: [T('Dégâts ×1,7 contre les Kaiju, ignore 3 d’armure'), T('Dégâts ×2,5 contre les Kaiju, ignore toute l’armure')] },
 };
@@ -401,6 +401,8 @@ const FUSIONS = {
     lv: [{ rampMax: 2 }, { rampMax: 3 }, { rampMax: 4 }], fx: s => T('Jusqu’à ×') + (1 + s.rampMax) + T(' en chauffant') },
 };
 for (const k in FUSIONS) TOWERS[k] = Object.assign({ fusion: true }, FUSIONS[k]);
+// Portée de base de toutes les tours (ECO.range)
+for (const k in TOWERS) TOWERS[k].range = +(TOWERS[k].range * ECO.range).toFixed(2);
 const fusionUnlocked = k => M('f_' + k) > 0;
 function fusionKey(a, b) {
   for (const k in FUSIONS) { const [x, y] = FUSIONS[k].parents; if ((x === a && y === b) || (x === b && y === a)) return k; }
@@ -517,11 +519,11 @@ const BOSSAPP = { halloween: T('Le Roi Citrouille approche...'), noel: T('Le Yé
 const hpMul = w => 1 + (w - 1) * 0.16 + (w - 1) * (w - 1) * 0.011;
 
 function statsOf(type, lvl, br) {
-  const D = TOWERS[type], i = lvl - 1, ms = D.parents ? (M('m_' + D.parents[0]) + M('m_' + D.parents[1])) / 2 : M('m_' + type), rank = br ? Math.max(0, lvl - 2) : 0;
-  const st = Object.assign({}, D, D.lv[Math.min(i, 2)], { dmg: D.dmg * LVL.dmg[i] * (1 + 0.1 * ms), range: D.range + LVL.range[i] + (ms >= 5 ? 0.3 : 0), rate: D.rate * LVL.rate[i], br: br || null, rank });
+  const D = TOWERS[type], i = lvl - 1, avg = id => D.parents ? (M(id + D.parents[0]) + M(id + D.parents[1])) / 2 : M(id + type), ms = avg('m_'), pr = avg('p_'), rank = br ? Math.max(0, lvl - 2) : 0;
+  const st = Object.assign({}, D, D.lv[Math.min(i, 2)], { dmg: D.dmg * LVL.dmg[i] * (1 + 0.1 * ms), range: D.range * (1 + RANGE_UP * pr) + LVL.range[i] + (ms >= 5 ? 0.2 : 0), rate: D.rate * LVL.rate[i], br: br || null, rank });
   if (br && rank > 0) {
     st.brMul = BRANCH[br].mul[rank - 1];
-    if (br === 'air') { st.range += 0.3 * rank; st.air = true; }
+    if (br === 'air') { st.range += 0.2 * rank; st.air = true; }
     if (br === 'boss') st.pierce = rank >= 2 ? 99 : 3;
   }
   return st;
@@ -531,6 +533,8 @@ function upCost(t, lvl = t.lvl) { if (lvl >= (TOWERS[t.type].fusion ? 3 : 4)) re
 const sellValue = t => Math.floor(t.inv * (0.7 + 0.05 * M('resell')));
 
 // Améliorations permanentes (Atelier)
+// Longue-vue : +2,5 % de portée de base par niveau (5 niveaux en 10 paliers), fusions comprises (moyenne des deux éléments)
+const RANGE_UP = 0.025;
 const MASTERY = { feu: T('du feu'), eau: T('de l’eau'), terre: T('de la terre'), vent: T('du vent'), foudre: T('de l’éclair'), glace: T('de la glace') };
 const UPGRADES = [
   { id: 'gold', name: T('Trésor de départ'), max: 5, base: 8, fx: l => '+' + l * 25 + T(' or au départ') },
@@ -544,8 +548,11 @@ const UPGRADES = [
   { id: 'paratonnerre', name: T('Paratonnerre'), max: 3, base: 12, fx: l => T('Paralysie des Grésillons −') + l * 25 + ' %' },
   { id: 'talisman', name: 'Talisman', max: 3, base: 14, fx: l => T('Perversion des Maléfik −') + l * 25 + T(' % de durée') },
   { id: 'revive', name: T('Seconde chance'), max: 1, base: 60, fx: () => T('Une fois par partie, la maison repart avec 5 vies') },
-  ...TORDER.map(t => ({ id: 'm_' + t, tower: t, name: T('Maîtrise ') + MASTERY[t], max: 5, base: 10,
-    fx: l => TOWERS[t].name + ' : +' + l * 10 + T(' % de dégâts') + (l >= 5 ? T(', +0,3 de portée') : '') })),
+  // Chaque élément : maîtrise (dégâts) puis longue-vue (portée), côte à côte
+  ...TORDER.flatMap(t => [{ id: 'm_' + t, tower: t, name: T('Maîtrise ') + MASTERY[t], max: 5, base: 10,
+    fx: l => TOWERS[t].name + ' : +' + l * 10 + T(' % de dégâts') + (l >= 5 ? T(', +0,2 de portée') : '') },
+    { id: 'p_' + t, tower: t, range: true, name: T('Longue-vue ') + MASTERY[t], max: 5, base: 8,
+      fx: l => TOWERS[t].name + ' : +' + String(Math.round(l * RANGE_UP * 1000) / 10).replace('.', LANG === 'en' ? '.' : ',') + T(' % de portée') }]),
 ];
 // Paliers : u.k par niveau d'origine, u.max paliers en tout ; prix d'un palier ≈ prix d'origine du niveau / k (même total à ECO.atelier = 1)
 for (const u of UPGRADES) { u.k = upK(u.id); u.max *= u.k; }

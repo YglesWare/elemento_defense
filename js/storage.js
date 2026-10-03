@@ -8,7 +8,7 @@
 const STORE_DB = 'elemento', STORE_VER = 1;
 // Domaine de chaque clé : la table distante qu'elle rejoindra. Les clés absentes restent sur l'appareil ('local').
 const STORE_DOMAINS = {
-  'elemento.pseudo': 'profile', 'elemento.lang': 'profile', 'elemento.opts': 'profile',
+  'elemento.pseudo': 'profile', 'elemento.playerId': 'profile', 'elemento.lang': 'profile', 'elemento.opts': 'profile',
   'elemento.meta': 'progress', 'elemento.best2': 'progress', 'elemento.best': 'progress',
   'elemento.yglouEgg': 'progress', 'elemento.intro': 'progress', 'elemento.trophies': 'progress', 'elemento.daily': 'progress', 'elemento.tuto': 'progress', 'elemento.guideDone': 'progress', 'elemento.seen': 'progress',
   'elemento.stats': 'stats',
@@ -129,13 +129,14 @@ const Sync = {
     const A = this.adapter, u = A.user && await A.user(); if (!u) return false;
     const since = (await store.sys('lastPull')) || 0, started = Date.now();
     const local = new Map((await store.records()).map(r => [r.k, r]));
+    let pulled = 0;
     // 1. Ce qui a changé ailleurs (autre téléphone, navigateur…)
     for (const r of await A.pull(since)) {
       const mine = local.get(r.k);
       if (store.domain(r.k) === 'local' || (mine && mine.at >= r.at)) continue;
       const rec = { k: r.k, v: r.del ? null : JSON.stringify(r.v), at: r.at, dirty: 0, del: r.del ? 1 : 0 };
       if (rec.del) store.mem.delete(rec.k); else store.mem.set(rec.k, rec.v);
-      store.queue.set(rec.k, rec); local.set(rec.k, rec);
+      store.queue.set(rec.k, rec); local.set(rec.k, rec); pulled++;
     }
     await store.flush();
     // 2. Ce qui a changé ici
@@ -150,6 +151,16 @@ const Sync = {
       });
     }
     await store.sys('lastPull', started);
-    return true;
+    return { pulled, pushed: out.length };
+  },
+  // Changement de compte : toute la progression locale est à renvoyer
+  async markAllDirty() {
+    await store.flush();
+    if (store.mode !== 'idb') return;
+    await new Promise(ok => {
+      const tx = store.db.transaction('kv', 'readwrite'), os = tx.objectStore('kv');
+      os.openCursor().onsuccess = ev => { const c = ev.target.result; if (!c) return; const r = c.value; if (store.domain(r.k) !== 'local' && !r.dirty) { r.dirty = 1; c.update(r); } c.continue(); };
+      tx.oncomplete = tx.onerror = tx.onabort = () => ok();
+    });
   },
 };
