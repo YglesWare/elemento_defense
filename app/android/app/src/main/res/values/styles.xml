@@ -13,6 +13,8 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- Bandes derrière la barre d'état et les boutons de navigation d'Android : bleu ciel, comme le haut du jeu -->
+        <item name="android:windowBackground">@color/splash_bg</item>
     </style>
 
 
