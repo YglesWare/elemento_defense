@@ -431,6 +431,48 @@ function bodyPath(type, r, ghost) {
   return p;
 }
 // Accessoires des monstres pendant les événements : derrière le corps…
+// Accessoires des monstres de chaque carte : derrière le corps (pinces, tentacules, ailes…)
+function zoneBehind(c, a, r, lw, t, col, id) {
+  if (a === 'crab') for (const sg of [-1, 1]) {
+    const k = Math.sin(t * 4 + sg) * 0.12;
+    c.save(); c.translate(sg * r * 1.05, -r * 0.1); c.rotate(sg * (0.5 + k));
+    c.beginPath(); c.ellipse(0, -r * 0.35, r * 0.42, r * 0.55, 0, 0, TAU); fs(c, col, lw);
+    c.beginPath(); c.moveTo(-r * 0.1, -r * 0.85); c.lineTo(0, -r * 0.45); c.lineTo(r * 0.12, -r * 0.88); c.lineWidth = lw; c.strokeStyle = INK; c.stroke(); c.restore();
+  } else if (a === 'kraken') for (let i = 0; i < 4; i++) {
+    const sg = i < 2 ? -1 : 1, k = (i % 2) * 0.35 + 0.35, w = Math.sin(t * 3 + i) * r * 0.18;
+    c.beginPath(); c.moveTo(sg * r * 0.4, r * 0.5); c.quadraticCurveTo(sg * r * (0.9 + k), r * (0.9 - k * 0.3) + w, sg * r * (1.35 + k * 0.4), r * (0.3 + k) - w);
+    c.lineWidth = r * 0.3; c.strokeStyle = INK; c.stroke(); c.lineWidth = r * 0.2; c.strokeStyle = col; c.stroke();
+  } else if (a === 'dragon') {
+    const f = Math.sin(t * 6 + id) * 0.3;
+    for (const sg of [-1, 1]) {
+      c.beginPath(); c.moveTo(sg * r * 0.5, -r * 0.3); c.quadraticCurveTo(sg * r * 1.4, -r * (1.4 + f), sg * r * 2.0, -r * (0.6 + f));
+      c.lineTo(sg * r * 1.6, -r * 0.2); c.lineTo(sg * r * 1.3, -r * 0.35); c.lineTo(sg * r * 1.05, r * 0.05); c.closePath(); fs(c, '#8f2b22', lw);
+    }
+  } else if (a === 'mammoth') for (const sg of [-1, 1]) { c.beginPath(); c.ellipse(sg * r * 0.95, -r * 0.2, r * 0.42, r * 0.6, sg * 0.3, 0, TAU); fs(c, '#8a6b5a', lw); }
+}
+// Accessoires sur la tête (au-dessus du corps)
+function zoneFront(c, a, r, lw, t, sdx, col) {
+  const top = -r * 0.9;
+  if (a === 'shell') { c.save(); c.translate(r * 0.35, top + r * 0.05); c.rotate(0.3); c.beginPath(); c.moveTo(0, r * 0.12); for (let i = 0; i <= 4; i++) { const ang = Math.PI * (1.1 + i * 0.2); c.lineTo(Math.cos(ang) * r * 0.32, r * 0.12 + Math.sin(ang) * r * 0.32); } c.closePath(); fs(c, '#ffb3c7', lw * 0.7); c.beginPath(); for (let i = 1; i < 4; i++) { const ang = Math.PI * (1.1 + i * 0.2); c.moveTo(0, r * 0.12); c.lineTo(Math.cos(ang) * r * 0.3, r * 0.12 + Math.sin(ang) * r * 0.3); } c.lineWidth = lw * 0.5; c.strokeStyle = INK; c.stroke(); c.restore(); }
+  else if (a === 'lily') { c.beginPath(); c.ellipse(0, top + r * 0.02, r * 0.62, r * 0.2, 0, 0.25, TAU - 0.25); c.lineTo(0, top + r * 0.02); c.closePath(); fs(c, '#5fbf4a', lw * 0.7); c.beginPath(); c.arc(r * 0.18, top - r * 0.12, r * 0.13, 0, TAU); fs(c, '#ff9ccf', lw * 0.6); }
+  else if (a === 'leaf') for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(0, top + r * 0.05); c.quadraticCurveTo(sg * r * 0.15, top - r * 0.45, sg * r * 0.5, top - r * 0.35); c.quadraticCurveTo(sg * r * 0.3, top - r * 0.05, 0, top + r * 0.05); fs(c, sg < 0 ? '#5fc94a' : '#4aa83c', lw * 0.7); }
+  else if (a === 'turban') { c.beginPath(); c.ellipse(0, top + r * 0.18, r * 0.82, r * 0.34, 0, Math.PI, TAU); c.closePath(); fs(c, '#fff4dc', lw * 0.8); c.beginPath(); c.moveTo(-r * 0.7, top + r * 0.05); c.quadraticCurveTo(0, top - r * 0.2, r * 0.7, top + r * 0.05); c.lineWidth = lw * 0.6; c.strokeStyle = 'rgba(42,27,61,.35)'; c.stroke(); c.beginPath(); c.arc(0, top - r * 0.02, r * 0.1, 0, TAU); fs(c, '#e8344e', lw * 0.5); }
+  else if (a === 'hibiscus') { c.save(); c.translate(-r * 0.5, top + r * 0.12); for (let i = 0; i < 5; i++) { const ang = i * TAU / 5; c.beginPath(); c.ellipse(Math.cos(ang) * r * 0.15, Math.sin(ang) * r * 0.15, r * 0.14, r * 0.1, ang, 0, TAU); fs(c, '#ff4f6e', lw * 0.5); } c.beginPath(); c.arc(0, 0, r * 0.07, 0, TAU); c.fillStyle = '#ffd23f'; c.fill(); c.restore(); }
+  else if (a === 'cowboy') { c.beginPath(); c.ellipse(0, top + r * 0.12, r * 0.95, r * 0.18, 0, 0, TAU); fs(c, '#9a5a2e', lw * 0.8); c.beginPath(); c.moveTo(-r * 0.45, top + r * 0.1); c.quadraticCurveTo(-r * 0.5, top - r * 0.45, 0, top - r * 0.38); c.quadraticCurveTo(r * 0.5, top - r * 0.45, r * 0.45, top + r * 0.1); c.closePath(); fs(c, '#b8743f', lw * 0.8); c.fillStyle = '#5a3218'; c.fillRect(-r * 0.45, top - r * 0.02, r * 0.9, r * 0.1); }
+  else if (a === 'horns') for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(sg * r * 0.3, top + r * 0.12); c.quadraticCurveTo(sg * r * 0.45, top - r * 0.3, sg * r * 0.62, top - r * 0.42); c.quadraticCurveTo(sg * r * 0.6, top - r * 0.05, sg * r * 0.55, top + r * 0.2); c.closePath(); fs(c, '#3b2430', lw * 0.7); }
+  else if (a === 'beanie') { c.beginPath(); c.ellipse(0, top + r * 0.2, r * 0.8, r * 0.55, 0, Math.PI, TAU); c.closePath(); fs(c, '#3f7fe0', lw * 0.8); rr(c, -r * 0.82, top + r * 0.08, r * 1.64, r * 0.24, r * 0.1); fs(c, '#ffffff', lw * 0.7); c.beginPath(); c.arc(0, top - r * 0.38, r * 0.17, 0, TAU); fs(c, '#ffffff', lw * 0.7); }
+  else if (a === 'earmuffs') { c.beginPath(); c.arc(0, top + r * 0.35, r * 0.85, Math.PI * 1.1, Math.PI * 1.9); c.lineWidth = lw * 1.6; c.strokeStyle = INK; c.stroke(); for (const sg of [-1, 1]) { c.beginPath(); c.arc(sg * r * 0.82, top + r * 0.55, r * 0.24, 0, TAU); fs(c, '#ffd23f', lw * 0.7); } }
+  // Boss
+  else if (a === 'crab') for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(sg * r * 0.25, top + r * 0.1); c.lineTo(sg * r * 0.35, top - r * 0.35); c.lineWidth = lw; c.strokeStyle = INK; c.stroke(); c.beginPath(); c.arc(sg * r * 0.35, top - r * 0.42, r * 0.13, 0, TAU); fs(c, '#ffffff', lw * 0.6); c.beginPath(); c.arc(sg * r * 0.35 + sdx * r * 0.03, top - r * 0.42, r * 0.06, 0, TAU); c.fillStyle = INK; c.fill(); }
+  else if (a === 'toad') { crownZ(c, 0, top + r * 0.02, r * 0.42, lw); for (const sg of [-1, 1]) { c.beginPath(); c.ellipse(sg * r * 0.72, r * 0.35, r * 0.22, r * 0.16, 0, 0, TAU); c.fillStyle = 'rgba(255,240,180,.75)'; c.fill(); } }
+  else if (a === 'mushroom') { c.beginPath(); c.ellipse(0, top + r * 0.25, r * 1.15, r * 0.75, 0, Math.PI, TAU); c.closePath(); fs(c, '#e8344e', lw); c.fillStyle = '#ffffff'; for (const [dx, dy, rr2] of [[-0.55, -0.15, 0.16], [0.1, -0.4, 0.2], [0.6, -0.12, 0.14], [-0.15, 0.05, 0.1]]) { c.beginPath(); c.arc(dx * r, top + r * 0.25 + dy * r, rr2 * r, 0, TAU); c.fill(); } }
+  else if (a === 'sphinx') { for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(sg * r * 0.55, top + r * 0.1); c.lineTo(sg * r * 1.1, r * 0.4); c.lineTo(sg * r * 0.75, r * 0.55); c.lineTo(sg * r * 0.35, top + r * 0.4); c.closePath(); fs(c, '#3f6fd8', lw * 0.8); c.beginPath(); c.moveTo(sg * r * 0.7, top + r * 0.45); c.lineTo(sg * r * 0.9, r * 0.1); c.lineWidth = lw * 1.4; c.strokeStyle = '#ffd23f'; c.stroke(); } c.beginPath(); c.ellipse(0, top + r * 0.15, r * 0.75, r * 0.32, 0, Math.PI, TAU); c.closePath(); fs(c, '#ffd23f', lw * 0.8); c.fillStyle = '#3f6fd8'; for (const k of [-0.4, 0, 0.4]) c.fillRect(k * r - r * 0.08, top - r * 0.12, r * 0.16, r * 0.24); }
+  else if (a === 'golem') { c.fillStyle = '#7d6a5c'; for (const [dx, dy, w] of [[-0.55, -0.1, 0.32], [0.1, -0.35, 0.36], [0.6, -0.05, 0.3]]) { c.beginPath(); c.moveTo(dx * r - w * r, top + dy * r + w * r * 0.6); c.lineTo(dx * r - w * r * 0.6, top + dy * r - w * r * 0.4); c.lineTo(dx * r + w * r * 0.7, top + dy * r - w * r * 0.5); c.lineTo(dx * r + w * r, top + dy * r + w * r * 0.6); c.closePath(); fs(c, '#8c7a6b', lw * 0.8); } c.beginPath(); c.moveTo(-r * 0.4, r * 0.2); c.lineTo(-r * 0.2, r * 0.45); c.lineTo(-r * 0.35, r * 0.7); c.lineWidth = lw * 0.8; c.strokeStyle = 'rgba(42,27,61,.5)'; c.stroke(); }
+  else if (a === 'dragon') for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(sg * r * 0.3, top + r * 0.15); c.quadraticCurveTo(sg * r * 0.5, top - r * 0.5, sg * r * 0.85, top - r * 0.6); c.quadraticCurveTo(sg * r * 0.65, top - r * 0.1, sg * r * 0.6, top + r * 0.25); c.closePath(); fs(c, '#ffd23f', lw * 0.8); }
+  else if (a === 'mammoth') for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(sg * r * 0.35, r * 0.35); c.quadraticCurveTo(sg * r * 0.75, r * 1.0, sg * r * 0.25, r * 1.15); c.quadraticCurveTo(sg * r * 0.55, r * 0.85, sg * r * 0.2, r * 0.45); c.closePath(); fs(c, '#fffaf0', lw * 0.8); }
+  else if (a === 'bear') { for (const sg of [-1, 1]) { c.beginPath(); c.arc(sg * r * 0.62, top + r * 0.1, r * 0.28, 0, TAU); fs(c, col, lw * 0.8); c.beginPath(); c.arc(sg * r * 0.62, top + r * 0.12, r * 0.13, 0, TAU); c.fillStyle = '#ffc6d6'; c.fill(); } rr(c, -r * 0.85, r * 0.55, r * 1.7, r * 0.26, r * 0.12); fs(c, '#e8344e', lw * 0.7); }
+}
+function crownZ(c, x, y, w, lw) { c.beginPath(); c.moveTo(x - w, y); c.lineTo(x - w * 1.1, y - w * 0.9); c.lineTo(x - w * 0.5, y - w * 0.4); c.lineTo(x, y - w * 1.15); c.lineTo(x + w * 0.5, y - w * 0.4); c.lineTo(x + w * 1.1, y - w * 0.9); c.lineTo(x + w, y); c.closePath(); fs(c, '#ffd23f', lw * 0.8); }
 function evBehind(c, ev, type, r, lw, t, col) {
   if (type === 'lapin' || (ev === 'paques' && type === 'boss')) { bunnyEars(c, -r * 0.7, r * 1.05, lw, col, '#ffb3cf', t); return; }
   if (ev === 'valentin' && type === 'zip') for (const sg of [-1, 1]) { c.beginPath(); c.ellipse(sg * r * 0.95, -r * 0.45, r * 0.45, r * 0.22, sg * -0.6, 0, TAU); fs(c, '#ffffff', lw * 0.8); }
@@ -487,7 +529,8 @@ function evFront(c, ev, type, r, lw, t, sdx, e) {
 }
 function drawEnemy(c, type, x, y, s, t, e) {
   const D = ETYPES[type], r = s * D.size, lw = Math.max(1.4, s * 0.045), ev = evt(), SK = skinOf(type), HS = ev === 'halloween' ? SK : null, XS = SK && !HS ? ev : null;
-  const ghost = type === 'spectre' || (HS && type === 'gloop'), col = SK ? SK.color : D.color, lig = SK ? SK.light : D.light;
+  const ZS = SK ? null : zoneSkin(type), ZA = ZS && ZS.acc;
+  const ghost = type === 'spectre' || (HS && type === 'gloop'), col = SK ? SK.color : ZS ? ZS.color : D.color, lig = SK ? SK.light : ZS ? ZS.light : D.light;
   const fly = !!D.flying, sdx = e ? e.sdx : 1, sdy = e ? e.sdy : 0, id = e ? e.id : 0;
   const still = e && (e.frozen > 0 || e.stun > 0);
   const ph = e ? e.phase : t * 6;
@@ -513,7 +556,7 @@ function drawEnemy(c, type, x, y, s, t, e) {
       c.quadraticCurveTo(sg * r * 1.15, r * 0.05, sg * r * 0.6, r * 0.35); c.closePath(); fs(c, ({ halloween: '#2b2140', noel: '#c9d8ec', paques: '#ffd23f', valentin: '#ffffff', nouvelan: '#ffd23f' })[ev] || '#4a3aa6', lw);
       c.beginPath(); c.moveTo(sg * r * 0.3, -r * 0.8); c.lineTo(sg * r * 0.6, -r * 1.35); c.lineTo(sg * r * 0.75, -r * 0.6); c.closePath(); fs(c, col, lw);
     }
-  } else if (type === 'boss' && (!SK || ev === 'noel')) {
+  } else if (type === 'boss' && (!SK || ev === 'noel') && !ZS) {
     for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(sg * r * 0.25, -r * 0.9); c.quadraticCurveTo(sg * r * 0.55, -r * 1.35, sg * r * 0.85, -r * 1.55); c.quadraticCurveTo(sg * r * 0.75, -r * 1.05, sg * r * 0.7, -r * 0.7); c.closePath(); fs(c, '#fff1d0', lw); }
   } else if (type === 'gresil' && HS) {
     // Araignée : huit pattes
@@ -528,6 +571,7 @@ function drawEnemy(c, type, x, y, s, t, e) {
     for (const k of [-0.45, 0, 0.45]) { const x0 = -sdx * r * 1.25 + px * k * r, y0 = -sdy * r * 1.25 + py * k * r; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x0 - sdx * r * (0.7 + Math.abs(k)), y0 - sdy * r * (0.7 + Math.abs(k))); c.stroke(); }
   }
   if (XS || type === 'lapin') evBehind(c, XS, type, r, lw, t, col);
+  if (ZA) zoneBehind(c, ZA, r, lw, t, col, id);
   if (HS && type === 'zip') for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(sg * r * 0.25, -r * 0.95); c.lineTo(sg * r * 0.75, -r * 1.45); c.lineTo(sg * r * 0.85, -r * 0.6); c.closePath(); fs(c, col, lw); }
   const body = bodyPath(type, r, ghost);
   const g = c.createRadialGradient(-r * 0.35, -r * 0.45, r * 0.1, 0, 0, r * 1.3); g.addColorStop(0, lig); g.addColorStop(1, col);
@@ -569,6 +613,7 @@ function drawEnemy(c, type, x, y, s, t, e) {
   const mood = e && e.flash > 0 ? 'open' : D.mood;
   face(c, sdx * r * 0.16, (type === 'tonk' ? r * 0.2 : r * 0.05) + sdy * r * 0.08, r * 0.95, sdx, sdy, mood, blink, D.angry);
   if (XS || D.season) evFront(c, XS, type, r, lw, t, sdx, e);
+  if (ZA && !(type === 'tonk' || type === 'malefik' || type === 'magma')) zoneFront(c, ZA, r, lw, t, sdx, col);
   if (HS && type === 'zip') { c.lineWidth = lw * 0.6; c.strokeStyle = '#d8d0ec'; c.beginPath(); for (const sg of [-1, 1]) for (const k of [-0.06, 0.08]) { c.moveTo(sg * r * 0.55, r * 0.3 + k * r); c.lineTo(sg * r * 1.05, r * 0.22 + k * r * 2); } c.stroke(); }
   if (e) {
     if (e.wet > 0) {

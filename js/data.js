@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 41;
+const BUILD = 43;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -54,7 +54,9 @@ const bankShares = () => IS_EN ? pct(ECO.bankWin) + ' of the remaining gold if y
 // shards : éclats gagnés · bankWin / bankKo : part de l'or restant mise en cagnotte · mapPrice / atelier / unlock : prix
 // des cartes, des améliorations et des tours et fusions de l'Atelier · hp : PV des ennemis par difficulté (solo ; la coop garde coopHp)
 // Si on change hp, bankWin ou bankKo, mettre à jour les textes des difficultés (DIFFS) et de l'aide (index.html).
-const ECO = Object.assign({ shards: 0.4, bankWin: 0.85, bankKo: 0.4, mapPrice: 1.1, atelier: 1.5, unlock: 1.5, hp: { facile: 0.8, moyen: 1.3, difficile: 2.3 } },
+// mapHp / mapShards : PV des ennemis ×mapHp et éclats +mapShards à chaque carte suivante (cartes 1 à 10) ;
+// mapHpDiff : part de cette hausse de PV gardée selon la difficulté (en Difficile, les PV de base sont déjà très hauts)
+const ECO = Object.assign({ shards: 0.4, bankWin: 0.85, bankKo: 0.4, mapPrice: 1.1, atelier: 1.5, unlock: 1.5, mapHp: 1.1, mapShards: 0.15, mapHpDiff: { facile: 1, moyen: 0.75, difficile: 0.5 }, hp: { facile: 0.8, moyen: 1.3, difficile: 2.3 } },
   // Outil d'équilibrage seulement : la page tools/balance.html essaie d'autres réglages dans une iframe
   (() => { try { return window.parent !== window && window.parent.BALANCE ? JSON.parse(new URLSearchParams(location.search).get('eco') || '{}') : {}; } catch (e) { return {}; } })());
 
@@ -156,6 +158,10 @@ const DIFFS = {
 // PV des ennemis en solo selon ECO ; la coop garde ses PV d'origine (tout le monde y part de zéro)
 for (const k of ['facile', 'moyen', 'difficile']) { DIFFS[k].coopHp = DIFFS[k].hp; if (ECO.hp && ECO.hp[k]) DIFFS[k].hp = ECO.hp[k]; }
 for (const m of MAPS) if (m.price) m.price = Math.round(m.price * ECO.mapPrice / 50) * 50;
+// Progression des cartes : chaque carte (hors événements et cartes aléatoires) est plus coriace et rapporte plus que la précédente
+MAPS.filter(m => !m.season && !m.random).forEach((m, i) => { m.hpMul = +Math.pow(ECO.mapHp, i).toFixed(2); m.shards = +(1 + ECO.mapShards * i).toFixed(2); m.prog = true; });
+// PV de la carte selon la difficulté (cartes de la progression seulement)
+const mapHpFor = (mi, diff) => { const m = MAPS[mi]; const e = m.prog && ECO.mapHpDiff ? ECO.mapHpDiff[diff] ?? 1 : 1; return Math.pow(m.hpMul, e); };
 const BEST2 = 'elemento.best2';
 // Clé des records d'une carte (les cartes d'événement ont des records par édition annuelle)
 const recId = m => m.rid || m.id;
@@ -476,7 +482,34 @@ SKINS.nouvelan = {
   boss: { name: 'Dragon', color: '#e8344e', light: '#ff9aa8' },
 };
 const skinOf = k => { const e = evt(); return e && SKINS[e] ? SKINS[e][k] || null : null; };
-const eName = k => (skinOf(k) || ETYPES[k]).name;
+// ---------- Monstres de chaque carte (mêmes statistiques, autre look) ----------
+// Chaque carte de la progression (sauf la première) teinte ses monstres, leur ajoute un accessoire de son thème
+// et a son propre boss. ZONE_SKINS = false : tout le monde garde le look d'origine.
+const ZONE_SKINS = true;
+const ZONES = {
+  plage: { tint: '#3fd0e0', acc: 'shell', adj: T('des plages'), boss: { name: T('Crabe géant'), up: T('CRABE GÉANT'), app: T('Le Crabe géant sort du sable...'), acc: 'crab', color: '#ff6b4a', light: '#ffb199' } },
+  marais: { tint: '#6aa84f', acc: 'lily', adj: T('des marais'), boss: { name: T('Roi crapaud'), up: T('ROI CRAPAUD'), app: T('Le Roi crapaud émerge de la vase...'), acc: 'toad', color: '#6fbf4a', light: '#c4f09a' } },
+  foret: { tint: '#3f9a52', acc: 'leaf', adj: T('des bois'), boss: { name: T('Champignon ancien'), up: T('CHAMPIGNON ANCIEN'), app: T('Le Champignon ancien se réveille...'), acc: 'mushroom', color: '#e9d2b0', light: '#fff4e0' } },
+  desert: { tint: '#e3b45e', acc: 'turban', adj: T('des sables'), boss: { name: 'Sphinx', up: 'SPHINX', app: T('Le Sphinx s’éveille...'), acc: 'sphinx', color: '#e8b85a', light: '#ffe2a0' } },
+  ile: { tint: '#ff7a59', acc: 'hibiscus', adj: T('des îles'), boss: { name: 'Kraken', up: 'KRAKEN', app: T('Le Kraken remonte des profondeurs...'), acc: 'kraken', color: '#b45fd6', light: '#e5b3ff' } },
+  canyon: { tint: '#c9703f', acc: 'cowboy', adj: T('des canyons'), boss: { name: T('Golem de roche'), up: T('GOLEM DE ROCHE'), app: T('Le Golem de roche s’ébranle...'), acc: 'golem', color: '#a88a74', light: '#d8c4b2' } },
+  volcan: { tint: '#e0442f', acc: 'horns', adj: T('de lave'), boss: { name: T('Dragon de lave'), up: T('DRAGON DE LAVE'), app: T('Le Dragon de lave déploie ses ailes...'), acc: 'dragon', color: '#e8452f', light: '#ffa070' } },
+  pic: { tint: '#8fd0ff', acc: 'beanie', adj: T('des cimes'), boss: { name: T('Mammouth des neiges'), up: T('MAMMOUTH DES NEIGES'), app: T('Le Mammouth des neiges dévale la pente...'), acc: 'mammoth', color: '#a98b7a', light: '#e2cdbf' } },
+  toundra: { tint: '#f2e46b', acc: 'earmuffs', adj: T('de la toundra'), boss: { name: T('Ours polaire'), up: T('OURS POLAIRE'), app: T('L’Ours polaire sort de sa tanière...'), acc: 'bear', color: '#f4f7fb', light: '#ffffff' } },
+};
+// Mélange de deux couleurs #rrggbb (k : part de la seconde)
+const mixHex = (a, b, k) => '#' + [1, 3, 5].map(i => Math.round(parseInt(a.substr(i, 2), 16) * (1 - k) + parseInt(b.substr(i, 2), 16) * k).toString(16).padStart(2, '0')).join('');
+const zoneOf = () => (ZONE_SKINS && G && !G.demo && MAPS[G.map] && !MAPS[G.map].season && ZONES[MAPS[G.map].wid || MAPS[G.map].id]) || null;
+const ZCACHE = {};
+// Déguisement de carte d'un type de monstre (les monstres d'événement n'en ont pas)
+function zoneSkin(k) {
+  const Z = zoneOf(), D = ETYPES[k]; if (!Z || !D || D.season) return null;
+  const key = (MAPS[G.map].wid || MAPS[G.map].id) + k;
+  if (!ZCACHE[key]) ZCACHE[key] = k === 'boss' ? { ...Z.boss, zone: Z }
+    : { name: D.name + ' ' + Z.adj, color: mixHex(D.color, Z.tint, 0.45), light: mixHex(D.light, Z.tint, 0.3), acc: Z.acc, zone: Z };
+  return ZCACHE[key];
+}
+const eName = k => (skinOf(k) || zoneSkin(k) || ETYPES[k]).name;
 const BOSSNAME = { halloween: 'ROI CITROUILLE', noel: T('YÉTI'), paques: T('LAPIN GÉANT'), valentin: T('REINE DES CŒURS'), nouvelan: 'DRAGON' };
 const BOSSAPP = { halloween: T('Le Roi Citrouille approche...'), noel: T('Le Yéti approche...'), paques: T('Le Lapin en chocolat approche...'), valentin: T('La Reine des Cœurs approche...'), nouvelan: T('Le Dragon approche...') };
 const hpMul = w => 1 + (w - 1) * 0.16 + (w - 1) * (w - 1) * 0.011;

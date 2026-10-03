@@ -595,3 +595,24 @@ button:disabled{cursor:default}
 .intro-foot{display:flex;align-items:center;gap:8px;width:100%;margin-top:6px}
 #introYg{width:56px;height:56px;flex:none}
 .intro-foot .btn{flex:1;margin:0}
+
+/* Bonus : bouton en partie, liste, et boutique de l'Atelier */
+#bBonus{position:absolute;right:8px;bottom:4px;z-index:5;width:auto;height:30px;padding:0 8px;display:flex;align-items:center;gap:4px;font-size:17px;background:var(--sun)}
+/* Bouton bonus visible : la barre de la prochaine vague se range à gauche pour lui laisser la place */
+#stage.bonus-on #nextWave{left:8px;transform:none;max-width:calc(100% - 92px)}
+#bBonus b{font:800 13px/1 "Baloo 2",system-ui,sans-serif;color:var(--ink)}
+#bBonus.aim{background:var(--pop);animation:updpulse 1s ease-in-out infinite}
+#bBonus[disabled]{opacity:.55}
+.bonuspop{position:absolute;right:8px;bottom:42px;z-index:7;width:min(260px,calc(100% - 16px));background:var(--paper);border:3px solid var(--ink);border-radius:16px;box-shadow:0 4px 0 var(--ink);padding:8px;display:flex;flex-direction:column;gap:6px}
+.bonuspop[hidden]{display:none}
+.bp-h{margin:0;font:800 13px/1.2 "Baloo 2",system-ui,sans-serif;color:var(--ink);opacity:.75;text-align:center}
+.bp-it{display:flex;align-items:center;gap:8px;width:100%;padding:6px 10px;border:2.5px solid var(--ink);border-radius:12px;background:var(--mist);font:800 15px/1.1 "Baloo 2",system-ui,sans-serif;color:var(--ink);cursor:pointer;text-align:left}
+.bp-it span{font-size:20px}.bp-it b{flex:1}.bp-it small{opacity:.7}
+.bp-it[disabled]{opacity:.45;cursor:default}
+.up.bonus .bico{font-size:30px;line-height:44px;width:44px;text-align:center;grid-row:span 2}
+.up.bonus .tag.own{align-self:start;background:var(--mist)}
+
+/* Barres de 5 onglets (Atelier, aide) : un peu plus serrées pour que les noms tiennent */
+.tabbar:has(> button:nth-child(5)) button{font-size:14px;letter-spacing:0;padding-inline:2px}
+@media (max-width:370px){.tabbar:has(> button:nth-child(5)) button{font-size:12.5px}}
+#hFus{grid-template-columns:minmax(0,1fr)}

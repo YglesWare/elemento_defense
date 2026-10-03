@@ -139,6 +139,7 @@ const elLives = $('#hLives'), elGold = $('#hGold'), bWave = $('#bWave');
 function refreshHUD() {
   setText(elLives, 'l', String(Math.max(0, G.lives)));
   setText(elGold, 'g', fmtK(G.gold));
+  if (typeof refreshBonusBtn === 'function') refreshBonusBtn();
   const nwk = (G.over ? 'x' : G.nextWave ? G.nextWave.n : '-') + G.weather; if (hudCache.nw !== nwk) { hudCache.nw = nwk; renderNextWave(); }
   setText($('#hBank'), 'bk', '🐷 ' + fmtK(meta.bank || 0)); $('#hBank').hidden = !!(G.duel || G.coop);
   let ic = '▶', sm = T('Vague'), big, cls, bonus = 0;
@@ -181,6 +182,7 @@ function renderNextWave() {
 // Plateau
 function tapCell(q, r, isMouse) {
   if (!G || G.over) return;
+  if (typeof bonusTap === 'function' && bonusTap(q, r)) return;
   if (!inside(q, r)) { deselect(); return; }
   const tw = towerAt(q, r);
   if (tw) {
@@ -492,6 +494,7 @@ function renderShop(boughtId) {
       d.querySelector('button').addEventListener('click', () => buyUp(u));
     }
   }
+  if (typeof renderBonusShop === 'function') renderBonusShop(boughtId);
 }
 function buyUp(u) {
   const l = upLv(u), price = upPrice(u);
@@ -676,6 +679,13 @@ TORDER.forEach(type => {
   $('#hEls').appendChild(d);
   drawTower(prepMini(d.querySelector('canvas'), 48, 52), type, 24, 29, 40, 1, 0.5, 0, 0.3, 0, false);
 });
+// Fusions : recette, effet, prix de déblocage (éclats) et coût de la fusion (or)
+for (const k in FUSIONS) {
+  const F = TOWERS[k], d = document.createElement('div'); d.className = 'el';
+  d.innerHTML = '<canvas></canvas><div><b>' + F.name + '</b><span class="k">' + F.elem + '</span></div><div><span class="kinds">' + kindLine(k) + '</span><p>' + F.desc + '</p><span class="c">' + GEM + F.unlock + T(' pour débloquer') + '</span> <span class="c">' + COIN + F.fee + T(' par fusion') + '</span></div>';
+  $('#hFus').appendChild(d);
+  drawTower(prepMini(d.querySelector('canvas'), 48, 52), k, 24, 29, 40, 1, 0.5, 0, 0.3, 0, false);
+}
 Object.keys(ETYPES).forEach(type => {
   const D = ETYPES[type], d = document.createElement('div'); d.className = 'foe';
   d.innerHTML = '<canvas></canvas><b>' + D.name + '</b><span>' + D.desc + '</span>';

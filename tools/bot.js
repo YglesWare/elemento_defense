@@ -21,7 +21,9 @@ function botCells() {
   return out.sort((a, b) => b.score - a.score);
 }
 function botPickType(n) {
-  const ok = BOT_MIX.filter(unlocked);
+  // Comme un joueur : on évite les éléments pénalisés par le biome de la carte
+  const bio = MAPS[G.map].biome, all = BOT_MIX.filter(unlocked), good = all.filter(t => affinity(t, bio) >= 0);
+  const ok = good.length ? good : all;
   // Volants dans la prochaine vague et pas encore de Zéphyr : on en pose un
   const flying = G.nextWave && G.nextWave.list && G.nextWave.list.some(it => ETYPES[it.type] && ETYPES[it.type].flying);
   if (flying && unlocked('vent') && !G.towers.some(t => t.type === 'vent')) return 'vent';
@@ -29,10 +31,23 @@ function botPickType(n) {
 }
 // Dépense l'or : on améliore la tour la moins chère à monter si on a déjà assez de tours, sinon on construit
 // Réglages de jeu du bot : nombre de tours visé (base + par vague, plafond) et choix des améliorations
-const BOT = { base: 5, per: 1 / 2, cap: 20, upBest: false };
+const BOT = { base: 5, per: 1 / 2, cap: 20, upBest: false, fuse: true };
 function botSpend(cells, st) {
   // Difficile : on soigne d'abord les tours sous 60 % de PV
   if (hardMode()) for (const t of G.towers.filter(t => t.hp < t.maxHp * 0.6).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)) if (G.gold >= healCost(t)) healPaid(t);
+  // Fusions : deux tours compatibles au niveau 2 → une tour fusionnée, sur la case la mieux placée des deux
+  if (BOT.fuse) for (let guard = 0; guard < 6; guard++) {
+    const score = t => { const c = cells.find(c => c.q === t.c && c.r === t.r); return c ? c.score : 0; };
+    let best = null;
+    for (const a of G.towers) for (const b of G.towers) {
+      if (a === b || TOWERS[a.type].fusion || TOWERS[b.type].fusion || a.lvl < 2 || b.lvl < 2) continue;
+      const k = fusionKey(a.type, b.type); if (!k || !fusionUnlocked(k) || G.gold < TOWERS[k].fee) continue;
+      const [src, dst] = score(a) >= score(b) ? [b, a] : [a, b];
+      if (!best || score(dst) > best.v) best = { src, dst, k, v: score(dst) };
+    }
+    if (!best) break;
+    doFuse(best.src, best.dst, best.k);
+  }
   for (let guard = 0; guard < 40; guard++) {
     const want = Math.min(BOT.base + Math.floor(G.wave * BOT.per), BOT.cap), free = cells.filter(c => canBuild(c.q, c.r));
     // upBest : on monte d'abord les tours les mieux placées (les premières construites), sinon la moins chère
@@ -70,12 +85,13 @@ function botGame(mi, diff, lv) {
   }
 }
 
-// Atelier : achète ce qui est le moins cher, tours d'abord (les fusions ne servent pas au bot)
+// Atelier : achète ce qui est le moins cher, tours et fusions d'abord
 const BOT_SKIP = ['paratonnerre', 'talisman', 'revive'];
 function botAtelier() {
   for (let guard = 0; guard < 500; guard++) {
     const offers = [];
     for (const t in UNLOCK) if (!unlocked(t)) offers.push({ p: UNLOCK[t], w: UNLOCK[t] * 0.5, buy: () => { meta.lv['u_' + t] = 1; } });
+    if (BOT.fuse) for (const k in FUSIONS) if (!fusionUnlocked(k) && FUSIONS[k].parents.every(unlocked)) offers.push({ p: FUSIONS[k].unlock, w: FUSIONS[k].unlock * 0.6, buy: () => { meta.lv['f_' + k] = 1; } });
     for (const u of UPGRADES) if (upLv(u) < u.max && (!u.tower || unlocked(u.tower)) && !BOT_SKIP.includes(u.id)) offers.push({ p: upPrice(u), w: upPrice(u), buy: () => { meta.lv[u.id] = upLv(u) + 1; } });
     const o = offers.filter(x => x.p <= meta.shards).sort((a, b) => a.w - b.w)[0];
     if (!o) return;
@@ -85,6 +101,7 @@ function botAtelier() {
 // Éclats déjà dépensés dans l'Atelier (tours débloquées + paliers achetés)
 function botSpent() {
   let n = 0; for (const t in UNLOCK) if (unlocked(t)) n += UNLOCK[t];
+  for (const k in FUSIONS) if (fusionUnlocked(k)) n += FUSIONS[k].unlock;
   for (const u of UPGRADES) for (let l = 0; l < upLv(u); l++) n += Math.max(1, Math.round(u.base * ECO.atelier * (l + 1) / (u.k * u.k)));
   return n;
 }
@@ -99,12 +116,14 @@ function botCampaign(maxGames = 80, stopAt = 'difficile') {
     botAtelier();
     const todo = [];
     for (const k of ['facile', 'moyen', 'difficile']) for (const i of regular) if (mapOwned(i) && diffOpen(i, k) && !won(i, k)) todo.push([i, k]);
-    let pickd = todo.find(([i, k]) => (fails[i + k] || 0) < 2);
-    // Tout bloque : on farme le niveau réussi qui rapporte le plus (carte la plus haute, difficulté la plus haute)
-    if (!pickd) { for (const k in fails) fails[k] = 0; const farm = []; for (const k of ['difficile', 'moyen', 'facile']) for (const i of regular.slice().reverse()) if (won(i, k)) farm.push([i, k]); pickd = farm[0] || todo[0]; }
+    // Comme un joueur : un niveau raté deux fois n'est retenté qu'une fois nettement plus fort (+15 % d'éclats investis)
+    const inv = botSpent(), ready = ([i, k]) => { const f = fails[i + k]; return !f || f.n < 2 || inv >= f.at * 1.15; };
+    let pickd = todo.find(ready);
+    // Sinon, on farme le niveau réussi qui rapporte le plus (carte la plus haute, puis difficulté la plus haute)
+    if (!pickd) { const farm = []; for (const i of regular.slice().reverse()) for (const k of ['difficile', 'moyen', 'facile']) if (won(i, k)) farm.push([i, k]); pickd = farm[0] || todo[0]; }
     if (!pickd) break;
     const [i, k] = pickd, s0 = meta.shards + botSpent(), b0 = meta.bank || 0, r = botGame(i, k, null);
-    if (!r.won) fails[i + k] = (fails[i + k] || 0) + 1; else for (const x in fails) fails[x] = 0;
+    if (!r.won) { const f = fails[i + k]; fails[i + k] = { n: f && inv < f.at * 1.15 ? f.n + 1 : 1, at: inv }; } else delete fails[i + k];
     log.push({ g: g + 1, map: i + 1, diff: k, won: r.won, wave: r.wave, shards: meta.shards + botSpent() - s0, bank: (meta.bank || 0) - b0, invested: botSpent() });
     if (r.won && k === stopAt) break;
   }

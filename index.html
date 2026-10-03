@@ -28,6 +28,8 @@
     <div id="duelBar" hidden></div>
     <div id="radial" hidden><button type="button" class="rb fuse" id="rFuse" aria-label="Fusionner"><canvas></canvas><span class="rc"></span></button><button type="button" class="rb sel" id="rSel" aria-label="Sélectionner cette tour"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="none" stroke="#2a1b3d" stroke-width="2.6"/><circle cx="12" cy="12" r="3" fill="#2a1b3d"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4" stroke="#2a1b3d" stroke-width="2.6" stroke-linecap="round"/></svg></button></div>
     <div id="nextWave" hidden></div>
+    <button class="ibtn" id="bBonus" type="button" aria-label="Bonus" hidden>🎁<b>2/2</b></button>
+    <div class="bonuspop" id="bonusPop" hidden></div>
     <div id="hint" hidden></div>
     <div id="banner" hidden><div class="big"></div><div class="small"></div></div>
   </main>
@@ -99,6 +101,9 @@
       <h2 class="ptitle">Les gardiens</h2>
       <div class="els" id="hEls"></div>
       <button class="btn green" id="hTuto" type="button" style="width:100%;margin-top:12px">Voir les tours en action</button>
+      <h2 class="ptitle" style="margin-top:18px">Les fusions</h2>
+      <p class="fine panedesc">Monte deux tours compatibles au niveau 2, puis fais glisser l’une sur l’autre (ou touche l’une, puis l’autre) : elles fusionnent en une tour bien plus puissante. Chaque recette se débloque dans l’Atelier, et la fusion coûte un peu d’or.</p>
+      <div class="els" id="hFus"></div>
     </div>
     <div class="panelbox" data-pane="combo">
       <h2 class="ptitle">Les combos</h2>
@@ -201,10 +206,12 @@
       <button type="button" role="tab" data-tab="fus">Fusions<span class="dot"></span></button>
       <button type="button" role="tab" data-tab="camp">Camp<span class="dot"></span></button>
       <button type="button" role="tab" data-tab="mast">Maîtrises<span class="dot"></span></button>
+      <button type="button" role="tab" data-tab="bonus">Bonus<span class="dot"></span></button>
     </div>
     <div class="panelbox" data-pane="tow"><h2 class="ptitle">Les gardiens</h2><p class="fine panedesc">Débloque de nouvelles tours, pour toutes tes parties.</p><div class="ups" id="sTow"></div></div>
     <div class="panelbox" data-pane="fus"><h2 class="ptitle">Les fusions</h2><p class="fine panedesc">Une recette à la fois. Il faut déjà posséder les deux tours d’origine.</p><div class="ups" id="sFus"></div></div>
     <div class="panelbox" data-pane="camp"><h2 class="ptitle">Le camp</h2><p class="fine panedesc">Des bonus qui valent pour toutes les tours et toutes les parties.</p><div class="ups" id="sBase"></div></div>
+    <div class="panelbox" data-pane="bonus"><h2 class="ptitle">Les bonus</h2><p class="fine panedesc">À usage unique, payés avec l’or de la cagnotte 🐷 (<b id="sBank">0</b> or). Pendant une partie solo, touche le bouton 🎁 : 2 bonus au maximum par partie.</p><div class="ups" id="sBonus"></div></div>
     <div class="panelbox" data-pane="mast"><h2 class="ptitle">Les maîtrises</h2><p class="fine panedesc">Renforce un élément : toutes ses tours en profitent, fusions comprises.</p><div class="ups" id="sMast"></div></div>
     <button class="btn stickyb" id="sBack" type="button">Retour</button>
   </div>
@@ -324,4 +331,4 @@
 </div>
 <!-- Les données du joueur (IndexedDB) sont chargées d'abord, puis les scripts du jeu, dans cet ordre -->
 <script src="js/storage.js"></script>
-<script>store.boot(['js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js']);</script>
+<script>store.boot(['js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bonus.js']);</script>

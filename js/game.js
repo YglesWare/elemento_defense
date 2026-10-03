@@ -155,7 +155,7 @@ function baseState(mi, save, diff) {
   return { map: mi, diff, startLives: Df.lives + Math.round(M('lives') * 2), maxw: Df.waves, hpd: Df.hp, spd: Df.speed, bm: Df.bonus, mm: Df.malus, banked: save ? save.banked || 0 : 0,
     terrain: m.terrain ? diffTerrain(mi, diff) : null, gold: save ? save.gold : Df.gold + Math.round(M('gold') * 25), lives: save ? save.lives : Df.lives + Math.round(M('lives') * 2), wave: save ? save.wave : 0, score: save ? save.score : 0,
     weather: (save && save.weather) || 'clear', bossKills: save ? save.bossKills || 0 : 0, shardsPaid: save ? save.shardsPaid || 0 : 0, shardsWon: save ? save.shardsWon || 0 : 0, won: save ? !!save.won : false, reviveUsed: save ? !!save.reviveUsed : false,
-    endless: save ? !!save.endless : diff === 'infini', ruins: save ? (save.ruins || []).slice() : [], towers: [], enemies: [], projs: [], fx: [], parts: [], texts: [], zones: [], tors: [], eprojs: [], spawnQ: [], spawnT: 0,
+    endless: save ? !!save.endless : diff === 'infini', ruins: save ? (save.ruins || []).slice() : [], bonusUsed: save ? save.bonusUsed || 0 : 0, bonusAim: null, towers: [], enemies: [], projs: [], fx: [], parts: [], texts: [], zones: [], tors: [], eprojs: [], spawnQ: [], spawnT: 0,
     waveActive: false, speed: 1, paused: false, over: false, time: 0, shake: 0, speedLines: 0, hurtT: 0, baseHit: 0, eid: 0, onoCd: {},
     selType: null, selTower: null, hover: null, ghost: null, bad: null, autoT: 0, checkpoint: null };
 }
@@ -166,7 +166,7 @@ function newGame(mi, save, diff) {
   if (!save) { stats.games++; saveStats(); }
   if (save) for (const t of save.towers) { const nt = addTower(t.type, t.c, t.r, t.lvl >= 3 && !t.br && !TOWERS[t.type].fusion ? 2 : t.lvl, t.mode, t.inv, t.br); if (hardMode() && t.hp > 0) nt.hp = Math.min(nt.maxHp, t.hp); }
   saveCheckpoint();
-  hudCache = {};
+  hudCache = {}; const bp = $('#bonusPop'); if (bp) bp.hidden = true;
   resize(); refreshCosts(); showPanel('palette'); refreshPalette();
   $('#bSpeed').textContent = 'x1';
   show('game'); keepAwake();
@@ -182,7 +182,7 @@ function saveCheckpoint() {
   if (G.duel || duelOn || G.coop) return;
   G.checkpoint = { grid: GRIDV, rnd: MAPS[G.map].rnd || null, map: G.map, mapId: MAPS[G.map].id, diff: G.diff, banked: G.banked, gold: G.gold, lives: G.lives, wave: G.wave, score: G.score, endless: G.endless,
     bossKills: G.bossKills, shardsPaid: G.shardsPaid, shardsWon: G.shardsWon, won: G.won, reviveUsed: G.reviveUsed,
-    weather: G.weather, ruins: G.ruins, towers: G.towers.map(t => ({ type: t.type, c: t.c, r: t.r, lvl: t.lvl, mode: t.mode, inv: t.inv, br: t.br, hp: Math.round(t.hp) })) };
+    weather: G.weather, ruins: G.ruins, bonusUsed: G.bonusUsed || 0, towers: G.towers.map(t => ({ type: t.type, c: t.c, r: t.r, lvl: t.lvl, mode: t.mode, inv: t.inv, br: t.br, hp: Math.round(t.hp) })) };
   store.set(SAVE, G.checkpoint);
 }
 function recordBest() {
@@ -219,7 +219,7 @@ function healPaid(t) {
   if (typeof refreshInfo === 'function') { hudCache.info = null; refreshInfo(); }
 }
 function destroyTower(t) {
-  t.hp = 0; t.dead = true; G.towers = G.towers.filter(x => x !== t); G.ruins.push({ c: t.c, r: t.r, type: t.type });
+  t.hp = 0; t.dead = true; G.towers = G.towers.filter(x => x !== t); G.ruins.push({ c: t.c, r: t.r, type: t.type, lvl: t.lvl, br: t.br, mode: t.mode, inv: t.inv });
   if (G.selTower === t && typeof deselect === 'function') deselect();
   if (G.drag && G.drag.t === t) G.drag = null;
   ono(T('DÉTRUITE !'), t.x, t.y, '#ff4f6e', 0.55, 0, 1.1); Snd.play('hurt'); G.shake = Math.max(G.shake, 0.3);
@@ -294,7 +294,7 @@ function makeWave(w) {
   const ev = evt(), EV = ev && EVMOB[ev];
   if (EV && w >= EV.from) pool.push(EV.type, EV.type);
   let theme = null, label = '';
-  if (w % 10 === 0) label = BOSSAPP[ev] || T('Un Kaiju approche...');
+  if (w % 10 === 0) label = BOSSAPP[ev] || (zoneSkin('boss') || {}).app || T('Un Kaiju approche...');
   else if (EV && w >= 5 && w % 10 === 5) { theme = EV.type; label = EV.label; }
   else if (w >= 4 && w % 5 === 4) { theme = 'flappy'; label = T('Nuée de Flappy !'); }
   else if (w >= 7 && w % 7 === 0) { theme = 'zip'; label = T('Ruée de Zippy !'); }
@@ -492,7 +492,7 @@ function gameOver() {
 
 // ---------- Ennemis ----------
 function spawn(type, pi) {
-  const D = ETYPES[type], w = G.wave, m = hpMul(w) * MAPS[G.map].hpMul * (G.hpd || 1) * (G.coopHp || 1);
+  const D = ETYPES[type], w = G.wave, m = hpMul(w) * mapHpFor(G.map, G.diff) * (G.hpd || 1) * (G.coopHp || 1);
   const e = { id: ++G.eid, type, hp: D.hp * m, maxHp: D.hp * m, speed: D.speed * rand(0.95, 1.05) * (G.spd || 1),
     armor: D.armor ? D.armor + Math.floor(w / 10) : 0, flying: !!D.flying, d: 0, x: 0, y: 0, sdx: 1, sdy: 0,
     slowA: 0, slowT: 0, wet: 0, burn: 0, burnT: 0, frozen: 0, stun: 0, flash: 0, phase: rand(TAU), dead: false, lifeCost: D.lifeCost ?? 1, abT: 1.2 };
@@ -506,7 +506,7 @@ function spawn(type, pi) {
   if (typeof introMob === 'function' && !G.coopGuest) introMob(type);
   if (D.boss) {
     G.speedLines = 1.5; G.shake = Math.max(G.shake, 0.5);
-    banner((BOSSNAME[evt()] || 'KAIJU') + ' !!', T('Le boss débarque'), true); Snd.play('boss');
+    banner((BOSSNAME[evt()] || (zoneSkin('boss') || {}).up || 'KAIJU') + ' !!', T('Le boss débarque'), true); Snd.play('boss');
   }
 }
 function spawnAt(type, k, d, pi) {
