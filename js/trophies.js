@@ -176,7 +176,7 @@ function openTrophies() {
   }).join('');
   show('trophies'); screens.trophies.scrollTop = 0;
 }
-function refreshTrophyBtn() { const b = $('#prTrophies'); if (b) b.textContent = T('🏆 Trophées · ') + TROPHIES.filter(t => trophyData()[t.id]).length + '/' + TROPHIES.length; }
+function refreshTrophyBtn() { const b = $('#prTrophies'); if (b) b.textContent = T('🏆 Trophées') + ' ' + TROPHIES.filter(t => trophyData()[t.id]).length + '/' + TROPHIES.length; }
 $('#prTrophies').addEventListener('click', () => { Snd.init(); openTrophies(); });
 $('#trBack').addEventListener('click', () => { refreshTrophyBtn(); show('profile'); });
 document.addEventListener('keydown', ev => { if (curScreen === 'trophies' && ev.key === 'Escape') { refreshTrophyBtn(); show('profile'); } });

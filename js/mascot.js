@@ -48,12 +48,26 @@ function refreshProfileChip() { const n = (store.get('elemento.pseudo') || '').t
 function openProfile() {
   Snd.init(); show('profile'); screens.profile.scrollTop = 0; if (typeof refreshTrophyBtn === 'function') refreshTrophyBtn();
   $('#prName').value = store.get('elemento.pseudo') || '';
-  const best = store.get(BEST2) || {}, owned = MAPS.filter((m, i) => !m.season && !m.random && mapOwned(i)).length, wins = Object.values(best).reduce((n, r) => n + Object.values(r).filter(x => x && x.won).length, 0);
-  const n = v => (IS_EN ? v.toLocaleString('en-US') : v.toLocaleString('fr-FR')), h = Math.floor(stats.time / 3600), mn = Math.floor(stats.time / 60) % 60;
-  const pl = (v, one, many) => n(v) + T(v === 1 ? one : many);
-  $('#prStats2').textContent = pl(stats.games, ' partie · ', ' parties · ') + pl(stats.kills, ' ennemi vaincu · ', ' ennemis vaincus · ') + n(stats.bosses) + (IS_EN && stats.bosses !== 1 ? ' bosses · ' : ' boss · ') + pl(stats.towers, ' tour posée · ', ' tours posées · ') + (h ? h + ' h ' + String(mn).padStart(2, '0') : mn + ' min') + T(' de jeu');
-  $('#prStats').textContent = (meta.shards || 0) + T(' éclats · ') + (meta.earned || 0) + T(' gagnés en tout · cagnotte ') + (meta.bank || 0) + T(' or · ') + owned + T('/10 cartes · ') + wins + (IS_EN ? ' win' + (wins === 1 ? '' : 's') : ' victoire' + (wins > 1 ? 's' : ''));
 }
+// Page des stats (depuis le Profil) : une tuile par chiffre
+screens.stats = $('#sStats');
+function openStats() {
+  const best = store.get(BEST2) || {}, owned = MAPS.filter((m, i) => m.prog && mapOwned(i)).length;
+  const won = k => Object.values(best).filter(r => r[k] && r[k].won).length, maps = Object.values(best).filter(r => Object.values(r).some(x => x && x.won)).length;
+  const n = v => Math.round(v).toLocaleString(IS_EN ? 'en-US' : 'fr-FR'), h = Math.floor(stats.time / 3600), mn = Math.floor(stats.time / 60) % 60;
+  const tiles = [
+    ['💎', n(meta.shards || 0), T('éclats')], ['✨', n(meta.earned || 0), T('éclats gagnés en tout')], ['🐷', n(meta.bank || 0), T('or en cagnotte')],
+    ['🗺️', owned + ' / 10', T('cartes possédées')], ['🏁', n(maps), T('cartes réussies')], ['🥇', won('facile') + ' · ' + won('moyen') + ' · ' + won('difficile'), T('réussies en F · M · D')],
+    ['🎮', n(stats.games), T('parties lancées')], ['🏆', n(stats.wins), T('victoires')], ['💥', n(stats.ko), 'K.O.'],
+    ['🌊', n(stats.waves), T('vagues repoussées')], ['⚔️', n(stats.kills), T('ennemis vaincus')], ['🐲', n(stats.bosses), T('boss vaincus')],
+    ['🏗️', n(stats.towers), T('tours posées')], ['⏳', h ? h + ' h ' + String(mn).padStart(2, '0') : mn + ' min', T('temps de jeu')],
+  ];
+  $('#stGrid').innerHTML = tiles.map(([ic, v, l]) => '<div class="st"><span class="st-ic">' + ic + '</span><b>' + v + '</b><span>' + l + '</span></div>').join('');
+  show('stats'); screens.stats.scrollTop = 0;
+}
+$('#prStatsBtn').addEventListener('click', () => { Snd.init(); openStats(); });
+$('#stBack').addEventListener('click', () => show('profile'));
+document.addEventListener('keydown', ev => { if (curScreen === 'stats' && ev.key === 'Escape') show('profile'); });
 $('#tProfile').addEventListener('click', openProfile);
 $('#prName').addEventListener('input', ev => { store.set('elemento.pseudo', ev.target.value.trim().slice(0, 12)); refreshProfileChip(); });
 $('#prName').addEventListener('keydown', ev => ev.stopPropagation());
