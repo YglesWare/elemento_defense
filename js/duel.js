@@ -45,6 +45,7 @@ function exitDuelMeta() {
   if (!soloMeta) return;
   for (const k of Object.keys(meta)) delete meta[k];
   Object.assign(meta, soloMeta); soloMeta = null; duelOn = false;
+  if (typeof trophyPay === 'function') trophyPay();
 }
 
 // ---------- Lancement ----------
@@ -267,6 +268,7 @@ function duelAbort(text) {
 function showDuelScreen(final, why, abortText) {
   const me = meId(), rank = DUEL.result || [...DUEL.alive, ...[...DUEL.elim].reverse()];
   const won = final && !abortText && rank[0] === me, place = rank.indexOf(me) + 1;
+  if (won && typeof trophy === 'function') trophy('duel_win');
   $('#dWord').textContent = abortText ? 'FIN' : won ? T('VICTOIRE !!') : T('ÉLIMINÉ');
   $('#dWord').classList.toggle('win', won);
   $('#dText').textContent = abortText || (won ? T('Tu es le dernier survivant. Bravo !')

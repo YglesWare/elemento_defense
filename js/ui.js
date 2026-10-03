@@ -6,7 +6,7 @@ const GEM = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l7 7-7 13
 const LOCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="11" rx="3" fill="#ffd23f" stroke="#2a1b3d" stroke-width="2.2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke="#2a1b3d" stroke-width="2.4"/><circle cx="12" cy="16" r="1.6" fill="#2a1b3d"/></svg>';
 const screens = { profile: $('#sProfile'), title: $('#sTitle'), help: $('#sHelp'), pause: $('#sPause'), over: $('#sOver'), shop: $('#sShop'), tuto: $('#sTuto'), tree: $('#sTree'), maps: $('#sMaps'), diff: $('#sDiff') };
 let curScreen = 'title', helpFrom = 'title', shopFrom = 'title', hudCache = {};
-function show(name) { for (const k in screens) screens[k].hidden = k !== name; curScreen = name; if (name === 'title') refreshTitle(); }
+function show(name) { for (const k in screens) screens[k].hidden = k !== name; curScreen = name; if (name === 'title') { refreshTitle(); if (typeof trophyScan === 'function') { trophyPay(); trophyScan(); } } }
 function setText(el, key, v) { if (hudCache[key] !== v) { hudCache[key] = v; el.textContent = v; } }
 function setHTML(el, key, v) { if (hudCache[key] !== v) { hudCache[key] = v; el.innerHTML = v; } }
 
@@ -199,6 +199,7 @@ function tapCell(q, r, isMouse) {
     if (G.coopGuest) { G.ghost = null; coopAct({ a: 'build', type: G.selType, q, r }); return; }
     build(G.selType, q, r); return;
   }
+  if (typeof trophyTap === 'function') trophyTap(q, r);
   deselect();
 }
 let press = null;
@@ -756,6 +757,7 @@ function doFuse(src, dst, k) {
   for (const o of [src, dst]) burst(o.x, o.y, 0.4, 18, [TOWERS[o.type].color, '#ffffff', '#ff6ad5'], 3, 0.1, 1, 0.8, 'star');
   G.fx.push({ kind: 'ring', gx: dst.x, gy: dst.y, r0: 0.2, r1: 2.2, t: 0, dur: 0.6, color: '#ff6ad5' });
   ono('FUSION !', dst.x, dst.y, '#ff6ad5', 0.8, 0, 1.1);
+  if (typeof trophy === 'function' && !G.coopGuest) trophy('first_fusion');
   Snd.play('win');
   selectTower(nt);
   banner(F.name.toUpperCase(), F.elem);

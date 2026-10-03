@@ -163,7 +163,7 @@ function newGame(mi, save, diff) {
   const m = MAPS[mi]; useGrid(m);
   G = baseState(mi, save, diff);
   P = buildPath(m); G.deco = genDeco(mi);
-  if (!save) { stats.games++; saveStats(); }
+  if (!save) { stats.games++; saveStats(); const h = new Date().getHours(); if (h < 5 && typeof trophy === 'function' && !G.duel) trophy('egg_night'); }
   if (save) for (const t of save.towers) { const nt = addTower(t.type, t.c, t.r, t.lvl >= 3 && !t.br && !TOWERS[t.type].fusion ? 2 : t.lvl, t.mode, t.inv, t.br); if (hardMode() && t.hp > 0) nt.hp = Math.min(nt.maxHp, t.hp); }
   saveCheckpoint();
   hudCache = {}; const bp = $('#bonusPop'); if (bp) bp.hidden = true;
@@ -252,7 +252,7 @@ function addTower(type, q, r, lvl = 1, mode = 'premier', inv, br) {
 }
 function build(type, q, r) {
   const D = TOWERS[type], cost = costOf(type); G.gold -= cost;
-  const t = addTower(type, q, r); t.recoil = 1; if (!G.demo) stats.towers++;
+  const t = addTower(type, q, r); t.recoil = 1; t.builtAt = G.time; if (!G.demo) stats.towers++;
   burst(t.x, t.y, 0.1, 12, ['#ffffff', '#f1eafa', D.color], 2.2, 0.09, 3, 0.5, 'star');
   ono('POP!', t.x, t.y, '#fff', 0.45, 0.1, 0.9);
   Snd.play('build'); G.ghost = null;
@@ -272,6 +272,7 @@ function upgrade(t, br) {
 function evolve(t) { if (TOWERS[t.type].fusion) upgrade(t); else if (t.lvl === 2 || t.lvl >= 4) openTree(t); else upgrade(t, t.br); }
 function sell(t) {
   if (G.coopGuest) { coopAct({ a: 'sell', id: t.id }); deselect(); return; }
+  if (t.builtAt != null && G.time - t.builtAt < 3 && typeof trophy === 'function') trophy('egg_regret');
   const v = sellValue(t); G.gold += v;
   G.towers = G.towers.filter(x => x !== t);
   burst(t.x, t.y, 0.3, 12, ['#cdbfe0', '#ffffff', '#ffd23f'], 2, 0.09, 3, 0.5);
@@ -458,6 +459,7 @@ function waveDone() {
   hint(T('Vague ') + G.wave + ' : +' + bonus + T(' or') + (aw.gain ? ', +' + aw.gain + T(' éclats') : '') + (canBuyAnything() ? T(' · achat possible dans l’Atelier') : ''), 3200);
   Snd.play('clear');
   saveCheckpoint(); recordBest(); stats.waves++; saveStats();
+  if (typeof trophy === 'function') { if (G.diff === 'infini' && G.wave >= 30) trophy('inf_30'); if (G.diff === 'infini' && G.wave >= 50) trophy('inf_50'); trophyScan(); }
   if (G.wave >= G.maxw && !G.endless) { setTimeout(() => victory(), 700); return; }
   if (opts.auto) G.autoT = 3;
 }
@@ -480,6 +482,7 @@ function victory() {
   if (G.coop) { coopEnd(true); return; }
   G.paused = true; G.won = true; G.endless = true; Snd.play('win');
   const best = recordBest(), award = awardShards(), bank = bankGold(ECO.bankWin); G.shardsWon = G.shardsPaid; saveCheckpoint(); stats.wins++; saveStats();
+  if (typeof trophyWin === 'function') trophyWin();
   showOver(true, best, award, bank);
 }
 function gameOver() {
@@ -654,7 +657,7 @@ function hurt(e, dmg, elem, s) {
 function kill(e) {
   if (e.dead || G.coopGuest) return;
   e.dead = true;
-  const D = ETYPES[e.type]; if (!G.demo) { stats.kills++; if (D.boss) stats.bosses++; }
+  const D = ETYPES[e.type]; if (!G.demo) { stats.kills++; if (D.boss) { stats.bosses++; if (typeof trophyBoss === 'function') trophyBoss(); } }
   const up = (e.flying ? FLY : 0) + 0.25;
   const rw = G.coop ? coopLoot(D.reward * (1 + G.wave * 0.01)) : Math.round(D.reward * (1 + G.wave * 0.01) * (1 + 0.06 * M('loot')));
   if (!G.coop) G.gold += rw; G.score += rw * 10;

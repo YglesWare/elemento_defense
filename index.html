@@ -81,6 +81,7 @@
       <button class="btn alt" id="tSound" type="button">Son : oui</button>
       <button class="btn alt" id="tTuto" type="button">Tutoriel animé</button>
       <button class="btn alt" id="tHelp" type="button">Aide et règles</button>
+      <button class="btn" id="prTrophies" type="button">🏆 Trophées</button>
       <p class="fine">Tu commences avec deux gardiens. Chaque vague gagnée rapporte des éclats pour en débloquer d’autres dans l’Atelier.</p>
     </div>
     <button class="btn stickyb" id="prBack" type="button">Retour</button>
@@ -318,6 +319,17 @@
   </div>
 </section>
 
+<section class="screen" id="sTrophies" hidden>
+  <div class="inner">
+    <div class="panelbox col">
+      <h2 class="ptitle">Trophées <span class="trcount" id="trCount"></span></h2>
+      <p class="fine panedesc">Chaque trophée rapporte des éclats. Les trophées cachés sont des secrets à dénicher un peu partout, jusque sur les cartes.</p>
+      <ul class="trlist" id="trList"></ul>
+    </div>
+    <button class="btn stickyb" id="trBack" type="button">Retour</button>
+  </div>
+</section>
+<div class="trophytoast" id="trophyToast" role="status" aria-live="polite" hidden></div>
 <!-- Fenêtre d'explication : nouveau monstre, première tour attaquée (js/intro.js) -->
 <div class="intro" id="intro" role="dialog" aria-modal="true" aria-labelledby="introTitle" hidden>
   <div class="intro-card">
@@ -331,4 +343,4 @@
 </div>
 <!-- Les données du joueur (IndexedDB) sont chargées d'abord, puis les scripts du jeu, dans cet ordre -->
 <script src="js/storage.js"></script>
-<script>store.boot(['js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bonus.js']);</script>
+<script>store.boot(['js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bonus.js', 'js/trophies.js']);</script>

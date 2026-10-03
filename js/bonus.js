@@ -103,7 +103,7 @@ function useBonus(b, q, r) {
     burst(t.x, t.y, 0.4, 24, ['#ffd23f', '#ffffff', '#b8f5c0'], 3, 0.1, 2, 0.8, 'star'); ono(T('DE RETOUR !'), t.x, t.y, '#5cd86a', 0.6, 0, 1.1);
   }
   meta.bonus[b.id] = bonusOwned(b.id) - 1; saveMeta();
-  G.bonusUsed = (G.bonusUsed || 0) + 1;
+  G.bonusUsed = (G.bonusUsed || 0) + 1; if (typeof trophy === 'function') trophy('bonus_use');
   Snd.play('win'); hint(b.icon + ' ' + b.name + T(' utilisé · bonus ') + G.bonusUsed + '/' + BONUS_MAX, 2200);
   hudCache = {}; refreshBonusBtn();
 }

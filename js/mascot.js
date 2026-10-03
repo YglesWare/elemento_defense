@@ -35,6 +35,7 @@ function mascotTick(t) {
 $('#tYglou').addEventListener('click', () => {
   Snd.init(); Snd.play('cri'); MASCOT.jumpT = 0.6; MASCOT.taps++;
   try { navigator.vibrate && navigator.vibrate(15); } catch (e) {}
+  if (MASCOT.taps >= 10 && typeof trophy === 'function') trophy('egg_yglou');
   if (MASCOT.taps >= 10 && !store.get(EGG_KEY)) {
     store.set(EGG_KEY, true); meta.shards += 5; meta.earned = (meta.earned || 0) + 5; saveMeta();
     document.querySelector('#sTitle .bubble').textContent = T('Kiiaaa ! Tu as trouvé mon secret : +5 éclats pour toi !');
@@ -45,7 +46,7 @@ $('#tYglou').addEventListener('click', () => {
 // ---------- Profil : pseudo, son, tutoriel et aide ----------
 function refreshProfileChip() { const n = (store.get('elemento.pseudo') || '').trim(); $('#tProfName').textContent = n || T('Profil'); }
 function openProfile() {
-  Snd.init(); show('profile'); screens.profile.scrollTop = 0;
+  Snd.init(); show('profile'); screens.profile.scrollTop = 0; if (typeof refreshTrophyBtn === 'function') refreshTrophyBtn();
   $('#prName').value = store.get('elemento.pseudo') || '';
   const best = store.get(BEST2) || {}, owned = MAPS.filter((m, i) => !m.season && !m.random && mapOwned(i)).length, wins = Object.values(best).reduce((n, r) => n + Object.values(r).filter(x => x && x.won).length, 0);
   const n = v => (IS_EN ? v.toLocaleString('en-US') : v.toLocaleString('fr-FR')), h = Math.floor(stats.time / 3600), mn = Math.floor(stats.time / 60) % 60;

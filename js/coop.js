@@ -266,6 +266,7 @@ function coopEnd(win) {
 function coopFinish(win, text, quit) {
   if (!G || !G.coop || G.coopDone) return;
   G.coopDone = true; G.over = true; G.won = !!win; G.paused = true;
+  if (win && typeof trophy === 'function') trophy('coop_win');
   Snd.play(win ? 'win' : quit ? 'clear' : 'ko');
   setTimeout(() => {
     if (!G || !G.coop) return;
