@@ -549,7 +549,17 @@ function drawShowcase(t) {
     drawTower(o.c, o.type, 24, 31, 42, 1, t + i * 0.7, Math.sin(t * 1.3 + i), 0.2, rc, ((t + i * 0.9) % 4) < 0.12);
   });
 }
-function drawMapMini(c, mi, w, h, diff) { withGrid(MAPS[mi], () => drawMapMini2(c, mi, w, h, diff)); }
+// Écran en hauteur : la partie échange lignes et colonnes (L.portrait, js/game.js) ; les aperçus font pareil pour ressembler
+// à la vraie carte, dans un cadre en hauteur (9/13)
+const miniPortrait = () => innerHeight > innerWidth * 1.08;
+function drawMapMini(c, mi, w, h, diff) {
+  document.documentElement.classList.toggle('miniportrait', miniPortrait());
+  if (miniPortrait()) {
+    const H = Math.round(w * 13 / 9); c = prepMini(c.canvas, w, H); c.save(); c.transform(0, 1, 1, 0, 0, 0);
+    withGrid(MAPS[mi], () => drawMapMini2(c, mi, H, w, diff)); c.restore(); return;
+  }
+  withGrid(MAPS[mi], () => drawMapMini2(c, mi, w, h, diff));
+}
 function drawMapMini2(c, mi, w, h, diff) {
   const m = MAPS[mi], cs = Math.min(w / COLS, h / ROWS), ox = (w - COLS * cs) / 2, oy = (h - ROWS * cs) / 2;
   c.fillStyle = m.frame; c.fillRect(0, 0, w, h);
@@ -625,7 +635,7 @@ function dailyCard() {
   d.innerHTML = '<canvas></canvas><span class="nm">' + T('📅 Carte du jour') + '</span><span class="bio-l">' + T('Nouvelle carte dans ') + dailyLeft() + ' · ' + RSIZES[r.size].name + '</span>'
     + '<span class="medals">' + medalsHTML(rec) + '</span><button class="sbtn" type="button">' + T('Jouer ▸') + '</button>';
   const cv2 = d.querySelector('canvas'), c = prepMini(cv2, 140, 90), keep = MAPS[RI];
-  MAPS[RI] = map; drawMapMini(c, RI, 140, 90); MAPS[RI] = keep;
+  MAPS[RI] = map; drawMapMini(c, RI, 140, 90, 'moyen'); MAPS[RI] = keep;
   const open = () => { Snd.init(); playDaily(); };
   d.querySelector('button').addEventListener('click', open); cv2.addEventListener('click', open);
   if (typeof rankCard === 'function') rankCard(d, r.daily);
@@ -638,9 +648,10 @@ function randomCard() {
     + T('<button class="sbtn" type="button">Créer ▸</button>');
   const cv2 = d.querySelector('canvas'), c = prepMini(cv2, 140, 90);
   randCardMap = randCardMap || genRandomMap('moyenne', 20261001);
-  const keep = MAPS[RI]; MAPS[RI] = randCardMap; drawMapMini(c, RI, 140, 90); MAPS[RI] = keep;
-  c.fillStyle = 'rgba(42,27,61,.35)'; c.fillRect(0, 0, 140, 90);
-  drawDice(c, 70, 45, 26);
+  const keep = MAPS[RI]; MAPS[RI] = randCardMap; drawMapMini(c, RI, 140, 90, 'moyen'); MAPS[RI] = keep;
+  const ch = miniPortrait() ? Math.round(140 * 13 / 9) : 90; // l'aperçu peut être en hauteur (écran en hauteur)
+  c.fillStyle = 'rgba(42,27,61,.35)'; c.fillRect(0, 0, 140, ch);
+  drawDice(c, 70, ch / 2, 26);
   const open = () => { Snd.init(); openRand(); };
   d.querySelector('button').addEventListener('click', open); cv2.addEventListener('click', open);
   return d;

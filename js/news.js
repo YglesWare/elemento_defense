@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  59: [
+    ['🗺️', 'Sur un téléphone tenu droit, les aperçus des cartes sont dans le même sens que la partie : la carte du jour ressemble enfin à ce que tu vas jouer.'],
+  ],
   58: [
     ['🗺️', 'Carte du jour : le bouton « Amis » passe au-dessus de « Jouer », pour que tous les boutons « Jouer » soient alignés.'],
   ],

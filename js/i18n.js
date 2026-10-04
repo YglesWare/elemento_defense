@@ -1506,6 +1506,7 @@ const EN = {
 "Rejoindre": "Rejoin",
 "Appli fermée par erreur en pleine partie en ligne ? Rouvre-la vite : elle te propose de rejoindre la partie (tu as 1 min 30). En coop, tu retrouves tes tours et ton équipe.": "Closed the app by mistake during an online game? Reopen it quickly: it offers to rejoin the game (you have 1 min 30). In co-op, you get your towers and your team back.",
 "Carte du jour : le bouton « Amis » passe au-dessus de « Jouer », pour que tous les boutons « Jouer » soient alignés.": "Daily map: the “Friends” button moves above “Play”, so all the “Play” buttons line up.",
+"Sur un téléphone tenu droit, les aperçus des cartes sont dans le même sens que la partie : la carte du jour ressemble enfin à ce que tu vas jouer.": "On a phone held upright, map previews now face the same way as the game: the daily map finally looks like what you’ll play.",
 };
 const T = s => (IS_EN && typeof s === 'string' && EN[s] !== undefined ? EN[s] : s);
 // Textes fixes de la page : nœuds de texte et attributs (placeholder, aria-label, title, alt)
