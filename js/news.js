@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  58: [
+    ['🗺️', 'Carte du jour : le bouton « Amis » passe au-dessus de « Jouer », pour que tous les boutons « Jouer » soient alignés.'],
+  ],
   57: [
     ['🔁', 'Appli fermée par erreur en pleine partie en ligne ? Rouvre-la vite : elle te propose de rejoindre la partie (tu as 1 min 30). En coop, tu retrouves tes tours et ton équipe.'],
   ],

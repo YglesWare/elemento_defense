@@ -862,3 +862,6 @@ html.cvd .tbtn .bio.bad{background:#ffe2c4}
 #micMeter b{display:block;height:100%;width:0;background:var(--sky);transition:width .08s}
 #micMeter.on b{background:var(--leaf)}
 .upbar.inf i{background:linear-gradient(90deg,var(--grape),var(--pop))}
+/* Ligne « Amis » de la carte du jour : poussée en bas, juste au-dessus du bouton « Jouer » */
+.mapc>.drank{margin-top:auto}
+.mapc>.drank+.sbtn{margin-top:0}

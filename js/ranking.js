@@ -48,7 +48,8 @@ function rankCard(card, day) {
   if (!rankOn()) return;
   const row = document.createElement('div'); row.className = 'drank';
   row.innerHTML = '<button class="sbtn drbtn" type="button">' + T('🏆 Amis') + '</button><span class="drtxt"></span>';
-  card.appendChild(row);
+  // Au-dessus du bouton « Jouer », pour que les boutons « Jouer » restent alignés d'une carte à l'autre
+  const play = card.querySelector(':scope > .sbtn'); if (play) card.insertBefore(row, play); else card.appendChild(row);
   row.querySelector('button').addEventListener('click', ev => { ev.stopPropagation(); openRank(day); });
   rankLoad(day).then(by => {
     if (!by) return;
