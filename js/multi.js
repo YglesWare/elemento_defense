@@ -209,7 +209,8 @@ function renderMP() {
 
 // ---------- Actions ----------
 function needName() {
-  const inp = $('#mpName'), v = (inp ? inp.value : mpName()).trim().slice(0, 12) || randomPseudo();
+  const inp = $('#mpName'); let v = (inp ? inp.value : mpName()).trim().slice(0, 12) || randomPseudo();
+  if (typeof pseudoGuard === 'function') v = pseudoGuard(v, store.get('elemento.pseudo'));
   store.set('elemento.pseudo', v); return v;
 }
 async function hostInvite() {

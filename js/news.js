@@ -6,6 +6,10 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  53: [
+    ['🎩', 'La garde-robe d’Yglou : chapeaux, couleurs de crête et aura dorée, à acheter avec l’or de ta cagnotte. Tes amis voient ton Yglou déguisé !'],
+    ['👓', 'Confort de jeu : texte plus grand, couleurs pour daltoniens, vibrations et secousses réglables (dans le Profil).'],
+  ],
   52: [
     ['🎯', 'Trois défis chaque jour, à retrouver sur l’accueil : ils remplissent ta cagnotte d’or, et un coffre bonus t’attend si tu les réussis tous.'],
     ['🏆', 'Carte du jour : compare ton score avec celui de tes amis grâce au classement du jour.'],

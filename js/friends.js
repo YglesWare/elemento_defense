@@ -25,8 +25,8 @@ const frOn = () => typeof CLOUD !== 'undefined' && !cloudOff() && onlineAllowed(
 const frLive = () => frOn() && !!CLOUD.user && !!CLOUD.sb && navigator.onLine;
 async function frRpc(fn, args) { const { data, error } = await CLOUD.sb.rpc(fn, args || {}); if (error) throw error; return data; }
 async function frProfile() {
-  const key = cleanPseudo() + '|' + favElement();
-  const r = await frRpc('profile_sync', { p_pseudo: cleanPseudo(), p_avatar: favElement() });
+  const av = typeof myAvatar === 'function' ? myAvatar() : favElement(), key = cleanPseudo() + '|' + av;
+  const r = await frRpc('profile_sync', { p_pseudo: cleanPseudo(), p_avatar: av });
   FR.sent = key; FR.ok = true;
   if (r && r.code && r.code !== FR.code) { FR.code = r.code; store.set(FRC_KEY, r.code); }
 }
@@ -35,7 +35,7 @@ async function frLoad(force) {
   if (!force && FR.busy) return;
   FR.busy = true;
   try {
-    if (!FR.ok || FR.sent !== cleanPseudo() + '|' + favElement()) await frProfile();
+    if (!FR.ok || FR.sent !== cleanPseudo() + '|' + (typeof myAvatar === 'function' ? myAvatar() : favElement())) await frProfile();
     const rows = await frRpc('friends_list');
     FR.list = (rows || []).map(r => ({ id: r.user_id, pseudo: r.pseudo, av: r.avatar, kind: r.kind, since: r.since, online: !!r.online, state: r.state, seen: r.last_seen }));
     store.set(FR_KEY, FR.list); FR.lastLoad = Date.now(); FR.err = '';
@@ -81,7 +81,11 @@ const frBtn = (act, label, cls = '') => '<button class="sbtn frb ' + cls + '" ty
 const byOnline = (a, b) => (b.online - a.online) || a.pseudo.localeCompare(b.pseudo);
 const frOf = kind => FR.list.filter(f => f.kind === kind).sort(byOnline);
 function frAvatars(root) {
-  root.querySelectorAll('canvas[data-av]').forEach(cv => { const t = TOWERS[cv.dataset.av] ? cv.dataset.av : 'feu', n = +(cv.dataset.size || 40); drawTower(prepMini(cv, n, n), t, n / 2, n * 0.6, n * 0.8, 1, 0.5, 0, 0.3, 0, false); });
+  // Avatar : l'Yglou déguisé du joueur (« yg… », js/wardrobe.js), ou un gardien pour les anciennes versions du jeu
+  root.querySelectorAll('canvas[data-av]').forEach(cv => {
+    const n = +(cv.dataset.size || 40), c = prepMini(cv, n, n), look = typeof avatarLook === 'function' && avatarLook(cv.dataset.av);
+    if (look) drawYglouHead(c, n, look); else drawTower(c, TOWERS[cv.dataset.av] ? cv.dataset.av : 'feu', n / 2, n * 0.6, n * 0.8, 1, 0.5, 0, 0.3, 0, false);
+  });
 }
 function frNote() {
   if (!navigator.onLine || (typeof CLOUD !== 'undefined' && !CLOUD.user)) return T('Hors ligne : la liste se mettra à jour au retour du réseau.');

@@ -193,6 +193,33 @@ function drawTower(c, type, x, y, s, lvl, t, lx, ly, recoil, blink, br) {
 }
 // ---------- Déguisements des tours pendant les événements ----------
 const HTOP = { feu: -1.3, eau: -1.32, terre: -0.98, vent: -0.92, foudre: -0.98, glace: -1.3, tornade: -1.32, orage: -1.0, volcan: -0.92, geyser: -1.6, marais: -0.5, blizzard: -0.92, sable: -0.92, plasma: -0.92 };
+// Chapeaux de la garde-robe (y : bas du chapeau sur la tête, r : rayon de la tête)
+function crownHat(c, ty, hr, lw) {
+  const w = hr * 1.05, y0 = ty + hr * 0.22, h = hr * 0.62;
+  c.beginPath(); c.moveTo(-w * 0.62, y0); c.lineTo(-w * 0.68, y0 - h * 0.62); c.lineTo(-w * 0.32, y0 - h * 0.3); c.lineTo(0, y0 - h); c.lineTo(w * 0.32, y0 - h * 0.3); c.lineTo(w * 0.68, y0 - h * 0.62); c.lineTo(w * 0.62, y0); c.closePath(); fs(c, '#ffd23f', lw);
+  for (const [x, y, col] of [[-w * 0.68, y0 - h * 0.62, '#ff4f81'], [0, y0 - h, '#3fa9ff'], [w * 0.68, y0 - h * 0.62, '#ff4f81']]) { c.beginPath(); c.arc(x, y, hr * 0.09, 0, TAU); fs(c, col, lw * 0.7); }
+  c.beginPath(); c.arc(0, y0 - h * 0.2, hr * 0.1, 0, TAU); fs(c, '#5cd86a', lw * 0.7);
+}
+function capHat(c, ty, hr, lw) {
+  const y0 = ty + hr * 0.3;
+  c.beginPath(); c.ellipse(hr * 0.5, y0, hr * 0.62, hr * 0.15, 0.12, 0, TAU); fs(c, '#d83a66', lw);
+  c.beginPath(); c.moveTo(-hr * 0.78, y0); c.bezierCurveTo(-hr * 0.78, y0 - hr * 0.8, hr * 0.78, y0 - hr * 0.8, hr * 0.78, y0); c.closePath(); fs(c, '#ff4f81', lw);
+  c.beginPath(); c.moveTo(0, y0 - hr * 0.58); c.lineTo(0, y0); c.lineWidth = lw * 0.7; c.strokeStyle = 'rgba(42,27,61,.35)'; c.stroke();
+  c.beginPath(); c.arc(0, y0 - hr * 0.6, hr * 0.08, 0, TAU); fs(c, '#ffd23f', lw * 0.7);
+}
+function topHat(c, ty, hr, lw) {
+  const y0 = ty + hr * 0.2;
+  c.beginPath(); c.ellipse(0, y0, hr * 0.85, hr * 0.17, 0, 0, TAU); fs(c, '#2f2340', lw);
+  rr(c, -hr * 0.5, y0 - hr * 0.95, hr * 1.0, hr * 0.95, hr * 0.08); fs(c, '#3b2d52', lw);
+  rr(c, -hr * 0.5, y0 - hr * 0.32, hr * 1.0, hr * 0.2, 0); fs(c, '#ff4f81', lw * 0.8);
+  c.beginPath(); c.ellipse(-hr * 0.22, y0 - hr * 0.7, hr * 0.06, hr * 0.2, 0, 0, TAU); c.fillStyle = 'rgba(255,255,255,.25)'; c.fill();
+}
+function ninjaBand(c, hy, hr, lw) {
+  const by = hy - hr * 0.5;
+  c.save(); c.beginPath(); c.arc(0, hy, hr, 0, TAU); c.clip(); c.beginPath(); c.rect(-hr * 1.1, by - hr * 0.13, hr * 2.2, hr * 0.26); fs(c, '#e8344e', lw); c.restore();
+  c.beginPath(); c.arc(0, hy, hr, 0, TAU); c.lineWidth = lw; c.strokeStyle = INK; c.stroke();
+  for (const [dy, a] of [[-0.05, -0.35], [0.12, 0.25]]) { c.save(); c.translate(hr * 0.95, by + hr * dy); c.rotate(a); c.beginPath(); c.moveTo(0, -hr * 0.07); c.quadraticCurveTo(hr * 0.35, -hr * 0.12, hr * 0.55, hr * 0.02); c.lineTo(hr * 0.5, hr * 0.12); c.quadraticCurveTo(hr * 0.3, 0, 0, hr * 0.07); c.closePath(); fs(c, '#e8344e', lw * 0.8); c.restore(); }
+}
 function witchHat(c, y, r, lw, band) {
   c.beginPath(); c.ellipse(0, y, r * 0.78, r * 0.17, -0.08, 0, TAU); fs(c, '#3b2458', lw);
   c.beginPath(); c.moveTo(-r * 0.46, y - r * 0.04); c.quadraticCurveTo(-r * 0.2, y - r * 0.6, r * 0.05, y - r * 1.05);
@@ -1073,6 +1100,13 @@ function drawYglou(c, x, y, s, mood = 'happy', t = 0, o = {}) {
   const hop = mood === 'party' ? Math.abs(Math.sin(t * 7)) * s * 0.06 : 0;
   if (o.atom) yAtom(c, x, y, s * o.atom, t, false);
   c.save(); c.translate(x, y); c.lineJoin = 'round'; c.lineCap = 'round';
+  // Aura dorée (garde-robe) : un halo et quatre étincelles qui tournent
+  if (o.aura) {
+    const g = c.createRadialGradient(0, -r * 0.2, r * 0.3, 0, -r * 0.2, r * 1.55); g.addColorStop(0, 'rgba(255,214,90,.55)'); g.addColorStop(1, 'rgba(255,214,90,0)');
+    c.fillStyle = g; c.beginPath(); c.arc(0, -r * 0.2, r * 1.55, 0, TAU); c.fill();
+    for (let i = 0; i < 4; i++) { const a = t * 1.2 + i * TAU / 4, px = Math.cos(a) * r * 1.3, py = -r * 0.2 + Math.sin(a) * r * 1.05, q = r * (0.13 + 0.04 * Math.sin(t * 5 + i));
+      c.beginPath(); for (let k = 0; k < 8; k++) { const b = k * Math.PI / 4, rr2 = k % 2 ? q * 0.38 : q; c.lineTo(px + Math.cos(b) * rr2, py + Math.sin(b) * rr2); } c.closePath(); fs(c, '#ffe066', lw * 0.6); }
+  }
   if (!o.noShadow) { c.fillStyle = 'rgba(42,27,61,.2)'; c.beginPath(); c.ellipse(0, r * 1.05, r * 0.8 * (1 - hop / s), r * 0.15, 0, 0, TAU); c.fill(); }
   c.translate(0, -hop);
   const hy = -r * 0.45, hr = r * 0.85, by0 = r * 0.35;
@@ -1091,7 +1125,7 @@ function drawYglou(c, x, y, s, mood = 'happy', t = 0, o = {}) {
   for (let i = 0; i < 3; i++) { const yy = by0 + r * (0.05 + i * 0.18); c.beginPath(); c.moveTo(-r * 0.28 + i * r * 0.05, yy); c.lineTo(0, yy + r * 0.1); c.lineTo(r * 0.28 - i * r * 0.05, yy); c.stroke(); }
   c.beginPath(); c.arc(0, hy, hr, 0, TAU); fs(c, grd(hy, hr), lw);
   // crête dorée plaquée vers l'arrière (cachée par un déguisement)
-  if (!o.costume) for (const [a, k, dx] of [[0.35, 1, -0.1], [0.75, 0.9, 0.12], [1.1, 0.75, 0.32]]) {
+  if (!o.costume || o.costume === 'ninja') for (const [a, k, dx] of [[0.35, 1, -0.1], [0.75, 0.9, 0.12], [1.1, 0.75, 0.32]]) {
     c.save(); c.translate(hr * dx, hy - hr * 0.88 + hr * dx * 0.25); c.rotate(a + (mood === 'shock' ? -0.25 : 0));
     c.beginPath(); c.moveTo(-r * 0.11, r * 0.08); c.quadraticCurveTo(-r * 0.1, -r * 0.42 * k, r * 0.06, -r * 0.62 * k); c.quadraticCurveTo(r * 0.13, -r * 0.3 * k, r * 0.11, r * 0.08); c.closePath(); fs(c, o.crest || YG.crest, lw * 0.9); c.restore();
   }
@@ -1133,7 +1167,11 @@ function drawYglou(c, x, y, s, mood = 'happy', t = 0, o = {}) {
   else if (o.costume === 'valentin') {
     c.beginPath(); c.arc(0, hy, hr * 1.02, Math.PI * 1.15, Math.PI * 1.85); c.lineWidth = lw * 1.6; c.strokeStyle = '#ff4f81'; c.stroke();
     for (const sg of [-1, 1]) { const bx = sg * hr * 0.55, bby = hy - hr * 1.45 + Math.sin(t * 5 + sg) * hr * 0.05; c.beginPath(); c.moveTo(sg * hr * 0.5, hy - hr * 0.88); c.lineTo(bx, bby); c.lineWidth = lw * 0.8; c.strokeStyle = INK; c.stroke(); heart(c, bx, bby, hr * 0.42); fs(c, '#ff4f81', lw * 0.7); }
-  } else if (o.costume === 'nouvelan') {
+  } else if (o.costume === 'crown') crownHat(c, ty, hr, lw);
+  else if (o.costume === 'cap') capHat(c, ty, hr, lw);
+  else if (o.costume === 'tophat') topHat(c, ty, hr, lw);
+  else if (o.costume === 'ninja') ninjaBand(c, hy, hr, lw);
+  else if (o.costume === 'nouvelan') {
     c.beginPath(); c.moveTo(-hr * 1.1, ty + hr * 0.4); c.lineTo(0, ty - hr * 0.45); c.lineTo(hr * 1.1, ty + hr * 0.4); c.quadraticCurveTo(0, ty + hr * 0.18, -hr * 1.1, ty + hr * 0.4); fs(c, '#e8c47a', lw);
     c.beginPath(); c.moveTo(-hr * 0.5, ty + hr * 0.1); c.lineTo(0, ty - hr * 0.45); c.lineTo(hr * 0.5, ty + hr * 0.1); c.lineWidth = lw * 0.6; c.strokeStyle = 'rgba(120,80,30,.5)'; c.stroke();
   }

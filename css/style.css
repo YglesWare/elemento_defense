@@ -811,3 +811,35 @@ button:disabled{cursor:default}
 .rksc{font-weight:800;font-size:13px;text-align:right;line-height:1.15;white-space:nowrap}
 .rksc small{display:block;color:var(--muted);font-size:11px}
 #rankPop .intro-card>.btn{width:100%}
+
+/* Garde-robe d'Yglou (js/wardrobe.js) */
+#sWardrobe{background:repeating-conic-gradient(from 0deg at 50% 10%,var(--grape) 0deg 7deg,var(--grape2) 7deg 14deg)}
+.wrbank{align-self:center;display:inline-flex;align-items:center;gap:6px;background:var(--ink);color:#fff;border-radius:99px;padding:4px 16px;font-weight:800;font-size:15px}
+.wrbank b{font-size:18px}
+.wr{gap:10px}
+.wrprev{display:flex;justify-content:center;background:var(--mist);border:2.5px solid var(--ink);border-radius:16px}
+.wrprev canvas{width:200px;height:210px}
+.wrsel{display:flex;flex-direction:column;gap:7px;border:2.5px solid var(--pop);border-radius:14px;background:#fff8d6;padding:8px 10px}
+.wrselh{display:flex;align-items:center;gap:8px;font-weight:800}
+.wrselh b{flex:1;font-size:16px}
+.wrselh span{display:inline-flex;align-items:center;gap:3px;font-weight:800}
+.wrselh svg,.wrbuy svg,.wst svg{width:15px;height:15px}
+.sbtn.wrbuy{background:var(--sun);display:flex;align-items:center;justify-content:center;gap:4px}
+.wrtabs .sbtn.on{background:var(--sun)}
+.wrtiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.wtile{display:flex;flex-direction:column;align-items:center;gap:2px;border:2.5px solid var(--ink);border-radius:13px;background:var(--paper);box-shadow:0 2px 0 var(--ink);padding:4px 3px 6px;font:inherit;color:inherit}
+.wtile canvas{width:64px;height:64px}
+.wtile b{font-weight:800;font-size:12px;line-height:1.15;min-height:28px;display:flex;align-items:center;text-align:center}
+.wtile.worn{background:var(--okbg);outline:3px solid var(--leaf);outline-offset:-1px}
+.wtile.sel{outline:3px solid var(--pop);outline-offset:1px}
+.wtile.poor{opacity:.6}
+.wst{display:inline-flex;align-items:center;gap:2px;font-weight:800;font-size:11.5px;border:2px solid var(--ink);border-radius:99px;padding:0 7px;line-height:1.5}
+.wst.worn{background:var(--leaf)}.wst.own{background:var(--mist)}.wst.buy{background:var(--sun)}.wst.poor{background:#eee}
+
+/* Confort et accessibilité (js/comfort.js) */
+.cflist{display:flex;flex-direction:column;gap:8px;width:100%;text-align:left}
+#comfortPop .intro-card .btn{width:100%}
+html.bigtext .screen>.inner,html.bigtext .intro-card{zoom:1.12}
+html.cvd .tbtn .bio.good{background:#d6e8ff}
+html.cvd .tbtn .bio.bad{background:#ffe2c4}
+.prnameres{background:#fff8d6;border:2px solid var(--ink);border-radius:12px;padding:6px 10px;font-weight:800;color:var(--ink)}

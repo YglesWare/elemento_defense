@@ -82,6 +82,7 @@
       <div class="profhead"><canvas id="prCv" aria-hidden="true"></canvas><div><h2 class="ptitle" style="margin:0">Profil</h2></div></div>
       <label class="mp-label" for="prName">Ton pseudo (utilisé en multijoueur)</label>
       <input id="prName" class="mp-input" maxlength="12" autocomplete="nickname" placeholder="Ton pseudo">
+      <p class="fine prnameres" id="prNameRes" hidden>🧑‍🎨 Bravo, tu as trouvé le nom du créateur ! Mais ce pseudo lui est réservé : tu gardes le tien.</p>
       <p class="fine pa-err" id="prNameWarn" hidden>Ce pseudo n’est pas autorisé : tes amis verront « Joueur ».</p>
       <span class="mp-label">Langue · Language</span>
       <div class="mp-seg" id="prLang"><button class="sbtn" type="button" data-lang="auto">Auto</button><button class="sbtn" type="button" data-lang="fr">Français</button><button class="sbtn" type="button" data-lang="en">English</button></div>
@@ -103,6 +104,8 @@
           <div class="mp-seg"><button class="sbtn" id="prEraseNo" type="button">Annuler</button><button class="sbtn danger" id="prEraseYes" type="button">Effacer en ligne</button></div>
         </div>
       </div>
+      <button class="btn alt" id="prWardrobe" type="button">🎩 Garde-robe d’Yglou</button>
+      <button class="btn alt" id="prComfort" type="button">👓 Confort et accessibilité</button>
       <button class="btn alt" id="prParents" type="button">👪 Espace parents</button>
       <button class="btn alt" id="prNews" type="button">🆕 Nouveautés</button>
       <div class="mp-seg prbtns"><button class="sbtn" id="prStatsBtn" type="button">📊 Stats</button><button class="sbtn" id="prTrophies" type="button">🏆 Trophées</button></div>
@@ -383,6 +386,24 @@
     <button class="btn stickyb" id="paBack" type="button">Retour</button>
   </div>
 </section>
+<section class="screen" id="sWardrobe" hidden>
+  <div class="inner">
+    <div class="bigword calm head">GARDE-ROBE</div>
+    <span class="wrbank">🐷 <b id="wrBank">0</b> <span>or en cagnotte</span></span>
+    <div class="panelbox col wr">
+      <div class="wrprev"><canvas id="wrPrev" aria-label="Yglou avec sa tenue" role="img"></canvas></div>
+      <div class="wrsel" id="wrSel" hidden>
+        <div class="wrselh"><b id="wrSelName"></b><span id="wrSelPrice"></span></div>
+        <div class="mp-seg"><button class="sbtn wrbuy" id="wrBuy" type="button">Acheter</button><button class="sbtn" id="wrCancel" type="button">Annuler</button></div>
+        <p class="fine" id="wrPoor" hidden></p>
+      </div>
+      <div class="mp-seg wrtabs" id="wrTabs"><button class="sbtn on" type="button" data-t="hat">Chapeaux</button><button class="sbtn" type="button" data-t="crest">Crêtes</button><button class="sbtn" type="button" data-t="aura">Aura</button></div>
+      <div class="wrtiles" id="wrTiles"></div>
+      <p class="fine">Touche un objet pour l’essayer sur Yglou. Tout se paie avec l’or de la cagnotte, jamais avec de l’argent réel.</p>
+    </div>
+    <button class="btn stickyb" id="wrBack" type="button">Retour</button>
+  </div>
+</section>
 <section class="screen" id="sStats" hidden>
   <div class="inner">
     <div class="panelbox col">
@@ -456,6 +477,15 @@
     <button class="btn alt" id="rkClose" type="button">Fermer</button>
   </div>
 </div>
+<!-- Confort et accessibilité (js/comfort.js) -->
+<div class="intro" id="comfortPop" role="dialog" aria-modal="true" aria-labelledby="cfTitle" hidden>
+  <div class="intro-card">
+    <h2 id="cfTitle">Confort de jeu</h2>
+    <div class="cflist" id="cfList"></div>
+    <p class="fine">Ces réglages restent sur ce téléphone.</p>
+    <button class="btn" id="cfClose" type="button">Fermer</button>
+  </div>
+</div>
 <!-- Mon QR code ami -->
 <div class="intro" id="frQr" role="dialog" aria-modal="true" aria-labelledby="fqTitle" hidden>
   <div class="intro-card">
@@ -509,4 +539,4 @@
 </div>
 <!-- Les données du joueur (IndexedDB) sont chargées d'abord, puis les scripts du jeu, dans cet ordre -->
 <script src="js/storage.js"></script>
-<script>store.boot(['js/errors.js', 'js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bonus.js', 'js/trophies.js', 'js/actions.js', 'js/vendor/supabase.js', 'js/cloud.js', 'js/parents.js', 'js/friends.js', 'js/online.js', 'js/emotes.js', 'js/news.js', 'js/quests.js', 'js/ranking.js']);</script>
+<script>store.boot(['js/errors.js', 'js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bonus.js', 'js/trophies.js', 'js/actions.js', 'js/vendor/supabase.js', 'js/cloud.js', 'js/parents.js', 'js/friends.js', 'js/online.js', 'js/emotes.js', 'js/news.js', 'js/quests.js', 'js/ranking.js', 'js/wardrobe.js', 'js/comfort.js']);</script>

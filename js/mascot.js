@@ -7,7 +7,9 @@ const EGG_KEY = 'elemento.yglouEgg';
 const liveCostume = () => { const now = new Date(); for (const k in SEASONS) if (SEASONS[k].on(now)) return k; return null; };
 function paintYglou(cv, w, h, mood, t, o = {}) {
   if (!cv || !cv.offsetParent) return;
-  const c = prepMini(cv, w, h), oo = Object.assign({ costume: liveCostume() }, o);
+  // Tenue de la garde-robe (js/wardrobe.js) ; sans chapeau choisi, le déguisement de l'événement en cours
+  const W = typeof wear === 'function' ? wear() : {}, oo = Object.assign({ costume: (typeof wearHat === 'function' && wearHat()) || liveCostume(), crest: typeof wearCrest === 'function' ? wearCrest() : null, aura: !!W.aura }, o);
+  const c = prepMini(cv, w, h);
   // Avec un chapeau, Yglou est un peu plus petit et plus bas pour que le chapeau tienne dans le cadre
   // o.top : place vide en haut du cadre (part de la hauteur) pour que les sauts et le chapeau ne soient jamais coupés
   // Avec l'atome d'éléments, Yglou est un peu plus petit pour que les électrons restent dans le cadre
@@ -24,10 +26,11 @@ function mascotTick(t) {
     const j = MASCOT.jumpT > 0 ? Math.sin((0.6 - MASCOT.jumpT) / 0.6 * Math.PI) * 18 : 0;
     const cv = $('#tYglou'), hh = cv.clientHeight || 175, base = hh / 1.35;
     paintYglou(cv, Math.round(cv.clientWidth || hh * 0.8), hh, MASCOT.jumpT > 0 ? 'party' : (t % 7) < 0.6 ? 'wink' : 'happy', t, { jump: j * base / 130, top: 0.35, atom: 1.3 });
-    if (!MASCOT.chipT || t - MASCOT.chipT > 1) { MASCOT.chipT = t; paintYglou($('#tProfCv'), 30, 30, 'happy', 0, { noShadow: true, noConfetti: true, costume: null }); }
+    if (!MASCOT.chipT || t - MASCOT.chipT > 1) { MASCOT.chipT = t; paintYglou($('#tProfCv'), 30, 30, 'happy', 0, { noShadow: true, noConfetti: true, costume: typeof wearHat === 'function' ? wearHat() : null, aura: false }); }
   } else if (curScreen === 'over') paintYglou($('#oYglou'), 170, 130, MASCOT.overMood, t, { atom: 1.3 });
   else if (curScreen === 'profile') paintYglou($('#prCv'), 70, 70, (t % 5) < 0.6 ? 'wink' : 'happy', t, { noConfetti: true });
   else if (curScreen === 'shop') paintYglou($('#sYglou'), 72, 72, MASCOT.shopParty > 0 ? 'party' : (t % 6) < 0.6 ? 'wink' : 'happy', t, { noConfetti: true });
+  if (typeof wardrobeTick === 'function') wardrobeTick(t);
   const gb = document.querySelector('#guideBox:not([hidden]) .gy');
   if (gb && typeof GUIDE !== 'undefined') paintYglou(gb, 56, 56, GUIDE.i === 0 ? 'wink' : GUIDE.i === GSTEPS.length - 1 ? 'party' : 'happy', t, { noConfetti: true, noShadow: true });
 }

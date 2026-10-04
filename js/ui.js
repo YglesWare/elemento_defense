@@ -365,7 +365,7 @@ function refreshCosts() {
     b.setAttribute('aria-label', b.dataset.aria + (lk ? T(', à débloquer dans l’Atelier') : ', ' + costOf(type) + T(' or')));
     const Wx = G && !G.demo && G.weather && G.weather !== 'clear' ? WEATHERS[G.weather] : null;
     const bs = b.querySelector('.bio'), a = G && !G.demo ? clamp(affinity(type, MAPS[G.map].biome) + (Wx ? affinity(type, Wx) : 0), -0.6, 0.6) : 0;
-    bs.hidden = !a; if (a) { bs.textContent = (a > 0 ? '+' : '−') + Math.round(Math.abs(a) * 100); bs.className = 'bio ' + (a > 0 ? 'good' : 'bad'); bs.title = 'Biome ' + MAPS[G.map].biome.name + (Wx ? ' + ' + Wx.name : '') + T(' : ') + fmtAff(a); }
+    bs.hidden = !a; if (a) { bs.textContent = (a > 0 ? (COMFORT.cvd ? '▲' : '+') : (COMFORT.cvd ? '▼' : '−')) + Math.round(Math.abs(a) * 100); bs.className = 'bio ' + (a > 0 ? 'good' : 'bad'); bs.title = 'Biome ' + MAPS[G.map].biome.name + (Wx ? ' + ' + Wx.name : '') + T(' : ') + fmtAff(a); }
   }
 }
 function drawUpIcon(c, id, x, y, s) {

@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 52;
+const BUILD = 53;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -18,6 +18,11 @@ const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const lerp = (a, b, t) => a + (b - a) * t;
 const RM = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)').matches : false;
+// Confort et accessibilité (réglages de l'appareil, js/comfort.js) : texte plus grand, couleurs pour daltoniens,
+// vibrations, moins de secousses. COL() : les couleurs « bien / moyen / pas bien » du jeu (bleu et orange pour les daltoniens).
+const COMFORT = Object.assign({ big: false, cvd: false, vib: true, calm: false }, store.get('elemento.comfort') || {});
+const COL = () => COMFORT.cvd ? { good: '#3a8dff', mid: '#ffd23f', bad: '#ff9a1f', badA: 'rgba(255,154,31,', okBg: '#d6e8ff', noBg: '#ffe2c4' }
+  : { good: '#5cd86a', mid: '#ffd23f', bad: '#ff4f6e', badA: 'rgba(255,79,110,', okBg: '#dcf7d6', noBg: '#ffe0e6' };
 function mulberry(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 // store (lecture/écriture des données du joueur) : voir js/storage.js
 const opts = Object.assign({ sound: true, music: true, auto: false }, store.get(OPTS) || {});

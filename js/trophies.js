@@ -144,9 +144,27 @@ $('#sTitle .logo').addEventListener('click', () => {
   const el = $('#sTitle .logo'); el.classList.remove('wob'); void el.offsetWidth; el.classList.add('wob');
   if (++logoTaps === 7) trophy('egg_logo');
 });
-// Pseudo du créateur
-const trophyName = n => { if (String(n || '').trim().toLowerCase() === 'ygles') trophy('egg_ygles'); };
-$('#prName').addEventListener('input', ev => trophyName(ev.target.value));
+// Pseudo du créateur : le trouver donne le trophée, mais « Ygles » lui est réservé (variantes comprises : YGLES, Ygl3s, Y g l e s…).
+// Seuls ses appareils, reconnus à leur identifiant de progression (Profil → Compte en ligne), peuvent le porter.
+const CREATOR_IDS = ['7D08-EE30'];
+const pidShortOf = id => String(id || '').replace(/-/g, '').slice(0, 8).toUpperCase().replace(/(.{4})(.{4})/, '$1-$2');
+const isCreator = () => CREATOR_IDS.includes(pidShortOf(store.get('elemento.playerId')));
+const reservedName = n => String(n || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/3/g, 'e').replace(/[1!|]/g, 'l').replace(/[^a-z]/g, '') === 'ygles';
+const trophyName = n => { if (reservedName(n)) trophy('egg_ygles'); };
+// Rend un pseudo utilisable : le pseudo réservé redevient « fallback » (le pseudo d'avant), avec le trophée en cadeau
+function pseudoGuard(n, fallback) {
+  if (!reservedName(n) || isCreator()) return n;
+  trophy('egg_ygles');
+  return fallback && !reservedName(fallback) ? fallback : randomPseudo();
+}
+let namePrev = null;
+$('#prName').addEventListener('focus', ev => { namePrev = store.get('elemento.pseudo') || ''; });
+$('#prName').addEventListener('input', ev => {
+  const v = ev.target.value, ok = pseudoGuard(v, namePrev);
+  if (ok === v) return;
+  ev.target.value = ok; store.set('elemento.pseudo', ok); refreshProfileChip();
+  const w = $('#prNameRes'); w.hidden = false; clearTimeout(w._t); w._t = setTimeout(() => { w.hidden = true; }, 5000);
+});
 // Code Konami : ↑ ↑ ↓ ↓ ← → ← → B A, au clavier ; sur l'écran d'accueil d'un téléphone, les flèches sont
 // des glissés du doigt, B un toucher sur la moitié gauche de l'écran et A un toucher sur la moitié droite
 const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
@@ -183,5 +201,5 @@ document.addEventListener('keydown', ev => { if (curScreen === 'trophies' && ev.
 
 // Au démarrage : l'ancien secret d'Yglou devient un trophée, le pseudo est vérifié, les récompenses en attente sont versées
 if (store.get(EGG_KEY) && !trophyHas('egg_yglou')) { const d = trophyData(); d.egg_yglou = { at: Date.now(), paid: true }; store.set(TROPHY_KEY, d); }
-trophyName(store.get('elemento.pseudo'));
+{ const n = store.get('elemento.pseudo'), ok = pseudoGuard(n, null); if (ok !== n) { store.set('elemento.pseudo', ok); refreshProfileChip(); } }
 trophyPay(); trophyScan(); refreshTrophyBtn();
