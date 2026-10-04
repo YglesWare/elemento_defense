@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  66: [
+    ['🏠', 'Accueil : les boutons Histoire et Jouer sont moins hauts.'],
+  ],
   65: [
     ['🎵', 'Nouvelle musique : chaque biome et chaque événement a la sienne, composée en direct, jamais deux fois pareille, avec des pauses où l’on n’entend que les vagues, le vent ou les oiseaux.'],
     ['🌫️', 'Histoire : chez Papi Yglou, le brouillard tombe et il vous explique comment la météo change la force des tours.'],
