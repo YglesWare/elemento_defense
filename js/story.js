@@ -322,7 +322,7 @@ function openStory() {
     + all.map((t, i) => {
       const [x, y] = NODE_POS[i] || [0.5, 0.5], ready = i < CHAPTERS.length, st = !ready ? 'soon' : done[i] ? 'done' : i === cur ? 'cur' : i < cur ? 'done' : 'lock';
       return '<button class="stnode ' + st + '" type="button" data-i="' + i + '" style="left:' + x * 100 + '%;top:' + y * 100 + '%" aria-label="' + esc(T(t)) + '">' + (i === all.length - 1 ? '👑' : done[i] ? '✓' : i) + '</button>'
-        + '<span class="stlbl" style="left:' + x * 100 + '%;top:calc(' + y * 100 + '% + 19px)">' + esc(T(t)) + '</span>';
+        + '<span class="stlbl" style="left:' + x * 100 + '%;top:calc(' + y * 100 + '% + 25px)">' + esc(T(t)) + '</span>';
     }).join('')
     + '<canvas class="sttok" id="stTok" style="left:' + NODE_POS[cur][0] * 100 + '%;top:' + NODE_POS[cur][1] * 100 + '%"></canvas>';
   // La carte se dessine à la taille de son cadre

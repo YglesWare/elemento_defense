@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  62: [
+    ['🗺️', 'Carte de l’histoire : l’étape en cours pulse bien à sa place, sans se cacher sous son nom.'],
+  ],
   61: [
     ['📖', 'L’histoire de Braise est complète : Zéphyr, Voltie, Givrette, Papi Yglou et sa fusion… jusqu’au Roi Gloop ! Et une surprise à la fin.'],
     ['🗺️', 'La carte de l’histoire devient un vrai parchemin d’aventurier.'],

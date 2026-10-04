@@ -875,7 +875,9 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
 .stworld{position:relative;width:100%;aspect-ratio:9/13;max-height:74vh;margin-inline:auto;border:4px solid #5a3a1e;border-radius:10px;box-shadow:0 5px 0 var(--ink),inset 0 0 0 3px #f8ebc8;overflow:hidden;background:#f2dfb0}
 .stmap{position:absolute;inset:0;width:100%;height:100%}
 .stnode{position:absolute;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;border:3px solid #5a3a1e;background:#fff3d6;box-shadow:0 2px 0 #5a3a1e;font:800 14px/1 "Baloo 2",system-ui,sans-serif;color:#4a2f17;padding:0;z-index:2}
-.stnode.done{background:var(--leaf)}.stnode.cur{background:var(--sun);width:40px;height:40px;animation:emoIn .8s ease-in-out infinite alternate}
+.stnode.done{background:var(--leaf)}.stnode.cur{background:var(--sun);width:40px;height:40px;z-index:4;animation:stPulse .8s ease-in-out infinite alternate}
+/* L'étape en cours pulse sur place (le centrage translate(-50%,-50%) reste dans l'animation) */
+@keyframes stPulse{from{transform:translate(-50%,-50%) scale(1)}to{transform:translate(-50%,-50%) scale(1.12)}}
 .stnode.lock,.stnode.soon{background:#d8c49a;color:#8a7350}
 @media (prefers-reduced-motion:reduce){.stnode.cur{animation:none}}
 .stlbl{position:absolute;transform:translateX(-50%);font-weight:800;font-size:11px;color:#4a2f17;background:#fff8e6;border:1.5px solid #5a3a1e;border-radius:6px;padding:0 6px;white-space:nowrap;z-index:2;pointer-events:none;box-shadow:0 1px 0 #5a3a1e}

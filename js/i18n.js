@@ -1647,6 +1647,7 @@ const EN = {
 "L’histoire de Braise est complète : Zéphyr, Voltie, Givrette, Papi Yglou et sa fusion… jusqu’au Roi Gloop ! Et une surprise à la fin.": "Ember’s story is complete: Zephyr, Volty, Frosty, Grandpa Yglou and fusion… all the way to King Gloop! And a surprise at the end.",
 "La carte de l’histoire devient un vrai parchemin d’aventurier.": "The story map becomes a real adventurer’s parchment.",
 "Finis l’histoire pour gagner le trophée « Doux rêveur » et un bonnet de nuit pour Yglou.": "Finish the story to earn the “Sweet dreamer” trophy and a nightcap for Yglou.",
+"Carte de l’histoire : l’étape en cours pulse bien à sa place, sans se cacher sous son nom.": "Story map: the current step now pulses in place, without hiding under its name.",
 };
 const T = s => (IS_EN && typeof s === 'string' && EN[s] !== undefined ? EN[s] : s);
 // Textes fixes de la page : nœuds de texte et attributs (placeholder, aria-label, title, alt)
