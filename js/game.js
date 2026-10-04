@@ -347,7 +347,8 @@ function waveTimer() {
 // La prochaine vague est tirée à l'avance : l'aperçu montre exactement ce qui va arriver
 function prepNextWave() {
   G.nextWave = (!G.endless && G.wave >= G.maxw) ? null : Object.assign({ n: G.wave + 1 }, makeWave(G.wave + 1));
-  if (G.nextWave && G.nextWave.n > 1 && (G.nextWave.n - 1) % 5 === 0) {
+  // Mode histoire : pas de météo au hasard, seulement celle écrite dans le chapitre (storyWave)
+  if (G.nextWave && !G.story && G.nextWave.n > 1 && (G.nextWave.n - 1) % 5 === 0) {
     const pool = (WEATHER_POOL[MAPS[G.map].wid || MAPS[G.map].id] || ['clear']).filter(w => w !== G.weather);
     G.nextWave.weather = pool.length ? pick(pool) : 'clear';
   }

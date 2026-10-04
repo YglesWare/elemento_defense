@@ -137,7 +137,19 @@ const CHAPTERS = [
       ['papi', 'Écoutez bien, jeunes gardiens : deux amis qui unissent leurs pouvoirs, ça décoiffe. Même moi, et j’ai plus beaucoup de plumes.'],
       ['papi', 'Monte deux tours au niveau 2, puis fais glisser l’une sur l’autre : elles fusionnent ! Essaie Braise et Zéphyr : ça fait une Tornade de feu.'],
     ],
-    events: { start2: [['glace', 'M-moi, je ralentis tout le monde avec mon froid… P-pose-moi au milieu du chemin.']] },
+    // La météo : le brouillard tombe à la vague 4 et se lève à la 6
+    weather: { 4: 'fog', 6: 'clear' },
+    events: {
+      start2: [['glace', 'M-moi, je ralentis tout le monde avec mon froid… P-pose-moi au milieu du chemin.']],
+      start4: [
+        ['papi', 'Oh oh… Voilà le brouillard qui monte de la vallée. Ouvrez l’œil, mes petits !'],
+        ['feu', 'Je ne vois même plus le bout de ma flamme !'],
+        ['papi', 'Faites attention : la météo change la force des tours. Dans le brouillard, toutes les tours voient moins loin.'],
+        ['yglou', 'Pluie, canicule, blizzard… chaque météo aide certaines tours et en gêne d’autres. Sous la carte, l’icône montre la météo, et une flèche annonce quand elle va changer.'],
+        ['papi', 'Hé hé… Et parfois, un bon coup de vent chasse le brouillard. Mais ça, c’est un secret.'],
+      ],
+      start6: [['papi', 'Ah ! Le brouillard se lève. Vos tours voient de nouveau loin : profitez-en !']],
+    },
     outro: [
       ['papi', 'Bravo ! Vous apprenez vite. Revenez demain, je vous apprendrai encore un tour… ou deux.'],
       ['glace', 'J-je peux venir avec vous ? Je n’ai jamais vu le reste du monde…'],
@@ -412,7 +424,7 @@ async function playChapter(i) {
   for (const t of ch.towers) if (UNLOCK[t]) meta.lv['u_' + t] = 1;
   if (ch.fusion) for (const k in FUSIONS) if (FUSIONS[k].parents.every(p => ch.towers.includes(p))) meta.lv['f_' + k] = 1;
   meta.shards = ch.shards || 0;
-  storyRun = { ch: i, towers: ch.towers, waves: ch.waves, events: ch.events || {}, tries: 0 };
+  storyRun = { ch: i, towers: ch.towers, waves: ch.waves, events: ch.events || {}, weather: ch.weather || {}, tries: 0 };
   await storySay(ch.intro);
   if (ch.atelier) {
     openShop(); const tab = document.querySelector('[data-tab=mast]'); if (tab) tab.click();
@@ -443,7 +455,7 @@ function storyWave(w) {
   const np = P ? P.portals.length : 1, portals = w <= 1 ? [0] : [...Array(np).keys()];
   const routes = P ? P.paths.map((pa, i) => i).filter(i => portals.includes(P.paths[i].pk || 0)) : [0];
   list.forEach((it, i) => { it.pi = routes[i % routes.length]; });
-  return { list, label: spec.some(([t]) => t === 'boss') ? T('Un Kaiju approche...') : '', portals };
+  return { list, label: spec.some(([t]) => t === 'boss') ? T('Un Kaiju approche...') : '', portals, weather: G.story.weather && G.story.weather[w] };
 }
 function storyWaveStart(n) { const ev = G.story.events['start' + n]; if (ev) storySay(ev); }
 function storyWaveEnd(n) { const ev = G.story.events['end' + n]; if (ev) storySay(ev); }
