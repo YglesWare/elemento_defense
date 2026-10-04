@@ -6,6 +6,11 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  67: [
+    ['🎻', 'Fini le son 8 bits : la musique est jouée avec de vrais instruments (piano, guitare, harpe, flûte, violon, cor…), plus grave et beaucoup plus douce pour les oreilles.'],
+    ['🗺️', 'Chaque carte a sa musique : bossa-nova à la plage, grenouilles au marais, cor des Alpes au Pic, trot de cheval au canyon, tambours au volcan…'],
+    ['🎃', 'Les fêtes ont leur air : la Toccata de Bach pour Halloween, Jingle Bells à Noël, le Canon de Pachelbel à la Saint-Valentin, Le Printemps de Vivaldi à Pâques.'],
+  ],
   66: [
     ['🏠', 'Accueil : les boutons Histoire et Jouer sont moins hauts.'],
   ],
