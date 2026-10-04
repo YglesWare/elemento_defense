@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  57: [
+    ['🔁', 'Appli fermée par erreur en pleine partie en ligne ? Rouvre-la vite : elle te propose de rejoindre la partie (tu as 1 min 30). En coop, tu retrouves tes tours et ton équipe.'],
+  ],
   56: [
     ['⚡', 'Les demandes d’amis apparaissent en quelques secondes, sans avoir à rouvrir la page Amis.'],
   ],

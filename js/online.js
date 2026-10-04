@@ -35,7 +35,8 @@ function onlineChannelOnce(room) {
 }
 function onlineClose() {
   const ch = ONL.ch, room = ONL.room, host = ONL.host;
-  ONL.ch = null; ONL.room = null; ONL.host = false; ONL.hostRelay = null;
+  ONL.ch = null; ONL.room = null; ONL.host = false; ONL.hostRelay = null; Net.fresh = false;
+  try { localStorage.removeItem(SESS_KEY); } catch (e) {}
   for (const pc of ONL.pcs.values()) { try { pc.close(); } catch (e) {} }
   ONL.pcs.clear(); ONL.relays.clear(); ONL.last.clear(); ONL.invites.clear(); ONL.joined.clear();
   if (ch) CLOUD.sb.removeChannel(ch).catch(() => {});
@@ -95,7 +96,7 @@ async function onSignal(m) {
       if (old) { old.onconnectionstatechange = null; try { old.close(); } catch (e) {} }
       const L = relayLink('host'); L.dc.send = s => sig({ t: 'r', to: 'host', d: s }); L.pc.relay = 'host';
       ONL.hostRelay = L; Net.hostPc = L.pc; Net.peers.set('host', L);
-      Net.sendTo('host', { t: 'hello', id: Net.me.id, name: Net.me.name, v: NET_VER });
+      Net.sendTo('host', { t: 'hello', id: Net.me.id, name: Net.me.name, v: NET_VER, fresh: !!Net.fresh });
     } else if (m.t === 'r' && m.to === me && ONL.hostRelay) {
       let msg; try { msg = JSON.parse(m.d); } catch (e) { return; }
       Net.receive(ONL.hostRelay.pc, ONL.hostRelay.dc, msg);
@@ -129,9 +130,11 @@ setInterval(() => {
   else if (!Net.reconnecting && Net.peers.has('host') && Net.hostLast && now - Net.hostLast > 8000) Net.dropPc(Net.peers.get('host').pc);
 }, 2000);
 const nameOf = id => { const p = Net.players.find(x => x.id === id) || Net.peers.get(id); return (p && p.name) || T('Un joueur'); };
-Net.on('away', id => hint(nameOf(id) + T(' a perdu la connexion… on l’attend 20 s'), 3000));
+Net.on('away', id => hint(nameOf(id) + T(' a perdu la connexion… on l’attend 1 min 30'), 3000));
 Net.on('back', id => { if (id === 'host') { $('#reconnBox').hidden = true; hint(T('Reconnecté !'), 1800); } else { hint(nameOf(id) + T(' est de retour !'), 2200); if (typeof COOP !== 'undefined' && COOP.on) COOP.towerSig = ''; } });
 Net.on('reconnecting', () => { $('#reconnBox').hidden = false; });
+// Place retrouvée après une appli relancée : les prochaines reconnexions sont de simples coupures
+Net.on('roster', () => { if (Net.online && Net.role === 'guest') Net.fresh = false; });
 Net.on('closed', () => { $('#reconnBox').hidden = true; });
 
 // ---------- Hôte : salon et invitations ----------
@@ -251,8 +254,9 @@ $('#ipYes').addEventListener('click', async () => {
   } catch (e) { Net.reset(); mpGo('home', { tab: 'online', err: e.message || T('Impossible de rejoindre la partie.') }); }
   finally { ONL.busy = false; }
 });
-async function onlineJoin(room) {
-  Net.reset(); Net.role = 'guest'; Net.online = true; Net.me = { id: rid(), name: cleanPseudo(), host: false };
+// pid : l'identifiant de joueur d'avant, pour reprendre sa place après une appli fermée puis rouverte
+async function onlineJoin(room, pid) {
+  Net.reset(); Net.role = 'guest'; Net.online = true; Net.fresh = !!pid; Net.me = { id: pid || rid(), name: cleanPseudo(), host: false };
   ONL.room = room; ONL.host = false; keepAwake();
   await onlineChannel(room);
   sig({ t: 'hi', pid: Net.me.id });
@@ -260,3 +264,26 @@ async function onlineJoin(room) {
 }
 setInterval(() => { pollInvites(); }, 4000);
 setInterval(() => { pollRoomInvites(); }, 3000);
+
+// ---------- Appli fermée puis rouverte en pleine partie en ligne (invité) ----------
+// Le téléphone retient la partie en cours (salon, identifiant de joueur) ; relancé dans le délai de grâce, il propose
+// de la rejoindre : l'hôte lui garde sa place, et en coop il lui renvoie toute la partie.
+const SESS_KEY = 'elemento.mpSess';
+setInterval(() => {
+  if (Net.online && Net.role === 'guest' && ONL.room && Net.peers.has('host')) { try { localStorage.setItem(SESS_KEY, JSON.stringify({ room: ONL.room, pid: Net.me.id, at: Date.now() })); } catch (e) {} }
+}, 5000);
+(async function rejoinCheck() {
+  let sess = null; try { sess = JSON.parse(localStorage.getItem(SESS_KEY) || 'null'); } catch (e) {}
+  if (!sess || Date.now() - sess.at > ONLINE_GRACE) { try { localStorage.removeItem(SESS_KEY); } catch (e) {} return; }
+  for (let i = 0; i < 30 && !frLive(); i++) await new Promise(r => setTimeout(r, 500));
+  if (!frLive() || Net.role || Date.now() - sess.at > ONLINE_GRACE) return;
+  $('#rejoinPop').hidden = false;
+  $('#rjNo').onclick = () => { $('#rejoinPop').hidden = true; try { localStorage.removeItem(SESS_KEY); } catch (e) {} };
+  $('#rjYes').onclick = async () => {
+    $('#rejoinPop').hidden = true; Snd.init(); ONL.busy = true;
+    show('multi'); screens.multi.scrollTop = 0;
+    mpGo('busy', { busyText: T('On rejoint la partie…'), lanJoin: true });
+    try { await onlineJoin(sess.room, sess.pid); } catch (e) { Net.reset(); mpGo('home', { tab: 'online', err: T('La partie n’existe plus.') }); }
+    finally { ONL.busy = false; }
+  };
+})();

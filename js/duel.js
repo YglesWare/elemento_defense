@@ -92,13 +92,13 @@ function hostTick() {
     Net.send('all', { k: 'wave', n: DUEL.hostWave, gap: DUEL.cfg.gap, w: G ? G.weather : 'clear' });
   }
   // En ligne, un joueur peut perdre le réseau quelques secondes : il a le temps de se reconnecter (js/net.js)
-  const afk = Net.online ? 25000 : DUEL.cfg.afk;
+  const afk = Net.online ? ONLINE_GRACE + 5000 : DUEL.cfg.afk;
   for (const id of DUEL.alive) if (id !== meId() && t - (DUEL.last[id] || 0) > afk) eliminate(id, 'absent');
 }
 function guestWatch() {
   if (!DUEL.on || DUEL.result) return;
   const h = hostId();
-  if (!h || dnow() - (DUEL.last[h] || 0) > (Net.online ? 27000 : DUEL.cfg.hostAfk)) duelAbort(T('L’hôte ne répond plus. La partie est interrompue.'));
+  if (!h || dnow() - (DUEL.last[h] || 0) > (Net.online ? ONLINE_GRACE + 7000 : DUEL.cfg.hostAfk)) duelAbort(T('L’hôte ne répond plus. La partie est interrompue.'));
 }
 function sendStatus() {
   if (!DUEL.on || !G) return;
@@ -341,3 +341,5 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') DUEL.hiddenAt = dnow();
   else if (DUEL.hiddenAt && dnow() - DUEL.hiddenAt > DUEL.cfg.afk && !DUEL.dead && !DUEL.result) duelDead('absent');
 });
+// Un joueur revient après avoir fermé l'appli : sa carte de duel est perdue, il compte comme parti et attend la suite au salon
+Net.on('rejoin', id => { if (DUEL.on && Net.role === 'host' && DUEL.alive.has(id)) eliminate(id, 'parti'); });

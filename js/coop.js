@@ -42,7 +42,7 @@ function coopHostStart() {
   if (Net.players.length < 2) { MP.err = T('Il faut au moins 2 joueurs pour lancer la partie.'); renderMP(); return; }
   const rm = MAPS[DUEL.lobbyMap] && MAPS[DUEL.lobbyMap].random ? { size: DUEL.lobbySize || 'moyenne', seed: newSeed() } : null;
   const msg = { k: 'cstart', map: DUEL.lobbyMap, rnd: rm, diff: DUEL.lobbyDiff || 'moyen', ids: Net.players.map(p => p.id), names: Object.fromEntries(Net.players.map(p => [p.id, p.name])) };
-  Net.send('all', msg);
+  Net.send('all', msg); COOP.startMsg = msg;
   beginCoop(msg);
 }
 function beginCoop(msg) {
@@ -215,7 +215,7 @@ function coopTick(dt) {
     COOP.snapT -= dt; if (COOP.snapT <= 0 && !G.over) { COOP.snapT = 0.125; sendSnapshot(); }
   } else {
     // En ligne, la reconnexion a 25 s (js/net.js) : la fin de partie viendra de Net si elle échoue
-    if (!G.over && !Net.reconnecting && now - COOP.lastSnap > (Net.online ? 30000 : 8000)) coopFinish(false, T('La connexion avec l’hôte est perdue. La partie s’arrête.'));
+    if (!G.over && !Net.reconnecting && now - COOP.lastSnap > (Net.online ? ONLINE_GRACE + 10000 : 8000)) coopFinish(false, T('La connexion avec l’hôte est perdue. La partie s’arrête.'));
     // Achats dans l'Atelier pendant la partie : l'hôte en a besoin pour calculer nos tours
     const lv = JSON.stringify(meta.lv); if (lv !== COOP.lvSent) { COOP.lvSent = lv; Net.send(hostOf(), { k: 'clv', lv: meta.lv }); }
   }
@@ -361,3 +361,5 @@ Net.on('leave', id => { if (COOP.on) playerGone(id); });
 Net.on('closed', () => { if (COOP.on && G && G.coopGuest && !G.over) coopFinish(false, T('La connexion avec l’hôte est perdue. La partie s’arrête (règles du K.O.).')); });
 // Un invité envoie ses améliorations à l'hôte dès qu'il voit le mode coop dans le salon
 Net.on('msg', ({ data }) => { if (data && data.k === 'lobby' && data.mode === 'coop' && Net.role !== 'host') Net.send(hostOf(), { k: 'clv', lv: meta.lv }); });
+// Un coéquipier revient après avoir fermé l'appli : on lui renvoie toute la partie (carte, puis tours et état au prochain envoi)
+Net.on('rejoin', id => { if (COOP.on && Net.role === 'host' && COOP.startMsg && G && G.coop && !G.over) { Net.send(id, COOP.startMsg); COOP.towerSig = ''; } });

@@ -1498,6 +1498,13 @@ const EN = {
 "La partie est sauvegardée au début de chaque vague : après un plantage, tu reprends avec les tours posées pendant la pause.": "Your game is saved at the start of every wave: after a crash, you resume with the towers placed during the break.",
 "La musique se coupe quand le jeu passe en arrière-plan.": "Music stops when the game goes to the background.",
 "Les demandes d’amis apparaissent en quelques secondes, sans avoir à rouvrir la page Amis.": "Friend requests now show up within seconds, without reopening the Friends page.",
+"On rejoint la partie…": "Rejoining the game…",
+"La partie n’existe plus.": "That game no longer exists.",
+" a perdu la connexion… on l’attend 1 min 30": " lost the connection… waiting 1 min 30",
+"Partie en cours": "Game in progress",
+"Tu étais dans une partie en ligne avec tes amis. Tu veux la rejoindre ?": "You were in an online game with your friends. Do you want to rejoin it?",
+"Rejoindre": "Rejoin",
+"Appli fermée par erreur en pleine partie en ligne ? Rouvre-la vite : elle te propose de rejoindre la partie (tu as 1 min 30). En coop, tu retrouves tes tours et ton équipe.": "Closed the app by mistake during an online game? Reopen it quickly: it offers to rejoin the game (you have 1 min 30). In co-op, you get your towers and your team back.",
 };
 const T = s => (IS_EN && typeof s === 'string' && EN[s] !== undefined ? EN[s] : s);
 // Textes fixes de la page : nœuds de texte et attributs (placeholder, aria-label, title, alt)

@@ -3,6 +3,8 @@
 // La mise en relation se fait par QR codes : l'hôte montre une invitation, l'invité répond avec un autre QR.
 'use strict';
 
+// En ligne : temps laissé à un joueur pour revenir (coupure de réseau, ou appli fermée puis rouverte)
+const ONLINE_GRACE = 90000;
 const NET_VER = 7, NET_MAX = 4, QR_PREFIX = 'ELD' + NET_VER;
 
 // ---------- Encodage des invitations (compression + base64url) ----------
@@ -211,7 +213,7 @@ const Net = {
       if (pc.connectionState === 'failed' || pc.connectionState === 'closed') self.dropPc(pc);
     });
     dc.onopen = () => {
-      if (self.role === 'guest') { self.peers.set('host', { pc, dc }); self.sendTo('host', { t: 'hello', id: self.me.id, name: self.me.name, v: NET_VER }); }
+      if (self.role === 'guest') { self.peers.set('host', { pc, dc }); self.sendTo('host', { t: 'hello', id: self.me.id, name: self.me.name, v: NET_VER, fresh: !!self.fresh }); }
     };
     dc.onclose = () => self.dropPc(pc);
     dc.onmessage = ev => { let msg; try { msg = JSON.parse(ev.data); } catch (e) { return; } self.receive(pc, dc, msg); };
@@ -223,7 +225,7 @@ const Net = {
         const back = this.online && this.peers.get(msg.id);
         if (back && back.away) {
           clearTimeout(back.awayT); Object.assign(back, { pc, dc, away: 0, awayT: 0, last: performance.now() });
-          this.syncRoster(); this.emit('back', msg.id); return;
+          this.syncRoster(); this.emit('back', msg.id); if (msg.fresh) this.emit('rejoin', msg.id); return;
         }
         if (this.peers.size + 1 >= NET_MAX) { try { dc.send(JSON.stringify({ t: 'full' })); } catch (e) {} setTimeout(() => pc.close(), 300); return; }
         if (pc.lan && this.inGame()) { try { dc.send(JSON.stringify({ t: 'ingame' })); } catch (e) {} setTimeout(() => pc.close(), 300); return; }
@@ -261,13 +263,13 @@ const Net = {
       if (this.role === 'host') {
         if (p.away) return;
         p.away = Date.now(); p.dc = { readyState: 'closed', send() {} }; try { pc.close(); } catch (e) {}
-        p.awayT = setTimeout(() => { if (p.away && this.peers.get(id) === p) { p.pc = { final: true, close() {} }; p.pc.final = true; this.dropPc(p.pc); } }, 20000);
+        p.awayT = setTimeout(() => { if (p.away && this.peers.get(id) === p) { p.pc = { final: true, close() {} }; p.pc.final = true; this.dropPc(p.pc); } }, ONLINE_GRACE);
         this.syncRoster(); this.emit('away', id); return;
       }
       if (!this.reconnecting) {
         this.peers.delete(id); try { pc.close(); } catch (e) {}
         this.reconnecting = true; this.emit('reconnecting');
-        clearTimeout(this.reconT); this.reconT = setTimeout(() => { if (this.reconnecting) { this.reconnecting = false; this.emit('closed', T('Connexion perdue avec l’hôte.')); this.reset(); } }, 25000);
+        clearTimeout(this.reconT); this.reconT = setTimeout(() => { if (this.reconnecting) { this.reconnecting = false; this.emit('closed', T('Connexion perdue avec l’hôte.')); this.reset(); } }, ONLINE_GRACE + 5000);
         if (typeof onlineRejoin === 'function') onlineRejoin();
       }
       return;
