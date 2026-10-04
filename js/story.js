@@ -487,4 +487,4 @@ async function storyLose() {
 }
 function storyAbort() { storyLeave(); openStory(); }
 $('#tStory').addEventListener('click', openStory);
-$('#stBack').addEventListener('click', () => show('title'));
+$('#storyBack').addEventListener('click', () => show('title'));

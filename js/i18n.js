@@ -1648,6 +1648,7 @@ const EN = {
 "L’histoire de Braise est complète : Zéphyr, Voltie, Givrette, Papi Yglou et sa fusion… jusqu’au Roi Gloop ! Et une surprise à la fin.": "Ember’s story is complete: Zephyr, Volty, Frosty, Grandpa Yglou and fusion… all the way to King Gloop! And a surprise at the end.",
 "La carte de l’histoire devient un vrai parchemin d’aventurier.": "The story map becomes a real adventurer’s parchment.",
 "Finis l’histoire pour gagner le trophée « Doux rêveur » et un bonnet de nuit pour Yglou.": "Finish the story to earn the “Sweet dreamer” trophy and a nightcap for Yglou.",
+"Le bouton « Retour » de la page Stats fonctionne de nouveau.": "The “Back” button on the Stats page works again.",
 "Les dialogues de l’histoire deviennent une vraie BD en plein écran : des cases, des bulles et des CRONCH !": "Story dialogues are now a real full-screen comic: panels, speech bubbles and CRONCH!",
 "Sur la carte de l’histoire, le nom du Roi Gloop n’est plus coupé.": "On the story map, the Gloop King's name is no longer cut off.",
 "Carte de l’histoire : l’étape en cours pulse bien à sa place, sans se cacher sous son nom.": "Story map: the current step now pulses in place, without hiding under its name.",

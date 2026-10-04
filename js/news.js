@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  64: [
+    ['📊', 'Le bouton « Retour » de la page Stats fonctionne de nouveau.'],
+  ],
   63: [
     ['💬', 'Les dialogues de l’histoire deviennent une vraie BD en plein écran : des cases, des bulles et des CRONCH !'],
     ['👑', 'Sur la carte de l’histoire, le nom du Roi Gloop n’est plus coupé.'],
