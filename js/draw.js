@@ -194,6 +194,16 @@ function drawTower(c, type, x, y, s, lvl, t, lx, ly, recoil, blink, br) {
 // ---------- Déguisements des tours pendant les événements ----------
 const HTOP = { feu: -1.3, eau: -1.32, terre: -0.98, vent: -0.92, foudre: -0.98, glace: -1.3, tornade: -1.32, orage: -1.0, volcan: -0.92, geyser: -1.6, marais: -0.5, blizzard: -0.92, sable: -0.92, plasma: -0.92 };
 // Chapeaux de la garde-robe (y : bas du chapeau sur la tête, r : rayon de la tête)
+// Bonnet de nuit (récompense du mode histoire) : bleu nuit à étoiles, pompon qui retombe
+function nightcapHat(c, ty, hr, lw) {
+  const y0 = ty + hr * 0.25;
+  c.beginPath(); c.moveTo(-hr * 0.95, y0); c.quadraticCurveTo(-hr * 0.5, y0 - hr * 1.15, hr * 0.35, y0 - hr * 0.98); c.quadraticCurveTo(hr * 0.95, y0 - hr * 0.82, hr * 1.05, y0 - hr * 0.2);
+  c.quadraticCurveTo(hr * 0.65, y0 - hr * 0.45, hr * 0.95, y0); c.closePath(); fs(c, '#3b4f9a', lw);
+  // Bandeau aussi large que la tête à cette hauteur : on ne voit plus ses bords dépasser
+  rr(c, -hr * 1.04, y0 - hr * 0.12, hr * 2.08, hr * 0.28, hr * 0.14); fs(c, '#ffffff', lw);
+  c.beginPath(); c.arc(hr * 1.0, y0 - hr * 0.15, hr * 0.16, 0, TAU); fs(c, '#ffffff', lw * 0.8);
+  c.fillStyle = '#ffe066'; for (const [x, y] of [[-0.25, -0.55], [0.25, -0.7], [0.55, -0.35]]) { c.beginPath(); c.arc(hr * x, y0 + hr * y, hr * 0.06, 0, TAU); c.fill(); }
+}
 function crownHat(c, ty, hr, lw) {
   const w = hr * 1.05, y0 = ty + hr * 0.22, h = hr * 0.62;
   c.beginPath(); c.moveTo(-w * 0.62, y0); c.lineTo(-w * 0.68, y0 - h * 0.62); c.lineTo(-w * 0.32, y0 - h * 0.3); c.lineTo(0, y0 - h); c.lineTo(w * 0.32, y0 - h * 0.3); c.lineTo(w * 0.68, y0 - h * 0.62); c.lineTo(w * 0.62, y0); c.closePath(); fs(c, '#ffd23f', lw);
@@ -203,7 +213,7 @@ function crownHat(c, ty, hr, lw) {
 function capHat(c, ty, hr, lw) {
   const y0 = ty + hr * 0.3;
   c.beginPath(); c.ellipse(hr * 0.5, y0, hr * 0.62, hr * 0.15, 0.12, 0, TAU); fs(c, '#d83a66', lw);
-  c.beginPath(); c.moveTo(-hr * 0.78, y0); c.bezierCurveTo(-hr * 0.78, y0 - hr * 0.8, hr * 0.78, y0 - hr * 0.8, hr * 0.78, y0); c.closePath(); fs(c, '#ff4f81', lw);
+  c.beginPath(); c.moveTo(-hr * 0.94, y0); c.bezierCurveTo(-hr * 0.94, y0 - hr * 0.86, hr * 0.94, y0 - hr * 0.86, hr * 0.94, y0); c.closePath(); fs(c, '#ff4f81', lw);
   c.beginPath(); c.moveTo(0, y0 - hr * 0.58); c.lineTo(0, y0); c.lineWidth = lw * 0.7; c.strokeStyle = 'rgba(42,27,61,.35)'; c.stroke();
   c.beginPath(); c.arc(0, y0 - hr * 0.6, hr * 0.08, 0, TAU); fs(c, '#ffd23f', lw * 0.7);
 }
@@ -286,9 +296,9 @@ function costume(c, type, r, lw, t, fy) {
   }
 }
 function santaHat(c, y, r, lw, col) {
-  c.beginPath(); c.moveTo(-r * 0.5, y); c.quadraticCurveTo(-r * 0.25, y - r * 0.85, r * 0.25, y - r * 0.95); c.quadraticCurveTo(r * 0.6, y - r * 0.9, r * 0.75, y - r * 0.45);
-  c.quadraticCurveTo(r * 0.45, y - r * 0.55, r * 0.5, y); c.closePath(); fs(c, col, lw);
-  rr(c, -r * 0.58, y - r * 0.12, r * 1.16, r * 0.26, r * 0.13); fs(c, '#ffffff', lw);
+  c.beginPath(); c.moveTo(-r * 0.62, y); c.quadraticCurveTo(-r * 0.3, y - r * 0.88, r * 0.25, y - r * 0.95); c.quadraticCurveTo(r * 0.6, y - r * 0.9, r * 0.75, y - r * 0.45);
+  c.quadraticCurveTo(r * 0.5, y - r * 0.55, r * 0.62, y); c.closePath(); fs(c, col, lw);
+  rr(c, -r * 0.72, y - r * 0.13, r * 1.44, r * 0.28, r * 0.14); fs(c, '#ffffff', lw);
   c.beginPath(); c.arc(r * 0.75, y - r * 0.42, r * 0.14, 0, TAU); fs(c, '#ffffff', lw * 0.8);
 }
 function bow(c, x, y, w, lw, col) {
@@ -1171,6 +1181,7 @@ function drawYglou(c, x, y, s, mood = 'happy', t = 0, o = {}) {
   else if (o.costume === 'cap') capHat(c, ty, hr, lw);
   else if (o.costume === 'tophat') topHat(c, ty, hr, lw);
   else if (o.costume === 'ninja') ninjaBand(c, hy, hr, lw);
+  else if (o.costume === 'nightcap') nightcapHat(c, ty, hr, lw);
   else if (o.costume === 'nouvelan') {
     c.beginPath(); c.moveTo(-hr * 1.1, ty + hr * 0.4); c.lineTo(0, ty - hr * 0.45); c.lineTo(hr * 1.1, ty + hr * 0.4); c.quadraticCurveTo(0, ty + hr * 0.18, -hr * 1.1, ty + hr * 0.4); fs(c, '#e8c47a', lw);
     c.beginPath(); c.moveTo(-hr * 0.5, ty + hr * 0.1); c.lineTo(0, ty - hr * 0.45); c.lineTo(hr * 0.5, ty + hr * 0.1); c.lineWidth = lw * 0.6; c.strokeStyle = 'rgba(120,80,30,.5)'; c.stroke();

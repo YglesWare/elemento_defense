@@ -6,6 +6,11 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  61: [
+    ['📖', 'L’histoire de Braise est complète : Zéphyr, Voltie, Givrette, Papi Yglou et sa fusion… jusqu’au Roi Gloop ! Et une surprise à la fin.'],
+    ['🗺️', 'La carte de l’histoire devient un vrai parchemin d’aventurier.'],
+    ['🌙', 'Finis l’histoire pour gagner le trophée « Doux rêveur » et un bonnet de nuit pour Yglou.'],
+  ],
   60: [
     ['📖', 'Nouveau : le mode Histoire, « La flamme de Braise » ! Suis Braise dans son aventure, rencontre Ondine et Rocaille, croque des gemmes… Les 5 premiers chapitres sont là, la suite arrive bientôt.'],
   ],

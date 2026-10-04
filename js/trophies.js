@@ -37,6 +37,7 @@ const TROPHIES = [
   { id: 'egg_yglou', icon: '🦅', name: T('Kiiaaa !'), desc: T('Toucher Yglou 10 fois sur l’accueil.'), r: 5, hidden: true, hint: T('Yglou adore qu’on s’occupe de lui…') },
   { id: 'egg_house', icon: '🏠', name: T('Maison chatouilleuse'), desc: T('Toucher 10 fois la maison pendant une partie.'), r: 5, hidden: true, hint: T('Même une maison peut être chatouilleuse.') },
   { id: 'egg_logo', icon: '✨', name: T('Logo en folie'), desc: T('Toucher 7 fois le logo de l’accueil.'), r: 5, hidden: true, hint: T('Le titre a du ressort.') },
+  { id: 'story_end', icon: '🌙', name: T('Doux rêveur'), desc: T('Finir le mode histoire « La flamme de Braise ».'), r: 10 },
   { id: 'egg_ygles', icon: '🧑‍🎨', name: T('Bonjour, créateur !'), desc: T('Prendre « Ygles » comme pseudo.'), r: 5, hidden: true, hint: T('Le créateur a un nom… et un bec.') },
   { id: 'egg_night', icon: '🌙', name: T('Oiseau de nuit'), desc: T('Lancer une partie entre minuit et 5 h.'), r: 5, hidden: true, hint: T('Les hiboux jouent tard.') },
   { id: 'egg_close', icon: '😅', name: T('Sur le fil'), desc: T('Gagner une partie avec une seule vie.'), r: 5, hidden: true, hint: T('Gagner de justesse a du charme.') },
