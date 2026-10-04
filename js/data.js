@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 54;
+const BUILD = 55;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -33,7 +33,9 @@ if (!meta.lv) meta.lv = {};
 // meta.lv garde le nombre de paliers achetés ; M(id) rend le niveau équivalent (fractionnaire) utilisé par le jeu.
 const UPK = { gold: 5, lives: 2, loot: 3, bonus: 4, cheap: 4, resell: 5, remparts: 4, bouclier: 3, paratonnerre: 5, talisman: 5, revive: 1 };
 const upK = id => UPK[id] || (id.startsWith('m_') ? 5 : id.startsWith('p_') ? 2 : 1);
-const lvOf = (lv, id) => ((lv && lv[id]) || 0) / upK(id);
+// Améliorations infinies (Maîtrises, Longue-vue, Remparts) : au-delà du niveau maximum, l'effet continue, réduit (UP_INF[id].f)
+const UP_INF = {};
+const lvOf = (lv, id) => { const raw = ((lv && lv[id]) || 0) / upK(id), I = UP_INF[id]; return I && raw > I.max ? I.max + (raw - I.max) * I.f : raw; };
 // Progression d'avant le découpage : un niveau acheté vaut k paliers
 if ((meta.lvv || 1) < 2) { for (const id in meta.lv) meta.lv[id] *= upK(id); meta.lvv = 2; store.set('elemento.meta', meta); }
 const M = id => lvOf(meta.lv, id);
@@ -541,28 +543,38 @@ const sellValue = t => Math.floor(t.inv * (0.7 + 0.05 * M('resell')));
 // Longue-vue : +2,5 % de portée de base par niveau (5 niveaux en 10 paliers), fusions comprises (moyenne des deux éléments)
 const RANGE_UP = 0.025;
 const MASTERY = { feu: T('du feu'), eau: T('de l’eau'), terre: T('de la terre'), vent: T('du vent'), foudre: T('de l’éclair'), glace: T('de la glace') };
+// Nombres des textes d'amélioration : les paliers donnent des niveaux à virgule (22 paliers / 5 = 4,4),
+// d'où des 110.00000000000001 sans arrondi ; une décimale au plus, avec la virgule en français
+const nf = v => String(Math.round(v * 10) / 10).replace('.', LANG === 'en' ? '.' : ',');
 const UPGRADES = [
-  { id: 'gold', name: T('Trésor de départ'), max: 5, base: 8, fx: l => '+' + l * 25 + T(' or au départ') },
-  { id: 'lives', name: T('Cœur solide'), max: 5, base: 10, fx: l => '+' + l * 2 + T(' vies au départ') },
-  { id: 'loot', name: T('Butin'), max: 5, base: 12, fx: l => '+' + l * 6 + T(' % d’or par ennemi') },
-  { id: 'bonus', name: T('Prime de vague'), max: 5, base: 8, fx: l => '+' + l * 20 + T(' % de prime de fin de vague') },
-  { id: 'cheap', name: T('Rabais'), max: 5, base: 15, fx: l => T('Tours et améliorations ') + l * 4 + T(' % moins chères') },
-  { id: 'resell', name: T('Revente'), max: 4, base: 8, fx: l => T('Tours revendues à ') + (70 + l * 5) + ' %' },
-  { id: 'remparts', name: T('Remparts'), max: 5, base: 10, fx: l => T('Tours +') + l * 20 + T(' % de PV') },
-  { id: 'bouclier', name: T('Bouclier'), max: 3, base: 15, fx: l => T('Chaque tour commence la vague avec un bouclier de ') + l * 15 + T(' % de ses PV') },
-  { id: 'paratonnerre', name: T('Paratonnerre'), max: 3, base: 12, fx: l => T('Paralysie des Grésillons −') + l * 25 + ' %' },
-  { id: 'talisman', name: 'Talisman', max: 3, base: 14, fx: l => T('Perversion des Maléfik −') + l * 25 + T(' % de durée') },
+  { id: 'gold', name: T('Trésor de départ'), max: 5, base: 8, fx: l => '+' + nf(l * 25) + T(' or au départ') },
+  { id: 'lives', name: T('Cœur solide'), max: 5, base: 10, fx: l => '+' + nf(l * 2) + (l * 2 > 1 ? T(' vies au départ') : T(' vie au départ')) },
+  { id: 'loot', name: T('Butin'), max: 5, base: 12, fx: l => '+' + nf(l * 6) + T(' % d’or par ennemi') },
+  { id: 'bonus', name: T('Prime de vague'), max: 5, base: 8, fx: l => '+' + nf(l * 20) + T(' % de prime de fin de vague') },
+  { id: 'cheap', name: T('Rabais'), max: 5, base: 15, fx: l => T('Tours et améliorations ') + nf(l * 4) + T(' % moins chères') },
+  { id: 'resell', name: T('Revente'), max: 4, base: 8, fx: l => T('Tours revendues à ') + nf(70 + l * 5) + ' %' },
+  { id: 'remparts', name: T('Remparts'), max: 5, base: 10, inf: 0.5, fx: l => T('Tours +') + nf(l * 20) + T(' % de PV') },
+  { id: 'bouclier', name: T('Bouclier'), max: 3, base: 15, fx: l => T('Chaque tour commence la vague avec un bouclier de ') + nf(l * 15) + T(' % de ses PV') },
+  { id: 'paratonnerre', name: T('Paratonnerre'), max: 3, base: 12, fx: l => T('Paralysie des Grésillons −') + nf(l * 25) + ' %' },
+  { id: 'talisman', name: 'Talisman', max: 3, base: 14, fx: l => T('Perversion des Maléfik −') + nf(l * 25) + T(' % de durée') },
   { id: 'revive', name: T('Seconde chance'), max: 1, base: 60, fx: () => T('Une fois par partie, la maison repart avec 5 vies') },
   // Chaque élément : maîtrise (dégâts) puis longue-vue (portée), côte à côte
-  ...TORDER.flatMap(t => [{ id: 'm_' + t, tower: t, name: T('Maîtrise ') + MASTERY[t], max: 5, base: 10,
-    fx: l => TOWERS[t].name + ' : +' + l * 10 + T(' % de dégâts') + (l >= 5 ? T(', +0,2 de portée') : '') },
-    { id: 'p_' + t, tower: t, range: true, name: T('Longue-vue ') + MASTERY[t], max: 5, base: 8,
-      fx: l => TOWERS[t].name + ' : +' + String(Math.round(l * RANGE_UP * 1000) / 10).replace('.', LANG === 'en' ? '.' : ',') + T(' % de portée') }]),
+  ...TORDER.flatMap(t => [{ id: 'm_' + t, tower: t, name: T('Maîtrise ') + MASTERY[t], max: 5, base: 10, inf: 0.5,
+    fx: l => TOWERS[t].name + ' : +' + nf(l * 10) + T(' % de dégâts') + (l >= 5 ? T(', +0,2 de portée') : '') },
+    { id: 'p_' + t, tower: t, range: true, name: T('Longue-vue ') + MASTERY[t], max: 5, base: 8, inf: 0.4,
+      fx: l => TOWERS[t].name + ' : +' + nf(l * RANGE_UP * 100) + T(' % de portée') }]),
 ];
 // Paliers : u.k par niveau d'origine, u.max paliers en tout ; prix d'un palier ≈ prix d'origine du niveau / k (même total à ECO.atelier = 1)
-for (const u of UPGRADES) { u.k = upK(u.id); u.max *= u.k; }
+for (const u of UPGRADES) { u.k = upK(u.id); u.max *= u.k; if (u.inf) UP_INF[u.id] = { max: u.max / u.k, f: u.inf }; }
 const upLv = u => meta.lv[u.id] || 0;
-const upPrice = u => Math.max(1, Math.round(u.base * ECO.atelier * (upLv(u) + 1) / (u.k * u.k)));
+// Prix du palier l ; au-delà du maximum (améliorations infinies), +12 % à chaque palier
+function upPriceAt(u, l) {
+  const p = u.base * ECO.atelier * (Math.min(l, u.max - 1) + 1) / (u.k * u.k);
+  return Math.max(1, Math.round(l >= u.max ? p * Math.pow(1.12, l - u.max + 1) : p));
+}
+const upPrice = u => upPriceAt(u, upLv(u));
+const upFull = u => !u.inf && upLv(u) >= u.max;                 // plus rien à acheter
+const upEff = (u, l) => lvOf({ [u.id]: l }, u.id);                // niveau effectif après l paliers (pour les textes)
 const UNLOCK = { terre: 15, vent: 20, glace: 30, foudre: 40 };
 for (const t in UNLOCK) UNLOCK[t] = Math.round(UNLOCK[t] * ECO.unlock);
 for (const k in FUSIONS) FUSIONS[k].unlock = Math.round(FUSIONS[k].unlock * ECO.unlock);
@@ -570,7 +582,7 @@ const unlocked = type => !UNLOCK[type] || M('u_' + type) > 0;
 function canBuyAnything() {
   for (const t in UNLOCK) if (!unlocked(t) && meta.shards >= UNLOCK[t]) return true;
   for (const k in FUSIONS) if (!fusionUnlocked(k) && FUSIONS[k].parents.every(unlocked) && meta.shards >= FUSIONS[k].unlock) return true;
-  return UPGRADES.some(u => upLv(u) < u.max && (!u.tower || unlocked(u.tower)) && meta.shards >= upPrice(u));
+  return UPGRADES.some(u => !upFull(u) && (!u.tower || unlocked(u.tower)) && meta.shards >= upPrice(u));
 }
 
 // ================= Son (synthétisé) =================

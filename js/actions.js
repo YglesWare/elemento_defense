@@ -40,25 +40,40 @@ async function micOpen() {
   ACT.micOpening = true;
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }, video: false });
-    const ac = new (window.AudioContext || window.webkitAudioContext)(), src = ac.createMediaStreamSource(stream), an = ac.createAnalyser();
-    an.fftSize = 512; src.connect(an);
-    ACT.mic = { stream, ac, an, wave: new Uint8Array(an.fftSize), freq: new Uint8Array(an.frequencyBinCount) };
+    // Le contexte audio des bruitages, déjà réveillé par un appui sur l'écran (un contexte créé ici resterait en pause
+    // sur beaucoup de téléphones, et le jeu n'entendrait que du silence)
+    Snd.init(); const own = !Snd.ac, ac = Snd.ac || new (window.AudioContext || window.webkitAudioContext)();
+    if (ac.state === 'suspended') ac.resume().catch(() => {}); // sans attendre : le réveil peut ne venir qu'au prochain appui
+    const src = ac.createMediaStreamSource(stream), an = ac.createAnalyser();
+    an.fftSize = 1024; an.smoothingTimeConstant = 0.3; src.connect(an);
+    ACT.mic = { stream, ac, own, src, an, wave: new Float32Array(an.fftSize), freq: new Float32Array(an.frequencyBinCount), floor: 0.01, lvl: 0 };
   } catch (e) { store.set(MIC_KEY, 'off'); }
   ACT.micOpening = false;
 }
 function micClose() {
   if (!ACT.mic) return;
-  ACT.mic.stream.getTracks().forEach(t => t.stop()); try { ACT.mic.ac.close(); } catch (e) {}
-  ACT.mic = null; ACT.blowT = 0;
+  const m = ACT.mic; ACT.mic = null; ACT.blowT = 0;
+  m.stream.getTracks().forEach(t => t.stop()); try { m.src.disconnect(); } catch (e) {}
+  if (m.own) { try { m.ac.close(); } catch (e) {} }
+  $('#micMeter').hidden = true;
 }
-// Un souffle : un bruit fort, surtout dans les graves, qui dure un quart de seconde
+// Un souffle : un bruit nettement plus fort que le bruit ambiant (mesuré en continu), surtout dans les graves,
+// qui dure 0,3 s. Pendant qu'on souffle, le brouillard s'éclaircit déjà (G.blowFx) et la jauge 🎤 le montre.
 function micBlow(dt) {
   const m = ACT.mic; if (!m) return;
-  m.an.getByteTimeDomainData(m.wave); m.an.getByteFrequencyData(m.freq);
-  let s = 0; for (const v of m.wave) { const d = (v - 128) / 128; s += d * d; }
-  const rms = Math.sqrt(s / m.wave.length), n = m.freq.length, low = m.freq.slice(0, n / 8).reduce((a, b) => a + b, 0), all = m.freq.reduce((a, b) => a + b, 0) || 1;
-  ACT.blowT = rms > 0.09 && low / all > 0.35 ? ACT.blowT + dt : Math.max(0, ACT.blowT - dt * 2);
-  if (ACT.blowT > 0.25) { ACT.blowT = 0; clearFog('blow'); }
+  if (m.ac.state === 'suspended') m.ac.resume().catch(() => {});
+  m.an.getFloatTimeDomainData(m.wave); m.an.getFloatFrequencyData(m.freq);
+  let s = 0; for (const v of m.wave) s += v * v;
+  const rms = Math.sqrt(s / m.wave.length), n = m.freq.length, cut = Math.max(4, Math.round(n * 1500 / (m.ac.sampleRate / 2)));
+  // Part des graves calculée sur l'énergie réelle (les décibels tassent les écarts : un souffle n'y paraissait jamais assez grave)
+  let low = 0, all = 1e-12; for (let i = 1; i < n; i++) { const p = Math.pow(10, m.freq[i] / 10); all += p; if (i < cut) low += p; }
+  const thr = Math.max(0.015, m.floor * 4), on = rms > thr && low / all > 0.5;
+  if (!on) m.floor = m.floor * 0.97 + Math.min(rms, 0.05) * 0.03; // bruit ambiant (sans compter les souffles)
+  m.lvl = Math.min(1, rms / thr);
+  ACT.blowT = on ? ACT.blowT + dt : Math.max(0, ACT.blowT - dt * 1.5);
+  G.blowFx = Math.min(1, ACT.blowT / 0.3);
+  const mm = $('#micMeter'); mm.hidden = false; mm.querySelector('b').style.width = Math.round(m.lvl * 100) + '%'; mm.classList.toggle('on', on);
+  if (ACT.blowT > 0.3) { ACT.blowT = 0; G.blowFx = 0; clearFog('blow'); }
 }
 
 // ---------- Gestes sur la carte : balayer (brouillard) et frotter (blizzard) ----------
@@ -134,9 +149,9 @@ setInterval(() => {
   if (!G || G.demo) { micClose(); return; }
   const live = actOn();
   if (G.fogClear > 0 && live) { G.fogClear -= dt; if (G.fogClear <= 0) { G.fogClear = 0; restat(); } }
-  G.fogA = clamp((G.fogA ?? 1) + ((G.fogClear > 0 ? 0 : 1) - (G.fogA ?? 1)) * Math.min(1, dt * 2.5), 0, 1);
+  G.fogA = clamp((G.fogA ?? 1) + ((G.fogClear > 0 ? 0 : 1 - 0.5 * (G.blowFx || 0)) - (G.fogA ?? 1)) * Math.min(1, dt * 2.5), 0, 1);
   if (G.warmT > 0 && live) { G.warmT -= dt; if (G.warmT <= 0) { G.warmT = 0; restat(); } }
   if (live) tiltWind(dt); else if (!G.duel && !G.coop) { G.windS = G.windW = null; }
   // Micro : ouvert seulement pendant un brouillard en cours, si le joueur l'a accepté
-  if (live && G.weather === 'fog' && store.get(MIC_KEY) === 'on' && (typeof parentMic !== 'function' || parentMic())) { micOpen(); if (!(G.fogClear > 0)) micBlow(dt); } else micClose();
+  if (live && G.weather === 'fog' && store.get(MIC_KEY) === 'on' && (typeof parentMic !== 'function' || parentMic())) { micOpen(); if (!(G.fogClear > 0)) micBlow(dt); else { G.blowFx = 0; $('#micMeter').hidden = true; } } else { micClose(); if (G) G.blowFx = 0; }
 }, 50);

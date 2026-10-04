@@ -6,6 +6,12 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  55: [
+    ['♾️', 'Maîtrises, Longue-vue et Remparts n’ont plus de limite : au-delà du maximum, ils continuent de progresser, plus doucement. Le mode Infini devient l’endroit idéal pour gagner des éclats.'],
+    ['🌬️', 'Souffler sur le téléphone chasse bien le brouillard, et une jauge 🎤 montre que le micro t’entend.'],
+    ['💾', 'La partie est sauvegardée au début de chaque vague : après un plantage, tu reprends avec les tours posées pendant la pause.'],
+    ['🔇', 'La musique se coupe quand le jeu passe en arrière-plan.'],
+  ],
   54: [
     ['📶', 'En ligne, si le réseau coupe quelques secondes en pleine partie, tu rejoins la partie tout seul au lieu de la perdre.'],
   ],

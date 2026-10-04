@@ -183,8 +183,10 @@ function saveCheckpoint() {
   G.checkpoint = { grid: GRIDV, rnd: MAPS[G.map].rnd || null, map: G.map, mapId: MAPS[G.map].id, diff: G.diff, banked: G.banked, gold: G.gold, lives: G.lives, wave: G.wave, score: G.score, endless: G.endless,
     bossKills: G.bossKills, shardsPaid: G.shardsPaid, shardsWon: G.shardsWon, won: G.won, reviveUsed: G.reviveUsed,
     weather: G.weather, ruins: G.ruins, bonusUsed: G.bonusUsed || 0, towers: G.towers.map(t => ({ type: t.type, c: t.c, r: t.r, lvl: t.lvl, mode: t.mode, inv: t.inv, br: t.br, hp: Math.round(t.hp) })) };
-  store.set(SAVE, G.checkpoint);
+  store.set(SAVE, G.checkpoint); store.flush(); // écrite tout de suite : un plantage juste après ne la perd pas
 }
+// Appli mise en arrière-plan entre deux vagues : on garde les tours posées pendant l'entracte
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && G && !G.over && !G.demo && !G.waveActive && G.wave > 0) saveCheckpoint(); });
 function recordBest() {
   if (G.duel || duelOn || G.coop) return { wave: G.wave, score: G.score };
   // Carte du jour : records gardés jour par jour (les autres cartes aléatoires n'en ont pas)
@@ -453,6 +455,8 @@ function startWave(forced) {
   // Dernière vague déjà lancée : on attend la fin de la partie (victoire, puis choix des vagues infinies)
   if (!G.endless && G.wave >= G.maxw) return;
   if (G.coopGuest) { if (!forced) coopAct({ a: 'wave' }); return; }
+  // Sauvegarde juste avant la vague, avec les tours posées et améliorées pendant l'entracte (reprise après un plantage)
+  if (!G.waveActive && !G.demo) saveCheckpoint();
   let early = 0;
   if (!forced && G.waveActive && G.enemies.length) { early = 5 + Math.floor(G.wave / 2); if (G.coop) coopGiveAll(early); else G.gold += early; }
   G.wave++;

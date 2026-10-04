@@ -334,6 +334,8 @@ button:disabled{cursor:default}
 .mapc.locked canvas{filter:grayscale(1) brightness(.8)}
 .mapc canvas{cursor:pointer}
 .mapc .sbtn{flex:none;background:var(--sun);font-size:15px;display:flex;align-items:center;justify-content:center;gap:4px}
+/* Bouton « Jouer » toujours en bas de la carte, même quand sa voisine de ligne est plus haute */
+.mapc>.sbtn{margin-top:auto}
 .mapc .sbtn svg{width:14px;height:14px;flex:none}
 .mapc.bought{animation:bought .45s ease-out}
 .medals{display:flex;gap:3px;flex-wrap:wrap}
@@ -852,3 +854,11 @@ html.cvd .tbtn .bio.bad{background:#ffe2c4}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.reconn-spin{animation-duration:3s}}
 .mp-tag.away{background:var(--nobg)}
+
+/* Témoin du micro pendant le brouillard (js/actions.js) */
+#micMeter{position:absolute;right:8px;top:8px;z-index:7;display:flex;align-items:center;gap:5px;background:var(--paper);border:2.5px solid var(--ink);border-radius:99px;box-shadow:0 2px 0 var(--ink);padding:2px 9px 2px 6px;pointer-events:none}
+#micMeter span{font-size:15px}
+#micMeter i{display:block;width:54px;height:9px;border:2px solid var(--ink);border-radius:99px;overflow:hidden;background:var(--mist)}
+#micMeter b{display:block;height:100%;width:0;background:var(--sky);transition:width .08s}
+#micMeter.on b{background:var(--leaf)}
+.upbar.inf i{background:linear-gradient(90deg,var(--grape),var(--pop))}

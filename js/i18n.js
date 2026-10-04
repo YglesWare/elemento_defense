@@ -631,7 +631,7 @@ const EN = {
 "Île Takoyaki": "Takoyaki Island",
 "Œuf blindé": "Armored Egg",
 "Ravioli": "Dumpling",
-" +0,6 portée": " +0.6 range",
+" +0,4 portée": " +0.4 range",
 " : il faut ": ": needs ",
 " : les deux tours doivent être au niveau 2": ": both towers must be level 2",
 " : seul son propriétaire peut la modifier": ": only its owner can change it",
@@ -1492,6 +1492,11 @@ const EN = {
 "Reconnexion…": "Reconnecting…",
 "Le réseau a coupé : on rejoint la partie.": "The network dropped: rejoining the game.",
 "En ligne, si le réseau coupe quelques secondes en pleine partie, tu rejoins la partie tout seul au lieu de la perdre.": "Online, if the network drops for a few seconds mid-game, you rejoin automatically instead of losing the game.",
+" vie au départ": " life at start",
+"Maîtrises, Longue-vue et Remparts n’ont plus de limite : au-delà du maximum, ils continuent de progresser, plus doucement. Le mode Infini devient l’endroit idéal pour gagner des éclats.": "Masteries, Spyglass and Ramparts have no limit anymore: past the maximum they keep improving, more slowly. Endless mode becomes the best place to earn shards.",
+"Souffler sur le téléphone chasse bien le brouillard, et une jauge 🎤 montre que le micro t’entend.": "Blowing on the phone now clears the fog properly, and a 🎤 meter shows the microphone hears you.",
+"La partie est sauvegardée au début de chaque vague : après un plantage, tu reprends avec les tours posées pendant la pause.": "Your game is saved at the start of every wave: after a crash, you resume with the towers placed during the break.",
+"La musique se coupe quand le jeu passe en arrière-plan.": "Music stops when the game goes to the background.",
 };
 const T = s => (IS_EN && typeof s === 'string' && EN[s] !== undefined ? EN[s] : s);
 // Textes fixes de la page : nœuds de texte et attributs (placeholder, aria-label, title, alt)

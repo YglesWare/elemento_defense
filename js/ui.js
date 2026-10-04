@@ -78,7 +78,7 @@ function statChips(t) {
   const ch = [['', T('<i>Dégâts</i>') + Math.round(s.dmg)], ['', T('<i>Portée</i>') + fr(s.range.toFixed(1))], ['', T('<i>Cadence</i>') + fr(s.rate.toFixed(2)) + '/s'], ['', extra]];
   if (s.brMul) ch.push(['good', '×' + fr(s.brMul) + ' ' + BRANCH[s.br].vs]);
   if (s.terr && s.aff) ch.push([s.aff > 0 ? 'good' : 'bad', s.terr.name + ' ' + fmtAff(s.aff)]);
-  if (s.terr && s.terr.range) ch.push(['good', s.terr.name + T(' +0,6 portée')]);
+  if (s.terr && s.terr.range) ch.push(['good', s.terr.name + T(' +0,4 portée')]);
   if (s.bio) ch.push([s.bio > 0 ? 'good' : 'bad', 'Biome ' + fmtAff(s.bio)]);
   if (s.wea) ch.push([s.wea > 0 ? 'good' : 'bad', T('Météo ') + fmtAff(s.wea)]);
   if (G.weather === 'fog') ch.push(['bad', T('Brouillard −0,4 portée')]);
@@ -465,8 +465,8 @@ function renderShop(boughtId) {
   const can = {
     tow: TORDER.some(t => !unlocked(t) && meta.shards >= UNLOCK[t]),
     fus: Object.keys(FUSIONS).some(k => !fusionUnlocked(k) && FUSIONS[k].parents.every(unlocked) && meta.shards >= FUSIONS[k].unlock),
-    camp: UPGRADES.some(u => !u.tower && M(u.id) < u.max && meta.shards >= upPrice(u)),
-    mast: UPGRADES.some(u => u.tower && unlocked(u.tower) && M(u.id) < u.max && meta.shards >= upPrice(u)),
+    camp: UPGRADES.some(u => !u.tower && !upFull(u) && meta.shards >= upPrice(u)),
+    mast: UPGRADES.some(u => u.tower && unlocked(u.tower) && !upFull(u) && meta.shards >= upPrice(u)),
   };
   document.querySelectorAll('#sTabs [data-tab]').forEach(b => b.querySelector('.dot').classList.toggle('has', !!can[b.dataset.tab]));
   const tb = $('#sTow'); tb.innerHTML = '';
@@ -482,19 +482,21 @@ function renderShop(boughtId) {
   for (const [box, list] of [[$('#sBase'), UPGRADES.filter(u => !u.tower)], [$('#sMast'), UPGRADES.filter(u => u.tower)]]) {
     box.innerHTML = '';
     for (const u of list) {
-      const l = upLv(u), maxed = l >= u.max, price = upPrice(u), d = document.createElement('div'), lockT = u.tower && !unlocked(u.tower);
+      const l = upLv(u), maxed = upFull(u), beyond = u.inf && l >= u.max, price = upPrice(u), d = document.createElement('div'), lockT = u.tower && !unlocked(u.tower);
       d.className = 'up' + (u.id === 'revive' ? ' wide' : '') + (maxed ? ' maxed' : '') + (lockT ? ' lockd' : '') + (boughtId === u.id ? ' bought' : '');
       // Jusqu'à 10 paliers : des pastilles ; au-delà, une jauge
-      let pips = ''; if (u.max <= 10) for (let i = 0; i < u.max; i++) pips += '<span class="pip' + (i < l ? ' on' : '') + '"></span>';
+      // Au-delà du maximum (amélioration infinie) : la jauge pleine et « ∞ » avec les paliers en plus
+      let pips = ''; if (beyond) pips = '<span class="upbar inf"><i style="width:100%"></i></span><span class="upn">∞ +' + (l - u.max) + '</span>';
+      else if (u.max <= 10) for (let i = 0; i < u.max; i++) pips += '<span class="pip' + (i < l ? ' on' : '') + '"></span>';
       else pips = '<span class="upbar"><i style="width:' + Math.round(l * 100 / u.max) + '%"></i></span><span class="upn">' + l + '/' + u.max + '</span>';
       d.innerHTML = '<canvas></canvas><span class="un">' + u.name + T('</span><span class="pips" aria-label="Niveau ') + l + T(' sur ') + u.max + '">' + pips + '</span>'
-        + '<p>' + (l ? u.fx(l / u.k) : T('Pas encore acheté')) + (maxed ? '' : T('<br><span class="nx">Niveau ') + (l + 1) + T(' : ') + u.fx((l + 1) / u.k) + '</span>') + '</p>'
+        + '<p>' + (l ? u.fx(upEff(u, l)) : T('Pas encore acheté')) + (maxed ? '' : T('<br><span class="nx">Niveau ') + (l + 1) + T(' : ') + u.fx(upEff(u, l + 1)) + '</span>') + '</p>'
         + '<button class="sbtn buy" type="button"' + (maxed || lockT || meta.shards < price ? ' disabled' : '') + '>' + (lockT ? T('Débloque ') + TOWERS[u.tower].name + T(' d’abord') : maxed ? T('Niveau max') : T('Acheter ') + GEM + price) + '</button>';
       box.appendChild(d);
       const c = prepMini(d.querySelector('canvas'), 44, 48);
       if (u.tower) drawTower(c, u.tower, 22, 27, 37, l ? Math.min(3, Math.ceil(l / u.k * 3 / 5)) : 1, 0.5, 0, 0.3, 0, false);
       // Longue-vue : un cercle de portée en pointillés autour de la tour
-      if (u.range) { c.save(); c.setLineDash([3, 3]); c.lineWidth = 1.5; c.strokeStyle = TOWERS[u.tower].color; c.globalAlpha = 0.9; c.beginPath(); c.arc(22, 26, 19 + l / u.max * 2, 0, Math.PI * 2); c.stroke(); c.restore(); }
+      if (u.range) { c.save(); c.setLineDash([3, 3]); c.lineWidth = 1.5; c.strokeStyle = TOWERS[u.tower].color; c.globalAlpha = 0.9; c.beginPath(); c.arc(22, 26, 19 + Math.min(1, l / u.max) * 2, 0, Math.PI * 2); c.stroke(); c.restore(); }
       else drawUpIcon(c, u.id, 22, 25, 40);
       d.querySelector('button').addEventListener('click', () => buyUp(u));
     }
@@ -503,7 +505,7 @@ function renderShop(boughtId) {
 }
 function buyUp(u) {
   const l = upLv(u), price = upPrice(u);
-  if (l >= u.max || (u.tower && !unlocked(u.tower))) return;
+  if (upFull(u) || (u.tower && !unlocked(u.tower))) return;
   if (meta.shards < price) { Snd.play('no'); return; }
   meta.shards -= price; meta.lv[u.id] = l + 1; saveMeta();
   if (G && shopFrom === 'game') {

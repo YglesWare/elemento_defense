@@ -102,9 +102,11 @@ const Music = {
   },
   tick() {
     const ac = this.ac; if (!ac || ac.state !== 'running') return;
-    const on = opts.music !== false, inGame = G && !G.over;
+    // Jeu en arrière-plan ou sans le focus (autre onglet, autre fenêtre, appli quittée) : la musique se tait
+    const away = document.hidden || (typeof document.hasFocus === 'function' && !document.hasFocus() && window.parent === window);
+    const on = opts.music !== false && !away, inGame = G && !G.over;
     const duck = inGame && (G.paused || curScreen !== 'game') ? 0.45 : 1;
-    this.out.gain.setTargetAtTime(on ? 0.5 * duck * (TRACKS[this.track].vol || 1) : 0, ac.currentTime, 0.25);
+    this.out.gain.setTargetAtTime(on ? 0.5 * duck * (TRACKS[this.track].vol || 1) : 0, ac.currentTime, away ? 0.05 : 0.25);
     if (this.nextT < ac.currentTime - 0.25) this.nextT = ac.currentTime + 0.05;
     if (!on) { this.nextT = Math.max(this.nextT, ac.currentTime); return; }
     while (this.nextT < ac.currentTime + 0.15) {
@@ -150,4 +152,7 @@ const Music = {
   },
 };
 document.addEventListener('pointerdown', () => { Snd.init(); Music.start(); }, { passive: true });
+// Retour sur le jeu : le contexte audio a pu être mis en pause par le téléphone pendant l'absence
+const musicBack = () => { if (!document.hidden && Snd.ac && Snd.ac.state === 'suspended') Snd.ac.resume().catch(() => {}); };
+addEventListener('focus', musicBack); document.addEventListener('visibilitychange', musicBack);
 document.addEventListener('keydown', () => { Snd.init(); Music.start(); });
