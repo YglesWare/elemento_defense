@@ -162,8 +162,9 @@ function baseState(mi, save, diff) {
 function newGame(mi, save, diff) {
   const m = MAPS[mi]; useGrid(m);
   G = baseState(mi, save, diff);
+  if (typeof storyRun !== 'undefined' && storyRun) G.story = storyRun; // mode histoire (js/story.js) : un rêve, rien n'est compté
   P = buildPath(m); G.deco = genDeco(mi);
-  if (!save) { stats.games++; saveStats(); const h = new Date().getHours(); if (h < 5 && typeof trophy === 'function' && !G.duel) trophy('egg_night'); }
+  if (!save && !G.story) { stats.games++; saveStats(); const h = new Date().getHours(); if (h < 5 && typeof trophy === 'function' && !G.duel) trophy('egg_night'); }
   if (save) for (const t of save.towers) { const nt = addTower(t.type, t.c, t.r, t.lvl >= 3 && !t.br && !TOWERS[t.type].fusion ? 2 : t.lvl, t.mode, t.inv, t.br); if (hardMode() && t.hp > 0) nt.hp = Math.min(nt.maxHp, t.hp); }
   saveCheckpoint();
   hudCache = {}; const bp = $('#bonusPop'); if (bp) bp.hidden = true;
@@ -175,11 +176,11 @@ function newGame(mi, save, diff) {
   else {
     banner(T('PRÊT ?'), MAPS[mi].name + ' · ' + DIFFS[G.diff].name + (G.endless ? T(' · vagues infinies') : ' · ' + G.maxw + T(' vagues')));
     const seen = store.get('elemento.bankhint') || 0;
-    if (seen < 3) { store.set('elemento.bankhint', seen + 1); setTimeout(() => { if (G && G.map === mi && !G.over && !G.duel && !G.guide) bankHint(5000); }, 2400); }
+    if (seen < 3 && !G.story) { store.set('elemento.bankhint', seen + 1); setTimeout(() => { if (G && G.map === mi && !G.over && !G.duel && !G.guide) bankHint(5000); }, 2400); }
   }
 }
 function saveCheckpoint() {
-  if (G.duel || duelOn || G.coop) return;
+  if (G.duel || duelOn || G.coop || G.story) return;
   G.checkpoint = { grid: GRIDV, rnd: MAPS[G.map].rnd || null, map: G.map, mapId: MAPS[G.map].id, diff: G.diff, banked: G.banked, gold: G.gold, lives: G.lives, wave: G.wave, score: G.score, endless: G.endless,
     bossKills: G.bossKills, shardsPaid: G.shardsPaid, shardsWon: G.shardsWon, won: G.won, reviveUsed: G.reviveUsed,
     weather: G.weather, ruins: G.ruins, bonusUsed: G.bonusUsed || 0, towers: G.towers.map(t => ({ type: t.type, c: t.c, r: t.r, lvl: t.lvl, mode: t.mode, inv: t.inv, br: t.br, hp: Math.round(t.hp) })) };
@@ -188,7 +189,7 @@ function saveCheckpoint() {
 // Appli mise en arrière-plan entre deux vagues : on garde les tours posées pendant l'entracte
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && G && !G.over && !G.demo && !G.waveActive && G.wave > 0) saveCheckpoint(); });
 function recordBest() {
-  if (G.duel || duelOn || G.coop) return { wave: G.wave, score: G.score };
+  if (G.duel || duelOn || G.coop || G.story) return { wave: G.wave, score: G.score };
   // Carte du jour : records gardés jour par jour (les autres cartes aléatoires n'en ont pas)
   if (MAPS[G.map].daily) {
     const all = store.get(DAILY_KEY) || {}, day = (all[MAPS[G.map].daily] = all[MAPS[G.map].daily] || {}), cur = day[G.diff] || { wave: 0, score: 0, won: false };
@@ -267,7 +268,7 @@ function addTower(type, q, r, lvl = 1, mode = 'premier', inv, br) {
 }
 function build(type, q, r) {
   const D = TOWERS[type], cost = costOf(type); G.gold -= cost;
-  const t = addTower(type, q, r); t.recoil = 1; t.builtAt = G.time; if (!G.demo) { stats.towers++; if (typeof questEvent === 'function') questEvent('tower'); }
+  const t = addTower(type, q, r); t.recoil = 1; t.builtAt = G.time; if (!G.demo && !G.story) { stats.towers++; if (typeof questEvent === 'function') questEvent('tower'); }
   burst(t.x, t.y, 0.1, 12, ['#ffffff', '#f1eafa', D.color], 2.2, 0.09, 3, 0.5, 'star');
   ono('POP!', t.x, t.y, '#fff', 0.45, 0.1, 0.9);
   Snd.play('build'); G.ghost = null;
@@ -304,6 +305,7 @@ const EVMOB = {
   nouvelan: { type: 'hongbao', from: 3, label: T('Pluie d’enveloppes rouges !') },
 };
 function makeWave(w) {
+  if (G && G.story && typeof storyWave === 'function') return storyWave(w);
   const pool = ['gloop', 'gloop'];
   if (w >= 3) pool.push('zip'); if (w >= 4) pool.push('flappy'); if (w >= 6) pool.push('tonk'); if (w >= 8) pool.push('magma'); if (w >= 7) pool.push('gresil'); if (w >= 9) pool.push('crachou');
   // Monstre propre à chaque événement, et sa vague spéciale (15, 25, 35…)
@@ -461,6 +463,7 @@ function startWave(forced) {
   if (!forced && G.waveActive && G.enemies.length) { early = 5 + Math.floor(G.wave / 2); if (G.coop) coopGiveAll(early); else G.gold += early; }
   G.wave++;
   const { list, label } = takeWave(G.wave);
+  if (G.story && typeof storyWaveStart === 'function') storyWaveStart(G.wave);
   for (const t of G.towers) if (!(t.ko > 0)) t.shield = Math.max(t.shield || 0, Math.round(t.maxHp * 0.15 * M('bouclier')));
   G.spawnQ.push(...list); G.spawnT = 0.5; G.waveActive = true; G.autoT = 0;
   G.chronoT = null; G.chronoArmed = true;
@@ -479,7 +482,7 @@ function waveDone() {
   const aw = awardShards();
   hint(T('Vague ') + G.wave + ' : +' + bonus + T(' or') + (aw.gain ? ', +' + aw.gain + T(' éclats') : '') + (canBuyAnything() ? T(' · achat possible dans l’Atelier') : ''), 3200);
   Snd.play('clear');
-  saveCheckpoint(); recordBest(); stats.waves++; saveStats(); if (typeof questEvent === 'function') questEvent('wave');
+  saveCheckpoint(); recordBest(); if (!G.story) { stats.waves++; saveStats(); } if (typeof questEvent === 'function') questEvent('wave'); if (G.story && typeof storyWaveEnd === 'function') storyWaveEnd(G.wave);
   if (typeof trophy === 'function') { if (G.diff === 'infini' && G.wave >= 30) trophy('inf_30'); if (G.diff === 'infini' && G.wave >= 50) trophy('inf_50'); trophyScan(); }
   if (G.wave >= G.maxw && !G.endless) { setTimeout(() => victory(), 700); return; }
   if (opts.auto) G.autoT = 3;
@@ -501,6 +504,7 @@ function revokeShards() {
 function victory() {
   if (!G || G.over) return;
   if (G.coop) { coopEnd(true); return; }
+  if (G.story) { storyWin(); return; }
   G.paused = true; G.won = true; G.endless = true; Snd.play('win');
   const best = recordBest(), award = awardShards(), bank = bankGold(ECO.bankWin); G.shardsWon = G.shardsPaid; saveCheckpoint(); stats.wins++; saveStats();
   if (typeof logGame === 'function') logGame('won', award);
@@ -511,6 +515,7 @@ function victory() {
 function gameOver() {
   if (G.duel) { duelDead('ko'); return; }
   if (G.coop) { if (!G.coopGuest) coopEnd(false); return; }
+  if (G.story) { storyLose(); return; }
   G.over = true; G.lives = 0; Snd.play('ko');
   const best = recordBest(), award = awardShards(), bank = bankGold(ECO.bankKo); store.del(SAVE); stats.ko++; saveStats();
   if (typeof logGame === 'function') logGame('ko', award);
@@ -682,7 +687,7 @@ function hurt(e, dmg, elem, s) {
 function kill(e) {
   if (e.dead || G.coopGuest) return;
   e.dead = true;
-  const D = ETYPES[e.type]; if (!G.demo) { stats.kills++; if (typeof questEvent === 'function') questEvent('kill'); if (D.boss) { stats.bosses++; if (typeof trophyBoss === 'function') trophyBoss(); if (typeof questEvent === 'function') questEvent('boss'); } }
+  const D = ETYPES[e.type]; if (!G.demo && !G.story) { stats.kills++; if (typeof questEvent === 'function') questEvent('kill'); if (D.boss) { stats.bosses++; if (typeof trophyBoss === 'function') trophyBoss(); if (typeof questEvent === 'function') questEvent('boss'); } }
   const up = (e.flying ? FLY : 0) + 0.25;
   const rw = G.coop ? coopLoot(D.reward * (1 + G.wave * 0.01)) : Math.round(D.reward * (1 + G.wave * 0.01) * (1 + 0.06 * M('loot')));
   if (!G.coop) G.gold += rw; G.score += rw * 10;

@@ -53,7 +53,7 @@ const TROPHIES = [
 const trophyData = () => store.get(TROPHY_KEY) || {};
 const trophyHas = id => !!trophyData()[id];
 // Pas de trophée pendant le tutoriel animé ni dans l'outil d'équilibrage
-const trophyOff = () => (window.parent !== window && window.parent.BALANCE) || (G && G.demo);
+const trophyOff = () => (window.parent !== window && window.parent.BALANCE) || (G && (G.demo || G.story));
 
 function trophy(id) {
   if (trophyOff()) return;

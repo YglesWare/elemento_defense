@@ -70,6 +70,7 @@
     <div id="tShow"></div>
     <div class="bubble">Six gardiens élémentaires contre une armée de slimes. Protège la petite maison !</div>
     <button class="btn alt questbtn" id="tQuests" type="button" hidden>🎯 Défis du jour · <span id="tqN">0/3</span><b class="frbadge" id="tqBadge" hidden></b></button>
+    <button class="btn storybtn" id="tStory" type="button">📖 Histoire · La flamme de Braise</button>
     <button class="btn" id="tPlay" type="button">Jouer !</button>
     <button class="btn mpbtn" id="tMulti" type="button">Multijoueur · 2 à 4 joueurs</button>
     <button class="btn green" id="tContinue" type="button" hidden>Continuer</button>
@@ -88,7 +89,7 @@
       <span class="mp-label">Langue · Language</span>
       <div class="mp-seg" id="prLang"><button class="sbtn" type="button" data-lang="auto">Auto</button><button class="sbtn" type="button" data-lang="fr">Français</button><button class="sbtn" type="button" data-lang="en">English</button></div>
       <button class="btn alt" id="tSound" type="button">Son : oui</button>
-      <button class="btn alt" id="tTuto" type="button">Tutoriel animé</button>
+      <button class="btn alt" id="tTuto" type="button" hidden>Tutoriel animé</button>
       <button class="btn alt" id="tHelp" type="button">Aide et règles</button>
       <div class="cloudbox" id="prCloud">
         <span class="mp-label">☁️ Compte en ligne</span>
@@ -286,7 +287,7 @@
     <div class="purse"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#ffd23f" stroke="#2a1b3d" stroke-width="2.2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#e0a800" stroke-width="2"/></svg><b id="mBank">0</b><span>or en cagnotte</span></div>
     <p class="fine" style="font-size:14px;opacity:1">L’or qu’il te reste à la fin d’une partie rejoint la cagnotte : 85 % en cas de victoire, 40 % en cas de K.O., rien si tu abandonnes (tu perds aussi les éclats gagnés pendant la partie). Elle sert uniquement à acheter de nouvelles cartes. Pour en acheter une, réussis d’abord la carte précédente en Facile.</p>
     <p class="mp-err" id="mTest" hidden>🧪 Mode test : toutes les cartes et tous les événements sont débloqués.</p>
-    <button class="btn green" id="mGuide" type="button">🎓 Tutoriel guidé · une partie pas à pas</button>
+    <button class="btn green" id="mGuide" type="button" hidden>🎓 Tutoriel guidé · une partie pas à pas</button>
     <div class="tabbar" role="tablist" id="mTabs">
       <button type="button" role="tab" data-mt="std">Cartes</button>
       <button type="button" role="tab" data-mt="evt">Événements<span class="dot"></span></button>
@@ -405,6 +406,14 @@
     <button class="btn stickyb" id="wrBack" type="button">Retour</button>
   </div>
 </section>
+<section class="screen" id="sStory" hidden>
+  <div class="inner">
+    <div class="bigword calm head storyhead">LA FLAMME DE BRAISE</div>
+    <div class="stworld" id="stWorld"></div>
+    <button class="btn" id="stPlay" type="button">Jouer</button>
+    <button class="btn alt" id="stBack" type="button">Retour</button>
+  </div>
+</section>
 <section class="screen" id="sStats" hidden>
   <div class="inner">
     <div class="panelbox col">
@@ -497,6 +506,12 @@
     <div class="intro-foot"><button class="btn alt" id="rjNo" type="button">Non merci</button><button class="btn green" id="rjYes" type="button">Rejoindre</button></div>
   </div>
 </div>
+<!-- Dialogues du mode histoire (js/story.js) -->
+<div class="dlg" id="dlg" role="dialog" aria-live="polite" hidden>
+  <canvas id="dlgAv" aria-hidden="true"></canvas>
+  <div class="dlgb"><b id="dlgName"></b><p id="dlgText"></p><span class="dlgtap">Touche pour continuer</span></div>
+  <button class="dlgskip" id="dlgSkip" type="button">Passer ⏭</button>
+</div>
 <!-- Mon QR code ami -->
 <div class="intro" id="frQr" role="dialog" aria-modal="true" aria-labelledby="fqTitle" hidden>
   <div class="intro-card">
@@ -550,4 +565,4 @@
 </div>
 <!-- Les données du joueur (IndexedDB) sont chargées d'abord, puis les scripts du jeu, dans cet ordre -->
 <script src="js/storage.js"></script>
-<script>store.boot(['js/errors.js', 'js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bonus.js', 'js/trophies.js', 'js/actions.js', 'js/vendor/supabase.js', 'js/cloud.js', 'js/parents.js', 'js/friends.js', 'js/online.js', 'js/emotes.js', 'js/news.js', 'js/quests.js', 'js/ranking.js', 'js/wardrobe.js', 'js/comfort.js']);</script>
+<script>store.boot(['js/errors.js', 'js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bonus.js', 'js/trophies.js', 'js/actions.js', 'js/vendor/supabase.js', 'js/cloud.js', 'js/parents.js', 'js/friends.js', 'js/online.js', 'js/emotes.js', 'js/news.js', 'js/quests.js', 'js/ranking.js', 'js/wardrobe.js', 'js/comfort.js', 'js/story.js']);</script>

@@ -35,6 +35,7 @@ TORDER.forEach((type, i) => {
 });
 function selectType(type) {
   if (!G || G.over) return;
+  if (G.story && !G.story.towers.includes(type)) { Snd.play('no'); hint(T('Tu n’as pas encore rencontré ce gardien… 🤫'), 2000); return; }
   // Tour verrouillée : achat rapide (un toucher pour proposer, un second pour acheter), sans passer par l'Atelier
   if (!unlocked(type)) {
     const price = UNLOCK[type], name = TOWERS[type].name, now = performance.now();
@@ -58,6 +59,7 @@ function refreshPalette() {
     const b = palBtns[type], sel = G.selType === type, poor = unlocked(type) && G.gold < costOf(type);
     if (b._sel !== sel) { b._sel = sel; b.classList.toggle('sel', sel); b.setAttribute('aria-pressed', sel); }
     if (b._poor !== poor) { b._poor = poor; b.classList.toggle('poor', poor); }
+    const sl = !!(G.story && !G.story.towers.includes(type)); if (b._sl !== sl) { b._sl = sl; b.classList.toggle('storylock', sl); }
   }
 }
 let duelTab = 'tours';
@@ -324,7 +326,7 @@ $('#pAuto').addEventListener('click', () => { opts.auto = !opts.auto; store.set(
 $('#pHelp').addEventListener('click', () => { helpFrom = 'pause'; show('help'); screens.help.scrollTop = 0; });
 $('#tHelp').addEventListener('click', () => { helpFrom = curScreen === 'profile' ? 'profile' : 'title'; show('help'); screens.help.scrollTop = 0; store.set('elemento.seen', true); });
 $('#hBack').addEventListener('click', () => show(helpFrom));
-$('#pQuit').addEventListener('click', () => { G = null; show('title'); });
+$('#pQuit').addEventListener('click', () => { if (G && G.story && typeof storyAbort === 'function') { storyAbort(); return; } G = null; show('title'); });
 $('#oMenu').addEventListener('click', () => { G = null; show('title'); });
 // Rejouer une carte aléatoire en génère une nouvelle de même taille (l'ancienne a disparu avec la partie)
 $('#oRetry').addEventListener('click', () => { if (G && MAPS[G.map].random) newGame(makeRandom(MAPS[G.map].rnd.size, newSeed()), null, G.diff); else if (G) newGame(G.map, null, G.diff); else newGame(0, null, 'facile'); });

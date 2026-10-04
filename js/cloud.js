@@ -62,7 +62,7 @@ function cloudChoose(local, remote) {
 // et améliorer le jeu. Si le compte est supprimé, ses parties restent mais deviennent anonymes (supabase/game_log.sql).
 const LOG_KEY = 'elemento.gamelog', LOG_MAX = 300;
 function logGame(result, award) {
-  if (!G || G.demo || G.duel || G.coop || G.logged || (window.parent !== window && window.parent.BALANCE)) return;
+  if (!G || G.demo || G.duel || G.coop || G.story || G.logged || (window.parent !== window && window.parent.BALANCE)) return;
   G.logged = true;
   const m = MAPS[G.map], towers = {};
   for (const t of G.towers) towers[t.type] = (towers[t.type] || 0) + 1;

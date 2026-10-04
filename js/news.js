@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  60: [
+    ['📖', 'Nouveau : le mode Histoire, « La flamme de Braise » ! Suis Braise dans son aventure, rencontre Ondine et Rocaille, croque des gemmes… Les 5 premiers chapitres sont là, la suite arrive bientôt.'],
+  ],
   59: [
     ['🗺️', 'Sur un téléphone tenu droit, les aperçus des cartes sont dans le même sens que la partie : la carte du jour ressemble enfin à ce que tu vas jouer.'],
   ],

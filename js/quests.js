@@ -50,7 +50,7 @@ const questIcon = q => QUESTS[q.id].el ? ELEM_IC[q.el] || '🎨' : QUESTS[q.id].
 const questText = q => QUESTS[q.id].txt(QUESTS[q.id].n, q);
 // Appelé par le jeu (js/game.js, js/ui.js) : win, end, tower, wave, kill, boss, fusion
 function questEvent(ev, d = {}) {
-  if (!questsOn() || !G || G.demo || G.duel || G.coop || G.guide || (window.parent !== window && window.parent.BALANCE)) return;
+  if (!questsOn() || !G || G.demo || G.duel || G.coop || G.guide || G.story || (window.parent !== window && window.parent.BALANCE)) return;
   const st = questDay(); let changed = false;
   st.list.forEach((q, i) => {
     const Q = QUESTS[q.id]; if (!Q || Q.ev !== ev || st.prog[i] >= Q.n || (Q.test && !Q.test(d, q))) return;

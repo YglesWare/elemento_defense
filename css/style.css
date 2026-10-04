@@ -867,3 +867,29 @@ html.cvd .tbtn .bio.bad{background:#ffe2c4}
 .mapc>.drank+.sbtn{margin-top:0}
 /* Aperçus de cartes en hauteur sur un écran en hauteur (comme la partie) */
 html.miniportrait .mapc canvas{aspect-ratio:9/13}
+
+/* Mode histoire (js/story.js) */
+.btn.storybtn{background:linear-gradient(90deg,#ffb36b,#ff7a3d);color:var(--ink)}
+#sStory{background:var(--sky) radial-gradient(rgba(42,27,61,.12) 1.2px,transparent 1.7px) 0 0/9px 9px}
+.storyhead{font-size:clamp(34px,9vw,58px)!important}
+.stworld{position:relative;width:100%;aspect-ratio:9/13;max-height:72vh;border:3px solid var(--ink);border-radius:18px;box-shadow:0 5px 0 var(--ink);overflow:hidden;background:linear-gradient(180deg,#9fe39a 0 22%,#7fc4ff 22% 30%,#9fd28b 30% 46%,#f5d98f 46% 62%,#c9a27a 62% 76%,#eef4ff 76%)}
+.stworld svg{position:absolute;inset:0;width:100%;height:100%}
+.stnode{position:absolute;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;border:3px solid var(--ink);background:var(--paper);box-shadow:0 2px 0 var(--ink);font:800 14px/1 "Baloo 2",system-ui,sans-serif;color:var(--ink);padding:0;z-index:2}
+.stnode.done{background:var(--leaf)}.stnode.cur{background:var(--sun);width:40px;height:40px;animation:emoIn .8s ease-in-out infinite alternate}
+.stnode.lock,.stnode.soon{background:#d9d2e3;color:#8a7f99}
+@media (prefers-reduced-motion:reduce){.stnode.cur{animation:none}}
+.stlbl{position:absolute;transform:translateX(-50%);font-weight:800;font-size:11px;background:rgba(255,255,255,.88);border:1.5px solid var(--ink);border-radius:8px;padding:0 6px;white-space:nowrap;z-index:2;pointer-events:none}
+.sttok{position:absolute;width:44px;height:48px;transform:translate(-50%,-115%);z-index:3;pointer-events:none}
+.dlg{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:75;width:min(520px,calc(100% - 20px));display:flex;align-items:flex-end;gap:8px;cursor:pointer}
+.dlg.right{flex-direction:row-reverse}
+.dlg canvas{width:72px;height:72px;flex:none;filter:drop-shadow(0 3px 0 rgba(42,27,61,.45))}
+.dlgb{flex:1;min-width:0;background:var(--paper);border:3px solid var(--ink);border-radius:18px;box-shadow:0 4px 0 var(--ink);padding:9px 12px 7px}
+.dlgb b{display:block;font-family:var(--display);font-weight:400;font-size:19px;letter-spacing:.5px;color:var(--pop)}
+.dlgb p{margin:2px 0 4px;font-weight:700;font-size:15px;line-height:1.35}
+.dlgtap{display:block;text-align:right;font-weight:800;font-size:11px;color:var(--muted)}
+.dlgskip{position:absolute;top:-30px;right:0;border:2px solid var(--ink);border-radius:99px;background:var(--paper);font:800 12px/1 "Baloo 2",system-ui,sans-serif;padding:4px 10px;box-shadow:0 2px 0 var(--ink)}
+.dlg.right .dlgskip{right:auto;left:0}
+.tbtn.storylock canvas{filter:brightness(0);opacity:.28}
+.tbtn.storylock .nm,.tbtn.storylock .cost,.tbtn.storylock .lock,.tbtn.storylock .bio{visibility:hidden}
+.tbtn.storylock{position:relative}
+.tbtn.storylock::after{content:'?';position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-size:28px;color:var(--muted)}

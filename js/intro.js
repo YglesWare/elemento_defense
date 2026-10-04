@@ -17,7 +17,7 @@ const MOB_TIPS = {
 };
 const introSeen = () => store.get(INTRO_KEY) || {};
 // Pas en multijoueur (ça mettrait les autres en pause), ni dans le tutoriel guidé, l'animation de démo ou l'outil d'équilibrage
-const introOk = () => G && !G.demo && !G.duel && !G.coop && !G.guide && !(window.parent !== window && window.parent.BALANCE);
+const introOk = () => G && !G.demo && !G.duel && !G.coop && !G.guide && !G.story && !(window.parent !== window && window.parent.BALANCE);
 const INTRO = { q: [], open: null };
 
 function introPush(key, item) {
