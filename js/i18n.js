@@ -1497,6 +1497,7 @@ const EN = {
 "Souffler sur le téléphone chasse bien le brouillard, et une jauge 🎤 montre que le micro t’entend.": "Blowing on the phone now clears the fog properly, and a 🎤 meter shows the microphone hears you.",
 "La partie est sauvegardée au début de chaque vague : après un plantage, tu reprends avec les tours posées pendant la pause.": "Your game is saved at the start of every wave: after a crash, you resume with the towers placed during the break.",
 "La musique se coupe quand le jeu passe en arrière-plan.": "Music stops when the game goes to the background.",
+"Les demandes d’amis apparaissent en quelques secondes, sans avoir à rouvrir la page Amis.": "Friend requests now show up within seconds, without reopening the Friends page.",
 };
 const T = s => (IS_EN && typeof s === 'string' && EN[s] !== undefined ? EN[s] : s);
 // Textes fixes de la page : nœuds de texte et attributs (placeholder, aria-label, title, alt)

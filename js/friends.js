@@ -42,19 +42,20 @@ async function frLoad(force) {
   } catch (e) { FR.err = (e && e.message) || String(e); }
   finally { FR.busy = false; frPaint(); }
 }
-// Toutes les 20 s : présence (« en ligne », « en partie »), puis la liste (plus souvent quand la page Amis est ouverte)
+// Présence (« en ligne », « en partie ») toutes les minutes ; la liste toutes les 2 s quand une page d'amis est ouverte,
+// toutes les 15 s sur l'accueil (pastille des demandes), sinon toutes les minutes
 async function frTick() {
   if (!frLive() || document.visibilityState !== 'visible') return;
   const now = Date.now();
   try {
     if (now - FR.lastPing > 55e3) { FR.lastPing = now; if (FR.ok) await frRpc('presence_ping', { p_state: G && curScreen === 'game' && !G.over ? 'game' : 'menu' }); }
     const open = curScreen === 'friends' || curScreen === 'fradd' || (curScreen === 'parents' && PA.view === 'friends');
-    if (now - FR.lastLoad > (open ? 15e3 : 60e3)) await frLoad();
+    if (now - FR.lastLoad > (open ? 1.8e3 : curScreen === 'title' ? 15e3 : 60e3)) await frLoad();
   } catch (e) {}
 }
-setTimeout(frTick, 4000); setInterval(frTick, 20e3);
+setTimeout(frTick, 4000); setInterval(frTick, 2000);
 // En arrière-plan, ou jeu en ligne coupé : on apparaît hors ligne
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && FR.ok && typeof CLOUD !== 'undefined' && CLOUD.user && navigator.onLine) frRpc('presence_ping', { p_state: 'off' }).catch(() => {}); else if (document.visibilityState === 'visible') FR.lastPing = 0; });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && FR.ok && typeof CLOUD !== 'undefined' && CLOUD.user && navigator.onLine) frRpc('presence_ping', { p_state: 'off' }).catch(() => {}); else if (document.visibilityState === 'visible') { FR.lastPing = 0; FR.lastLoad = 0; frTick(); } });
 
 // ---------- Affichage ----------
 const fmtCode = c => c ? 'YGL-' + c.slice(0, 3) + '-' + c.slice(3) : '…';

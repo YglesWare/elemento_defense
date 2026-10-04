@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  56: [
+    ['⚡', 'Les demandes d’amis apparaissent en quelques secondes, sans avoir à rouvrir la page Amis.'],
+  ],
   55: [
     ['♾️', 'Maîtrises, Longue-vue et Remparts n’ont plus de limite : au-delà du maximum, ils continuent de progresser, plus doucement. Le mode Infini devient l’endroit idéal pour gagner des éclats.'],
     ['🌬️', 'Souffler sur le téléphone chasse bien le brouillard, et une jauge 🎤 montre que le micro t’entend.'],
