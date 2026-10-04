@@ -58,7 +58,8 @@ async function onSignal(m) {
       const oldPc = ONL.pcs.get(m.from), oldL = ONL.relays.get(m.from);
       if (oldPc) { ONL.pcs.delete(m.from); if (Net.idOf(oldPc)) Net.dropPc(oldPc); else try { oldPc.close(); } catch (e) {} }
       if (oldL) Net.dropPc(oldL.pc);
-      if (Net.peers.size + 1 >= NET_MAX) return;
+      const returning = [...Net.peers.values()].some(p => p.away && p.uid === m.from);
+      if (!returning && Net.peers.size + 1 >= NET_MAX) return;
       const pc = new RTCPeerConnection({ iceServers: ICE_ONLINE }), dc = pc.createDataChannel('game', { ordered: true });
       pc.uid = m.from; ONL.pcs.set(m.from, pc); ONL.joined.add(m.from);
       Net.wire(pc, dc, null);
@@ -108,6 +109,30 @@ setInterval(() => {
   if (ONL.host) for (const [uid, L] of ONL.relays) { if (now - (ONL.last.get(uid) || now) > 15e3) Net.dropPc(L.pc); }
   else if (ONL.hostRelay && now - (ONL.last.get(ONL.hostUid) || now) > 15e3) Net.dropPc(ONL.hostRelay.pc);
 }, 3000);
+
+// ---------- Reconnexion (coupure de réseau en pleine partie) ----------
+// L'invité redemande une liaison à l'hôte par le canal du salon, toutes les 3 s, tant qu'il n'est pas revenu
+// (Net lui laisse 25 s ; l'hôte lui garde sa place 20 s).
+function onlineRejoin() {
+  if (!ONL.ch || ONL.host) return;
+  const old = ONL.pcs.get('host'); ONL.pcs.delete('host'); if (old) { try { old.close(); } catch (e) {} }
+  ONL.hostRelay = null; Net.hostPc = null;
+  clearInterval(ONL.rejoinT);
+  const ask = () => { if (!Net.reconnecting || !ONL.ch) { clearInterval(ONL.rejoinT); return; } if (!Net.hostPc) sig({ t: 'hi', pid: Net.me.id }); };
+  ask(); ONL.rejoinT = setInterval(ask, 3000);
+}
+// Coupure plus rapide à voir que par WebRTC : sans message depuis 8 s, la liaison est considérée comme perdue
+setInterval(() => {
+  if (!Net.online || !Net.role) return;
+  const now = performance.now();
+  if (Net.role === 'host') { for (const p of [...Net.peers.values()]) if (!p.away && p.last && now - p.last > 8000) Net.dropPc(p.pc); }
+  else if (!Net.reconnecting && Net.peers.has('host') && Net.hostLast && now - Net.hostLast > 8000) Net.dropPc(Net.peers.get('host').pc);
+}, 2000);
+const nameOf = id => { const p = Net.players.find(x => x.id === id) || Net.peers.get(id); return (p && p.name) || T('Un joueur'); };
+Net.on('away', id => hint(nameOf(id) + T(' a perdu la connexion… on l’attend 20 s'), 3000));
+Net.on('back', id => { if (id === 'host') { $('#reconnBox').hidden = true; hint(T('Reconnecté !'), 1800); } else { hint(nameOf(id) + T(' est de retour !'), 2200); if (typeof COOP !== 'undefined' && COOP.on) COOP.towerSig = ''; } });
+Net.on('reconnecting', () => { $('#reconnBox').hidden = false; });
+Net.on('closed', () => { $('#reconnBox').hidden = true; });
 
 // ---------- Hôte : salon et invitations ----------
 async function onlineCreate() {

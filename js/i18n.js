@@ -1485,6 +1485,13 @@ const EN = {
 "🧑‍🎨 Bravo, tu as trouvé le nom du créateur ! Mais ce pseudo lui est réservé : tu gardes le tien.": "🧑‍🎨 Well done, you found the creator’s name! But that nickname is reserved for him: you keep yours.",
 "La garde-robe d’Yglou : chapeaux, couleurs de crête et aura dorée, à acheter avec l’or de ta cagnotte. Tes amis voient ton Yglou déguisé !": "Yglou’s wardrobe: hats, crest colours and a golden aura, bought with your piggy-bank gold. Your friends see your dressed-up Yglou!",
 "Confort de jeu : texte plus grand, couleurs pour daltoniens, vibrations et secousses réglables (dans le Profil).": "Comfort settings: bigger text, colour-blind colours, adjustable vibrations and shaking (in the Profile).",
+" a perdu la connexion… on l’attend 20 s": " lost the connection… waiting 20 s",
+"Reconnecté !": "Reconnected!",
+" est de retour !": " is back!",
+"connexion perdue…": "connection lost…",
+"Reconnexion…": "Reconnecting…",
+"Le réseau a coupé : on rejoint la partie.": "The network dropped: rejoining the game.",
+"En ligne, si le réseau coupe quelques secondes en pleine partie, tu rejoins la partie tout seul au lieu de la perdre.": "Online, if the network drops for a few seconds mid-game, you rejoin automatically instead of losing the game.",
 };
 const T = s => (IS_EN && typeof s === 'string' && EN[s] !== undefined ? EN[s] : s);
 // Textes fixes de la page : nœuds de texte et attributs (placeholder, aria-label, title, alt)

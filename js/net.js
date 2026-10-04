@@ -219,20 +219,29 @@ const Net = {
   receive(pc, dc, msg) {
     if (this.role === 'host') {
       if (msg.t === 'hello') {
+        // En ligne : un joueur qui revient après une coupure retrouve sa place (même identifiant de joueur)
+        const back = this.online && this.peers.get(msg.id);
+        if (back && back.away) {
+          clearTimeout(back.awayT); Object.assign(back, { pc, dc, away: 0, awayT: 0, last: performance.now() });
+          this.syncRoster(); this.emit('back', msg.id); return;
+        }
         if (this.peers.size + 1 >= NET_MAX) { try { dc.send(JSON.stringify({ t: 'full' })); } catch (e) {} setTimeout(() => pc.close(), 300); return; }
         if (pc.lan && this.inGame()) { try { dc.send(JSON.stringify({ t: 'ingame' })); } catch (e) {} setTimeout(() => pc.close(), 300); return; }
         if (msg.v && msg.v !== NET_VER) { try { dc.send(JSON.stringify({ t: 'ver' })); } catch (e) {} setTimeout(() => pc.close(), 300); return; }
         // En ligne : le pseudo vient du serveur (celui de l'ami invité), pas de ce que l'invité envoie
         const nm = (pc.uid && typeof onlineName === 'function' && onlineName(pc.uid)) || String(msg.name || T('Joueur')).slice(0, 12);
-        this.peers.set(msg.id, { pc, dc, name: nm, ping: 0, uid: pc.uid || null });
+        this.peers.set(msg.id, { pc, dc, name: nm, ping: 0, uid: pc.uid || null, last: performance.now() });
         this.syncRoster(); this.emit('join', msg.id); return;
       }
       const id = this.idOf(pc); if (!id) return;
+      const pe = this.peers.get(id); if (pe) pe.last = performance.now();
       if (msg.t === 'pong') { const p = this.peers.get(id); if (p) p.ping = Math.round(performance.now() - msg.ts); return; }
-      if (msg.t === 'bye') { this.dropPc(pc); return; }
+      if (msg.t === 'bye') { pc.final = true; this.dropPc(pc); return; }
       if (msg.t === 'relay') { this.route(id, msg.to, msg.data); return; }
       this.emit('msg', { from: id, data: msg });
     } else {
+      this.hostLast = performance.now();
+      if (this.reconnecting) { this.reconnecting = false; this.emit('back', 'host'); }
       if (msg.t === 'ping') { this.sendTo('host', { t: 'pong', ts: msg.ts }); return; }
       if (msg.t === 'roster') { this.players = msg.players; this.emit('roster', this.players); return; }
       if (msg.t === 'full') { this.emit('error', T('La partie est déjà complète.')); return; }
@@ -246,6 +255,23 @@ const Net = {
   idOf(pc) { for (const [id, p] of this.peers) if (p.pc === pc) return id; return null; },
   dropPc(pc) {
     const id = this.idOf(pc); if (!id) return;
+    // En ligne : 20 s de grâce pour se reconnecter (le joueur garde sa place, la partie continue)
+    if (this.online && !pc.final) {
+      const p = this.peers.get(id);
+      if (this.role === 'host') {
+        if (p.away) return;
+        p.away = Date.now(); p.dc = { readyState: 'closed', send() {} }; try { pc.close(); } catch (e) {}
+        p.awayT = setTimeout(() => { if (p.away && this.peers.get(id) === p) { p.pc = { final: true, close() {} }; p.pc.final = true; this.dropPc(p.pc); } }, 20000);
+        this.syncRoster(); this.emit('away', id); return;
+      }
+      if (!this.reconnecting) {
+        this.peers.delete(id); try { pc.close(); } catch (e) {}
+        this.reconnecting = true; this.emit('reconnecting');
+        clearTimeout(this.reconT); this.reconT = setTimeout(() => { if (this.reconnecting) { this.reconnecting = false; this.emit('closed', T('Connexion perdue avec l’hôte.')); this.reset(); } }, 25000);
+        if (typeof onlineRejoin === 'function') onlineRejoin();
+      }
+      return;
+    }
     this.peers.delete(id); try { pc.close(); } catch (e) {}
     if (this.role === 'host') { this.syncRoster(); this.emit('leave', id); }
     else { this.emit('closed', T('Connexion perdue avec l’hôte.')); this.reset(); }
@@ -270,17 +296,19 @@ const Net = {
     this.syncRoster();
   },
   syncRoster() {
-    this.players = [{ ...this.me, ping: 0 }, ...[...this.peers].map(([id, p]) => ({ id, name: p.name, host: false, ping: p.ping }))];
+    this.players = [{ ...this.me, ping: 0 }, ...[...this.peers].map(([id, p]) => ({ id, name: p.name, host: false, ping: p.ping, away: !!p.away }))];
     this.broadcast({ t: 'roster', players: this.players });
     this.lanAnnounce();
     this.emit('roster', this.players);
   },
   leave() {
+    for (const p of this.peers.values()) p.pc.final = true;
     if (this.role === 'host') this.broadcast({ t: 'bye' }); else if (this.role === 'guest') this.sendTo('host', { t: 'bye' });
     setTimeout(() => this.reset(), 150);
   },
   reset() {
-    clearInterval(this.timer); this.timer = 0;
+    clearInterval(this.timer); this.timer = 0; clearTimeout(this.reconT); this.reconnecting = false;
+    for (const p of this.peers.values()) clearTimeout(p.awayT);
     for (const p of this.peers.values()) { try { p.pc.close(); } catch (e) {} }
     if (this.pending) { try { this.pending.pc.close(); } catch (e) {} }
     if (this.hostPc) { try { this.hostPc.close(); } catch (e) {} }

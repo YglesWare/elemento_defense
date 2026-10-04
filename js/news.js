@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  54: [
+    ['📶', 'En ligne, si le réseau coupe quelques secondes en pleine partie, tu rejoins la partie tout seul au lieu de la perdre.'],
+  ],
   53: [
     ['🎩', 'La garde-robe d’Yglou : chapeaux, couleurs de crête et aura dorée, à acheter avec l’or de ta cagnotte. Tes amis voient ton Yglou déguisé !'],
     ['👓', 'Confort de jeu : texte plus grand, couleurs pour daltoniens, vibrations et secousses réglables (dans le Profil).'],

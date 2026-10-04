@@ -843,3 +843,12 @@ html.bigtext .screen>.inner,html.bigtext .intro-card{zoom:1.12}
 html.cvd .tbtn .bio.good{background:#d6e8ff}
 html.cvd .tbtn .bio.bad{background:#ffe2c4}
 .prnameres{background:#fff8d6;border:2px solid var(--ink);border-radius:12px;padding:6px 10px;font-weight:800;color:var(--ink)}
+
+/* Reconnexion en ligne (js/online.js) */
+.reconn{position:fixed;left:50%;top:calc(64px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:70;display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;background:var(--paper);border:3px solid var(--ink);border-radius:16px;box-shadow:0 4px 0 var(--ink);padding:8px 14px;max-width:calc(100% - 24px)}
+.reconn b{font-family:var(--display);font-weight:400;font-size:20px;letter-spacing:.5px}
+.reconn small{grid-column:2;font-weight:700;font-size:12.5px;color:var(--muted)}
+.reconn-spin{grid-row:1/3;width:26px;height:26px;border-radius:50%;border:4px solid var(--mist);border-top-color:var(--pop);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.reconn-spin{animation-duration:3s}}
+.mp-tag.away{background:var(--nobg)}

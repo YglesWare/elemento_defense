@@ -91,12 +91,14 @@ function hostTick() {
     onWave(DUEL.hostWave, DUEL.cfg.gap);
     Net.send('all', { k: 'wave', n: DUEL.hostWave, gap: DUEL.cfg.gap, w: G ? G.weather : 'clear' });
   }
-  for (const id of DUEL.alive) if (id !== meId() && t - (DUEL.last[id] || 0) > DUEL.cfg.afk) eliminate(id, 'absent');
+  // En ligne, un joueur peut perdre le réseau quelques secondes : il a le temps de se reconnecter (js/net.js)
+  const afk = Net.online ? 25000 : DUEL.cfg.afk;
+  for (const id of DUEL.alive) if (id !== meId() && t - (DUEL.last[id] || 0) > afk) eliminate(id, 'absent');
 }
 function guestWatch() {
   if (!DUEL.on || DUEL.result) return;
   const h = hostId();
-  if (!h || dnow() - (DUEL.last[h] || 0) > DUEL.cfg.hostAfk) duelAbort(T('L’hôte ne répond plus. La partie est interrompue.'));
+  if (!h || dnow() - (DUEL.last[h] || 0) > (Net.online ? 27000 : DUEL.cfg.hostAfk)) duelAbort(T('L’hôte ne répond plus. La partie est interrompue.'));
 }
 function sendStatus() {
   if (!DUEL.on || !G) return;

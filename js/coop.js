@@ -214,7 +214,8 @@ function coopTick(dt) {
     const sig = towerSig(); if (sig !== COOP.towerSig) { COOP.towerSig = sig; sendTowers(); }
     COOP.snapT -= dt; if (COOP.snapT <= 0 && !G.over) { COOP.snapT = 0.125; sendSnapshot(); }
   } else {
-    if (!G.over && now - COOP.lastSnap > 8000) coopFinish(false, T('La connexion avec l’hôte est perdue. La partie s’arrête.'));
+    // En ligne, la reconnexion a 25 s (js/net.js) : la fin de partie viendra de Net si elle échoue
+    if (!G.over && !Net.reconnecting && now - COOP.lastSnap > (Net.online ? 30000 : 8000)) coopFinish(false, T('La connexion avec l’hôte est perdue. La partie s’arrête.'));
     // Achats dans l'Atelier pendant la partie : l'hôte en a besoin pour calculer nos tours
     const lv = JSON.stringify(meta.lv); if (lv !== COOP.lvSent) { COOP.lvSent = lv; Net.send(hostOf(), { k: 'clv', lv: meta.lv }); }
   }
