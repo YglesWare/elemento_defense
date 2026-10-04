@@ -6,6 +6,10 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  63: [
+    ['💬', 'Les dialogues de l’histoire deviennent une vraie BD en plein écran : des cases, des bulles et des CRONCH !'],
+    ['👑', 'Sur la carte de l’histoire, le nom du Roi Gloop n’est plus coupé.'],
+  ],
   62: [
     ['🗺️', 'Carte de l’histoire : l’étape en cours pulse bien à sa place, sans se cacher sous son nom.'],
   ],

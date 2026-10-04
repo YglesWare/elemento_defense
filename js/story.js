@@ -15,7 +15,7 @@ const CHAPTERS = [
   { title: 'La petite maison', place: 'Prairie Mochi', map: 0, towers: ['feu'], gold: 150, lives: 10,
     waves: [[['gloop', 4]], [['gloop', 6]], [['gloop', 9]]],
     intro: [
-      ['yglou', 'Il était une fois, dans la Prairie Mochi, une petite flamme nommée Braise.'],
+      ['narr', 'Il était une fois, dans la Prairie Mochi, une petite flamme nommée Braise.'],
       ['feu', 'Ah… La belle journée pour faire la sieste au soleil…'],
       ['yglou', 'Sauf que… des slimes foncent droit sur la maison de Mamie Mochi !'],
       ['feu', 'QUOI ?! Pas touche à Mamie ! Je vais les griller !'],
@@ -31,7 +31,7 @@ const CHAPTERS = [
   { title: 'Le lac d’Ondine', place: 'Plage Ramune', map: 1, towers: ['feu', 'eau'], gold: 200, lives: 12,
     waves: [[['gloop', 6]], [['zip', 8]], [['zip', 10], ['gloop', 4]], [['zip', 15]]],
     intro: [
-      ['yglou', 'Au bord du lac, quelqu’un appelle à l’aide…'],
+      ['narr', 'Au bord du lac, quelqu’un appelle à l’aide…'],
       ['eau', 'Au secours ! Ces Zippy vont trop vite, je n’arrive pas à les arrêter toute seule !'],
       ['feu', 'Moi non plus ! Ils filent entre mes flammes !'],
       ['eau', 'Et si je les ralentissais… pendant que tu les brûles ?'],
@@ -45,7 +45,7 @@ const CHAPTERS = [
   { title: 'Les gemmes scintillantes', place: 'Prairie Mochi', map: 0, towers: ['feu', 'eau'], gold: 220, lives: 12, shards: 60,
     waves: [[['gloop', 10]], [['gloop', 8], ['zip', 6]], [['zip', 10], ['gloop', 8]], [['gloop', 14], ['zip', 8]]],
     intro: [
-      ['yglou', 'Sur le chemin, quelque chose brille dans l’herbe…'],
+      ['narr', 'Sur le chemin, quelque chose brille dans l’herbe…'],
       ['feu', 'Une gemme violette ! Elle a l’air… croustillante.'],
       ['eau', 'Tu ne vas quand même pas la manger ?'],
       ['feu', 'CRONCH. … Ouh là ! Je me sens PLUS FORT ! Et je vois loin, loin, loin !'],
@@ -59,7 +59,7 @@ const CHAPTERS = [
   { title: 'Le marais de Rocaille', place: 'Marais Matcha', map: 2, towers: ['feu', 'eau', 'terre'], gold: 240, lives: 14,
     waves: [[['gloop', 8]], [['tonk', 4]], [['tonk', 6], ['gloop', 6]], [['tonk', 8]], [['tonk', 8], ['zip', 8]], [['tonk', 12]]],
     intro: [
-      ['yglou', 'Dans le marais, des Tonk casqués avancent en rang…'],
+      ['narr', 'Dans le marais, des Tonk casqués avancent en rang…'],
       ['feu', 'Prenez ça ! … Hein ? Mes flammes rebondissent sur leurs casques !'],
       ['terre', 'Grmbl… Encore des Tonk casqués. Tes petites flammes, ça leur fait des chatouilles.'],
       ['feu', 'Hé ! Elles sont TRÈS chaudes, mes flammes !'],
@@ -74,7 +74,7 @@ const CHAPTERS = [
   { title: 'Le premier géant', place: 'Forêt Dango', map: 3, towers: ['feu', 'eau', 'terre'], gold: 300, lives: 15,
     waves: [[['gloop', 10]], [['zip', 10], ['gloop', 6]], [['tonk', 6], ['gloop', 8]], [['gloop', 12], ['zip', 8]], [['gloop', 6], ['boss', 1]]],
     intro: [
-      ['yglou', 'À la sortie de la forêt, le sol se met à trembler…'],
+      ['narr', 'À la sortie de la forêt, le sol se met à trembler…'],
       ['feu', 'C’est un tremblement de terre ?'],
       ['terre', 'Non. C’est un Kaiju. Un très, très gros slime.'],
       ['eau', 'Il paraît qu’on le bat en visant tous ensemble.'],
@@ -88,7 +88,7 @@ const CHAPTERS = [
   { title: 'Le vent de Zéphyr', place: 'Île Takoyaki', map: 5, towers: ['feu', 'eau', 'terre', 'vent'], gold: 300, lives: 15,
     waves: [[['gloop', 8]], [['flappy', 6]], [['flappy', 8], ['gloop', 6]], [['tonk', 6], ['flappy', 6]], [['flappy', 16]], [['zip', 10], ['flappy', 10]]],
     intro: [
-      ['yglou', 'Sur l’île, des Flappy tournoient au-dessus des palmiers…'],
+      ['narr', 'Sur l’île, des Flappy tournoient au-dessus des palmiers…'],
       ['terre', 'Grmbl ! Ils volent trop haut, je ne peux pas les toucher !'],
       ['vent', 'Ooooh… des nuages tout ronds… Ah, pardon. Vous parlez des slimes volants ?'],
       ['feu', 'Oui ! Tu peux les attraper ?'],
@@ -103,7 +103,7 @@ const CHAPTERS = [
   { title: 'Le désert brûlant', place: 'Désert Dorayaki', map: 4, towers: ['feu', 'eau', 'terre', 'vent'], gold: 320, lives: 15,
     waves: [[['gloop', 10]], [['magma', 4], ['gloop', 6]], [['tonk', 8]], [['magma', 8], ['zip', 8]], [['gloop', 14], ['flappy', 6]], [['magma', 10], ['tonk', 6]]],
     intro: [
-      ['yglou', 'Dans le désert, le sable brûle les pattes…'],
+      ['narr', 'Dans le désert, le sable brûle les pattes…'],
       ['feu', 'Ahhh, quelle douce chaleur ! Je me sens en pleine forme !'],
       ['eau', 'Moi, je m’évapore… Ici, mes éclaboussures sont toutes molles.'],
       ['yglou', 'Chaque terrain change la puissance des tours : regarde le + ou le − sur leurs boutons. Et pose-les sur les collines : +0,4 de portée !'],
@@ -117,7 +117,7 @@ const CHAPTERS = [
   { title: 'Le canyon de Voltie', place: 'Canyon Taiyaki', map: 6, towers: ['feu', 'eau', 'terre', 'vent', 'foudre'], gold: 340, lives: 15,
     waves: [[['gloop', 12]], [['zip', 14]], [['gloop', 18]], [['gresil', 6], ['gloop', 8]], [['zip', 16], ['gloop', 10]], [['gloop', 24]]],
     intro: [
-      ['yglou', 'Dans le canyon, ça crépite de partout…'],
+      ['narr', 'Dans le canyon, ça crépite de partout…'],
       ['foudre', 'BZZT ! Salut ! Vous êtes qui ? Vous faites quoi ? On joue ? BZZT !'],
       ['feu', 'Euh… on chasse des slimes. Il y en a plein, groupés en paquets.'],
       ['foudre', 'DES PAQUETS ?! Mes éclairs rebondissent d’un slime à l’autre ! Trop bien ! BZZT !'],
@@ -130,7 +130,7 @@ const CHAPTERS = [
   { title: 'Le Grand Sage', place: 'Pic Kakigori', map: 8, towers: ['feu', 'eau', 'terre', 'vent', 'foudre', 'glace'], fusion: true, gold: 450, lives: 16,
     waves: [[['gloop', 12]], [['flappy', 10], ['gloop', 6]], [['tonk', 8], ['zip', 8]], [['gloop', 16], ['flappy', 8]], [['tonk', 10], ['magma', 6]], [['gloop', 20], ['flappy', 10]]],
     intro: [
-      ['yglou', 'Au sommet du Pic Kakigori, dans la neige, vit un très vieil aigle…'],
+      ['narr', 'Au sommet du Pic Kakigori, dans la neige, vit un très vieil aigle…'],
       ['yglou', 'Papi !'],
       ['papi', 'Hé hé hé… Mon petit Yglou ! Et tu m’amènes des amis. Entrez, entrez, il fait frisquet.'],
       ['glace', 'B-b-bonjour… Je suis Givrette. J’aide Papi à garder la montagne.'],
@@ -147,7 +147,7 @@ const CHAPTERS = [
   { title: 'Le choix du chemin', place: 'Volcan Wasabi', map: 7, towers: ['feu', 'eau', 'terre', 'vent', 'foudre', 'glace'], fusion: true, gold: 500, lives: 16,
     waves: [[['gloop', 14]], [['flappy', 12]], [['tonk', 10], ['gloop', 8]], [['gloop', 10], ['boss', 1]], [['flappy', 14], ['zip', 10]], [['tonk', 12], ['magma', 8]], [['gloop', 20], ['boss', 1]]],
     intro: [
-      ['yglou', 'Au pied du volcan, Papi Yglou a encore une leçon…'],
+      ['narr', 'Au pied du volcan, Papi Yglou a encore une leçon…'],
       ['papi', 'Une tour, ça peut se spécialiser. Monte-la au niveau 3 et choisis son talent : écraser le sol, chasser le ciel… ou terrasser les Kaiju !'],
       ['terre', 'Grmbl… Moi, je choisis Tueur de Kaiju. Évidemment.'],
       ['vent', 'Moi, Chasse-ciel. Les nuages, c’est chez moi.'],
@@ -160,7 +160,7 @@ const CHAPTERS = [
   { title: 'Le Roi Gloop', place: 'Toundra Yuzu', map: 9, towers: ['feu', 'eau', 'terre', 'vent', 'foudre', 'glace'], fusion: true, gold: 600, lives: 20, final: true,
     waves: [[['gloop', 16]], [['zip', 16], ['flappy', 8]], [['tonk', 12], ['gloop', 10]], [['magma', 10], ['gresil', 6]], [['flappy', 20]], [['gloop', 24], ['boss', 1]], [['tonk', 14], ['zip', 14]], [['gloop', 20], ['flappy', 12], ['boss', 2]]],
     intro: [
-      ['yglou', 'Au cœur de la Toundra glacée, sur un trône de neige…'],
+      ['narr', 'Au cœur de la Toundra glacée, sur un trône de neige…'],
       ['king', 'MOUAHAHA ! Qui ose déranger le Roi Gloop ?'],
       ['feu', 'Nous ! Pourquoi tu envoies tes slimes partout ?'],
       ['king', 'Parce que… parce que… j’ai FROID ! Ici, tout est glacé !'],
@@ -172,7 +172,7 @@ const CHAPTERS = [
       ['king', 'Bouhouhou… Vous avez gagné… Je voulais juste un peu de chaleur…'],
       ['feu', 'Fallait le dire ! Viens te réchauffer près de moi.'],
       ['king', '…C’est vrai ? Oh, c’est tout doux, tout chaud…'],
-      ['yglou', 'Et c’est ainsi que la vallée retrouva la paix…'],
+      ['narr', 'Et c’est ainsi que la vallée retrouva la paix…'],
     ] },
 ];
 const STORY_SOON = [];
@@ -185,15 +185,97 @@ const WAKE_LINES = [
 ];
 const LOSE_LINES = [['yglou', 'Aïe, les slimes sont passés ! Pas grave : on réessaie, avec un peu plus d’or.']];
 
-// ---------- Dialogues (portraits dessinés avec les vrais personnages du jeu) ----------
+// ---------- Dialogues : pages de BD en plein écran (cases, bulles, trame façon manga) ----------
 const STORY_NAMES = { feu: 'Braise', eau: 'Ondine', terre: 'Rocaille', vent: 'Zéphyr', foudre: 'Voltie', glace: 'Givrette', yglou: 'Yglou', papi: 'Papi Yglou', king: 'Roi Gloop' };
-function drawPortrait(cv, who) {
-  const c = prepMini(cv, 72, 72);
-  if (who === 'yglou') drawYglou(c, 36, 50, 60, 'happy', 0.4, { noShadow: true, noConfetti: true });
-  else if (who === 'papi') drawPapi(c, 36, 50, 60);
-  else if (who === 'king') drawKingGloop(c, 36, 72, 92);
-  else drawTower(c, who, 36, 46, 60, 1, 0.4, 0, 0.3, 0, false);
+const COMIC_COL = { feu: '#ffbd7a', eau: '#9ad6ff', terre: '#ddbb92', vent: '#a6ecd6', foudre: '#ffe773', glace: '#d3f0ff', yglou: '#dcc8ff', papi: '#ebe5d8', king: '#dccdff' };
+// Le personnage en grand, à la position (x, y) = ses pieds, taille s
+function drawPortraitAt(c, who, x, y, s) {
+  if (who === 'yglou') drawYglou(c, x, y - s * 0.42, s, 'happy', 0.4, { noShadow: true, noConfetti: true });
+  else if (who === 'papi') drawPapi(c, x, y - s * 0.42, s);
+  else if (who === 'king') drawKingGloop(c, x, y, s * 1.25);
+  else drawTower(c, who, x, y - s * 0.22, s, 1, 0.4, 0, 0.3, 0, false);
 }
+// Le dessin d'une case : trame de la couleur du personnage, traits de vitesse s'il s'exclame, portrait du côté « side »
+const COMIC_SFX = /\b(CRONCH|BAM|BZZT|Grmbl|QUOI)\b/;
+// Hauteur du bord haut (0-1) ou bas (3-2) du quadrilatère q à l'abscisse x
+const edgeY = (q, a, b, x) => q[a][1] + (q[b][1] - q[a][1]) * (x - q[a][0]) / ((q[b][0] - q[a][0]) || 1);
+function comicArt(cv, who, txt, side, w, h, q) {
+  const c = prepMini(cv, w, h);
+  const ink = () => { c.beginPath(); q.forEach(([x, y], k) => k ? c.lineTo(x, y) : c.moveTo(x, y)); c.closePath(); c.lineJoin = 'miter'; c.lineWidth = 8; c.strokeStyle = INK; c.stroke(); };
+  if (who === 'narr') {
+    c.fillStyle = '#f2dfb0'; c.fillRect(0, 0, w, h);
+    const R = REGIONS[storyRun ? storyRun.ch : 0] || REGIONS[0], u = Math.min(h * 0.28, w * 0.18), cy = (edgeY(q, 0, 1, w / 2) + edgeY(q, 3, 2, w / 2)) / 2;
+    blob(c, w / 2, cy + u * 0.35, u * 2.6, u * 1.2, R.c, 5); landmark(c, R.k, w / 2, cy + u * 0.4, u);
+    ink(); return;
+  }
+  c.fillStyle = COMIC_COL[who] || '#ffffff'; c.fillRect(0, 0, w, h);
+  const px = side === 'l' ? w * 0.2 : w * 0.8, top = edgeY(q, 0, 1, px), bot = edgeY(q, 3, 2, px), py = top + (bot - top) * 0.47, s = Math.min((bot - top) * 0.72, w * 0.36);
+  // Trame : des points plus gros loin du personnage
+  c.fillStyle = 'rgba(42,27,61,.13)';
+  for (let y = 4; y < h; y += 9) for (let x = (y / 9 % 2) * 4.5 + 4; x < w; x += 9) { const d = Math.hypot(x - px, y - py) / Math.hypot(w, h); c.beginPath(); c.arc(x, y, 0.6 + d * 3.2, 0, TAU); c.fill(); }
+  // Traits de vitesse quand ça s'exclame
+  if (/[!?]/.test(txt)) {
+    c.strokeStyle = 'rgba(255,255,255,.8)'; c.lineCap = 'round';
+    for (let k = 0; k < 28; k++) { const a = k / 28 * TAU, r0 = s * 0.62, r1 = Math.hypot(w, h); c.lineWidth = 1.5 + (k % 3); c.beginPath(); c.moveTo(px + Math.cos(a) * r0, py + Math.sin(a) * r0); c.lineTo(px + Math.cos(a) * r1, py + Math.sin(a) * r1); c.stroke(); }
+  }
+  drawPortraitAt(c, who, px, py + s * 0.5, s);
+  // Onomatopée en grosses lettres au-dessus du personnage
+  const sfx = who !== 'yglou' && txt.match(COMIC_SFX);
+  if (sfx) {
+    const fs = Math.round(Math.min(h * 0.22, 40));
+    c.save(); c.translate(px + (side === 'l' ? s * 0.25 : -s * 0.25), Math.max(top + fs * 0.8, py - s * 0.48)); c.rotate(side === 'l' ? -0.18 : 0.18);
+    c.font = fs + "px Bangers, Impact, 'Arial Black', sans-serif"; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
+    c.lineWidth = fs * 0.22; c.strokeStyle = INK; c.strokeText(sfx[1].toUpperCase(), 0, 0);
+    c.fillStyle = '#ffe14d'; c.fillText(sfx[1].toUpperCase(), 0, 0); c.restore();
+  }
+  ink();
+}
+const COMIC_PAGES = {
+  3: [[[0, 0], [100, 0], [100, 30], [0, 37]], [[0, 40], [100, 25], [97, 63], [3, 70]], [[0, 64], [100, 70], [100, 100], [0, 100]]],
+  2: [[[0, 0], [100, 0], [100, 46], [0, 54]], [[0, 57], [100, 42], [100, 100], [0, 100]]],
+};
+let dlgQ = null;
+function storySay(lines) {
+  return new Promise(done => {
+    if (!lines || !lines.length) { done(); return; }
+    const wasPaused = G ? G.paused : false; if (G) G.paused = true;
+    const box = $('#comic'), page = $('#cmPage');
+    let i = 0, side = 'l', lastWho = null;
+    const addPanel = () => {
+      const [who, txt] = lines[i], per = innerHeight < 560 ? 2 : 3;
+      page.classList.toggle('two', per === 2);
+      if (page.children.length >= per) page.innerHTML = '';
+      if (lastWho && who !== lastWho && who !== 'narr') side = side === 'l' ? 'r' : 'l';
+      if (who !== 'narr') lastWho = who;
+      // Une page sur deux en miroir, pour varier
+      const flip = (storySay.pg = (storySay.pg || 0) + (page.children.length ? 0 : 1)) % 2 === 0;
+      const Q = COMIC_PAGES[per][page.children.length].map(([x, y]) => [flip ? 100 - x : x, y]);
+      if (flip) Q.reverse().push(...Q.splice(0, 2));
+      const x0 = Math.min(...Q.map(v => v[0])), x1 = Math.max(...Q.map(v => v[0])), y0 = Math.min(...Q.map(v => v[1])), y1 = Math.max(...Q.map(v => v[1]));
+      const p = document.createElement('div');
+      p.className = 'cpanel';
+      p.style.cssText = 'left:' + x0 + '%;top:' + y0 + '%;width:' + (x1 - x0) + '%;height:' + (y1 - y0) + '%';
+      p.innerHTML = '<canvas aria-hidden="true"></canvas>' + (who === 'narr' ? '<div class="ccap">' + esc(T(txt)) + '</div>'
+        : '<div class="cbal ' + side + '"><b>' + esc(T(STORY_NAMES[who] || who)) + '</b>' + esc(T(txt)) + '</div>');
+      page.appendChild(p);
+      // clientWidth/Height ne tiennent pas compte de l'animation d'apparition (scale)
+      const w = Math.max(200, p.clientWidth), h = Math.max(90, p.clientHeight);
+      const q = Q.map(([x, y]) => [(x - x0) / ((x1 - x0) || 1) * w, (y - y0) / ((y1 - y0) || 1) * h]);
+      const cv = p.querySelector('canvas');
+      cv.style.clipPath = 'polygon(' + q.map(([x, y]) => x.toFixed(1) + 'px ' + y.toFixed(1) + 'px').join(',') + ')';
+      // Bulle et cartouche au milieu de la case, sous le bord penché
+      const tl = Math.max(edgeY(q, 0, 1, 0), edgeY(q, 0, 1, w)), bl = Math.min(edgeY(q, 3, 2, 0), edgeY(q, 3, 2, w));
+      const lab = p.querySelector('.cbal, .ccap');
+      if (who === 'narr') lab.style.top = (edgeY(q, 0, 1, 12) + 10) + 'px'; else lab.style.top = ((tl + bl) / 2) + 'px';
+      comicArt(cv, who, T(txt), side, w, h, q);
+    };
+    dlgQ = () => { i++; if (i < lines.length) { addPanel(); Snd.play('build'); return; } box.hidden = true; page.innerHTML = ''; dlgQ = null; if (G) G.paused = wasPaused; done(); };
+    page.innerHTML = ''; box.hidden = false; addPanel();
+  });
+}
+$('#comic').addEventListener('click', () => { if (dlgQ) dlgQ(); });
+$('#cmSkip').addEventListener('click', ev => { ev.stopPropagation(); while (dlgQ) dlgQ(); });
+
 // Papi Yglou : crête blanche, lunettes rondes, sourcils en bataille
 function drawPapi(c, x, y, s) {
   drawYglou(c, x, y, s, 'happy', 0.4, { noShadow: true, noConfetti: true, crest: '#f4f1ea' });
@@ -210,30 +292,11 @@ function drawKingGloop(c, x, y, s) {
   const r = s * ETYPES.gloop.size, top = y - r * 0.85 - r;
   c.save(); c.translate(x, top + r * 0.12); c.lineJoin = 'round'; crownHat(c, 0, r * 0.95, Math.max(1.5, s * 0.03)); c.restore();
 }
-let dlgQ = null;
-function storySay(lines) {
-  return new Promise(done => {
-    if (!lines || !lines.length) { done(); return; }
-    const wasPaused = G ? G.paused : false; if (G) G.paused = true;
-    let i = 0;
-    const box = $('#dlg'), paint = () => {
-      const [who, txt] = lines[i];
-      box.classList.toggle('right', who === 'feu');
-      drawPortrait($('#dlgAv'), who);
-      $('#dlgName').textContent = T(STORY_NAMES[who] || who);
-      $('#dlgText').textContent = T(txt);
-    };
-    dlgQ = () => { i++; if (i < lines.length) { paint(); Snd.play('build'); return; } box.hidden = true; dlgQ = null; if (G) G.paused = wasPaused; done(); };
-    box.hidden = false; paint();
-  });
-}
-$('#dlg').addEventListener('click', () => { if (dlgQ) dlgQ(); });
-$('#dlgSkip').addEventListener('click', ev => { ev.stopPropagation(); while (dlgQ) dlgQ(); });
 
 // ---------- Carte du monde (parchemin de jeu de rôle, dessiné avec le canvas) ----------
 screens.story = $('#sStory');
 // Étapes en zigzag, du haut (Prairie) vers le bas (Toundra) ; coordonnées en fraction de la carte
-const NODE_POS = [[0.22, 0.09], [0.74, 0.13], [0.36, 0.23], [0.75, 0.31], [0.24, 0.39], [0.73, 0.48], [0.28, 0.57], [0.74, 0.65], [0.27, 0.74], [0.73, 0.82], [0.5, 0.92]];
+const NODE_POS = [[0.22, 0.09], [0.74, 0.13], [0.36, 0.23], [0.75, 0.31], [0.24, 0.39], [0.73, 0.48], [0.28, 0.57], [0.74, 0.65], [0.27, 0.74], [0.73, 0.82], [0.5, 0.885]];
 // Décor de chaque région (centre décalé vers l'extérieur de l'étape)
 const REGIONS = [
   { k: 'prairie', at: [0.18, 0.06], c: '#a9da8c' }, { k: 'lac', at: [0.8, 0.1], c: '#8fd0f0' }, { k: 'gemmes', at: [0.42, 0.2], c: '#cdb7ef' },
