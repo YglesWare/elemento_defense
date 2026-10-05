@@ -53,7 +53,7 @@ function duelHostStart() {
   if (Net.role !== 'host') return;
   if (Net.players.length < 2) { MP.err = T('Il faut au moins 2 joueurs pour lancer la partie.'); renderMP(); return; }
   const rm = MAPS[DUEL.lobbyMap] && MAPS[DUEL.lobbyMap].random ? { size: DUEL.lobbySize || 'moyenne', seed: newSeed() } : null;
-  const msg = { k: 'start', map: DUEL.lobbyMap, rnd: rm, ids: Net.players.map(p => p.id), names: Object.fromEntries(Net.players.map(p => [p.id, p.name])), prep: DUEL.cfg.prep, gap: DUEL.cfg.gap };
+  const msg = { k: 'start', map: DUEL.lobbyMap, rnd: rm, ids: Net.players.map(p => p.id), names: Object.fromEntries(Net.players.map(p => [p.id, p.name])), prep: DUEL.cfg.prep, gap: DUEL.cfg.gap, chal: DUEL.lobbyChal || null };
   Net.send('all', msg);
   beginDuel(msg);
 }
@@ -72,6 +72,7 @@ function beginDuel(msg) {
   DUEL.map = msg.map;
   newGame(msg.map, null, 'infini');
   G.duel = true; G.sendQ = []; G.sendT = 0; G.speed = 1;
+  if (typeof chalStart === 'function') chalStart(msg.chal, true);
   $('#bSpeed').hidden = true; $('#stage').classList.add('duel'); resize();
   DUEL.nextAt = dnow() + (msg.prep || DUEL.cfg.prep);
   buildSendPanel(); showPanel('palette'); renderDuelBar();
@@ -321,7 +322,7 @@ Net.on('msg', ({ from, data }) => {
   if (!data || !data.k) return;
   DUEL.last[from] = dnow();
   switch (data.k) {
-    case 'lobby': DUEL.lobbyMap = data.map; if (data.rsize) DUEL.lobbySize = data.rsize; DUEL.lobbyMode = data.mode || 'duel'; if (data.diff) DUEL.lobbyDiff = data.diff; if (typeof MP !== 'undefined' && MP.state === 'lobby') renderMP(); break;
+    case 'lobby': DUEL.lobbyMap = data.map; if (data.rsize) DUEL.lobbySize = data.rsize; DUEL.lobbyMode = data.mode || 'duel'; if (data.diff) DUEL.lobbyDiff = data.diff; DUEL.lobbyChal = data.chal || null; if (typeof MP !== 'undefined' && MP.state === 'lobby') renderMP(); break;
     case 'start': if (Net.role !== 'host') beginDuel(data); break;
     case 'wave': if (Net.role !== 'host') onWave(data.n, data.gap, data.w); break;
     case 'st': DUEL.stats[from] = data; break;

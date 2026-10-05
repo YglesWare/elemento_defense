@@ -167,6 +167,9 @@ function newGame(mi, save, diff) {
   const m = MAPS[mi]; useGrid(m);
   G = baseState(mi, save, diff);
   if (inStory) { G.story = storyRun; storyRun.launch = false; }
+  // Défis (js/challenge.js) : le réglage de la carte en solo, ou celui de la sauvegarde ; le multijoueur pose le sien ensuite
+  G.chal = null;
+  if (typeof chalStart === 'function' && !duelOn && !G.story && !G.demo && chalMapOk(mi)) chalStart(save ? save.chal : chalGet(m.id), !save);
   P = buildPath(m); G.deco = genDeco(mi);
   if (!save && !G.story) { stats.games++; saveStats(); const h = new Date().getHours(); if (h < 5 && typeof trophy === 'function' && !G.duel) trophy('egg_night'); }
   if (save) for (const t of save.towers) { const nt = addTower(t.type, t.c, t.r, t.lvl >= 3 && !t.br && !TOWERS[t.type].fusion ? 2 : t.lvl, t.mode, t.inv, t.br); if (hardMode() && t.hp > 0) nt.hp = Math.min(nt.maxHp, t.hp); }
@@ -178,7 +181,7 @@ function newGame(mi, save, diff) {
   prepNextWave();
   if (save) banner('REPRISE', T('Vague ') + (G.wave + 1) + T(' prête'));
   else {
-    banner(T('PRÊT ?'), MAPS[mi].name + ' · ' + DIFFS[G.diff].name + (G.endless ? T(' · vagues infinies') : ' · ' + G.maxw + T(' vagues')));
+    banner(T('PRÊT ?'), MAPS[mi].name + ' · ' + DIFFS[G.diff].name + (G.endless ? T(' · vagues infinies') : ' · ' + G.maxw + T(' vagues')) + (G.chal ? ' · 🌶 ' + chalX(G.chal.mult) : ''));
     const seen = store.get('elemento.bankhint') || 0;
     if (seen < 3 && !G.story) { store.set('elemento.bankhint', seen + 1); setTimeout(() => { if (G && G.map === mi && !G.over && !G.duel && !G.guide) bankHint(5000); }, 2400); }
   }
@@ -187,7 +190,7 @@ function saveCheckpoint() {
   if (G.duel || duelOn || G.coop || G.story) return;
   G.checkpoint = { grid: GRIDV, rnd: MAPS[G.map].rnd || null, map: G.map, mapId: MAPS[G.map].id, diff: G.diff, banked: G.banked, gold: G.gold, lives: G.lives, wave: G.wave, score: G.score, endless: G.endless,
     bossKills: G.bossKills, shardsPaid: G.shardsPaid, shardsWon: G.shardsWon, won: G.won, reviveUsed: G.reviveUsed,
-    weather: G.weather, ruins: G.ruins, bonusUsed: G.bonusUsed || 0, time: Math.round(G.time), towers: G.towers.map(t => ({ type: t.type, c: t.c, r: t.r, lvl: t.lvl, mode: t.mode, inv: t.inv, br: t.br, hp: Math.round(t.hp) })) };
+    weather: G.weather, ruins: G.ruins, bonusUsed: G.bonusUsed || 0, time: Math.round(G.time), chal: G.chal ? { m: G.chal.m, sans: G.chal.sans, used: G.chal.used } : null, towers: G.towers.map(t => ({ type: t.type, c: t.c, r: t.r, lvl: t.lvl, mode: t.mode, inv: t.inv, br: t.br, hp: Math.round(t.hp) })) };
   store.set(SAVE, G.checkpoint); store.flush(); // écrite tout de suite : un plantage juste après ne la perd pas
 }
 // Appli mise en arrière-plan entre deux vagues : on garde les tours posées pendant l'entracte
@@ -205,8 +208,9 @@ function recordBest() {
     return cur;
   }
   if (MAPS[G.map].random) return { wave: G.wave, score: G.score };
-  const b = store.get(BEST2) || {}, id = recId(MAPS[G.map]), rec = (b[id] = b[id] || {}), cur = rec[G.diff] || { wave: 0, score: 0, won: false };
-  if (G.wave > cur.wave || (G.wave === cur.wave && G.score > cur.score)) { cur.wave = G.wave; cur.score = G.score; }
+  const b = store.get(BEST2) || {}, id = recId(MAPS[G.map]), rec = (b[id] = b[id] || {}), cur = rec[G.diff] || { wave: 0, score: 0, won: false }, sc = scoreFinal();
+  if (G.wave > cur.wave || (G.wave === cur.wave && sc > cur.score)) { cur.wave = G.wave; cur.score = sc; }
+  if (typeof chalRecord === 'function') chalRecord();
   if (G.won) cur.won = true;
   rec[G.diff] = cur; store.set(BEST2, b);
   return cur;
@@ -261,6 +265,7 @@ function towerStats0(t) {
   if (a) { const m = Math.max(0.1, 1 + a); st.dmg *= m; for (const k of ['burn', 'lava', 'poison']) if (st[k]) st[k] *= m; }
   // Tours réchauffées (frotter l'écran pendant un blizzard) : cadence +20 %
   if (G && G.warmT > 0) st.rate *= 1.2;
+  if (G && G.chal && chalLv('longue')) st.range *= 1 + 0.05 * chalLv('longue');
   return st;
 }
 function addTower(type, q, r, lvl = 1, mode = 'premier', inv, br) {
@@ -272,7 +277,8 @@ function addTower(type, q, r, lvl = 1, mode = 'premier', inv, br) {
 }
 function build(type, q, r) {
   const D = TOWERS[type], cost = costOf(type); G.gold -= cost;
-  const t = addTower(type, q, r); t.recoil = 1; t.builtAt = G.time; if (!G.demo && !G.story) { stats.towers++; if (typeof questEvent === 'function') questEvent('tower'); }
+  const t = addTower(type, q, r); t.recoil = 1; t.builtAt = G.time;
+  if (G.chal && chalLv('pouce') && !G.chal.used && !D.fusion) { G.chal.used = true; t.lvl = 2; t.s = towerStats(t); healTower(t, true); ono(T('🎁 NIVEAU 2 !'), t.x, t.y - 0.4, '#ffd23f', 0.5, 0, 1.2); } if (!G.demo && !G.story) { stats.towers++; if (typeof questEvent === 'function') questEvent('tower'); }
   burst(t.x, t.y, 0.1, 12, ['#ffffff', '#f1eafa', D.color], 2.2, 0.09, 3, 0.5, 'star');
   ono('POP!', t.x, t.y, '#fff', 0.45, 0.1, 0.9);
   Snd.play('build'); G.ghost = null;
@@ -286,10 +292,17 @@ function upgrade(t, br) {
   if (G.coopGuest) { coopAct({ a: 'up', id: t.id, br: br || null }); return; }
   G.gold -= cost; t.lvl++; if (t.lvl >= 3 && !t.br) t.br = br; t.inv += cost; t.s = towerStats(t); t.recoil = 1; if (!(t.ko > 0)) healTower(t, !hardMode());
   burst(t.x, t.y, 0.4, 16, ['#ffd23f', '#ffffff', t.br ? BRANCH[t.br].color : TOWERS[t.type].color], 2.6, 0.1, 2, 0.7, 'star');
-  ono(t.br ? BRANCH[t.br].short.toUpperCase() + (t.lvl === 3 ? ' I !' : ' II !') : 'LEVEL UP!', t.x, t.y, '#ffd23f', 0.5, 0, 1.0);
+  ono(t.br ? BRANCH[t.br].short.toUpperCase() + (t.lvl === 3 ? ' I !' : ' II !') : T('NIVEAU ') + t.lvl + ' !', t.x, t.y, '#ffd23f', 0.72, 0, 1.3);
+  // Amélioration bien visible : rayon de lumière, anneau, et la tour qui gonfle un instant
+  G.fx.push({ kind: 'beam', gx: t.x, gy: t.y, t: 0, dur: 0.9, color: t.br ? BRANCH[t.br].color : TOWERS[t.type].color });
+  G.fx.push({ kind: 'ring', gx: t.x, gy: t.y, r0: 0.2, r1: 1.6, t: 0, dur: 0.55, color: '#ffd23f' });
+  t.upT = G.time;
   Snd.play('up'); refreshInfo();
 }
-function evolve(t) { if (TOWERS[t.type].fusion) upgrade(t); else if (t.lvl === 2 || t.lvl >= 4) openTree(t); else upgrade(t, t.br); }
+function evolve(t) {
+  if (!TOWERS[t.type].fusion && t.lvl === 2 && !t.br && typeof storyLocked === 'function' && storyLocked('spec')) { Snd.play('no'); hint(T('Les spécialisations arrivent plus tard dans l’histoire : Papi te les montrera.'), 2600); return; }
+  if (TOWERS[t.type].fusion) upgrade(t); else if (t.lvl === 2 || t.lvl >= 4) openTree(t); else upgrade(t, t.br);
+}
 function sell(t) {
   if (G.coopGuest) { coopAct({ a: 'sell', id: t.id }); deselect(); return; }
   if (t.builtAt != null && G.time - t.builtAt < 3 && typeof trophy === 'function') trophy('egg_regret');
@@ -324,6 +337,7 @@ function makeWave(w) {
   else if (w >= 8 && w % 8 === 3) { theme = 'magma'; label = T('Pluie de Magmo !'); }
   let n = Math.round((6 + w * 1.5) * (G && G.coop ? 1 + 0.3 * (G.coopN - 1) : 1));
   if (theme === 'tonk') n = Math.round(n * 0.55); if (theme === 'zip') n = Math.round(n * 1.4);
+  if (G && G.chal) n = Math.round(n * (1 + 0.05 * chalLv('horde')));
   const gap = Math.max(0.32, 0.95 - w * 0.017), list = [];
   for (let i = 0; i < n; i++) {
     const type = theme && Math.random() < 0.75 ? theme : pick(pool);
@@ -346,13 +360,16 @@ function makeWave(w) {
 function waveTimer() {
   const t = DIFFS[G.diff] && DIFFS[G.diff].timer;
   if (!t || G.duel || (!G.endless && G.wave >= G.maxw)) return null;
-  return typeof t === 'function' ? t(G.wave) : t;
+  const v = typeof t === 'function' ? t(G.wave) : t;
+  if (!G.chal || v == null) return v;
+  if (chalLv('calme')) return null;
+  return Math.max(5, Math.round(v * (1 - 0.2 * chalLv('chrono'))));
 }
 // La prochaine vague est tirée à l'avance : l'aperçu montre exactement ce qui va arriver
 function prepNextWave() {
   G.nextWave = (!G.endless && G.wave >= G.maxw) ? null : Object.assign({ n: G.wave + 1 }, makeWave(G.wave + 1));
   // Mode histoire : pas de météo au hasard, seulement celle écrite dans le chapitre (storyWave)
-  if (G.nextWave && !G.story && G.nextWave.n > 1 && (G.nextWave.n - 1) % 5 === 0) {
+  if (G.nextWave && !G.story && !(G.chal && chalLv('soleil')) && G.nextWave.n > 1 && (G.nextWave.n - 1) % 5 === 0) {
     const pool = (WEATHER_POOL[MAPS[G.map].wid || MAPS[G.map].id] || ['clear']).filter(w => w !== G.weather);
     G.nextWave.weather = pool.length ? pick(pool) : 'clear';
   }
@@ -461,6 +478,7 @@ function startWave(forced) {
   if (!G || G.over || G.spawnQ.length || G.duel) return;
   // Dernière vague déjà lancée : on attend la fin de la partie (victoire, puis choix des vagues infinies)
   if (!G.endless && G.wave >= G.maxw) return;
+  if (G.story && typeof storyMustPlace === 'function' && storyMustPlace()) return;
   if (G.coopGuest) { if (!forced) coopAct({ a: 'wave' }); return; }
   // Sauvegarde juste avant la vague, avec les tours posées et améliorées pendant l'entracte (reprise après un plantage)
   if (!G.waveActive && !G.demo) saveCheckpoint();
@@ -530,9 +548,9 @@ function gameOver() {
 
 // ---------- Ennemis ----------
 function spawn(type, pi) {
-  const D = ETYPES[type], w = G.wave, m = hpMul(w) * mapHpFor(G.map, G.diff) * (G.hpd || 1) * (G.coopHp || 1);
-  const e = { id: ++G.eid, type, hp: D.hp * m, maxHp: D.hp * m, speed: D.speed * rand(0.95, 1.05) * (G.spd || 1),
-    armor: D.armor ? D.armor + Math.floor(w / 10) : 0, flying: !!D.flying, d: 0, x: 0, y: 0, sdx: 1, sdy: 0,
+  const D = ETYPES[type], w = G.wave, m = hpMul(w) * mapHpFor(G.map, G.diff) * (G.hpd || 1) * (G.coopHp || 1) * (G.chal ? chalHp() : 1);
+  const e = { id: ++G.eid, type, hp: D.hp * m, maxHp: D.hp * m, speed: D.speed * rand(0.95, 1.05) * (G.spd || 1) * (G.chal ? chalSpd() : 1),
+    armor: (D.armor ? D.armor + Math.floor(w / 10) : 0) + (G.chal ? chalLv('armure') : 0), flying: !!D.flying, d: 0, x: 0, y: 0, sdx: 1, sdy: 0,
     slowA: 0, slowT: 0, wet: 0, burn: 0, burnT: 0, frozen: 0, stun: 0, flash: 0, phase: rand(TAU), dead: false, lifeCost: D.lifeCost ?? 1, abT: 1.2 };
   // Les ennemis se répartissent à tour de rôle entre les itinéraires (les boss au hasard)
   e.pi = pi != null && P.paths[pi] ? pi : D.boss ? Math.floor(rand(P.paths.length)) : (G.rr = ((G.rr || 0) + 1) % P.paths.length);
@@ -700,8 +718,8 @@ function kill(e) {
   e.dead = true;
   const D = ETYPES[e.type]; if (!G.demo && !G.story) { stats.kills++; if (typeof questEvent === 'function') questEvent('kill'); if (D.boss) { stats.bosses++; if (typeof trophyBoss === 'function') trophyBoss(); if (typeof questEvent === 'function') questEvent('boss'); } }
   const up = (e.flying ? FLY : 0) + 0.25;
-  const rw = G.coop ? coopLoot(D.reward * (1 + G.wave * 0.01)) : Math.round(D.reward * (1 + G.wave * 0.01) * (1 + 0.06 * M('loot')));
-  if (!G.coop) G.gold += rw; G.score += rw * 10;
+  const lf = G.chal ? chalLoot() : 1, rw = G.coop ? coopLoot(D.reward * (1 + G.wave * 0.01) * lf) : Math.round(D.reward * (1 + G.wave * 0.01) * (1 + 0.06 * M('loot')));
+  if (!G.coop) G.gold += Math.round(rw * lf); G.score += rw * 10;
   burst(e.x, e.y, up, D.boss ? 40 : 10, [D.color, D.light, '#ffffff'], D.boss ? 4 : 2.4, D.boss ? 0.14 : 0.09, 4, 0.6);
   G.texts.push({ txt: '+' + rw, gx: e.x, gy: e.y, oy: -up - 0.3, t: 0, dur: 0.8, color: '#ffd23f', size: 0.32, rot: 0 });
   if (e.type === 'malefik') for (const t of G.towers) if (t.evil > 0 && t.evilBy === e.id) { t.evil = 0; ono(T('LIBÉRÉE !'), t.x, t.y, '#5cd86a', 0.42, 0, 0.9); }
@@ -1009,6 +1027,19 @@ function pill(c, txt, x, y, ok, bg, fg) {
   c.fillStyle = fg || (ok ? '#ffffff' : INK); c.textBaseline = 'middle'; c.fillText(txt, x0 + 10, y0 + h / 2 + 1);
   c.restore();
 }
+// Rayon de lumière d'une tour améliorée : derrière la tour
+function drawBeam(c, f, cs) {
+  const k = f.t / f.dur;
+      const [x, y] = toScreen(f.gx, f.gy), a = Math.sin(Math.min(1, k) * Math.PI), wb = cs * (0.7 + 0.35 * a), hb = cs * 3.6;
+      c.save();
+      // Halo de la couleur de la tour, puis colonne de lumière blanche et dorée, et éclat au pied
+      c.globalAlpha = 0.55 * a; c.fillStyle = f.color; c.fillRect(x - wb * 0.8, y - hb, wb * 1.6, hb + cs * 0.3); c.globalAlpha = 1;
+      const g = c.createLinearGradient(0, y - hb, 0, y + cs * 0.3); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.45, 'rgba(255,236,120,' + (0.9 * a) + ')'); g.addColorStop(1, 'rgba(255,255,255,' + a + ')');
+      c.fillStyle = g; c.fillRect(x - wb / 2, y - hb, wb, hb + cs * 0.3);
+      c.beginPath(); c.ellipse(x, y + cs * 0.25, wb * 0.9, cs * 0.22, 0, 0, TAU); c.fillStyle = 'rgba(255,255,255,' + (0.85 * a) + ')'; c.fill();
+      for (let i = 0; i < 6; i++) { const py = y - ((k * 1.4 + i / 6) % 1) * hb, px = x + Math.sin(i * 2.1 + k * 6) * wb * 0.4; star(c, px, py, cs * 0.07 * a + 1, cs * 0.03 * a + 0.5, 4); c.fillStyle = 'rgba(255,255,255,' + a + ')'; c.fill(); }
+      c.restore();
+}
 function render(c = ctx, bg = (G && G.bg) || bgCv) {
   const cs = L.cs, TM = G.time, lw = Math.max(1.4, cs * 0.045);
   c.setTransform(L.dpr, 0, 0, L.dpr, 0, 0);
@@ -1018,6 +1049,7 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
   c.save(); c.translate(sx, sy);
   P.portals.forEach((pt, i) => {
     const [ppx, ppy] = toScreen(pt[0], pt[1]); drawPortal(c, ppx, ppy, cs, TM);
+    if (i === P.portals.length - 1 && G.story && typeof storyStartFx === 'function') storyStartFx(c, cs, TM);
     // Flèche au-dessus des portails d'où sortira la prochaine vague
     // (pendant qu'une vague sort encore : ses propres portails)
     const act = G.spawnQ.length ? G.curPortals : G.nextWave && G.nextWave.portals;
@@ -1087,6 +1119,7 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
   }
   for (const u of G.ruins || []) { const [x, y] = toScreen(...cellW(u.c, u.r)); drawRuin(c, x, y, cs, u.type); }
   const dl = [];
+  for (const f of G.fx) if (f.kind === 'beam') drawBeam(c, f, cs);
   for (const t of G.towers) { const [x, y] = toScreen(t.x, t.y); dl.push([y + cs * 0.3, 0, t, x, y]); }
   for (const e of G.enemies) { if (e.flying) continue; const [x, y] = toScreen(e.x, e.y); dl.push([y + cs * 0.2, 1, e, x, y + cs * 0.2]); }
   for (const b of P.bases) { const [bx, by] = toScreen(b[0], b[1]); dl.push([by + cs * 0.35, 2, b, bx, by]); }
@@ -1096,7 +1129,8 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
       const dg = G.drag && G.drag.t === o; if (dg) { c.save(); c.globalAlpha = 0.35; }
       const ko = o.ko > 0; if (ko) { c.save(); c.globalAlpha *= 0.45; }
       if (G.coop && o.own) { c.beginPath(); c.ellipse(x, y + cs * 0.33, cs * 0.4, cs * 0.12, 0, 0, TAU); c.lineWidth = Math.max(2, cs * 0.09); c.strokeStyle = coopColor(o.own); c.stroke(); }
-      drawTower(c, o.type, x, y, cs, o.lvl, TM, o.lx, o.ly, o.recoil, o.blink < 0, o.br);
+      const up = o.upT != null && G.time - o.upT < 0.5 ? Math.sin((G.time - o.upT) / 0.5 * Math.PI) * 0.22 : 0;
+      drawTower(c, o.type, x, y, cs * (1 + up), o.lvl, TM, o.lx, o.ly, o.recoil, o.blink < 0, o.br);
       if (ko) { c.restore(); for (let i = 0; i < 3; i++) { const a = TM * 4 + i * TAU / 3; star(c, x + Math.cos(a) * cs * 0.28, y - cs * 0.45 + Math.sin(a) * cs * 0.08, cs * 0.08, cs * 0.035); fs(c, '#ffd23f', 1.2); } }
       if (o.evil > 0 && !ko) {
         c.save(); c.globalAlpha *= 0.3 + 0.12 * Math.sin(TM * 7); c.beginPath(); c.arc(x, y - cs * 0.1, cs * 0.48, 0, TAU); c.fillStyle = '#6a2fb0'; c.fill(); c.restore();
@@ -1178,6 +1212,7 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
   // Anneaux et éclairs
   for (const f of G.fx) {
     const k = f.t / f.dur;
+    if (f.kind === 'beam') continue; // dessiné avant les tours (drawBeam)
     if (f.kind === 'ring') {
       const [x, y] = toScreen(f.gx, f.gy), R = lerp(f.r0, f.r1, 1 - (1 - k) * (1 - k)) * cs / L.cw;
       c.save(); c.globalAlpha = 1 - k;

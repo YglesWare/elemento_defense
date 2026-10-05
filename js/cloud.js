@@ -148,6 +148,7 @@ function cloudSync(force) {
       await cloudPushLog().catch(() => {});
       if (typeof cloudPushErrors === 'function') await cloudPushErrors().catch(() => {});
       if (typeof cloudPushDaily === 'function') await cloudPushDaily().catch(() => {});
+      if (typeof cloudPushMaps === 'function') await cloudPushMaps().catch(() => {});
       CLOUD.lastSync = Date.now(); CLOUD.state = 'ok'; CLOUD.err = '';
     } catch (e) { CLOUD.state = 'err'; CLOUD.err = (e && e.message) || String(e); }
     finally { CLOUD.syncing = null; cloudPaint(); }

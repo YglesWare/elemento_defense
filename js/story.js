@@ -197,21 +197,79 @@ const WAKE_LINES = [
 ];
 const LOSE_LINES = [['yglou', 'Aïe, les slimes sont passés ! Pas grave : on réessaie, avec un peu plus d’or.']];
 
+// Émotions écrites à la main (chapitre.moment.n° de réplique), là où le texte ne suffit pas à les deviner
+const STORY_EMO = { '0.intro.1': 'joy', '0.intro.2': 'scared', '0.intro.3': 'angry', '0.outro.0': 'joy', '0.outro.2': 'joy', '0.outro.3': 'joy', '1.intro.2': 'angry', '1.outro.1': 'joy', '2.intro.1': 'joy', '2.intro.2': 'surprise', '2.intro.3': 'joy', '3.intro.1': 'surprise', '3.intro.3': 'angry', '3.outro.1': 'joy', '5.intro.2': 'joy', '5.intro.4': 'joy', '5.outro.0': 'joy', '6.intro.1': 'joy', '6.intro.2': 'sad', '6.outro.0': 'joy', '6.outro.1': 'sad', '7.intro.1': 'joy', '7.intro.3': 'joy', '7.outro.0': 'joy', '8.intro.1': 'joy', '8.intro.4': 'joy', '8.start4.1': 'scared', '8.start6.0': 'joy', '8.outro.3': 'scared', '9.intro.3': 'joy', '9.start4.0': 'surprise', '9.outro.1': 'angry', '10.intro.2': 'angry', '10.intro.3': 'sad', '10.intro.4': 'surprise', '10.start8.0': 'angry', '10.outro.2': 'joy', 'wake.1': 'joy', 'wake.2': 'joy', 'wake.3': 'joy' };
+CHAPTERS.forEach((ch, i) => { for (const [k, ls] of [['intro', ch.intro], ...Object.entries(ch.events || {}), ['outro', ch.outro]]) (ls || []).forEach((l, j) => { const e = STORY_EMO[i + '.' + k + '.' + j]; if (e) l[2] = e; }); });
+WAKE_LINES.forEach((l, j) => { const e = STORY_EMO['wake.' + j]; if (e) l[2] = e; });
 // ---------- Dialogues : pages de BD en plein écran (cases, bulles, trame façon manga) ----------
 const STORY_NAMES = { feu: 'Braise', eau: 'Ondine', terre: 'Rocaille', vent: 'Zéphyr', foudre: 'Voltie', glace: 'Givrette', yglou: 'Yglou', papi: 'Papi Yglou', king: 'Roi Gloop' };
 const COMIC_COL = { feu: '#ffbd7a', eau: '#9ad6ff', terre: '#ddbb92', vent: '#a6ecd6', foudre: '#ffe773', glace: '#d3f0ff', yglou: '#dcc8ff', papi: '#ebe5d8', king: '#dccdff' };
 // Le personnage en grand, à la position (x, y) = ses pieds, taille s
-function drawPortraitAt(c, who, x, y, s) {
-  if (who === 'yglou') drawYglou(c, x, y - s * 0.42, s, 'happy', 0.4, { noShadow: true, noConfetti: true });
-  else if (who === 'papi') drawPapi(c, x, y - s * 0.42, s);
-  else if (who === 'king') drawKingGloop(c, x, y, s * 1.25);
-  else drawTower(c, who, x, y - s * 0.22, s, 1, 0.4, 0, 0.3, 0, false);
+// Yglou et Papi ont leurs propres expressions ; les gardiens et le Roi Gloop passent par FACE_MOOD (js/draw.js)
+const YG_MOOD = { joy: 'party', sad: 'sad', surprise: 'shock', scared: 'shock', angry: 'shock' };
+function drawPortraitAt(c, who, x, y, s, emo) {
+  const ym = YG_MOOD[emo] || 'happy';
+  if (who === 'yglou') drawYglou(c, x, y - s * 0.42, s, ym, 0.4, { noShadow: true, noConfetti: true });
+  else if (who === 'papi') drawPapi(c, x, y - s * 0.42, s, ym);
+  else {
+    FACE_MOOD = emo || null;
+    try { if (who === 'king') drawKingGloop(c, x, y, s * 1.25); else drawTower(c, who, x, y - s * 0.22, s, 1, 0.4, 0, 0.3, 0, false); }
+    finally { FACE_MOOD = null; }
+  }
+}
+// Émotion d'une réplique : écrite à la main (3e élément), sinon devinée d'après le texte
+function storyEmo(line) {
+  const [who, txt, emo] = line;
+  if (emo !== undefined) return emo;
+  if (who === 'narr') return null;
+  if (/Grmbl|SILENCE|écrabouiller/.test(txt)) return 'angry';
+  if (/^(Aïe|Oh non|Bouhou|Snif)|Bouhouhou/.test(txt)) return 'sad';
+  if (/Au secours|B-b-|J-je|M-moi|P-pose|tremble/.test(txt)) return 'scared';
+  if (/QUOI|\?!|!\?|^Hein|^Oh oh|^Ouh/.test(txt)) return 'surprise';
+  if (/Bravo|Trop bien|TROP|On l’a eu|Youpi|Hourra|Merci|Bienvenue|Hé hé|MOUAHAHA|chauffe|feu d’artifice/.test(txt)) return 'joy';
+  return null;
 }
 // Le dessin d'une case : trame de la couleur du personnage, traits de vitesse s'il s'exclame, portrait du côté « side »
 const COMIC_SFX = /\b(CRONCH|BAM|BZZT|Grmbl|QUOI)\b/;
 // Hauteur du bord haut (0-1) ou bas (3-2) du quadrilatère q à l'abscisse x
 const edgeY = (q, a, b, x) => q[a][1] + (q[b][1] - q[a][1]) * (x - q[a][0]) / ((q[b][0] - q[a][0]) || 1);
-function comicArt(cv, who, txt, side, w, h, q) {
+// Effets manga autour du personnage, selon l'émotion : étincelles (joie), marque de colère et fond rouge,
+// lignes sombres et fond bleuté (tristesse), points d'exclamation (surprise), ondes tremblantes (peur)
+function comicEmoFx(c, emo, px, py, s, w, h, side) {
+  const tint = { angry: 'rgba(255,70,70,.16)', sad: 'rgba(60,90,170,.2)', scared: 'rgba(120,190,255,.18)', joy: 'rgba(255,240,120,.18)' }[emo];
+  if (tint) { c.fillStyle = tint; c.fillRect(0, 0, w, h); }
+  if (emo === 'sad') {
+    c.strokeStyle = 'rgba(42,27,61,.35)'; c.lineCap = 'round';
+    for (let k = 0; k < 14; k++) { const x = (k + 0.5) / 14 * w, l = h * (0.25 + 0.2 * Math.sin(k * 2.3) ** 2); c.lineWidth = 1.5 + (k % 2); c.beginPath(); c.moveTo(x, 0); c.lineTo(x, l); c.stroke(); }
+  }
+  if (emo === 'scared') {
+    c.strokeStyle = 'rgba(255,255,255,.85)'; c.lineWidth = 2.5;
+    for (let k = 0; k < 3; k++) { const r0 = s * (0.6 + k * 0.16); c.beginPath(); for (let a = 0; a <= TAU + 0.01; a += 0.12) { const rr2 = r0 + Math.sin(a * 9) * s * 0.03; const x = px + Math.cos(a) * rr2, y = py + Math.sin(a) * rr2 * 0.9; a ? c.lineTo(x, y) : c.moveTo(x, y); } c.stroke(); }
+  }
+  if (emo === 'angry' || emo === 'surprise' || emo === 'joy') {
+    c.strokeStyle = emo === 'angry' ? 'rgba(255,255,255,.75)' : 'rgba(255,255,255,.8)'; c.lineCap = 'round';
+    const n = emo === 'angry' ? 22 : 28;
+    for (let k = 0; k < n; k++) { const a = k / n * TAU, r0 = s * 0.62, r1 = Math.hypot(w, h); c.lineWidth = 1.5 + (k % 3) * (emo === 'angry' ? 1.6 : 1); c.beginPath(); c.moveTo(px + Math.cos(a) * r0, py + Math.sin(a) * r0); c.lineTo(px + Math.cos(a) * r1, py + Math.sin(a) * r1); c.stroke(); }
+  }
+  return () => {
+    // Par-dessus le personnage
+    const hx = px + (side === 'l' ? s * 0.42 : -s * 0.42), hy = py - s * 0.42;
+    if (emo === 'joy') for (const [dx, dy, k] of [[-0.55, -0.35, 1], [0.6, -0.2, 0.8], [0.45, -0.62, 0.6], [-0.4, 0.3, 0.55]]) { star(c, px + dx * s, py + dy * s, s * 0.16 * k, s * 0.05 * k, 4); c.fillStyle = '#fff36b'; c.fill(); c.lineWidth = 1.2; c.strokeStyle = 'rgba(42,27,61,.5)'; c.stroke(); }
+    if (emo === 'angry') {
+      // Marque de colère : quatre petits crochets rouges
+      c.save(); c.translate(hx, hy); c.strokeStyle = '#e8344e'; c.lineWidth = Math.max(3, s * 0.045); c.lineCap = 'round';
+      for (const [sx, sy] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { c.beginPath(); c.moveTo(sx * s * 0.03, sy * s * 0.11); c.quadraticCurveTo(sx * s * 0.03, sy * s * 0.03, sx * s * 0.11, sy * s * 0.03); c.stroke(); }
+      c.restore();
+    }
+    if (emo === 'surprise') {
+      const fsz = Math.round(s * 0.3);
+      c.save(); c.font = fsz + "px Bangers, Impact, 'Arial Black', sans-serif"; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
+      for (const [dx, rot] of [[-0.1, -0.25], [0.12, 0.2]]) { c.save(); c.translate(hx + dx * s, hy - s * 0.05); c.rotate(rot); c.lineWidth = fsz * 0.2; c.strokeStyle = INK; c.strokeText('!', 0, 0); c.fillStyle = '#ffe14d'; c.fillText('!', 0, 0); c.restore(); }
+      c.restore();
+    }
+  };
+}
+function comicArt(cv, who, txt, side, w, h, q, emo) {
   const c = prepMini(cv, w, h);
   const ink = () => { c.beginPath(); q.forEach(([x, y], k) => k ? c.lineTo(x, y) : c.moveTo(x, y)); c.closePath(); c.lineJoin = 'miter'; c.lineWidth = 8; c.strokeStyle = INK; c.stroke(); };
   if (who === 'narr') {
@@ -225,12 +283,14 @@ function comicArt(cv, who, txt, side, w, h, q) {
   // Trame : des points plus gros loin du personnage
   c.fillStyle = 'rgba(42,27,61,.13)';
   for (let y = 4; y < h; y += 9) for (let x = (y / 9 % 2) * 4.5 + 4; x < w; x += 9) { const d = Math.hypot(x - px, y - py) / Math.hypot(w, h); c.beginPath(); c.arc(x, y, 0.6 + d * 3.2, 0, TAU); c.fill(); }
-  // Traits de vitesse quand ça s'exclame
-  if (/[!?]/.test(txt)) {
+  // Émotion : fond et effets ; sans émotion, des traits de vitesse quand ça s'exclame
+  const front = emo ? comicEmoFx(c, emo, px, py, s, w, h, side) : null;
+  if (!emo && /[!?]/.test(txt)) {
     c.strokeStyle = 'rgba(255,255,255,.8)'; c.lineCap = 'round';
     for (let k = 0; k < 28; k++) { const a = k / 28 * TAU, r0 = s * 0.62, r1 = Math.hypot(w, h); c.lineWidth = 1.5 + (k % 3); c.beginPath(); c.moveTo(px + Math.cos(a) * r0, py + Math.sin(a) * r0); c.lineTo(px + Math.cos(a) * r1, py + Math.sin(a) * r1); c.stroke(); }
   }
-  drawPortraitAt(c, who, px, py + s * 0.5, s);
+  drawPortraitAt(c, who, px, py + s * 0.5, s, emo);
+  if (front) front();
   // Onomatopée en grosses lettres au-dessus du personnage
   const sfx = who !== 'yglou' && txt.match(COMIC_SFX);
   if (sfx) {
@@ -279,7 +339,7 @@ function storySay(lines) {
       const tl = Math.max(edgeY(q, 0, 1, 0), edgeY(q, 0, 1, w)), bl = Math.min(edgeY(q, 3, 2, 0), edgeY(q, 3, 2, w));
       const lab = p.querySelector('.cbal, .ccap');
       if (who === 'narr') lab.style.top = (edgeY(q, 0, 1, 12) + 10) + 'px'; else lab.style.top = ((tl + bl) / 2) + 'px';
-      comicArt(cv, who, T(txt), side, w, h, q);
+      comicArt(cv, who, T(txt), side, w, h, q, storyEmo(lines[i]));
     };
     dlgQ = () => { i++; if (i < lines.length) { addPanel(); Snd.play('build'); return; } box.hidden = true; page.innerHTML = ''; dlgQ = null; if (G) G.paused = wasPaused; done(); };
     page.innerHTML = ''; box.hidden = false; addPanel();
@@ -289,8 +349,8 @@ $('#comic').addEventListener('click', () => { if (dlgQ) dlgQ(); });
 $('#cmSkip').addEventListener('click', ev => { ev.stopPropagation(); while (dlgQ) dlgQ(); });
 
 // Papi Yglou : crête blanche, lunettes rondes, sourcils en bataille
-function drawPapi(c, x, y, s) {
-  drawYglou(c, x, y, s, 'happy', 0.4, { noShadow: true, noConfetti: true, crest: '#f4f1ea' });
+function drawPapi(c, x, y, s, mood = 'happy') {
+  drawYglou(c, x, y, s, mood, 0.4, { noShadow: true, noConfetti: true, crest: '#f4f1ea' });
   const r = s * 0.36, hy = -r * 0.45, hr = r * 0.85, fy = hy - hr * 0.04, ex = hr * 0.44, ew = hr * 0.17;
   c.save(); c.translate(x, y); c.lineWidth = Math.max(1.5, s * 0.025); c.strokeStyle = INK;
   for (const sg of [-1, 1]) { c.beginPath(); c.arc(sg * ex, fy, ew * 1.75, 0, TAU); c.fillStyle = 'rgba(255,255,255,.25)'; c.fill(); c.stroke(); }
@@ -436,14 +496,49 @@ async function playChapter(i) {
 }
 const STORY = { afterShop: null };
 $('#sBack').addEventListener('click', () => { if (STORY.afterShop) { const f = STORY.afterShop; STORY.afterShop = null; setTimeout(f, 0); } });
+// Ce que l'histoire n'a pas encore présenté reste verrouillé : spécialisations (chapitre 9), Atelier en partie (2),
+// vitesse (4) ; le ciblage et la vague automatique ne sont jamais présentés
+const STORY_FROM = { spec: 9, shop: 2, speed: 4, mode: 99, auto: 99 };
+const storyLocked = f => !!(G && G.story) && G.story.ch < (STORY_FROM[f] ?? 0);
+// Le gardien que le chapitre présente (le premier qui n'était pas au chapitre d'avant) : il faut le poser avant la vague 1
+const storyNew = i => CHAPTERS[i].towers.find(t => !(i ? CHAPTERS[i - 1].towers : []).includes(t)) || null;
+function storyMustPlace() {
+  const m = G && G.story && G.story.must;
+  if (!m || G.towers.some(t => t.type === m)) return false;
+  Snd.play('no'); hint(T('Pose d’abord ') + TOWERS[m].name + T(' : touche-la en bas, puis une case près du chemin.'), 3200);
+  return true;
+}
+function storyHud() {
+  $('#bSpeed').hidden = storyLocked('speed'); $('#bShop').hidden = storyLocked('shop');
+}
 function storyBattle() {
   const ch = CHAPTERS[storyRun.ch];
-  storyRun.launch = true;
+  storyRun.launch = true; storyRun.must = storyNew(storyRun.ch);
   newGame(ch.map, null, 'facile');
   // Un coup de pouce à chaque nouvel essai
   Object.assign(G, { gold: ch.gold + 50 * storyRun.tries, lives: ch.lives, startLives: ch.lives, maxw: ch.waves.length });
-  hudCache = {}; refreshPalette();
+  storyHud(); hudCache = {}; refreshPalette();
   banner(T('CHAPITRE ') + storyRun.ch, T(ch.title));
+}
+// Avant la première vague de chaque chapitre (appelé par render, js/game.js) : « Les slimes arrivent ici »,
+// « Ta maison », et des petits points qui suivent le chemin
+function storyStartFx(c, cs, TM) {
+  if (!G || !G.story || G.wave > 0 || !P) return;
+  for (const pa of P.paths) for (let k = 0; k < 6; k++) {
+    const [gx, gy] = pathOn(pa, pa.d0 + ((TM * 0.3 + k / 6) % 1) * (pa.goal - pa.d0)), [x, y] = toScreen(gx, gy);
+    c.beginPath(); c.arc(x, y, Math.max(5, cs * 0.17), 0, TAU); c.fillStyle = 'rgba(255,79,129,.85)'; c.fill(); c.lineWidth = 2; c.strokeStyle = '#fff'; c.stroke();
+  }
+  const label = (x, y, txt, col) => {
+    const b = Math.abs(Math.sin(TM * 3)) * cs * 0.18, fsz = Math.max(20, Math.round(cs * 0.55));
+    c.save(); c.font = fsz + "px Bangers, Impact, 'Arial Black', sans-serif"; c.textAlign = 'center'; c.textBaseline = 'bottom'; c.lineJoin = 'round';
+    const ty = y - cs * 0.65 - b, tw = c.measureText(txt).width;
+    const lx = clamp(x, tw / 2 + 6, L.w - tw / 2 - 6), ly = Math.max(fsz + 26, ty);
+    c.beginPath(); c.moveTo(x - cs * 0.16, ly + 4); c.lineTo(x + cs * 0.16, ly + 4); c.lineTo(x, ly + cs * 0.3); c.closePath(); c.fillStyle = col; c.fill(); c.lineWidth = 3; c.strokeStyle = INK; c.stroke();
+    c.lineWidth = fsz * 0.24; c.strokeStyle = INK; c.strokeText(txt, lx, ly); c.fillStyle = col; c.fillText(txt, lx, ly); c.restore();
+  };
+  const seen = new Set();
+  for (const pt of P.portals) { const [x, y] = toScreen(pt[0], pt[1]); label(x, y, T('LES SLIMES ARRIVENT ICI'), '#ff4f81'); }
+  for (const b of P.bases) { const k = Math.round(b[0]) + ',' + Math.round(b[1]); if (seen.has(k)) continue; seen.add(k); const [x, y] = toScreen(b[0], b[1]); label(x, y, T('TA MAISON'), '#5cd86a'); }
 }
 // Vagues écrites à la main (appelée par makeWave, js/game.js)
 function storyWave(w) {
@@ -460,7 +555,7 @@ function storyWave(w) {
 }
 function storyWaveStart(n) { const ev = G.story.events['start' + n]; if (ev) storySay(ev); }
 function storyWaveEnd(n) { const ev = G.story.events['end' + n]; if (ev) storySay(ev); }
-function storyLeave() { G = null; storyRun = null; exitDuelMeta(); }
+function storyLeave() { G = null; storyRun = null; exitDuelMeta(); $('#bSpeed').hidden = false; $('#bShop').hidden = false; }
 async function storyWin() {
   if (!G || G.over) return;
   G.over = true; G.won = true; Snd.play('win');

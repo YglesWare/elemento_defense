@@ -8,10 +8,31 @@ function star(c, x, y, R, ri, n = 5, rot = 0) { c.beginPath(); for (let i = 0; i
 function heart(c, x, y, s) { c.beginPath(); c.moveTo(x, y + s * 0.9); c.bezierCurveTo(x - s * 1.4, y, x - s * 0.9, y - s * 0.95, x, y - s * 0.35); c.bezierCurveTo(x + s * 0.9, y - s * 0.95, x + s * 1.4, y, x, y + s * 0.9); c.closePath(); }
 function prepMini(cv, w, h) { const d = Math.min(2, window.devicePixelRatio || 1); cv.width = Math.round(w * d); cv.height = Math.round(h * d); const c = cv.getContext('2d'); c.setTransform(d, 0, 0, d, 0, 0); return c; }
 
+// Émotion imposée aux visages (portraits du mode histoire) : joy, sad, angry, surprise, scared
+let FACE_MOOD = null;
 function face(c, x, y, r, lx, ly, mood, blink, angry) {
+  const emo = FACE_MOOD;
+  if (emo) { mood = emo === 'surprise' ? 'open' : emo === 'angry' ? 'grr' : emo; angry = emo === 'angry'; blink = false; }
   const ex = r * 0.38, ew = r * 0.17, eh = r * 0.25, ox = lx * r * 0.1, oy = ly * r * 0.08;
   for (const sg of [-1, 1]) {
     const cx = x + sg * ex + ox, cy = y + oy;
+    if (mood === 'joy') {
+      // Yeux plissés de joie : deux petits arcs vers le haut
+      c.beginPath(); c.moveTo(cx - ew * 1.1, cy + eh * 0.25); c.quadraticCurveTo(cx, cy - eh * 0.9, cx + ew * 1.1, cy + eh * 0.25);
+      c.lineWidth = r * 0.1; c.strokeStyle = INK; c.stroke();
+      continue;
+    }
+    if (emo === 'surprise' || emo === 'scared') {
+      // Grands yeux ronds
+      c.beginPath(); c.arc(cx, cy, ew * 1.25, 0, TAU); c.fillStyle = '#fff'; c.fill(); c.lineWidth = r * 0.07; c.strokeStyle = INK; c.stroke();
+      c.beginPath(); c.arc(cx + lx * ew * 0.2, cy, ew * (emo === 'scared' ? 0.4 : 0.55), 0, TAU); c.fillStyle = INK; c.fill();
+      if (emo === 'scared') { c.beginPath(); c.moveTo(cx - sg * ew * 1.3, cy - eh * 1.2); c.lineTo(cx + sg * ew * 1.1, cy - eh * 1.6); c.lineWidth = r * 0.09; c.stroke(); }
+      continue;
+    }
+    if (mood === 'sad') {
+      // Sourcils relevés vers le milieu
+      c.beginPath(); c.moveTo(cx - sg * ew * 1.3, cy - eh * 1.1); c.lineTo(cx + sg * ew * 1.1, cy - eh * 1.6); c.lineWidth = r * 0.1; c.strokeStyle = INK; c.stroke();
+    }
     if (blink) {
       c.beginPath(); c.moveTo(cx - ew, cy); c.quadraticCurveTo(cx, cy + eh * 0.7, cx + ew, cy);
       c.lineWidth = r * 0.1; c.strokeStyle = INK; c.stroke();
@@ -30,6 +51,26 @@ function face(c, x, y, r, lx, ly, mood, blink, angry) {
   for (const sg of [-1, 1]) { c.beginPath(); c.ellipse(x + sg * r * 0.66 + ox, y + r * 0.3 + oy, r * 0.16, r * 0.09, 0, 0, TAU); c.fill(); }
   const mx = x + ox, my = y + r * 0.34 + oy;
   c.strokeStyle = INK; c.lineWidth = r * 0.09;
+  if (mood === 'joy') {
+    // Grande bouche ouverte de rire
+    c.beginPath(); c.moveTo(mx - r * 0.22, my - r * 0.08); c.quadraticCurveTo(mx, my + r * 0.34, mx + r * 0.22, my - r * 0.08); c.closePath(); c.fillStyle = INK; c.fill();
+    c.beginPath(); c.ellipse(mx, my + r * 0.08, r * 0.1, r * 0.06, 0, 0, TAU); c.fillStyle = '#ff7a9a'; c.fill();
+    return;
+  }
+  if (mood === 'sad') {
+    c.beginPath(); c.arc(mx, my + r * 0.12, r * 0.13, 1.15 * Math.PI, 1.85 * Math.PI); c.stroke();
+    // Une larme
+    const tx = x + ex + ox, ty = y + oy + eh * 1.3;
+    c.beginPath(); c.moveTo(tx, ty); c.quadraticCurveTo(tx + ew * 0.9, ty + eh * 1.1, tx, ty + eh * 1.4); c.quadraticCurveTo(tx - ew * 0.9, ty + eh * 1.1, tx, ty); c.fillStyle = '#7fd3ff'; c.fill(); c.lineWidth = r * 0.04; c.stroke();
+    return;
+  }
+  if (mood === 'scared') {
+    // Bouche tremblante et goutte de sueur
+    c.beginPath(); for (let i = 0; i <= 6; i++) c.lineTo(mx - r * 0.2 + i * r * 0.067, my + (i % 2 ? r * 0.05 : -r * 0.03)); c.lineWidth = r * 0.06; c.stroke();
+    const dx = x + r * 0.95, dy = y - r * 0.55;
+    c.beginPath(); c.moveTo(dx, dy); c.quadraticCurveTo(dx + r * 0.16, dy + r * 0.22, dx, dy + r * 0.3); c.quadraticCurveTo(dx - r * 0.16, dy + r * 0.22, dx, dy); c.fillStyle = '#9fe0ff'; c.fill(); c.lineWidth = r * 0.04; c.stroke();
+    return;
+  }
   if (mood === 'open') {
     c.beginPath(); c.ellipse(mx, my, r * 0.11, r * 0.13, 0, 0, TAU); c.fillStyle = INK; c.fill();
     c.beginPath(); c.ellipse(mx, my + r * 0.06, r * 0.06, r * 0.04, 0, 0, TAU); c.fillStyle = '#ff7a9a'; c.fill();
@@ -46,14 +87,17 @@ function face(c, x, y, r, lx, ly, mood, blink, angry) {
 }
 
 // ---------- Tours ----------
+// Socle selon le niveau : lilas, bleu, or, rose (côté et dessus)
+const PED = [null, ['#cdbfe0', '#f4eefb'], ['#5fb0f5', '#cfe9ff'], ['#f2b51f', '#ffe48a'], ['#ff5fb8', '#ffc4e6']];
 function drawTower(c, type, x, y, s, lvl, t, lx, ly, recoil, blink, br) {
-  const lw = Math.max(1.4, s * 0.05), r = s * 0.25, D = TOWERS[type];
+  s *= 1 + 0.07 * Math.max(0, Math.min(4, lvl) - 1); // la tour grandit un peu à chaque niveau
+  const lw = Math.max(1.4, s * 0.05), r = s * 0.25, D = TOWERS[type], pc = PED[Math.max(1, Math.min(4, lvl))];
   c.save(); c.lineJoin = 'round'; c.lineCap = 'round';
   c.fillStyle = 'rgba(42,27,61,.22)'; c.beginPath(); c.ellipse(x, y + s * 0.33, s * 0.36, s * 0.09, 0, 0, TAU); c.fill();
   if (lvl >= 3) { c.save(); c.globalAlpha *= 0.28 + 0.14 * Math.sin(t * 4); c.fillStyle = br ? BRANCH[br].color : D.color; c.beginPath(); c.arc(x, y - s * 0.12, s * 0.47, 0, TAU); c.fill(); c.restore(); }
-  rr(c, x - s * 0.3, y + s * 0.08, s * 0.6, s * 0.24, s * 0.08); fs(c, '#cdbfe0', lw);
-  c.beginPath(); c.ellipse(x, y + s * 0.1, s * 0.3, s * 0.075, 0, 0, TAU); fs(c, '#f4eefb', lw);
-  for (let i = 0; i < lvl; i++) { star(c, x + (i - (lvl - 1) / 2) * s * 0.17, y + s * 0.215, s * 0.066, s * 0.03); fs(c, '#ffd23f', lw * 0.6); }
+  rr(c, x - s * 0.3, y + s * 0.08, s * 0.6, s * 0.24, s * 0.08); fs(c, pc[0], lw);
+  c.beginPath(); c.ellipse(x, y + s * 0.1, s * 0.3, s * 0.075, 0, 0, TAU); fs(c, pc[1], lw);
+  for (let i = 0; i < lvl; i++) { star(c, x + (i - (lvl - 1) / 2) * s * 0.17, y + s * 0.215, s * 0.075, s * 0.034); fs(c, '#ffd23f', lw * 0.6); }
   const bob = Math.sin(t * 3 + x * 0.07) * s * 0.02;
   c.translate(x, y - s * 0.1 + bob);
   c.translate(0, r * 0.9); c.scale(1 + recoil * 0.1, 1 - recoil * 0.12); c.translate(0, -r * 0.9);
@@ -188,6 +232,7 @@ function drawTower(c, type, x, y, s, lvl, t, lx, ly, recoil, blink, br) {
   }
   face(c, 0, fy, r, lx || 0, ly || 0, recoil > 0.45 ? 'open' : 'happy', blink, false);
   const ev = evt(); if (ev) (ev === 'halloween' ? costume : evCostume)(c, type, r, lw, t, fy, ev);
+  if (lvl >= 4 && !D.fusion) { c.save(); c.translate(r * 0.15, Math.sin(t * 3) * s * 0.015); c.rotate(0.14); c.lineJoin = 'round'; crownHat(c, -r * 1.95, r * 0.8, lw * 0.45); c.restore(); } // couronne : niveau maximum
   c.restore();
   if (br) drawEmblem(c, br, x + s * 0.3, y + s * 0.1, s * 0.12);
 }

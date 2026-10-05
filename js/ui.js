@@ -36,6 +36,7 @@ TORDER.forEach((type, i) => {
 function selectType(type) {
   if (!G || G.over) return;
   if (G.story && !G.story.towers.includes(type)) { Snd.play('no'); hint(T('Tu n’as pas encore rencontré ce gardien… 🤫'), 2000); return; }
+  if (typeof chalBanned === 'function' && chalBanned(type)) { Snd.play('no'); hint(TOWERS[type].name + T(' est interdite par le piment 🚫'), 2000); return; }
   // Tour verrouillée : achat rapide (un toucher pour proposer, un second pour acheter), sans passer par l'Atelier
   if (!unlocked(type)) {
     const price = UNLOCK[type], name = TOWERS[type].name, now = performance.now();
@@ -60,6 +61,8 @@ function refreshPalette() {
     if (b._sel !== sel) { b._sel = sel; b.classList.toggle('sel', sel); b.setAttribute('aria-pressed', sel); }
     if (b._poor !== poor) { b._poor = poor; b.classList.toggle('poor', poor); }
     const sl = !!(G.story && !G.story.towers.includes(type)); if (b._sl !== sl) { b._sl = sl; b.classList.toggle('storylock', sl); }
+    const ban = typeof chalBanned === 'function' && chalBanned(type); if (b._ban !== ban) { b._ban = ban; b.classList.toggle('banned', ban); }
+    const mp = !!(G.story && G.story.must === type && !G.towers.some(x => x.type === type)); if (b._mp !== mp) { b._mp = mp; b.classList.toggle('mustpick', mp); }
   }
 }
 let duelTab = 'tours';
@@ -108,7 +111,7 @@ function refreshInfo() {
   // Boutons sur deux lignes : l'action en petit, le prix dessous (jamais coupé, même avec 4 boutons)
   const up = $('#iUp'), two = (el, label, price, coin = true) => { el.classList.toggle('two', price != null); el.innerHTML = price != null ? '<span class="bl">' + label + '</span><span class="bp">' + (coin ? COIN : '') + price + '</span>' : label; };
   if (D.fusion) { if (cost) { two(up, T('Améliorer'), cost); up.disabled = G.gold < cost; } else { two(up, T('Niveau max')); up.disabled = true; } }
-  else if (t.lvl === 2 && !t.br) { two(up, T('Spécialiser ▸'), cost); up.disabled = false; }
+  else if (t.lvl === 2 && !t.br) { if (typeof storyLocked === 'function' && storyLocked('spec')) { two(up, T('🔒 Plus tard')); up.disabled = true; } else { two(up, T('Spécialiser ▸'), cost); up.disabled = false; } }
   else if (t.lvl >= 4) { two(up, T('Arbre ▸')); up.disabled = false; }
   else { two(up, t.br ? BRANCH[t.br].short + ' II' : T('Améliorer'), cost); up.disabled = G.gold < cost; }
   two($('#iSell'), T('Vendre'), sellValue(t));
@@ -117,7 +120,7 @@ function refreshInfo() {
   const hb = $('#iHeal'); hb.hidden = !hardMode();
   if (hardMode()) { if (hc) two(hb, T('Soigner'), hc); else two(hb, T('PV au max')); hb.disabled = !mine || !hc || G.gold < hc || t.ko > 0; }
   two($('#iMode'), T('Cible'), MODE_SHORT[t.mode], false);
-  $('#iMode').hidden = D.kind === 'onde';
+  $('#iMode').hidden = D.kind === 'onde' || (typeof storyLocked === 'function' && storyLocked('mode'));
   iCtx.clearRect(0, 0, 44, 48); drawTower(iCtx, t.type, 22, 27, 37, t.lvl, 1, 0, 0.3, 0, false, t.br);
 }
 function deselect() { if (!G) return; $('#modePick').hidden = true; if (typeof closeRadial === 'function') closeRadial(); G.selTower = null; G.selType = null; G.ghost = null; showPanel('palette'); refreshPalette(); }
@@ -279,8 +282,8 @@ document.addEventListener('keydown', ev => {
   else if (k === 'p') pause();
   else if (k === 'escape') { press = null; G.drag = null; deselect(); pause(); }
   else if (k === 'u' && G.selTower) evolve(G.selTower);
-  else if (k === 'f') $('#bSpeed').click();
-  else if (k === 'a') $('#bShop').click();
+  else if (k === 'f' && !$('#bSpeed').hidden) $('#bSpeed').click();
+  else if (k === 'a' && !$('#bShop').hidden) $('#bShop').click();
 });
 
 // Écrans
@@ -292,13 +295,14 @@ function pause() {
     + (MAPS[G.map].random ? T(' Graine de la carte : ') + seedCode(MAPS[G.map].rnd) + '.' : '')
     + ' Biome ' + MAPS[G.map].biome.name.toLowerCase() + T(' : ') + biomeText(MAPS[G.map].biome) + '.'
     + T(' Météo : ') + (WEATHERS[G.weather] || WEATHERS.clear).name.toLowerCase() + ((WEATHERS[G.weather] || WEATHERS.clear).desc !== 'aucun effet' ? ' (' + WEATHERS[G.weather].desc + ')' : '') + '.'
-    + T(' Cagnotte : ') + (meta.bank || 0) + T(' or. En fin de partie, elle reçoit ') + bankShares() + T('. Un abandon ne rapporte rien : ni or, ni éclats.');
+    + T(' Cagnotte : ') + (meta.bank || 0) + T(' or. En fin de partie, elle reçoit ') + bankShares() + T('. Un abandon ne rapporte rien : ni or, ni éclats.')
+    + (G.chal ? T(' Piment 🌶 ') + chalX(G.chal.mult) + ' : ' + chalNames(G.chal).join(', ') + '.' : '');
   cashArm = false; refreshCash();
   refreshOptBtns();
   if (typeof duelPauseUI === 'function') duelPauseUI(!!G.duel);
   if (G.coop && typeof coopPauseUI === 'function') coopPauseUI();
   // Mode histoire : on ne peut que quitter le chapitre (abandonner ou ouvrir le tutoriel laisserait le jeu dans le rêve)
-  $('#pTuto').hidden = !!G.story;
+  $('#pTuto').hidden = !!G.story; if (G.story) $('#pAuto').hidden = true;
   if (G.story) {
     $('#pCash').hidden = true;
     $('#pQuit').textContent = T('Quitter le chapitre');
@@ -360,7 +364,7 @@ function showOver(win, best, award, bank, quit, lostShards) {
   $('#oWord').textContent = quit ? 'ABANDON' : win ? T('VICTOIRE !!') : 'K.O. !';
   $('#oWord').classList.toggle('win', win);
   $('#oText').textContent = quit ? T('Partie abandonnée : elle ne rapporte ni or ni éclats.') : win ? T('Les ') + G.maxw + T(' vagues sont repoussées. La petite maison est sauve !') : T('Les slimes ont envahi la petite maison. Retente ta chance !');
-  $('#oWave').textContent = G.wave; $('#oScore').textContent = G.score;
+  $('#oWave').textContent = G.wave; $('#oScore').textContent = typeof scoreFinal === 'function' ? scoreFinal() : G.score;
   $('#oBest').textContent = best ? best.wave : G.wave;
   $('#oEndless').hidden = !win;
   const a = award || { gain: 0, parts: { wave: 0, score: 0, boss: 0, win: 0 }, mult: 1, before: 0 }, p = a.parts;
@@ -624,6 +628,7 @@ function renderMaps(boughtId) {
     const cv2 = d.querySelector('canvas'); drawMapMini(prepMini(cv2, 140, 90), i, 140, 90, 'moyen');
     d.querySelector('button').addEventListener('click', () => own ? openDiff(i) : buyMap(i));
     if (own) cv2.addEventListener('click', () => openDiff(i));
+    if (own && typeof chalCard === 'function') { chalCard(d, i); mapRankRow(d, i); }
   });
 }
 const medalsHTML = rec => DORDER.map(k => { const r = rec[k], on = k === 'infini' ? r && r.wave : r && r.won; return '<span class="medal' + (on ? ' on' : '') + '" title="' + DIFFS[k].name + '">' + (k === 'infini' ? '∞' + (r && r.wave ? ' ' + r.wave : '') : DIFFS[k].name[0]) + '</span>'; }).join('');
@@ -642,6 +647,7 @@ function seasonCard(i, rec) {
     + '<button class="sbtn" type="button"' + (on ? '' : ' disabled') + '>' + (on ? T('Jouer ▸') : T('Bientôt')) + '</button>';
   const cv2 = d.querySelector('canvas'); drawMapMini(prepMini(cv2, 140, 90), i, 140, 90, 'moyen');
   if (on) { d.querySelector('button').addEventListener('click', () => openDiff(i)); cv2.addEventListener('click', () => openDiff(i)); }
+  if (on && typeof chalCard === 'function') { chalCard(d, i); mapRankRow(d, i); }
   return d;
 }
 // Carte aléatoire : choix de la taille, puis écran des difficultés (avec « Nouvelle carte »)
@@ -695,6 +701,7 @@ function openDiff(i) {
   const m = MAPS[i], rec = (store.get(BEST2) || {})[recId(m)] || {};
   $('#dfName').textContent = (m.random ? '🎲 ' : m.season ? SEASONS[m.season].icon + ' ' : (i + 1) + '. ') + m.name;
   $('#dfSub').textContent = m.blurb + (m.random ? T(' Graine : ') + seedCode(m.rnd) + '.' : '') + ' Biome ' + m.biome.name.toLowerCase() + T(' : ') + biomeText(m.biome) + T(', sur toute la carte.');
+  if (typeof chalDiffLine === 'function') chalDiffLine(i);
   const box = $('#dfList'); box.innerHTML = '';
   for (const k of DORDER) {
     const Df = DIFFS[k], r = m.random ? null : rec[k], d = document.createElement('div'); d.className = 'df';
@@ -750,6 +757,7 @@ function fuseCheck(src, dst) {
   const k = fusionKey(src.type, dst.type);
   if (!k) return { k, why: TOWERS[src.type].name + T(' et ') + TOWERS[dst.type].name + T(' ne fusionnent pas') };
   const F = TOWERS[k];
+  if (typeof chalBanned === 'function' && chalBanned(k)) return { k, why: F.name + T(' : interdite par le piment 🚫') };
   if (!fusionUnlocked(k)) return { k, why: F.name + T(' : à débloquer dans l’Atelier (') + F.unlock + T(' éclats)') };
   if (src.lvl < 2 || dst.lvl < 2) return { k, why: F.name + T(' : les deux tours doivent être au niveau 2') };
   if (G.gold < F.fee) return { k, why: F.name + T(' : il faut ') + F.fee + T(' or') };

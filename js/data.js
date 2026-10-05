@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 70;
+const BUILD = 71;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -38,7 +38,7 @@ const UP_INF = {};
 const lvOf = (lv, id) => { const raw = ((lv && lv[id]) || 0) / upK(id), I = UP_INF[id]; return I && raw > I.max ? I.max + (raw - I.max) * I.f : raw; };
 // Progression d'avant le découpage : un niveau acheté vaut k paliers
 if ((meta.lvv || 1) < 2) { for (const id in meta.lv) meta.lv[id] *= upK(id); meta.lvv = 2; store.set('elemento.meta', meta); }
-const M = id => lvOf(meta.lv, id);
+const M = id => typeof G !== 'undefined' && G && G.chal && G.chal.m.puriste && !/^(u_|f_|map_)/.test(id) ? 0 : lvOf(meta.lv, id);
 // Améliorations d'un autre profil le temps d'un calcul (coop : chaque tour suit l'Atelier de son propriétaire)
 function withLv(lv, fn) { const s = meta.lv; meta.lv = lv || {}; try { return fn(); } finally { meta.lv = s; } }
 const Mo = (t, id) => (G && G.coop && t && t.own && t.own !== coopMe() ? lvOf(coopLv(t.own), id) : M(id));

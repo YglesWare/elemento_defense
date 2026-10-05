@@ -15,7 +15,7 @@ function dailyQueue(day, diff, rec) {
   if (!cur || rkCmp(rec, cur) < 0) { q[k] = { day, diff, won: !!rec.won, wave: rec.wave | 0, score: rec.score | 0 }; store.set(DQ_KEY, q); }
 }
 async function cloudPushDaily() {
-  const q = store.get(DQ_KEY) || {}, keys = Object.keys(q); if (!keys.length) return;
+  const q = store.get(DQ_KEY) || {}, keys = Object.keys(q); if (!keys.length || DEV_HOST) return; // pas de scores de test depuis l'ordinateur
   for (const k of keys) {
     const r = q[k];
     const { error } = await CLOUD.sb.rpc('daily_submit', { p_day: r.day, p_diff: r.diff, p_won: r.won, p_wave: r.wave, p_score: r.score });
@@ -93,6 +93,7 @@ function overExtra() {
   const box = $('#oExtra'), lines = [];
   for (const q of (G && G.questsDone) || []) lines.push('<p class="oxq">' + T('🎯 Défi réussi : ') + q + '</p>');
   box.innerHTML = lines.join(''); box.hidden = !lines.length;
+  if (typeof chalOverExtra === 'function') chalOverExtra(box);
   const m = G && MAPS[G.map]; if (!m || !m.daily || !rankOn() || G.duel || G.coop) return;
   const day = m.daily, diff = G.diff;
   (async () => {

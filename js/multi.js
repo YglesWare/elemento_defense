@@ -108,12 +108,13 @@ function manualHTML(copyCode) {
     + T('<p class="fine">Code reçu :</p><textarea id="mpCodeIn" rows="3" placeholder="Colle le code ici"></textarea><button class="sbtn" type="button" id="mpPaste">Valider le code</button></details>');
 }
 // Mode de jeu du salon : duel (chacun sa carte) ou coop (tous sur la même carte, avec une difficulté)
-function sendLobby() { Net.send('all', { k: 'lobby', map: DUEL.lobbyMap, rsize: DUEL.lobbySize, mode: DUEL.lobbyMode || 'duel', diff: DUEL.lobbyDiff || 'moyen' }); }
+function sendLobby() { Net.send('all', { k: 'lobby', map: DUEL.lobbyMap, rsize: DUEL.lobbySize, mode: DUEL.lobbyMode || 'duel', diff: DUEL.lobbyDiff || 'moyen', chal: DUEL.lobbyChal || null }); }
 function modePickHTML(canPick) {
   const mode = DUEL.lobbyMode || 'duel', diff = DUEL.lobbyDiff || 'moyen';
   const seg = (items, cur, pre) => '<div class="mp-seg">' + items.map(([k, label]) => '<button class="sbtn' + (k === cur ? ' on' : '') + '" type="button"' + (canPick ? ' data-a="' + pre + k + '"' : ' disabled') + '>' + label + '</button>').join('') + '</div>';
   return '<div class="mp-mode"><small>Mode</small>' + seg([['duel', '⚔ Duel'], ['coop', '🤝 Coop']], mode, 'mode-')
-    + (mode === 'coop' ? T('<small>Difficulté</small>') + seg(DORDER.map(k => [k, DIFFS[k].name]), diff, 'diff-') : '') + '</div>';
+    + (mode === 'coop' ? T('<small>Difficulté</small>') + seg(DORDER.map(k => [k, DIFFS[k].name]), diff, 'diff-') : '') + '</div>'
+    + (typeof chalLobbyHTML === 'function' ? chalLobbyHTML(canPick) : '');
 }
 function mapPickHTML(canPick) {
   const m = MAPS[DUEL.lobbyMap] || MAPS[0], rz = DUEL.lobbySize || 'moyenne';
@@ -288,6 +289,7 @@ $('#mpBody').addEventListener('click', ev => {
   else if (a.startsWith('rsize-')) { DUEL.lobbySize = a.slice(6); sendLobby(); renderMP(); }
   else if (a.startsWith('mode-')) { DUEL.lobbyMode = a.slice(5); sendLobby(); renderMP(); }
   else if (a.startsWith('diff-')) { DUEL.lobbyDiff = a.slice(5); sendLobby(); renderMP(); }
+  else if (a === 'chal') { if (typeof chalLobbyOpen === 'function') chalLobbyOpen(); }
   else if (a === 'launch') { if (DUEL.lobbyMode === 'coop') coopHostStart(); else duelHostStart(); }
 });
 // Garde le panneau de saisie manuelle ouvert d'un affichage à l'autre

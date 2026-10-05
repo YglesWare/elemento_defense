@@ -41,7 +41,7 @@ function coopHostStart() {
   if (Net.role !== 'host') return;
   if (Net.players.length < 2) { MP.err = T('Il faut au moins 2 joueurs pour lancer la partie.'); renderMP(); return; }
   const rm = MAPS[DUEL.lobbyMap] && MAPS[DUEL.lobbyMap].random ? { size: DUEL.lobbySize || 'moyenne', seed: newSeed() } : null;
-  const msg = { k: 'cstart', map: DUEL.lobbyMap, rnd: rm, diff: DUEL.lobbyDiff || 'moyen', ids: Net.players.map(p => p.id), names: Object.fromEntries(Net.players.map(p => [p.id, p.name])) };
+  const msg = { k: 'cstart', map: DUEL.lobbyMap, rnd: rm, diff: DUEL.lobbyDiff || 'moyen', ids: Net.players.map(p => p.id), names: Object.fromEntries(Net.players.map(p => [p.id, p.name])), chal: DUEL.lobbyChal || null };
   Net.send('all', msg); COOP.startMsg = msg;
   beginCoop(msg);
 }
@@ -53,8 +53,9 @@ function beginCoop(msg) {
   enterDuelMeta(); COOP.lvs = {}; COOP.lvSent = '{}';
   newGame(msg.map, null, msg.diff);
   Object.assign(G, { hpd: DIFFS[G.diff].coopHp || DIFFS[G.diff].hp, coop: true, coopGuest: !host, coopN: msg.ids.length, coopHp: 1 + 0.5 * (msg.ids.length - 1), speed: 1 });
+  if (typeof chalStart === 'function') chalStart(msg.chal, true);
   if (host) {
-    for (const id of msg.ids) if (id !== coopMe()) COOP.gold[id] = DIFFS[G.diff].gold;
+    for (const id of msg.ids) if (id !== coopMe()) COOP.gold[id] = Math.round(DIFFS[G.diff].gold * (G.chal ? chalGold() : 1));
     prepNextWave();
   } else { G.towers = []; G.nextWave = null; G.spawnQ = []; }
   $('#bSpeed').hidden = !host; $('#bSpeed').textContent = 'x1';

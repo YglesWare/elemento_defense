@@ -6,6 +6,13 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  71: [
+    ['⚙️', 'Nouveau : les piments 🌶 ! Sur une carte déjà gagnée, touche l’engrenage pour ajouter des malus (plus de points) ou des bonus (moins de points).'],
+    ['🏆', 'Un classement entre amis pour chaque carte et chaque difficulté. Touche « Relever » pour tenter le piment d’un ami !'],
+    ['🎭', 'Histoire : les personnages montrent leurs émotions dans les cases de BD (joie, colère, tristesse, surprise, peur).'],
+    ['🧭', 'Histoire : on voit tout de suite d’où viennent les slimes, il faut poser le nouveau gardien avant la vague, et ce qui n’a pas encore été présenté reste verrouillé.'],
+    ['⭐', 'Améliorer une tour se voit enfin : socle de couleur selon le niveau, tour qui grandit, rayon de lumière, et une couronne au niveau maximum.'],
+  ],
   70: [
     ['⚡', 'Le jeu reste plus fluide quand il y a beaucoup d’ennemis à l’écran (pratique pour les longues parties en Infini).'],
   ],

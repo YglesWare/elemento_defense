@@ -320,6 +320,7 @@
   <div class="inner">
     <div class="panelbox col">
       <div><h2 class="ptitle" id="dfName" style="margin-bottom:4px"></h2><p class="fine" id="dfSub" style="text-align:left;margin:0;font-size:13.5px;opacity:1"></p></div>
+      <div class="dfchal" id="dfChal" hidden></div>
       <div class="dfs" id="dfList"></div>
     </div>
     <button class="btn stickyb" id="dfBack" type="button">Retour</button>
@@ -484,6 +485,28 @@
     <button class="btn alt" id="qClose" type="button">Fermer</button>
   </div>
 </div>
+<!-- Défis d'une carte (js/challenge.js) -->
+<div class="intro" id="chalPop" role="dialog" aria-modal="true" aria-labelledby="chTitle" hidden>
+  <div class="intro-card chalcard">
+    <h2 id="chTitle">⚙️ Piments</h2>
+    <p class="fine" id="chSub"></p>
+    <div class="chmult"><b id="chMx">×1</b><small id="chMxs"></small></div>
+    <div class="chpre" id="chPre"></div>
+    <div class="chmods" id="chMods"></div>
+    <div class="chfoot"><button class="btn alt" id="chReset" type="button">Tout à zéro</button><button class="btn" id="chOk" type="button">Valider</button></div>
+    <button class="btn alt" id="chClose" type="button">Annuler</button>
+  </div>
+</div>
+<!-- Classement d'une carte entre amis (js/challenge.js) -->
+<div class="intro" id="mapRankPop" role="dialog" aria-modal="true" aria-labelledby="mrTitle" hidden>
+  <div class="intro-card">
+    <h2 id="mrTitle">Classement</h2>
+    <p class="fine">Seulement tes amis · piments compris</p>
+    <div class="mp-seg rktabs" id="mrTabs"></div>
+    <div class="rklist" id="mrList"></div>
+    <button class="btn alt" id="mrClose" type="button">Fermer</button>
+  </div>
+</div>
 <!-- Classement de la carte du jour (js/ranking.js) -->
 <div class="intro" id="rankPop" role="dialog" aria-modal="true" aria-labelledby="rkTitle" hidden>
   <div class="intro-card">
@@ -572,4 +595,4 @@
 </div>
 <!-- Les données du joueur (IndexedDB) sont chargées d'abord, puis les scripts du jeu, dans cet ordre -->
 <script src="js/storage.js"></script>
-<script>store.boot(['js/errors.js', 'js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bonus.js', 'js/trophies.js', 'js/actions.js', 'js/vendor/supabase.js', 'js/cloud.js', 'js/parents.js', 'js/friends.js', 'js/online.js', 'js/emotes.js', 'js/news.js', 'js/quests.js', 'js/ranking.js', 'js/wardrobe.js', 'js/comfort.js', 'js/story.js']);</script>
+<script>store.boot(['js/errors.js', 'js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bonus.js', 'js/trophies.js', 'js/actions.js', 'js/vendor/supabase.js', 'js/cloud.js', 'js/parents.js', 'js/friends.js', 'js/online.js', 'js/emotes.js', 'js/news.js', 'js/quests.js', 'js/ranking.js', 'js/challenge.js', 'js/wardrobe.js', 'js/comfort.js', 'js/story.js']);</script>
