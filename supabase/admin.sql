@@ -16,11 +16,13 @@ create table if not exists public.admin_log (
   id bigserial primary key,
   at timestamptz not null default now(),
   admin uuid,
-  action text not null check (action in ('export', 'delete')),
+  action text not null,
   target uuid,
   note text
 );
 alter table public.admin_log enable row level security;
+alter table public.admin_log drop constraint if exists admin_log_action_check;
+alter table public.admin_log add constraint admin_log_action_check check (action in ('export', 'delete', 'admin_add', 'admin_remove'));
 
 create or replace function public._is_admin() returns boolean language sql stable security definer set search_path = public as $$
   select exists (select 1 from admins where user_id = auth.uid())
@@ -109,8 +111,37 @@ begin
   return r;
 end $$;
 
+-- Gestion des administrateurs (réservée aux administrateurs) : la personne doit s'être connectée une fois avec Google sur admin.html
+create or replace function public.admin_list() returns table (user_id uuid, email text, added_at timestamptz, me boolean)
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if not _is_admin() then raise exception 'réservé aux administrateurs'; end if;
+  return query select a.user_id, u.email::text, a.added_at, a.user_id = auth.uid() from admins a join auth.users u on u.id = a.user_id order by a.added_at;
+end $$;
+create or replace function public.admin_add(p_email text) returns text
+language plpgsql security definer set search_path = public as $$
+declare uid uuid;
+begin
+  if not _is_admin() then raise exception 'réservé aux administrateurs'; end if;
+  select id into uid from auth.users where lower(email) = lower(btrim(p_email)) and not coalesce(is_anonymous, false) limit 1;
+  if uid is null then raise exception 'aucun compte avec cette adresse : la personne doit d''abord se connecter une fois avec Google sur cette page'; end if;
+  insert into admins (user_id) values (uid) on conflict do nothing;
+  insert into admin_log (admin, action, target) values (auth.uid(), 'admin_add', uid);
+  return 'ok';
+end $$;
+create or replace function public.admin_remove(p_user uuid) returns text
+language plpgsql security definer set search_path = public as $$
+begin
+  if not _is_admin() then raise exception 'réservé aux administrateurs'; end if;
+  if p_user = auth.uid() then raise exception 'tu ne peux pas te retirer toi-même'; end if;
+  if (select count(*) from admins) <= 1 then raise exception 'il faut garder au moins un administrateur'; end if;
+  delete from admins where user_id = p_user;
+  insert into admin_log (admin, action, target) values (auth.uid(), 'admin_remove', p_user);
+  return 'ok';
+end $$;
+
 do $$ declare f text; begin
-  foreach f in array array['public.admin_whoami()', 'public.admin_find(text)', 'public.admin_export(uuid)', 'public.admin_delete(uuid)'] loop
+  foreach f in array array['public.admin_whoami()', 'public.admin_find(text)', 'public.admin_export(uuid)', 'public.admin_delete(uuid)', 'public.admin_list()', 'public.admin_add(text)', 'public.admin_remove(uuid)'] loop
     execute 'revoke all on function ' || f || ' from public, anon';
     execute 'grant execute on function ' || f || ' to authenticated';
   end loop;

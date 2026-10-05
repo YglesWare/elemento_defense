@@ -39,7 +39,7 @@ textarea{width:100%;min-height:150px;font:500 14px/1.45 'Trebuchet MS',system-ui
 <div id="notAdmin" class="msg err" hidden></div>
 </header>
 
-<section class="card">
+<section class="card" id="procCard" hidden>
 <h2>Procédure</h2>
 <ol>
 <li><b>Vérifier que la demande vient bien du joueur</b> (ou de son parent) :
@@ -56,6 +56,14 @@ textarea{width:100%;min-height:150px;font:500 14px/1.45 'Trebuchet MS',system-ui
 <h2>Rechercher un joueur</h2>
 <form class="row" id="searchForm"><input id="q" placeholder="YGL-482-1937, 7D08-EE30, adresse e-mail ou pseudo" autocomplete="off"><button type="submit" id="go">Rechercher</button></form>
 <div id="results"></div>
+</section>
+
+<section class="card" id="adminsCard" hidden>
+<h2>Administrateurs</h2>
+<div id="admins"></div>
+<form class="row" id="addForm" style="margin-top:8px"><input id="addEmail" type="email" placeholder="adresse e-mail Google de la personne" autocomplete="off"><button type="submit">Ajouter</button></form>
+<p class="muted">La personne doit d'abord ouvrir cette page et se connecter une fois avec Google.</p>
+<div id="adminsMsg"></div>
 </section>
 
 <section class="card" id="replyCard" hidden>
@@ -85,15 +93,37 @@ async function refresh() {
   $('#me').textContent = 'Connecté : ' + (session.user.email || session.user.id);
   const { data, error } = await sb.rpc('admin_whoami');
   admin = !error && data && data.admin;
-  paintGate(error ? 'La base ne répond pas comme prévu : as-tu lancé supabase/admin.sql ? (' + error.message + ')' : null, session.user);
+  paintGate(null, session.user);
 }
 function paintGate(err, user) {
   const box = $('#notAdmin');
-  $('#searchCard').hidden = !admin;
-  if (admin || !user) { box.hidden = !err; if (err) box.textContent = err; return; }
-  box.hidden = false;
-  box.innerHTML = esc(err || 'Ce compte n’est pas administrateur.') + '<br>Pour le déclarer, lance dans le SQL Editor de Supabase :<br><span class="mono">insert into public.admins (user_id) values (\'' + esc(user.id) + '\') on conflict do nothing;</span><br>puis recharge la page.';
+  for (const id of ['#searchCard', '#procCard', '#adminsCard']) $(id).hidden = !admin;
+  if (!admin) { $('#replyCard').hidden = true; $('#results').innerHTML = ''; }
+  box.hidden = admin || !user; box.textContent = 'Accès réservé aux administrateurs.';
+  if (admin) loadAdmins();
 }
+// Administrateurs : liste, ajout par adresse e-mail, retrait (pas soi-même, pas le dernier)
+async function loadAdmins() {
+  const { data, error } = await sb.rpc('admin_list');
+  if (error) { $('#admins').innerHTML = '<div class="msg err">' + esc(error.message) + '</div>'; return; }
+  $('#admins').innerHTML = (data || []).map(a => '<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--mist);padding:6px 0"><span><b>' + esc(a.email || a.user_id) + '</b>' + (a.me ? ' (toi)' : '') + ' <span class="muted">· depuis le ' + esc(day(a.added_at)) + '</span></span>'
+    + (a.me ? '' : '<button type="button" class="alt" data-rm="' + esc(a.user_id) + '">Retirer</button>') + '</div>').join('');
+}
+$('#admins').addEventListener('click', async ev => {
+  const b = ev.target.closest('[data-rm]'); if (!b) return;
+  if (b.dataset.arm !== '1') { b.dataset.arm = '1'; b.textContent = 'Confirmer le retrait'; b.classList.add('danger'); return; }
+  const { error } = await sb.rpc('admin_remove', { p_user: b.dataset.rm });
+  $('#adminsMsg').innerHTML = error ? '<div class="msg err">' + esc(error.message) + '</div>' : '<div class="msg ok">Administrateur retiré.</div>';
+  loadAdmins();
+});
+$('#addForm').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const email = $('#addEmail').value.trim(); if (!email) return;
+  const { error } = await sb.rpc('admin_add', { p_email: email });
+  $('#adminsMsg').innerHTML = error ? '<div class="msg err">' + esc(error.message) + '</div>' : '<div class="msg ok">' + esc(email) + ' est maintenant administrateur.</div>';
+  if (!error) $('#addEmail').value = '';
+  loadAdmins();
+});
 $('#login').addEventListener('click', () => sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } }));
 $('#logout').addEventListener('click', async () => { await sb.auth.signOut(); $('#results').innerHTML = ''; refresh(); });
 
