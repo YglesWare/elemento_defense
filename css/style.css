@@ -110,6 +110,13 @@ button:disabled{cursor:default}
 #iActions .sbtn{flex:1 1 auto;min-width:0;padding-inline:8px;white-space:nowrap}
 #iActions:has(#iHeal:not([hidden])) .sbtn{font-size:14px;padding-inline:5px}
 #iActions .sbtn{height:48px}
+#info{position:relative}
+.modepick{position:absolute;right:8px;bottom:calc(100% + 8px);z-index:30;width:min(300px,calc(100vw - 24px));display:flex;flex-direction:column;gap:4px;padding:8px;background:var(--paper);border:3px solid var(--ink);border-radius:16px;box-shadow:0 4px 0 var(--ink)}
+.modepick .mpt{font-family:var(--display);font-weight:400;font-size:18px;letter-spacing:.5px;padding:0 4px 2px}
+.mpo{display:flex;align-items:center;gap:10px;text-align:left;padding:6px 8px;border:2px solid transparent;border-radius:10px;background:none;font:800 15px/1.15 "Baloo 2",system-ui,sans-serif;color:var(--ink);cursor:pointer}
+.mpo.on{background:var(--sun);border-color:var(--ink)}
+.mpo .mpi{font-size:22px;width:28px;text-align:center}
+.mpo small{display:block;font-weight:600;font-size:12.5px;color:var(--muted)}
 #iActions .sbtn.two{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;line-height:1;padding-block:3px}
 #iActions .two .bl{font-size:12px;letter-spacing:.2px;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 #iActions .two .bp{display:inline-flex;align-items:center;gap:3px;font-size:17px}

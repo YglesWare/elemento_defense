@@ -655,6 +655,12 @@ function reachBase(e) {
   e.dead = true; G.lives -= e.lifeCost; G.lostLife = true; G.shake = Math.max(G.shake, 0.45); G.hurtT = 0.5; G.baseHit = 0.4; G.hitBase = B;
   ono(e.lifeCost > 1 ? '-' + e.lifeCost + ' ♥' : T('AÏE!'), B[0], B[1], '#ff4f6e', 0.6, 0.2, 1.1);
   Snd.play('hurt');
+  // Un ennemi qui atteint la maison n'abandonne pas, il repart du début du chemin avec les PV qui lui restent, et coûte
+  // des vies à chaque passage jusqu'à ce qu'il soit abattu : tous les ennemis en Infini, les boss en Difficile
+  if ((G.diff === 'infini' || (G.diff === 'difficile' && ETYPES[e.type].boss)) && G.lives > 0 && !G.story) {
+    e.dead = false; e.d = 0; e.laps = (e.laps || 0) + 1; setPos(e);
+    if (ETYPES[e.type].boss) ono(T('ENCORE UN TOUR !'), e.x, e.y, '#ff4f6e', 0.6, 0.2, 1.3); else ono('↺', e.x, e.y, '#ff4f6e', 0.4, 0.1, 0.8);
+  }
   if (G.lives <= 0) {
     if (M('revive') && !G.reviveUsed) {
       G.reviveUsed = true; G.lives = 5;
@@ -745,7 +751,7 @@ function updateTower(t, dt) {
   if (t.type === 'sable') { sandPulse(t, s, list); return; }
   if (t.type === 'orage') { storm(t, s, list); return; }
   let tg = list[0], bv = -Infinity;
-  for (const e of list) { const v = t.mode === 'fort' ? e.hp : t.mode === 'proche' ? -((e.x - cx) ** 2 + (e.y - cy) ** 2) : e.d - PP(e).goal; if (v > bv) { bv = v; tg = e; } }
+  for (const e of list) { const v = aimScore(t, e, cx, cy); if (v > bv) { bv = v; tg = e; } }
   const ddx = tg.x - cx, ddy = tg.y - cy, [a, b] = L.portrait ? [ddy, ddx] : [ddx, ddy], l = Math.hypot(a, b) || 1;
   t.lx = a / l; t.ly = b / l;
   Snd.play(TOWERS[t.type].snd || t.type);
@@ -786,12 +792,24 @@ function geyserBlast(s, tg) {
   burst(x, y, 0.1, 16, ['#ffffff', '#dff6ff', '#9fe6ff'], 2.4, 0.1, -3, 0.7);
   if (Math.random() < 0.3) ono('PSHHH!', x, y, '#dff6ff', 0.5, 0.4, 1.0);
 }
+// Ciblage : plus le score est haut, plus l'ennemi est visé (premier = le plus avancé vers la maison)
+function aimScore(t, e, cx, cy) {
+  const ahead = e.d - PP(e).goal;
+  switch (t.mode) {
+    case 'dernier': return -ahead;
+    case 'faible': return -e.hp;
+    case 'fort': return e.hp;
+    case 'proche': return -((e.x - cx) ** 2 + (e.y - cy) ** 2);
+    case 'boss': return (ETYPES[e.type].boss ? 1e6 : 0) + ahead;
+    default: return ahead;
+  }
+}
 function beamTower(t, dt) {
   const s = t.s, [cx, cy] = windCenter(t), R2 = s.range * s.range;
   const ok = e => e && !e.dead && !(e.ghost > 0) && (s.air || !e.flying) && (e.x - cx) ** 2 + (e.y - cy) ** 2 <= R2;
   if (!ok(t.beam)) {
     t.beam = null; t.beamT = 0; let bv = -Infinity;
-    for (const e of G.enemies) { if (!ok(e)) continue; const v = t.mode === 'fort' ? e.hp : t.mode === 'proche' ? -((e.x - cx) ** 2 + (e.y - cy) ** 2) : e.d - PP(e).goal; if (v > bv) { bv = v; t.beam = e; } }
+    for (const e of G.enemies) { if (!ok(e)) continue; const v = aimScore(t, e, cx, cy); if (v > bv) { bv = v; t.beam = e; } }
   }
   if (t.recoil > 0) t.recoil = Math.max(0, t.recoil - dt * 5);
   t.blink -= dt; if (t.blink < -0.13) t.blink = rand(2, 5);

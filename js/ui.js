@@ -120,18 +120,27 @@ function refreshInfo() {
   $('#iMode').hidden = D.kind === 'onde';
   iCtx.clearRect(0, 0, 44, 48); drawTower(iCtx, t.type, 22, 27, 37, t.lvl, 1, 0, 0.3, 0, false, t.br);
 }
-function deselect() { if (!G) return; if (typeof closeRadial === 'function') closeRadial(); G.selTower = null; G.selType = null; G.ghost = null; showPanel('palette'); refreshPalette(); }
+function deselect() { if (!G) return; $('#modePick').hidden = true; if (typeof closeRadial === 'function') closeRadial(); G.selTower = null; G.selType = null; G.ghost = null; showPanel('palette'); refreshPalette(); }
 $('#iClose').addEventListener('click', deselect);
 // En coop, seul le propriétaire d'une tour peut la modifier
 const notMine = t => { if (!G.coop || !t.own || t.own === coopMe()) return false; hint(T('Tour de ') + coopName(t.own) + T(' : seul son propriétaire peut la modifier'), 2200); Snd.play('no'); return true; };
 $('#iUp').addEventListener('click', () => { if (G && G.selTower && !notMine(G.selTower)) evolve(G.selTower); });
 $('#iSell').addEventListener('click', () => { if (G && G.selTower && !notMine(G.selTower)) sell(G.selTower); });
 $('#iHeal').addEventListener('click', () => { if (G && G.selTower && !notMine(G.selTower)) healPaid(G.selTower); });
-$('#iMode').addEventListener('click', () => {
-  const t = G && G.selTower; if (!t || notMine(t)) return;
-  t.mode = MODES[(MODES.indexOf(t.mode) + 1) % MODES.length]; refreshInfo();
-  if (G.coopGuest) coopAct({ a: 'mode', id: t.id, mode: t.mode });
+// Ciblage : un petit menu avec les six choix
+$('#iMode').addEventListener('click', ev => {
+  ev.stopPropagation();
+  const t = G && G.selTower, box = $('#modePick'); if (!t || notMine(t)) return;
+  if (!box.hidden) { box.hidden = true; return; }
+  box.innerHTML = '<b class="mpt">' + T('Qui viser en premier ?') + '</b>' + MODES.map(m => '<button type="button" role="menuitemradio" aria-checked="' + (t.mode === m) + '" class="mpo' + (t.mode === m ? ' on' : '') + '" data-m="' + m + '"><span class="mpi">' + MODE_INFO[m][0] + '</span><span class="mpn">' + MODE_INFO[m][1] + '<small>' + MODE_INFO[m][2] + '</small></span></button>').join('');
+  box.querySelectorAll('.mpo').forEach(b => b.addEventListener('click', e2 => {
+    e2.stopPropagation(); const tt = G && G.selTower; box.hidden = true; if (!tt) return;
+    tt.mode = b.dataset.m; refreshInfo(); Snd.play('build');
+    if (G.coopGuest) coopAct({ a: 'mode', id: tt.id, mode: tt.mode });
+  }));
+  box.hidden = false;
 });
+document.addEventListener('pointerdown', ev => { const box = $('#modePick'); if (!box.hidden && !ev.target.closest('#modePick, #iMode')) box.hidden = true; });
 
 // HUD
 const fmtK = n => n >= 100000 ? Math.round(n / 1000) + 'k' : n >= 10000 ? fr((n / 1000).toFixed(1)) + 'k' : String(n);

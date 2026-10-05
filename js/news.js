@@ -6,6 +6,10 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  69: [
+    ['🎯', 'Choisis qui chaque tour vise : le premier, le dernier, le plus faible, le plus fort, le plus proche ou les boss. Touche « Cible » dans la fiche de la tour.'],
+    ['🐲', 'Infini : un ennemi qui atteint la maison ne disparaît plus, il refait le tour jusqu’à être abattu… et coûte des vies à chaque passage ! En Difficile, c’est le cas des boss.'],
+  ],
   68: [
     ['🐛', 'Histoire : quitter un chapitre en cours ne transforme plus la partie suivante en chapitre de l’histoire.'],
   ],

@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 68;
+const BUILD = 69;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -158,9 +158,9 @@ const DIFFS = {
   moyen: { name: T('Moyen'), waves: 30, hp: 1, speed: 1, lives: 20, gold: 200, shards: 1, bonus: 1, malus: 1, timer: 30,
     desc: T('30 vagues · ennemis +30 % de PV · 20 vies · la carte telle quelle · vague suivante automatique 30 s après la sortie du dernier ennemi') },
   difficile: { name: T('Difficile'), waves: 30, hp: 1.35, speed: 1.1, lives: 12, gold: 170, shards: 1.5, bonus: 0.75, malus: 1.5, timer: 15,
-    desc: T('30 vagues · ennemis +130 % de PV et plus rapides · 12 vies · plus d’obstacles, aucune colline · malus de terrain renforcés · vague suivante automatique après 15 s · une tour à 0 PV est détruite et laisse des ruines ; pas de soin gratuit entre les vagues, mais un soin payant et une petite régénération pendant les vagues · un ennemi n’attaque chaque tour qu’une fois') },
+    desc: T('30 vagues · ennemis +130 % de PV et plus rapides · 12 vies · plus d’obstacles, aucune colline · malus de terrain renforcés · vague suivante automatique après 15 s · une tour à 0 PV est détruite et laisse des ruines ; pas de soin gratuit entre les vagues, mais un soin payant et une petite régénération pendant les vagues · un ennemi n’attaque chaque tour qu’une fois') + T(' · un boss qui atteint la maison refait le tour jusqu’à être abattu') },
   infini: { name: T('Infini'), waves: Infinity, hp: 1, speed: 1, lives: 20, gold: 200, shards: 1.25, bonus: 1, malus: 1, timer: w => w < 10 ? null : Math.max(15, 30 - Math.floor((w - 10) / 5)),
-    desc: T('Vagues sans fin, de plus en plus dures · 20 vies · vagues 1 à 10 sans chrono, puis vague suivante automatique après 30 s, un délai qui raccourcit jusqu’à 15 s · bats ton record') },
+    desc: T('Vagues sans fin, de plus en plus dures · 20 vies · vagues 1 à 10 sans chrono, puis vague suivante automatique après 30 s, un délai qui raccourcit jusqu’à 15 s · bats ton record') + T(' · un ennemi qui atteint la maison refait le tour jusqu’à être abattu') },
 };
 // PV des ennemis en solo selon ECO ; la coop garde ses PV d'origine (tout le monde y part de zéro)
 for (const k of ['facile', 'moyen', 'difficile']) { DIFFS[k].coopHp = DIFFS[k].hp; if (ECO.hp && ECO.hp[k]) DIFFS[k].hp = ECO.hp[k]; }
@@ -415,8 +415,14 @@ function fusionKey(a, b) {
   for (const k in FUSIONS) { const [x, y] = FUSIONS[k].parents; if ((x === a && y === b) || (x === b && y === a)) return k; }
   return null;
 }
-const MODES = ['premier', 'fort', 'proche'], MODE_LABEL = { premier: T('Cible : 1er'), fort: T('Cible : costaud'), proche: T('Cible : proche') };
-const MODE_SHORT = { premier: T('1er'), fort: T('costaud'), proche: T('proche') };
+// Ciblage des tours (« premier » par défaut) : icône, nom court, explication du menu de choix
+const MODES = ['premier', 'dernier', 'faible', 'fort', 'proche', 'boss'];
+const MODE_SHORT = { premier: T('1er'), dernier: T('dernier'), faible: T('faible'), fort: T('costaud'), proche: T('proche'), boss: T('boss') };
+const MODE_INFO = {
+  premier: ['⏩', T('Premier'), T('Le plus avancé vers la maison')], dernier: ['⏪', T('Dernier'), T('Le plus loin de la maison')],
+  faible: ['💔', T('Plus faible'), T('Celui qui a le moins de PV')], fort: ['💪', T('Plus fort'), T('Celui qui a le plus de PV')],
+  proche: ['🎯', T('Plus proche'), T('Le plus près de la tour')], boss: ['🐲', T('Boss'), T('Les boss d’abord, sinon le premier')],
+};
 
 const ETYPES = {
   gloop: { name: 'Gloop', hp: 30, speed: 1.0, reward: 3, size: 0.24, color: '#b57bff', light: '#e2caff', mood: 'happy', desc: T('Le slime de base.') },
@@ -427,7 +433,7 @@ const ETYPES = {
   gresil: { name: T('Grésillon'), hp: 40, speed: 1.1, reward: 4, size: 0.22, color: '#c6e84a', light: '#eeffa8', mood: 'open', desc: T('Paralyse les tours proches quelques secondes.') },
   crachou: { name: T('Crachou'), hp: 70, speed: 0.8, reward: 6, size: 0.27, color: '#ff8a5c', light: '#ffc6a8', mood: 'grr', angry: true, armor: 1, desc: T('Crache sur les tours et leur fait perdre des PV.') },
   malefik: { name: T('Maléfik'), hp: 150, speed: 0.7, reward: 12, size: 0.28, color: '#7a4fb8', light: '#c9a8f0', mood: 'grr', angry: true, armor: 2, desc: T('Pervertit une tour : elle attaque les autres tours un moment.') },
-  boss: { name: 'Kaiju', hp: 650, speed: 0.42, reward: 45, size: 0.42, color: '#ff4f6e', light: '#ffa3b3', mood: 'grr', angry: true, armor: 5, lifeCost: 10, boss: true, desc: T('Boss des vagues 10, 20, 30. Ses coups de patte abîment les tours.') },
+  boss: { name: 'Kaiju', hp: 650, speed: 0.42, reward: 45, size: 0.42, color: '#ff4f6e', light: '#ffa3b3', mood: 'grr', angry: true, armor: 5, lifeCost: 10, boss: true, desc: T('Boss des vagues 10, 20, 30. Ses coups de patte abîment les tours.') + T(' En Difficile et en Infini, s’il atteint la maison, il refait le tour jusqu’à être abattu.') },
   spectre: { name: 'Spectre', hp: 50, speed: 1.15, reward: 5, size: 0.24, color: '#e6e0ff', light: '#ffffff', mood: 'open', season: 'halloween', desc: T('Halloween : devient intangible par moments, aucune attaque ne le touche alors.') },
   potiron: { name: T('Potiron'), hp: 70, speed: 1.3, reward: 3, size: 0.2, color: '#ff8a2b', light: '#ffc27a', mood: 'grr', angry: true, season: 'halloween', desc: T('Halloween : trois Potirons s’échappent du Roi Citrouille quand il tombe.') },
   cadeau: { name: T('Cadeau surprise'), hp: 90, speed: 0.75, reward: 6, size: 0.26, color: '#e8344e', light: '#ff9aa8', mood: 'grr', angry: true, armor: 2, season: 'noel', desc: T('Noël : en s’ouvrant, il libère deux Lutins.') },
