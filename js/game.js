@@ -1088,7 +1088,7 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
       const al = (0.14 + Math.min(0.45, Math.abs(a || 0.3)) * 0.9).toFixed(2);
       c.fillStyle = a < 0 ? 'rgba(255,79,110,' + al + ')' : a > 0 ? 'rgba(92,216,106,' + al + ')' : 'rgba(127,211,255,.42)';
       rr(c, x + 3, y + 3, cs - 6, cs - 6, cs * 0.16); c.fill();
-      c.font = Math.round(cs * 0.34) + 'px Bangers, Impact, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
+      c.font = Math.round(cs * 0.34) + 'px DispNum, Bangers, Impact, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
       const mk = a ? (a > 0 ? (a >= 0.3 ? '++' : '+') : (a <= -0.3 ? '−−' : '−')) : '↑'; c.lineWidth = 3; c.strokeStyle = INK; c.strokeText(mk, x + cs * 0.8, y + cs * 0.22); c.fillStyle = good ? '#ffffff' : '#ffd6de'; c.fillText(mk, x + cs * 0.8, y + cs * 0.22);
     }
   }
@@ -1139,7 +1139,7 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
       if (o.stun > 0 && !ko) {
         c.save(); c.strokeStyle = '#e6ff5a'; c.lineWidth = Math.max(1.5, cs * 0.04); c.lineCap = 'round';
         for (let i = 0; i < 3; i++) { const a = rand(TAU), rx = x + Math.cos(a) * cs * 0.3, ry = y - cs * 0.15 + Math.sin(a) * cs * 0.3; c.beginPath(); c.moveTo(rx, ry); c.lineTo(rx + rand(-1, 1) * cs * 0.12, ry + rand(-1, 1) * cs * 0.12); c.stroke(); }
-        c.font = Math.round(cs * 0.28) + 'px Bangers, Impact, sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = INK; c.strokeText('ZZZ', x + cs * 0.28, y - cs * 0.5); c.fillStyle = '#e6ff5a'; c.fillText('ZZZ', x + cs * 0.28, y - cs * 0.5);
+        c.font = Math.round(cs * 0.28) + 'px DispNum, Bangers, Impact, sans-serif'; c.textAlign = 'center'; c.lineWidth = 3; c.strokeStyle = INK; c.strokeText('ZZZ', x + cs * 0.28, y - cs * 0.5); c.fillStyle = '#e6ff5a'; c.fillText('ZZZ', x + cs * 0.28, y - cs * 0.5);
         c.restore();
       }
       if (o.shield > 0 && !ko) { c.save(); c.globalAlpha *= 0.35 + 0.1 * Math.sin(TM * 4); c.beginPath(); c.arc(x, y - cs * 0.08, cs * 0.46, 0, TAU); c.fillStyle = '#9fdcff'; c.fill(); c.globalAlpha = 0.8; c.lineWidth = 2; c.strokeStyle = '#ffffff'; c.stroke(); c.restore(); }
@@ -1249,7 +1249,7 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
     c.save(); c.globalAlpha = k > 0.72 ? (1 - k) / 0.28 : 1;
     c.translate(x, y + t.oy * cs); c.rotate(t.rot); c.scale(pop, pop);
     const px = Math.max(12, Math.round(t.size * cs));
-    c.font = px + 'px Bangers, Impact, "Arial Black", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
+    c.font = px + 'px DispNum, Bangers, Impact, "Arial Black", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
     c.lineWidth = Math.max(3, px * 0.24); c.strokeStyle = INK; c.strokeText(t.txt, 2, 2); c.strokeText(t.txt, 0, 0);
     c.fillStyle = t.color; c.fillText(t.txt, 0, 0);
     c.restore();

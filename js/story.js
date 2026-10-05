@@ -263,7 +263,7 @@ function comicEmoFx(c, emo, px, py, s, w, h, side) {
     }
     if (emo === 'surprise') {
       const fsz = Math.round(s * 0.3);
-      c.save(); c.font = fsz + "px Bangers, Impact, 'Arial Black', sans-serif"; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
+      c.save(); c.font = fsz + "px DispNum, Bangers, Impact, 'Arial Black', sans-serif"; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
       for (const [dx, rot] of [[-0.1, -0.25], [0.12, 0.2]]) { c.save(); c.translate(hx + dx * s, hy - s * 0.05); c.rotate(rot); c.lineWidth = fsz * 0.2; c.strokeStyle = INK; c.strokeText('!', 0, 0); c.fillStyle = '#ffe14d'; c.fillText('!', 0, 0); c.restore(); }
       c.restore();
     }
@@ -296,7 +296,7 @@ function comicArt(cv, who, txt, side, w, h, q, emo) {
   if (sfx) {
     const fs = Math.round(Math.min(h * 0.22, 40));
     c.save(); c.translate(px + (side === 'l' ? s * 0.25 : -s * 0.25), Math.max(top + fs * 0.8, py - s * 0.48)); c.rotate(side === 'l' ? -0.18 : 0.18);
-    c.font = fs + "px Bangers, Impact, 'Arial Black', sans-serif"; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
+    c.font = fs + "px DispNum, Bangers, Impact, 'Arial Black', sans-serif"; c.textAlign = 'center'; c.textBaseline = 'middle'; c.lineJoin = 'round';
     c.lineWidth = fs * 0.22; c.strokeStyle = INK; c.strokeText(sfx[1].toUpperCase(), 0, 0);
     c.fillStyle = '#ffe14d'; c.fillText(sfx[1].toUpperCase(), 0, 0); c.restore();
   }
@@ -530,7 +530,7 @@ function storyStartFx(c, cs, TM) {
   }
   const label = (x, y, txt, col) => {
     const b = Math.abs(Math.sin(TM * 3)) * cs * 0.18, fsz = Math.max(20, Math.round(cs * 0.55));
-    c.save(); c.font = fsz + "px Bangers, Impact, 'Arial Black', sans-serif"; c.textAlign = 'center'; c.textBaseline = 'bottom'; c.lineJoin = 'round';
+    c.save(); c.font = fsz + "px DispNum, Bangers, Impact, 'Arial Black', sans-serif"; c.textAlign = 'center'; c.textBaseline = 'bottom'; c.lineJoin = 'round';
     const ty = y - cs * 0.65 - b, tw = c.measureText(txt).width;
     const lx = clamp(x, tw / 2 + 6, L.w - tw / 2 - 6), ly = Math.max(fsz + 26, ty);
     c.beginPath(); c.moveTo(x - cs * 0.16, ly + 4); c.lineTo(x + cs * 0.16, ly + 4); c.lineTo(x, ly + cs * 0.3); c.closePath(); c.fillStyle = col; c.fill(); c.lineWidth = 3; c.strokeStyle = INK; c.stroke();
@@ -582,7 +582,7 @@ function drawBed(c) {
   drawTower(c, 'feu', 64, 86, 74, 1, 0.4, 0, 0.3, 0, true);
   c.beginPath(); c.roundRect(78, 88, 116, 38, 9); c.fillStyle = '#ff9ec0'; c.fill(); c.stroke();
   c.fillStyle = 'rgba(255,255,255,.6)'; for (let k = 0; k < 5; k++) { c.beginPath(); c.arc(94 + k * 22, 107, 4, 0, TAU); c.fill(); }
-  c.font = '24px Bangers, Impact, sans-serif'; c.fillStyle = '#ffffff'; c.fillText('Z', 108, 46); c.font = '18px Bangers, Impact, sans-serif'; c.fillText('z', 128, 32); c.fillText('z', 142, 20);
+  c.font = '24px DispNum, Bangers, Impact, sans-serif'; c.fillStyle = '#ffffff'; c.fillText('Z', 108, 46); c.font = '18px DispNum, Bangers, Impact, sans-serif'; c.fillText('z', 128, 32); c.fillText('z', 142, 20);
 }
 screens.wake = $('#sWake');
 $('#wkGo').addEventListener('click', () => { Snd.init(); renderMaps(); show('maps'); screens.maps.scrollTop = 0; });

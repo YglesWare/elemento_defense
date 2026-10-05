@@ -6,6 +6,10 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  72: [
+    ['🏷️', 'Les petites pastilles sur les boutons des tours affichent maintenant un % : c’est le bonus du terrain, du biome et de la météo, pas un prix.'],
+    ['🔢', 'Les chiffres des titres et des boutons sont plus lisibles : le 7 ne ressemble plus au 1 (un prix de 70 se lisait 10).'],
+  ],
   71: [
     ['⚙️', 'Nouveau : les piments 🌶 ! Sur une carte déjà gagnée, touche l’engrenage pour ajouter des malus (plus de points) ou des bonus (moins de points).'],
     ['🏆', 'Un classement entre amis pour chaque carte et chaque difficulté. Touche « Relever » pour tenter le piment d’un ami !'],

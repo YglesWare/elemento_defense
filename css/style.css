@@ -1,3 +1,5 @@
+/* Chiffres des titres : ceux de Baloo 2 (dans Bangers, le 1 et le 7 se ressemblent trop : un prix de 70 se lisait 10) */
+@font-face{font-family:'DispNum';src:url('../fonts/Baloo2-latin-800.woff2') format('woff2');font-weight:800;unicode-range:U+0030-0039;size-adjust:108%;font-display:swap}
 /* Layout : console de poche plein écran. HUD en haut, terrain au centre (paysage ou portrait selon l'écran),
    palette de tours en bas. Esthétique planche de manga : encre épaisse, ombres pleines, trames, fond en rayons. */
 :root{
@@ -16,7 +18,7 @@
   --fusion:#ff6ad5;
   --nobg:#ffe0e6;
   --veil:rgba(42,27,61,.62);
-  --display:'Bangers','Impact','Arial Black',sans-serif;
+  --display:'DispNum','Bangers','Impact','Arial Black',sans-serif;
   --body:'Baloo 2','Trebuchet MS',system-ui,sans-serif;
   color-scheme:light;
 }

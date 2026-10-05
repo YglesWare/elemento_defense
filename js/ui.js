@@ -388,7 +388,7 @@ function refreshCosts() {
     b.setAttribute('aria-label', b.dataset.aria + (lk ? T(', à débloquer dans l’Atelier') : ', ' + costOf(type) + T(' or')));
     const Wx = G && !G.demo && G.weather && G.weather !== 'clear' ? WEATHERS[G.weather] : null;
     const bs = b.querySelector('.bio'), a = G && !G.demo ? clamp(affinity(type, MAPS[G.map].biome) + (Wx ? affinity(type, Wx) : 0), -0.6, 0.6) : 0;
-    bs.hidden = !a; if (a) { bs.textContent = (a > 0 ? (COMFORT.cvd ? '▲' : '+') : (COMFORT.cvd ? '▼' : '−')) + Math.round(Math.abs(a) * 100); bs.className = 'bio ' + (a > 0 ? 'good' : 'bad'); bs.title = 'Biome ' + MAPS[G.map].biome.name + (Wx ? ' + ' + Wx.name : '') + T(' : ') + fmtAff(a); }
+    bs.hidden = !a; if (a) { bs.textContent = (a > 0 ? (COMFORT.cvd ? '▲' : '+') : (COMFORT.cvd ? '▼' : '−')) + Math.round(Math.abs(a) * 100) + '%'; bs.className = 'bio ' + (a > 0 ? 'good' : 'bad'); bs.title = 'Biome ' + MAPS[G.map].biome.name + (Wx ? ' + ' + Wx.name : '') + T(' : ') + fmtAff(a); }
   }
 }
 function drawUpIcon(c, id, x, y, s) {
@@ -413,7 +413,7 @@ function drawUpIcon(c, id, x, y, s) {
     case 'cheap':
       c.rotate(-0.35); rr(c, -r * 0.95, -r * 0.6, r * 1.9, r * 1.2, r * 0.25); fs(c, '#ff4f81', lw);
       c.beginPath(); c.arc(-r * 0.62, 0, r * 0.13, 0, TAU); fs(c, '#ffffff', lw * 0.6);
-      c.font = Math.round(r * 1.1) + 'px Bangers, Impact, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#ffffff';
+      c.font = Math.round(r * 1.1) + 'px DispNum, Bangers, Impact, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#ffffff';
       c.lineWidth = lw; c.strokeStyle = INK; c.strokeText('%', r * 0.2, r * 0.05); c.fillText('%', r * 0.2, r * 0.05); break;
     case 'resell':
       c.beginPath(); c.arc(0, 0, r * 0.6, 0, TAU); fs(c, '#ffd23f', lw);
@@ -1110,7 +1110,7 @@ new ResizeObserver(() => resize()).observe(stage);
 
 function boot(data) {
   refreshCosts();
-  if (document.fonts && document.fonts.load) document.fonts.load('24px Bangers').catch(() => {});
+  if (document.fonts && document.fonts.load) document.fonts.load('24px Bangers').catch(() => {}); document.fonts.load('24px DispNum', '0123456789').catch(() => {});
   resize();
   const s = data && data.save;
   const si = saveMapIndex(s);
