@@ -964,3 +964,5 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
 .tbtn.mustpick::after{content:'👇';position:absolute;left:50%;top:-34px;transform:translateX(-50%);font-size:26px;animation:mustFinger 1s ease-in-out infinite;pointer-events:none}
 @keyframes mustPulse{50%{box-shadow:0 0 0 5px var(--pop),0 3px 0 var(--ink);transform:translateY(-4px)}}
 @keyframes mustFinger{50%{transform:translate(-50%,-8px)}}
+/* Lien vers la politique de confidentialité, discret, en bas à gauche de l'accueil */
+.privlink{position:absolute;left:10px;bottom:calc(6px + env(safe-area-inset-bottom,0px));z-index:6;font:700 11px/1 "Baloo 2",system-ui,sans-serif;color:var(--ink);opacity:.55;text-decoration:underline}

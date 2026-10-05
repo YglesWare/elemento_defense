@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Élémento Defense · Demandes RGPD</title>
+<style>
+:root{--ink:#2a1b3d;--paper:#fff;--mist:#f1eafa;--muted:#6d5a85;--sky:#7fd3ff;--sun:#ffd23f;--pop:#ff4f81;--leaf:#5cd86a;--nobg:#ffe0e6;--okbg:#dcf7d6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--sky);color:var(--ink);font:500 15px/1.5 'Trebuchet MS',system-ui,-apple-system,'Segoe UI',sans-serif}
+main{max-width:860px;margin:0 auto;padding:20px 16px 48px;display:flex;flex-direction:column;gap:18px}
+.card{background:var(--paper);border:3px solid var(--ink);border-radius:18px;box-shadow:0 4px 0 var(--ink);padding:16px 18px}
+h1{font:900 clamp(24px,5vw,34px)/1.1 'Arial Black',Impact,sans-serif;margin:0}
+h2{font:800 18px/1.25 'Trebuchet MS',system-ui,sans-serif;margin:0 0 8px;color:var(--pop)}
+p{margin:6px 0} ol,ul{margin:6px 0;padding-left:22px} li{margin:3px 0}
+.muted{color:var(--muted);font-size:13.5px}
+button,.btn{font:800 15px/1 'Trebuchet MS',system-ui,sans-serif;border:2.5px solid var(--ink);border-radius:12px;background:var(--sun);color:var(--ink);padding:9px 14px;box-shadow:0 2px 0 var(--ink);cursor:pointer}
+button.alt{background:var(--paper)} button.danger{background:var(--pop);color:#fff} button:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input{font:600 16px/1.2 'Trebuchet MS',system-ui,sans-serif;border:2.5px solid var(--ink);border-radius:12px;padding:9px 12px;min-width:0;flex:1}
+.who{background:var(--mist);border:2px solid var(--ink);border-radius:14px;padding:12px;margin-top:10px}
+.who b{font-size:17px}
+.grid{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:14px;margin:6px 0 10px}
+.grid span:nth-child(odd){color:var(--muted)}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;word-break:break-all}
+.msg{padding:8px 12px;border-radius:10px;border:2px solid var(--ink);margin-top:8px}
+.msg.ok{background:var(--okbg)} .msg.err{background:var(--nobg)}
+textarea{width:100%;min-height:150px;font:500 14px/1.45 'Trebuchet MS',system-ui,sans-serif;border:2px solid var(--ink);border-radius:10px;padding:8px}
+.confirm{background:var(--nobg);border:2px solid var(--ink);border-radius:12px;padding:10px;margin-top:8px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+<header class="card"><h1>Demandes RGPD</h1>
+<p class="muted">Page réservée à l'administrateur du jeu. Elle ne fait rien sans un compte administrateur (vérifié par la base de données).</p>
+<div class="row" style="margin-top:10px"><span id="me" class="muted">Pas connecté</span><button id="login">Se connecter avec Google</button><button id="logout" class="alt" hidden>Se déconnecter</button></div>
+<div id="notAdmin" class="msg err" hidden></div>
+</header>
+
+<section class="card">
+<h2>Procédure</h2>
+<ol>
+<li><b>Vérifier que la demande vient bien du joueur</b> (ou de son parent) :
+  <ul><li>compte Google : l'e-mail de la demande doit être celui du compte ;</li>
+  <li>compte invité : demander l'<b>identifiant de progression</b> (Profil, sous « Compte en ligne », ex. 7D08-EE30) et le <b>code ami</b> (YGL-…), visibles seulement sur son appareil.</li></ul></li>
+<li><b>Rechercher</b> le joueur ci-dessous (code ami, identifiant de progression, e-mail ou pseudo).</li>
+<li><b>Accès</b> : « Exporter » télécharge toutes ses données (un fichier .json) à joindre à la réponse.<br><b>Effacement</b> : « Supprimer le compte » efface la sauvegarde, le profil, les amis, les invitations et les scores ; le journal des parties et les rapports techniques deviennent anonymes.</li>
+<li><b>Répondre</b> avec le modèle proposé, dans le mois qui suit la demande (délai légal).</li>
+</ol>
+<p class="muted">Chaque export et chaque suppression sont notés dans le registre (table admin_log) : c'est la preuve que la demande a été traitée.</p>
+</section>
+
+<section class="card" id="searchCard">
+<h2>Rechercher un joueur</h2>
+<form class="row" id="searchForm"><input id="q" placeholder="YGL-482-1937, 7D08-EE30, adresse e-mail ou pseudo" autocomplete="off"><button type="submit" id="go">Rechercher</button></form>
+<div id="results"></div>
+</section>
+
+<section class="card" id="replyCard" hidden>
+<h2>Réponse à envoyer</h2>
+<textarea id="reply"></textarea>
+<div class="row" style="margin-top:8px"><button id="copy" class="alt" type="button">Copier le texte</button><span id="copied" class="muted"></span></div>
+</section>
+</main>
+
+<script src="js/vendor/supabase.js"></script>
+<script>
+'use strict';
+const SUPA_URL = 'https://iqxeeauemqedudbqnihb.supabase.co', SUPA_KEY = 'sb_publishable_w1tE_arugsOhYTQkxWSJEw_-NWpcljf';
+// Session à part de celle du jeu (même site) : se connecter ici ne change pas le compte utilisé pour jouer
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: 'pkce', storageKey: 'elemento-admin-auth' } });
+const $ = s => document.querySelector(s);
+const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const fcode = c => c ? 'YGL-' + c.slice(0, 3) + '-' + c.slice(3) : '—';
+const pid = id => id ? String(id).replace(/-/g, '').slice(0, 8).toUpperCase().replace(/(.{4})(.{4})/, '$1-$2') : '—';
+const day = d => d ? new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—';
+let admin = false, found = [];
+
+async function refresh() {
+  const { data: { session } } = await sb.auth.getSession();
+  $('#login').hidden = !!session; $('#logout').hidden = !session;
+  if (!session) { $('#me').textContent = 'Pas connecté'; admin = false; paintGate(); return; }
+  $('#me').textContent = 'Connecté : ' + (session.user.email || session.user.id);
+  const { data, error } = await sb.rpc('admin_whoami');
+  admin = !error && data && data.admin;
+  paintGate(error ? 'La base ne répond pas comme prévu : as-tu lancé supabase/admin.sql ? (' + error.message + ')' : null, session.user);
+}
+function paintGate(err, user) {
+  const box = $('#notAdmin');
+  $('#searchCard').hidden = !admin;
+  if (admin || !user) { box.hidden = !err; if (err) box.textContent = err; return; }
+  box.hidden = false;
+  box.innerHTML = esc(err || 'Ce compte n’est pas administrateur.') + '<br>Pour le déclarer, lance dans le SQL Editor de Supabase :<br><span class="mono">insert into public.admins (user_id) values (\'' + esc(user.id) + '\') on conflict do nothing;</span><br>puis recharge la page.';
+}
+$('#login').addEventListener('click', () => sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } }));
+$('#logout').addEventListener('click', async () => { await sb.auth.signOut(); $('#results').innerHTML = ''; refresh(); });
+
+$('#searchForm').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const q = $('#q').value.trim(); if (q.length < 2) return;
+  $('#results').innerHTML = '<p class="muted">Recherche…</p>';
+  const { data, error } = await sb.rpc('admin_find', { p_q: q });
+  if (error) { $('#results').innerHTML = '<div class="msg err">' + esc(error.message) + '</div>'; return; }
+  found = data || [];
+  $('#results').innerHTML = found.length ? found.map((r, i) => '<div class="who" data-i="' + i + '"><b>' + esc(r.pseudo || '(sans profil)') + '</b>'
+    + '<div class="grid"><span>Code ami</span><span>' + esc(fcode(r.friend_code)) + '</span><span>Identifiant de progression</span><span>' + esc(pid(r.progress_id)) + '</span>'
+    + '<span>Compte</span><span>' + (r.anonymous ? 'invité (anonyme)' : esc((r.providers || []).join(', '))) + (r.email ? ' · ' + esc(r.email) : '') + '</span>'
+    + '<span>Créé le</span><span>' + esc(day(r.created_at)) + '</span><span>Vu le</span><span>' + esc(day(r.last_seen)) + '</span><span>Parties</span><span>' + r.games + '</span>'
+    + '<span>Identifiant de compte</span><span class="mono">' + esc(r.user_id) + '</span></div>'
+    + '<div class="row"><button type="button" data-a="export">📦 Exporter ses données</button><button type="button" class="danger" data-a="ask">🗑️ Supprimer le compte</button></div>'
+    + '<div class="confirm" hidden><p><b>Suppression définitive.</b> Pour confirmer, tape <b>' + esc(r.friend_code ? fcode(r.friend_code) : 'SUPPRIMER') + '</b> :</p>'
+    + '<div class="row"><input data-c placeholder="' + esc(r.friend_code ? fcode(r.friend_code) : 'SUPPRIMER') + '"><button type="button" class="danger" data-a="delete">Supprimer</button><button type="button" class="alt" data-a="cancel">Annuler</button></div></div>'
+    + '<div class="out"></div></div>').join('') : '<p class="muted">Aucun joueur trouvé.</p>';
+});
+
+$('#results').addEventListener('click', async ev => {
+  const b = ev.target.closest('button[data-a]'); if (!b) return;
+  const box = b.closest('.who'), r = found[+box.dataset.i], out = box.querySelector('.out'), a = b.dataset.a;
+  if (a === 'ask') { box.querySelector('.confirm').hidden = false; return; }
+  if (a === 'cancel') { box.querySelector('.confirm').hidden = true; return; }
+  if (a === 'export') {
+    b.disabled = true;
+    const { data, error } = await sb.rpc('admin_export', { p_user: r.user_id });
+    b.disabled = false;
+    if (error) { out.innerHTML = '<div class="msg err">' + esc(error.message) + '</div>'; return; }
+    const name = 'elemento-donnees-' + (r.pseudo || 'joueur').replace(/[^a-z0-9]+/gi, '-').toLowerCase() + '-' + new Date().toISOString().slice(0, 10) + '.json';
+    const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+    const link = document.createElement('a'); link.href = url; link.download = name; document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000);
+    out.innerHTML = '<div class="msg ok">Fichier téléchargé : <b>' + esc(name) + '</b> (' + data.sauvegarde.length + ' éléments de sauvegarde, ' + data.amis.length + ' amis, ' + data.journal_des_parties.length + ' parties).</div>';
+    reply('export', r, name);
+    return;
+  }
+  if (a === 'delete') {
+    const want = r.friend_code ? fcode(r.friend_code) : 'SUPPRIMER', got = box.querySelector('[data-c]').value.trim().toUpperCase();
+    if (got !== want.toUpperCase()) { out.innerHTML = '<div class="msg err">Le texte de confirmation ne correspond pas.</div>'; return; }
+    b.disabled = true;
+    const { data, error } = await sb.rpc('admin_delete', { p_user: r.user_id });
+    if (error) { b.disabled = false; out.innerHTML = '<div class="msg err">' + esc(error.message) + '</div>'; return; }
+    box.querySelector('.confirm').hidden = true; box.querySelectorAll('button').forEach(x => x.disabled = true);
+    out.innerHTML = '<div class="msg ok">Compte supprimé : ' + data.sauvegarde + ' éléments de sauvegarde, ' + data.amis + ' amis, ' + data.scores + ' scores effacés ; '
+      + data.parties_anonymisees + ' parties et ' + data.rapports_anonymises + ' rapports techniques rendus anonymes.</div>';
+    reply('delete', r);
+  }
+});
+
+function reply(kind, r, file) {
+  const who = r.pseudo ? '« ' + r.pseudo + ' »' : 'ton compte';
+  const txt = kind === 'export'
+    ? 'Bonjour,\n\nComme demandé, voici toutes les données que le jeu Élémento Defense garde pour le compte ' + who + ' : elles sont dans le fichier joint (' + file + ').\n\nIl contient le compte, le profil (pseudo et gardien), la sauvegarde de la progression, la liste d’amis (par code ami), les invitations, les scores, le journal des parties et les rapports techniques.\n\nTu peux aussi demander leur correction ou leur suppression en répondant à ce message.\n\nBonne journée,\nYgles — Élémento Defense\nhttps://yglesware.github.io/elemento_defense/privacy.html\n\n---\n\nHello,\n\nAs requested, attached (' + file + ') is all the data Élémento Defense keeps for the account ' + who + '.\n\nYou can also ask us to correct or delete it by replying to this message.\n\nBest regards,\nYgles — Élémento Defense'
+    : 'Bonjour,\n\nComme demandé, le compte ' + who + ' a été supprimé le ' + day(new Date()) + ' : la sauvegarde en ligne, le profil (pseudo et gardien), la liste d’amis, les invitations et les scores ont été effacés.\n\nLe journal des parties et les rapports techniques, qui servent à améliorer le jeu, sont conservés mais ne sont plus reliés à aucun compte : ils sont désormais anonymes.\n\nLa progression reste enregistrée sur l’appareil tant que le jeu n’est pas désinstallé ; au prochain lancement, un nouveau compte invité vide sera créé.\n\nBonne journée,\nYgles — Élémento Defense\nhttps://yglesware.github.io/elemento_defense/privacy.html\n\n---\n\nHello,\n\nAs requested, the account ' + who + ' was deleted on ' + new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) + ': the online backup, profile, friends list, invitations and scores were erased. The game log and technical reports are kept to improve the game, but are no longer linked to any account: they are now anonymous.\n\nBest regards,\nYgles — Élémento Defense';
+  $('#reply').value = txt; $('#replyCard').hidden = false; $('#copied').textContent = '';
+}
+$('#copy').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText($('#reply').value); $('#copied').textContent = 'Copié !'; }
+  catch (e) { $('#reply').select(); $('#copied').textContent = 'Sélectionné : fais Ctrl+C / Cmd+C.'; }
+});
+sb.auth.onAuthStateChange(() => refresh());
+refresh();
+</script>
+</body>
+</html>
