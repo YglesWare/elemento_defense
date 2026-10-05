@@ -332,8 +332,8 @@ if (NATIVE) {
   });
   // Mises à jour : l'APK installé à la main regarde la dernière release GitHub ; si elle est plus récente,
   // un bouton sur l'écran titre télécharge le nouvel APK (à installer par-dessus, même signature)
-  checkUpdate();
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - (checkUpdate.at || 0) > 3600e3) checkUpdate(); });
+  if (!window.STORE_BUILD) checkUpdate();
+  if (!window.STORE_BUILD) document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - (checkUpdate.at || 0) > 3600e3) checkUpdate(); });
 }
 async function checkUpdate(current = BUILD) {
   checkUpdate.at = Date.now();

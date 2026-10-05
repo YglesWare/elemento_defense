@@ -6,7 +6,7 @@
     "www": "node scripts/build-www.mjs",
     "sync": "npm run www && npx cap sync android",
     "apk": "npm run sync && cd android && ./gradlew assembleRelease",
-    "aab": "npm run sync && cd android && ./gradlew bundleRelease"
+    "aab": "node scripts/build-www.mjs --store && npx cap sync android && cd android && ./gradlew bundleRelease"
   },
   "dependencies": {
     "@capacitor/android": "8.5.2",

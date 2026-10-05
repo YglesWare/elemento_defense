@@ -486,6 +486,7 @@ async function playChapter(i) {
   meta.shards = ch.shards || 0;
   storyRun = { ch: i, towers: ch.towers, waves: ch.waves, events: ch.events || {}, weather: ch.weather || {}, tries: 0 };
   await storySay(ch.intro);
+  if (!storyRun) return; // le joueur a quitté l'histoire pendant l'intro
   if (ch.atelier) {
     openShop(); const tab = document.querySelector('[data-tab=mast]'); if (tab) tab.click();
     hint(T('Dépense tes éclats, puis touche « Retour » pour continuer l’aventure.'), 4000);

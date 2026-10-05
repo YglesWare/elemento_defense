@@ -17,7 +17,15 @@ if (html === before || html.includes('fonts.googleapis')) throw new Error('Lien 
 // au lieu de les dessiner par-dessus sur les téléphones à WebView récente
 html = html.replace(/,\s*viewport-fit=cover/, '');
 if (html.includes('viewport-fit=cover')) throw new Error('viewport-fit=cover toujours présent');
+// Version Google Play (npm run aab) : pas de mise à jour par les releases GitHub (le Play Store s'en charge, et il interdit
+// qu'une appli se mette à jour toute seule)
+const store = process.argv.includes('--store');
+if (store) {
+  const tag = '<script>window.STORE_BUILD = true;</script>';
+  html = html.replace(/<script>store\.boot\(/, tag + '\n<script>store.boot(');
+  if (!html.includes(tag)) throw new Error('Impossible de marquer la version store');
+}
 writeFileSync(join(www, 'index.html'), html);
 
 const build = readFileSync(join(root, 'js/data.js'), 'utf8').match(/const BUILD = (\d+)/)[1];
-console.log('www prêt, build ' + build);
+console.log('www prêt, build ' + build + (store ? ' (version Google Play)' : ''));
