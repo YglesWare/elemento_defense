@@ -90,6 +90,7 @@ function questRender() {
     + (st.chest ? '<span class="qr">✓</span>' : all ? '<button class="btn green qclaim" type="button" data-i="chest">' + T('Ouvrir') + '</button>' : '<span class="qr">' + n + '/3</span>');
   const now = new Date(), next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1), mn = Math.max(1, Math.round((next - now) / 60000));
   $('#qLeft').textContent = T('Nouveaux défis dans ') + (mn >= 60 ? Math.floor(mn / 60) + ' h ' + String(mn % 60).padStart(2, '0') : mn + ' min');
+  if (typeof adQuestPaint === 'function') adQuestPaint();
   document.querySelectorAll('#questPop .qclaim').forEach(b => b.addEventListener('click', () => questClaim(b.dataset.i)));
 }
 function questClaim(i) {

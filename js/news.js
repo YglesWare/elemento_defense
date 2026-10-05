@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  78: [
+    ['👪', 'Espace parents : un nouveau réglage « Vidéos à récompense ». Sans code parent, de courtes pubs facultatives pourront bientôt offrir de l’or ou des éclats ; avec un code parent, elles sont coupées tant que le parent ne les autorise pas.'],
+  ],
   77: [
     ['🗑️', 'Profil : un bouton « Supprimer mon compte » (un parent confirme), et l’encart de connexion se place sous le pseudo tant qu’on n’est pas connecté.'],
   ],

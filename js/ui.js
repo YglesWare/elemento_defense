@@ -326,7 +326,7 @@ function cashOut() {
   showOver(false, best, null, bank, true, lost);
 }
 $('#pCash').addEventListener('click', () => { if (!G || G.over) return; if (!cashArm) { cashArm = true; refreshCash(); return; } cashArm = false; cashOut(); });
-function resume() { if (!G) return; G.paused = false; show('game'); keepAwake(); }
+function resume() { if (!G || G.koAsk) return; G.paused = false; show('game'); keepAwake(); }
 const soundLabel = () => T('Son : ') + (opts.sound && opts.music !== false ? T('tout') : opts.sound ? T('effets') : T('coupé'));
 function refreshOptBtns() {
   $('#pSound').textContent = soundLabel();
@@ -375,6 +375,7 @@ function showOver(win, best, award, bank, quit, lostShards) {
   if (a.mult > 1) bits.push('Terrain ×' + fr(a.mult));
   $('#oShop').classList.toggle('ping', canBuyAnything());
   if (typeof overExtra === 'function') overExtra();
+  if (typeof adOverPaint === 'function') adOverPaint(!!quit);
   $('#oGainDetail').textContent = (quit ? T('Abandon : ') + (lostShards ? (IS_EN ? lostShards + ' shard' + (lostShards > 1 ? 's' : '') + ' earned during the game ' + (lostShards > 1 ? 'are' : 'is') + ' taken back' : lostShards + ' éclat' + (lostShards > 1 ? 's' : '') + ' gagné' + (lostShards > 1 ? 's' : '') + ' pendant la partie ' + (lostShards > 1 ? 'sont repris' : 'est repris')) : T('aucun éclat repris')) : bits.join(' · ')) + T('. Tu as maintenant ') + meta.shards + T(' éclats.');
   show('over');
 }
@@ -604,6 +605,7 @@ function drawMapMini2(c, mi, w, h, diff) {
 function renderMaps(boughtId) {
   $('#mBank').textContent = meta.bank || 0;
   $('#mTest').hidden = !TEST_ALL;
+  if (typeof adMapsPaint === 'function') adMapsPaint();
   const box = $('#tMaps'), best = store.get(BEST2) || {}; box.innerHTML = '';
   // Onglets : « Cartes » (carte aléatoire + cartes fixes) et « Événements » (en cours d'abord, puis à venir)
   const tab = store.get('elemento.tab.maps') === 'evt' ? 'evt' : 'std', live = MAPS.some(m => m.season && inSeason(m));

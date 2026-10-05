@@ -80,21 +80,23 @@ function logGame(result, award) {
   while (log.length > LOG_MAX) log.shift();
   store.set(LOG_KEY, log);
 }
-async function cloudPushLog() {
-  const out = store.get(LOG_KEY) || [];
+// Envoi d'un journal gardé sur l'appareil (parties, pubs) vers sa table
+async function cloudPushQueue(key, table) {
+  const out = store.get(key) || [];
   if (!out.length) return;
-  // Même identifiant = même partie : déjà envoyée (réponse perdue en route), la base la refuse comme doublon.
+  // Même identifiant = même ligne : déjà envoyée (réponse perdue en route), la base la refuse comme doublon.
   // Ajout simple (le joueur n'a pas le droit de relire le journal, donc pas d'« upsert ») ; un doublon dans le lot
   // fait échouer tout le lot : on renvoie alors une par une.
-  const sentIds = [], ins = rows => CLOUD.sb.from('game_log').insert(rows);
+  const sentIds = [], ins = rows => CLOUD.sb.from(table).insert(rows);
   const { error } = await ins(out);
   if (!error) sentIds.push(...out.map(x => x.id));
   else if (error.code === '23505') for (const x of out) { const r = await ins([x]); if (!r.error || r.error.code === '23505') sentIds.push(x.id); }
   if (!sentIds.length) return; // table absente, réseau… : on réessaiera à la prochaine synchro, sans gêner la sauvegarde
-  const ids = new Set(sentIds), cur = store.get(LOG_KEY) || [];
+  const ids = new Set(sentIds), cur = store.get(key) || [];
   // Envoyées : elles n'ont plus rien à faire sur l'appareil
-  store.set(LOG_KEY, cur.filter(x => !ids.has(x.id)));
+  store.set(key, cur.filter(x => !ids.has(x.id)));
 }
+const cloudPushLog = () => cloudPushQueue(LOG_KEY, 'game_log');
 
 // Nouveau compte sur cet appareil (ou première synchro) : même progression → fusion ; une seule des deux a été jouée →
 // on la garde ; deux progressions différentes → le joueur choisit
@@ -133,6 +135,19 @@ function cloudRehydrate() {
   if (typeof refreshTrophyBtn === 'function') refreshTrophyBtn();
 }
 
+// Fonctions en bêta (page admin.html, table feature_flags) : coupées, réservées aux administrateurs, ou ouvertes à tous.
+// Le dernier état reçu reste sur l'appareil ; sans réponse du serveur (jamais connecté), tout est coupé.
+// Réglages du jeu (table game_settings) : des nombres changés depuis admin.html, sinon la valeur par défaut du code.
+const FLAGS_KEY = 'elemento.flags', SETTINGS_KEY = 'elemento.settings';
+const flagOn = k => !!(store.get(FLAGS_KEY) || {})[k];
+const setting = (k, def) => { const v = (store.get(SETTINGS_KEY) || {})[k]; return typeof v === 'number' ? v : def; };
+async function flagsLoad() {
+  const [f, s] = await Promise.all([CLOUD.sb.rpc('flags_get'), CLOUD.sb.rpc('settings_get')]);
+  if (!f.error) store.set(FLAGS_KEY, f.data || {});
+  if (!s.error) store.set(SETTINGS_KEY, s.data || {});
+  if (typeof adPaintAll === 'function') adPaintAll();
+}
+
 // Synchronisation (hors partie et hors multijoueur, pour ne pas changer la progression en plein jeu)
 function cloudSync(force) {
   if (!CLOUD.user || duelOn || (G && !G.over && curScreen === 'game')) return Promise.resolve();
@@ -149,6 +164,8 @@ function cloudSync(force) {
       if (typeof cloudPushErrors === 'function') await cloudPushErrors().catch(() => {});
       if (typeof cloudPushDaily === 'function') await cloudPushDaily().catch(() => {});
       if (typeof cloudPushMaps === 'function') await cloudPushMaps().catch(() => {});
+      if (typeof ADLOG_KEY !== 'undefined') await cloudPushQueue(ADLOG_KEY, 'ad_log').catch(() => {});
+      await flagsLoad().catch(() => {});
       CLOUD.lastSync = Date.now(); CLOUD.state = 'ok'; CLOUD.err = '';
     } catch (e) { CLOUD.state = 'err'; CLOUD.err = (e && e.message) || String(e); }
     finally { CLOUD.syncing = null; cloudPaint(); }

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Élémento Defense · Demandes RGPD</title>
+<title>Élémento Defense · Administration</title>
 <style>
 :root{--ink:#2a1b3d;--paper:#fff;--mist:#f1eafa;--muted:#6d5a85;--sky:#7fd3ff;--sun:#ffd23f;--pop:#ff4f81;--leaf:#5cd86a;--nobg:#ffe0e6;--okbg:#dcf7d6}
 *{box-sizing:border-box}
@@ -29,11 +29,25 @@ input{font:600 16px/1.2 'Trebuchet MS',system-ui,sans-serif;border:2.5px solid v
 textarea{width:100%;min-height:150px;font:500 14px/1.45 'Trebuchet MS',system-ui,sans-serif;border:2px solid var(--ink);border-radius:10px;padding:8px}
 .confirm{background:var(--nobg);border:2px solid var(--ink);border-radius:12px;padding:10px;margin-top:8px}
 [hidden]{display:none!important}
+.flag{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;border-bottom:1px solid var(--mist);padding:8px 0}
+.flag>div:first-child{min-width:0;flex:1 1 260px}
+.wrap{overflow-x:auto;margin-top:10px}
+.tbl{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+.tbl th,.tbl td{padding:6px 8px;border-bottom:1px solid var(--mist);text-align:right;white-space:nowrap}
+.tbl th:first-child,.tbl td:first-child{text-align:left;white-space:normal;min-width:96px}
+.tbl th{color:var(--muted);font-weight:700}
+select{font:600 14px/1.2 'Trebuchet MS',system-ui,sans-serif;border:2px solid var(--ink);border-radius:10px;padding:5px 8px}
+input[type=checkbox]{min-width:0;flex:none;width:18px;height:18px;vertical-align:middle}
+.num{flex:none;width:84px;text-align:right}
+.seg{display:flex;border:2.5px solid var(--ink);border-radius:12px;overflow:hidden;box-shadow:0 2px 0 var(--ink)}
+.seg button{border:0;border-radius:0;box-shadow:none;background:var(--paper);padding:8px 11px;font-size:14px}
+.seg button+button{border-left:2px solid var(--ink)}
+.seg button.on{background:var(--sun)} .seg button.on[data-m="off"]{background:var(--mist)} .seg button.on[data-m="all"]{background:var(--leaf)}
 </style>
 </head>
 <body>
 <main>
-<header class="card"><h1>Demandes RGPD</h1>
+<header class="card"><h1>Administration</h1>
 <p class="muted">Page réservée à l'administrateur du jeu. Elle ne fait rien sans un compte administrateur (vérifié par la base de données).</p>
 <div class="row" style="margin-top:10px"><span id="me" class="muted">Pas connecté</span><button id="login">Se connecter avec Google</button><button id="logout" class="alt" hidden>Se déconnecter</button></div>
 <div id="notAdmin" class="msg err" hidden></div>
@@ -56,6 +70,29 @@ textarea{width:100%;min-height:150px;font:500 14px/1.45 'Trebuchet MS',system-ui
 <h2>Rechercher un joueur</h2>
 <form class="row" id="searchForm"><input id="q" placeholder="YGL-482-1937, 7D08-EE30, adresse e-mail ou pseudo" autocomplete="off"><button type="submit" id="go">Rechercher</button></form>
 <div id="results"></div>
+</section>
+
+<section class="card" id="flagsCard" hidden>
+<h2>Fonctions en bêta</h2>
+<p class="muted">Coupée : personne ne la voit. Admins : seulement les administrateurs, dans le jeu connecté avec le même compte Google. Tout le monde : tous les joueurs. Le jeu relit ces réglages à chaque synchronisation : au lancement et à chaque retour à l'accueil.</p>
+<div id="flags"></div>
+<div id="flagsMsg"></div>
+</section>
+
+<section class="card" id="setCard" hidden>
+<h2>Réglages du jeu</h2>
+<p class="muted">Changés sans nouvelle version : le jeu les relit au lancement et à chaque retour à l'accueil.</p>
+<div id="settings"></div>
+<div id="setMsg"></div>
+</section>
+
+<section class="card" id="adsCard" hidden>
+<h2>Pubs à récompense</h2>
+<div class="row"><label class="muted">Période <select id="adDays"><option value="7">7 jours</option><option value="30" selected>30 jours</option><option value="90">90 jours</option></select></label>
+<label class="muted"><input type="checkbox" id="adReal"> vraies pubs seulement (sans les pubs d'essai)</label></div>
+<div class="wrap"><table class="tbl" id="adStats"></table></div>
+<div class="wrap"><table class="tbl" id="adDaysT"></table></div>
+<p class="muted">Affichées : joueurs qui ont vu le bouton (une fois par jour et par emplacement). Demandées : boutons touchés. Vues : pubs regardées jusqu'au bout, récompense donnée. Le revenu se lit dans AdMob.</p>
 </section>
 
 <section class="card" id="adminsCard" hidden>
@@ -97,10 +134,10 @@ async function refresh() {
 }
 function paintGate(err, user) {
   const box = $('#notAdmin');
-  for (const id of ['#searchCard', '#procCard', '#adminsCard']) $(id).hidden = !admin;
+  for (const id of ['#searchCard', '#procCard', '#flagsCard', '#setCard', '#adsCard', '#adminsCard']) $(id).hidden = !admin;
   if (!admin) { $('#replyCard').hidden = true; $('#results').innerHTML = ''; }
   box.hidden = admin || !user; box.textContent = 'Accès réservé aux administrateurs.';
-  if (admin) loadAdmins();
+  if (admin) { loadAdmins(); loadFlags(); loadSettings(); loadAdStats(); }
 }
 // Administrateurs : liste, ajout par adresse e-mail, retrait (pas soi-même, pas le dernier)
 async function loadAdmins() {
@@ -124,6 +161,53 @@ $('#addForm').addEventListener('submit', async ev => {
   if (!error) $('#addEmail').value = '';
   loadAdmins();
 });
+// Fonctions en bêta : coupée, admins seulement, ou tout le monde (table feature_flags)
+const MODES = [['off', 'Coupée'], ['admins', 'Admins'], ['all', 'Tout le monde']];
+async function loadFlags() {
+  const { data, error } = await sb.rpc('admin_flags');
+  if (error) { $('#flags').innerHTML = '<div class="msg err">' + esc(error.message) + '</div>'; return; }
+  $('#flags').innerHTML = (data || []).map(f => '<div class="flag"><div><b>' + esc(f.label) + '</b><br><span class="muted"><span class="mono">' + esc(f.key) + '</span> · modifiée le ' + esc(day(f.updated_at)) + (f.by_email ? ' par ' + esc(f.by_email) : '') + '</span></div>'
+    + '<div class="seg" role="group" aria-label="' + esc(f.label) + '">' + MODES.map(([m, t]) => '<button type="button" data-flag="' + esc(f.key) + '" data-m="' + m + '" class="' + (f.mode === m ? 'on' : '') + '" aria-pressed="' + (f.mode === m) + '">' + t + '</button>').join('') + '</div></div>').join('')
+    || '<p class="muted">Aucune fonction en bêta.</p>';
+}
+$('#flags').addEventListener('click', async ev => {
+  const b = ev.target.closest('[data-flag]'); if (!b || b.classList.contains('on')) return;
+  const { error } = await sb.rpc('admin_flag_set', { p_key: b.dataset.flag, p_mode: b.dataset.m });
+  $('#flagsMsg').innerHTML = error ? '<div class="msg err">' + esc(error.message) + '</div>' : '<div class="msg ok">' + esc(b.dataset.flag) + ' : ' + esc(b.textContent) + '.</div>';
+  loadFlags();
+});
+// Réglages du jeu : des nombres bornés (table game_settings)
+async function loadSettings() {
+  const { data, error } = await sb.rpc('admin_settings');
+  if (error) { $('#settings').innerHTML = '<div class="msg err">' + esc(error.message) + '</div>'; return; }
+  $('#settings').innerHTML = (data || []).map(g => '<form class="flag" data-set="' + esc(g.key) + '"><div><b>' + esc(g.label) + '</b><br><span class="muted"><span class="mono">' + esc(g.key) + '</span> · de ' + g.min_v + ' à ' + g.max_v + ' · modifié le ' + esc(day(g.updated_at)) + (g.by_email ? ' par ' + esc(g.by_email) : '') + '</span></div>'
+    + '<div class="row"><input type="number" inputmode="numeric" class="num" min="' + g.min_v + '" max="' + g.max_v + '" value="' + g.value + '" required><button type="submit">Enregistrer</button></div></form>').join('')
+    || '<p class="muted">Aucun réglage.</p>';
+}
+$('#settings').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const f = ev.target.closest('[data-set]'), v = Math.round(+f.querySelector('input').value);
+  const { error } = await sb.rpc('admin_setting_set', { p_key: f.dataset.set, p_value: v });
+  $('#setMsg').innerHTML = error ? '<div class="msg err">' + esc(error.message) + '</div>' : '<div class="msg ok">' + esc(f.dataset.set) + ' = ' + v + '.</div>';
+  loadSettings();
+});
+
+// Pubs à récompense : par emplacement (supabase/ad_log.sql)
+const AD_KIND = { shards: 'A · Fin de partie', map: 'B · Cartes', chest: 'C · Défis du jour', revive: 'D · K.O.' };
+const AD_UNIT = { shards: 'éclats', gold: 'or', lives: 'vies' };
+const pc = (a, b) => b ? Math.round(a / b * 100) + ' %' : '—';
+async function loadAdStats() {
+  const args = { p_days: +$('#adDays').value, p_real: $('#adReal').checked };
+  const [st, dd] = await Promise.all([sb.rpc('admin_ad_stats', args), sb.rpc('admin_ad_days', args)]);
+  if (st.error) { $('#adStats').innerHTML = '<tr><td><div class="msg err">' + esc(st.error.message) + '</div></td></tr>'; $('#adDaysT').innerHTML = ''; return; }
+  const rows = (st.data || []).sort((a, b) => String(AD_KIND[a.kind] || a.kind).localeCompare(AD_KIND[b.kind] || b.kind));
+  $('#adStats').innerHTML = '<tr><th>Emplacement</th><th>Affichées</th><th>Demandées</th><th>Vues</th><th>Fermées avant</th><th>Refusées</th><th>Sans pub</th><th>Joueurs</th><th>Gain donné</th></tr>'
+    + (rows.map(r => '<tr><td>' + esc(AD_KIND[r.kind] || r.kind) + '</td><td>' + r.seen + '</td><td>' + r.asked + ' <span class="muted">(' + pc(r.asked, r.seen) + ')</span></td><td><b>' + r.done + '</b> <span class="muted">(' + pc(r.done, r.asked) + ')</span></td><td>' + r.skipped + '</td><td>' + r.refused + '</td><td>' + r.errors + '</td><td>' + r.players + '</td><td>' + r.gain + ' ' + esc(AD_UNIT[r.unit] || r.unit || '') + '</td></tr>').join('')
+      || '<tr><td colspan="9" class="muted">Aucune pub sur cette période.</td></tr>');
+  $('#adDaysT').innerHTML = (dd.data || []).length ? '<tr><th>Jour</th><th>Pubs vues</th><th>Joueurs</th><th>Par joueur</th></tr>' + dd.data.map(d => '<tr><td>' + esc(day(d.day)) + '</td><td>' + d.done + '</td><td>' + d.players + '</td><td>' + (d.done / Math.max(1, d.players)).toFixed(1).replace('.', ',') + '</td></tr>').join('') : '';
+}
+$('#adDays').addEventListener('change', loadAdStats);
+$('#adReal').addEventListener('change', loadAdStats);
 $('#login').addEventListener('click', () => sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } }));
 $('#logout').addEventListener('click', async () => { await sb.auth.signOut(); $('#results').innerHTML = ''; refresh(); });
 

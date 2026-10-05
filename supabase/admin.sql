@@ -1,6 +1,6 @@
 -- Élémento Defense : traitement des demandes RGPD (à coller dans SQL Editor → New query → Run ; se relance sans risque)
--- À lancer après tous les autres scripts. Réservé aux administrateurs (table admins) : retrouver un joueur,
--- exporter toutes ses données, supprimer son compte. Utilisé par la page admin.html du site.
+-- À lancer après tous les autres scripts (sauf ad_log.sql, qui vient juste après). Réservé aux administrateurs (table admins) : retrouver un joueur,
+-- exporter toutes ses données, supprimer son compte, ouvrir les fonctions en bêta, changer les réglages du jeu. Utilisé par la page admin.html du site.
 --
 -- Pour te déclarer administrateur, une fois connecté au moins une fois avec Google sur admin.html :
 --   insert into public.admins (user_id) select id from auth.users where email = 'yglesware@gmail.com' on conflict do nothing;
@@ -22,7 +22,7 @@ create table if not exists public.admin_log (
 );
 alter table public.admin_log enable row level security;
 alter table public.admin_log drop constraint if exists admin_log_action_check;
-alter table public.admin_log add constraint admin_log_action_check check (action in ('export', 'delete', 'admin_add', 'admin_remove', 'self_delete'));
+alter table public.admin_log add constraint admin_log_action_check check (action in ('export', 'delete', 'admin_add', 'admin_remove', 'self_delete', 'flag_set', 'setting_set'));
 
 create or replace function public._is_admin() returns boolean language sql stable security definer set search_path = public as $$
   select exists (select 1 from admins where user_id = auth.uid())
@@ -84,6 +84,7 @@ begin
     'scores_carte_du_jour', (select coalesce(jsonb_agg(to_jsonb(s) - 'user_id'), '[]') from daily_scores s where s.user_id = p_user),
     'scores_cartes', (select coalesce(jsonb_agg(to_jsonb(s) - 'user_id'), '[]') from map_scores s where s.user_id = p_user),
     'journal_des_parties', (select coalesce(jsonb_agg(to_jsonb(g) - 'user_id' order by g.at), '[]') from game_log g where g.user_id = p_user),
+    'journal_des_pubs', (select coalesce(jsonb_agg(to_jsonb(a) - 'user_id' order by a.at), '[]') from ad_log a where a.user_id = p_user),
     'rapports_techniques', (select coalesce(jsonb_agg(to_jsonb(e) - 'user_id'), '[]') from client_errors e where e.user_id = p_user)
   ) into r;
   insert into admin_log (admin, action, target) values (auth.uid(), 'export', p_user);
@@ -91,7 +92,7 @@ begin
 end $$;
 
 -- Suppression du compte (droit à l'effacement) : la sauvegarde, le profil, les amis, les invitations et les scores
--- disparaissent avec le compte ; le journal des parties et les rapports techniques restent, mais anonymes (plus de compte)
+-- disparaissent avec le compte ; les journaux (parties, pubs) et les rapports techniques restent, mais anonymes (plus de compte)
 create or replace function public.admin_delete(p_user uuid) returns jsonb
 language plpgsql security definer set search_path = public as $$
 declare r jsonb;
@@ -155,8 +156,88 @@ begin
   return r;
 end $$;
 
+-- Fonctions en bêta : chacune est coupée (off), réservée aux administrateurs (admins) ou ouverte à tout le monde (all).
+-- Le jeu les lit avec flags_get (js/cloud.js) ; une fonction absente ou inconnue est coupée.
+-- Pour en ajouter une : une ligne dans l'insert ci-dessous, puis la vérifier dans le jeu avec flagOn('clé').
+create table if not exists public.feature_flags (
+  key text primary key check (key ~ '^[a-z][a-z0-9_]{1,30}$'),
+  label text not null,
+  mode text not null default 'off' check (mode in ('off', 'admins', 'all')),
+  updated_at timestamptz not null default now(),
+  updated_by uuid
+);
+alter table public.feature_flags enable row level security;  -- aucune règle : seulement les fonctions
+insert into public.feature_flags (key, label, mode) values
+  ('ads', 'Vidéos à récompense (boutons de pub : fin de partie, cartes, défis du jour, K.O.)', 'admins')
+on conflict (key) do update set label = excluded.label;
+
+-- Pour le joueur connecté : { "ads": true, … }
+create or replace function public.flags_get() returns jsonb language sql stable security definer set search_path = public as $$
+  select coalesce(jsonb_object_agg(key, mode = 'all' or (mode = 'admins' and _is_admin())), '{}'::jsonb) from feature_flags
+$$;
+create or replace function public.admin_flags() returns table (key text, label text, mode text, updated_at timestamptz, by_email text)
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if not _is_admin() then raise exception 'réservé aux administrateurs'; end if;
+  return query select f.key, f.label, f.mode, f.updated_at, u.email::text from feature_flags f left join auth.users u on u.id = f.updated_by order by f.key;
+end $$;
+create or replace function public.admin_flag_set(p_key text, p_mode text) returns text
+language plpgsql security definer set search_path = public as $$
+begin
+  if not _is_admin() then raise exception 'réservé aux administrateurs'; end if;
+  if p_mode not in ('off', 'admins', 'all') then raise exception 'mode inconnu'; end if;
+  update feature_flags set mode = p_mode, updated_at = now(), updated_by = auth.uid() where key = p_key;
+  if not found then raise exception 'fonction inconnue'; end if;
+  insert into admin_log (admin, action, note) values (auth.uid(), 'flag_set', p_key || ' = ' || p_mode);
+  return 'ok';
+end $$;
+revoke all on function public.flags_get() from public;
+grant execute on function public.flags_get() to anon, authenticated;
+
+-- Réglages du jeu : des nombres que la page admin.html change sans nouvelle version (ex. le maximum de pubs par jour).
+-- Le jeu les lit avec settings_get (js/cloud.js) et garde sa valeur par défaut tant qu'il n'a rien reçu.
+-- Pour en ajouter un : une ligne dans l'insert ci-dessous, puis la lire dans le jeu avec setting('clé', défaut).
+create table if not exists public.game_settings (
+  key text primary key check (key ~ '^[a-z][a-z0-9_]{1,30}$'),
+  label text not null,
+  value int not null,
+  min_v int not null default 0,
+  max_v int not null default 100,
+  updated_at timestamptz not null default now(),
+  updated_by uuid
+);
+alter table public.game_settings enable row level security;  -- aucune règle : seulement les fonctions
+insert into public.game_settings (key, label, value, min_v, max_v) values
+  ('ads_max', 'Pubs à récompense : maximum par jour et par joueur (tous emplacements)', 10, 0, 30),
+  ('ads_map_max', 'Pubs à récompense : maximum par jour sur l''écran des cartes (B)', 3, 0, 10)
+on conflict (key) do update set label = excluded.label, min_v = excluded.min_v, max_v = excluded.max_v;
+
+create or replace function public.settings_get() returns jsonb language sql stable security definer set search_path = public as $$
+  select coalesce(jsonb_object_agg(key, value), '{}'::jsonb) from game_settings
+$$;
+create or replace function public.admin_settings() returns table (key text, label text, value int, min_v int, max_v int, updated_at timestamptz, by_email text)
+language plpgsql stable security definer set search_path = public as $$
+begin
+  if not _is_admin() then raise exception 'réservé aux administrateurs'; end if;
+  return query select g.key, g.label, g.value, g.min_v, g.max_v, g.updated_at, u.email::text from game_settings g left join auth.users u on u.id = g.updated_by order by g.key;
+end $$;
+create or replace function public.admin_setting_set(p_key text, p_value int) returns text
+language plpgsql security definer set search_path = public as $$
+declare r game_settings;
+begin
+  if not _is_admin() then raise exception 'réservé aux administrateurs'; end if;
+  select * into r from game_settings where game_settings.key = p_key;
+  if not found then raise exception 'réglage inconnu'; end if;
+  if p_value is null or p_value < r.min_v or p_value > r.max_v then raise exception 'valeur entre % et %', r.min_v, r.max_v; end if;
+  update game_settings set value = p_value, updated_at = now(), updated_by = auth.uid() where game_settings.key = p_key;
+  insert into admin_log (admin, action, note) values (auth.uid(), 'setting_set', p_key || ' = ' || p_value);
+  return 'ok';
+end $$;
+revoke all on function public.settings_get() from public;
+grant execute on function public.settings_get() to anon, authenticated;
+
 do $$ declare f text; begin
-  foreach f in array array['public.delete_my_account()', 'public.admin_whoami()', 'public.admin_find(text)', 'public.admin_export(uuid)', 'public.admin_delete(uuid)', 'public.admin_list()', 'public.admin_add(text)', 'public.admin_remove(uuid)'] loop
+  foreach f in array array['public.delete_my_account()', 'public.admin_whoami()', 'public.admin_find(text)', 'public.admin_export(uuid)', 'public.admin_delete(uuid)', 'public.admin_list()', 'public.admin_add(text)', 'public.admin_remove(uuid)', 'public.admin_flags()', 'public.admin_flag_set(text, text)', 'public.admin_settings()', 'public.admin_setting_set(text, int)'] loop
     execute 'revoke all on function ' || f || ' from public, anon';
     execute 'grant execute on function ' || f || ' to authenticated';
   end loop;

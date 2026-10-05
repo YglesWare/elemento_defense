@@ -229,6 +229,7 @@
       <div class="gain"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l7 7-7 13L5 9z" fill="#c59bff" stroke="#2a1b3d" stroke-width="2.2" stroke-linejoin="round"/><path d="M5 9h14M12 2L9 9l3 13 3-13z" fill="none" stroke="#2a1b3d" stroke-width="1.3" stroke-linejoin="round"/></svg><b id="oShards">+0</b><span>éclats gagnés dans la partie</span></div>
       <div class="oextra" id="oExtra" hidden></div>
       <p class="fine" id="oGainDetail"></p>
+      <button class="btn adbtn" id="oAd" type="button" hidden></button>
       <div class="gain bank"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#ffd23f" stroke="#2a1b3d" stroke-width="2.2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#e0a800" stroke-width="2"/></svg><b id="oBank">+0</b><span>or dans la cagnotte</span></div>
       <p class="fine" id="oBankDetail"></p>
       <button class="btn green" id="oEndless" type="button" hidden>Continuer en mode infini</button>
@@ -296,6 +297,7 @@
   <div class="inner">
     <div class="bigword calm head">LES CARTES</div>
     <div class="purse"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#ffd23f" stroke="#2a1b3d" stroke-width="2.2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#e0a800" stroke-width="2"/></svg><b id="mBank">0</b><span>or en cagnotte</span></div>
+    <button class="btn adbtn" id="mAd" type="button" hidden></button>
     <p class="fine" style="font-size:14px;opacity:1">L’or qu’il te reste à la fin d’une partie rejoint la cagnotte : 85 % en cas de victoire, 40 % en cas de K.O., rien si tu abandonnes (tu perds aussi les éclats gagnés pendant la partie). Elle sert uniquement à acheter de nouvelles cartes. Pour en acheter une, réussis d’abord la carte précédente en Facile.</p>
     <p class="mp-err" id="mTest" hidden>🧪 Mode test : toutes les cartes et tous les événements sont débloqués.</p>
     <button class="btn green" id="mGuide" type="button" hidden>🎓 Tutoriel guidé · une partie pas à pas</button>
@@ -491,6 +493,7 @@
     <h2 id="qTitle">Défis du jour</h2>
     <div class="qlist" id="qList"></div>
     <div class="qchest" id="qChest"></div>
+    <button class="btn adbtn" id="qAd" type="button" hidden></button>
     <p class="fine" id="qLeft"></p>
     <button class="btn alt" id="qClose" type="button">Fermer</button>
   </div>
@@ -563,6 +566,26 @@
   </div>
 </div>
 <!-- Limite de temps par jour atteinte (js/parents.js) -->
+<!-- Vidéo à récompense : confirmation, puis pub d'essai tant qu'AdMob n'est pas branché (js/ads.js) -->
+<div class="intro" id="adAsk" role="dialog" aria-modal="true" aria-labelledby="adTitle" hidden>
+  <div class="intro-card">
+    <h2 id="adTitle">Regarder une courte pub ?</h2>
+    <p>Tu gagnes</p>
+    <div class="adrw" id="adReward"></div>
+    <div class="intro-foot"><button class="btn alt" id="adNo" type="button">Non merci</button><button class="btn" id="adGo" type="button">▶ Regarder</button></div>
+    <p class="fine" id="adLeft"></p>
+  </div>
+</div>
+<div class="intro adplay" id="adPlay" role="dialog" aria-modal="true" aria-labelledby="adPlayT" hidden>
+  <div class="intro-card">
+    <span class="intro-tag">Pub d’essai</span>
+    <div class="adtv" aria-hidden="true">🎬<b id="adSec">3</b></div>
+    <h2 id="adPlayT">Ici, une vraie pub</h2>
+    <p>Pour l’instant, c’est une fausse pub de 3 secondes, pour tester les récompenses.</p>
+    <div class="adbar"><i id="adBar"></i></div>
+    <button class="btn alt" id="adSkip" type="button">Fermer</button>
+  </div>
+</div>
 <div class="intro" id="timeUp" role="dialog" aria-modal="true" aria-labelledby="tuTitle" hidden>
   <div class="intro-card">
     <canvas id="tuYg" aria-hidden="true" style="width:72px;height:72px"></canvas>
@@ -605,4 +628,4 @@
 </div>
 <!-- Les données du joueur (IndexedDB) sont chargées d'abord, puis les scripts du jeu, dans cet ordre -->
 <script src="js/storage.js"></script>
-<script>store.boot(['js/errors.js', 'js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bonus.js', 'js/trophies.js', 'js/actions.js', 'js/vendor/supabase.js', 'js/cloud.js', 'js/parents.js', 'js/friends.js', 'js/online.js', 'js/emotes.js', 'js/news.js', 'js/quests.js', 'js/ranking.js', 'js/challenge.js', 'js/wardrobe.js', 'js/comfort.js', 'js/story.js']);</script>
+<script>store.boot(['js/errors.js', 'js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bonus.js', 'js/trophies.js', 'js/actions.js', 'js/vendor/supabase.js', 'js/cloud.js', 'js/parents.js', 'js/friends.js', 'js/online.js', 'js/emotes.js', 'js/news.js', 'js/quests.js', 'js/ranking.js', 'js/challenge.js', 'js/ads.js', 'js/wardrobe.js', 'js/comfort.js', 'js/story.js']);</script>

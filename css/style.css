@@ -978,3 +978,16 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
 .cloudmore{font-size:13px;text-align:left}
 .cloudmore summary{cursor:pointer;color:var(--muted);font-weight:800;padding:2px 0}
 .cloudmore[open]{display:flex;flex-direction:column;gap:6px}
+/* Vidéos à récompense (js/ads.js) : bouton doré marqué PUB, confirmation et pub d'essai */
+.btn.adbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;font-size:19px;padding:8px 10px;background:linear-gradient(90deg,var(--sun2),var(--sun));color:var(--ink)}
+.btn.adbtn small{font:800 11px/1 var(--body);background:var(--ink);color:var(--paper);border-radius:99px;padding:3px 7px;letter-spacing:0}
+#sMaps .btn.adbtn{max-width:420px;margin:0 auto}
+.adrw{display:flex;align-items:center;gap:6px;font-family:var(--display);font-size:34px;line-height:1;color:var(--pop)}
+.adrw svg{width:28px;height:28px}
+.adtv{position:relative;font-size:54px;line-height:1}
+.adtv b{position:absolute;right:-14px;bottom:-4px;font:400 26px/1 var(--display);background:var(--sun);border:3px solid var(--ink);border-radius:99px;min-width:38px;padding:3px 6px;color:var(--ink)}
+.adbar{width:100%;height:12px;border:3px solid var(--ink);border-radius:99px;overflow:hidden;background:var(--mist)}
+.adbar i{display:block;height:100%;width:0;background:var(--leaf)}
+.adplay .btn{width:100%}
+#adAsk .intro-foot .btn{white-space:nowrap;font-size:20px;padding-inline:8px}
+#questPop .btn.adbtn{font-size:17px}

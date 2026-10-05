@@ -680,14 +680,18 @@ function reachBase(e) {
     if (ETYPES[e.type].boss) ono(T('ENCORE UN TOUR !'), e.x, e.y, '#ff4f6e', 0.6, 0.2, 1.3); else ono('↺', e.x, e.y, '#ff4f6e', 0.4, 0.1, 0.8);
   }
   if (G.lives <= 0) {
-    if (M('revive') && !G.reviveUsed) {
-      G.reviveUsed = true; G.lives = 5;
-      for (const o of G.enemies) if (!o.dead) knock(o, 2.5);
-      G.fx.push({ kind: 'ring', gx: B[0], gy: B[1], r0: 0.2, r1: 4, t: 0, dur: 0.7, color: '#ffd23f' });
-      burst(B[0], B[1], 0.5, 30, ['#ffd23f', '#ffffff', '#ff4f81'], 4, 0.12, 2, 0.8, 'star');
-      banner('SECONDE CHANCE !', T('5 vies retrouvées'), false); Snd.play('win');
-    } else gameOver();
+    if (G.koAsk) return;
+    if (M('revive') && !G.reviveUsed) { G.reviveUsed = true; reviveFx(B); }
+    else if (typeof adCanRevive === 'function' && adCanRevive()) adKoAsk(B); // seconde chance contre une pub (js/ads.js)
+    else gameOver();
   }
+}
+function reviveFx(B) {
+  G.lives = 5;
+  for (const o of G.enemies) if (!o.dead) knock(o, 2.5);
+  G.fx.push({ kind: 'ring', gx: B[0], gy: B[1], r0: 0.2, r1: 4, t: 0, dur: 0.7, color: '#ffd23f' });
+  burst(B[0], B[1], 0.5, 30, ['#ffd23f', '#ffffff', '#ff4f81'], 4, 0.12, 2, 0.8, 'star');
+  banner('SECONDE CHANCE !', T('5 vies retrouvées'), false); Snd.play('win');
 }
 function brMul(s, e) {
   if (!s || !s.brMul) return 1;

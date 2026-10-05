@@ -1,6 +1,6 @@
 // Élémento Defense : espace parents, protégé par un code à 6 chiffres.
 // Le code se crée après un calcul écrit en lettres (pour qu'un adulte soit là), et se refait de la même façon s'il est oublié.
-// Réglages : jeu en ligne, ajout d'amis par l'enfant, limite de temps par jour, pas d'en-ligne le soir, pubs, micro,
+// Réglages : jeu en ligne, ajout d'amis par l'enfant, limite de temps par jour, pas d'en-ligne le soir, vidéos à récompense, micro,
 // et la liste d'amis de l'enfant (js/friends.js). Ils sont sauvegardés avec la progression (domaine « profile ») :
 // une réinitialisation de la progression ne les efface pas, et ils suivent le compte sur un autre téléphone.
 'use strict';
@@ -19,7 +19,9 @@ function nightNow(p = parent()) {
 }
 const onlineAllowed = () => { const p = parent(); return p.online && !nightNow(p); };
 const parentMic = () => parent().mic;
-const adsAllowed = () => parent().ads; // pour les futures vidéos à récompense : rien ne s'affiche si c'est coupé
+// Vidéos à récompense (js/ads.js) : proposées tant qu'aucun code parent n'existe ; dès qu'un parent crée son code,
+// elles sont coupées, et il peut les rallumer dans les réglages
+const adsAllowed = () => { const p = parent(); return !p.pin || p.ads === true; };
 
 // ---------- Temps de jeu par jour ----------
 function playDay() { const r = store.get(PDAY_KEY) || {}; return r.d === dayKey() ? r : { d: dayKey(), s: 0, extra: 0 }; }
@@ -118,7 +120,7 @@ function paRender() {
       + row(T('Limite par jour'), T('Aujourd’hui : ') + fmtMin(played) + T(' joués'), '<button class="sbtn pa-pill" type="button" id="paLimit">' + (p.dayLimit ? fmtMin(p.dayLimit) : T('Aucune')) + '</button>')
       + (p.dayLimit ? row(T('Rallonge pour aujourd’hui'), (playDay().extra ? '+' + fmtMin(playDay().extra) + T(' déjà ajoutées') : ''), '<button class="sbtn pa-pill" type="button" id="paExtra">+15 min</button>') : '')
       + '<span class="mp-label">' + T('Divers') + '</span>'
-      + row(T('Publicités'), T('Coupé : aucune vidéo publicitaire, même pour un bonus'), toggle('ads', p.ads))
+      + row(T('Vidéos à récompense'), T('Une courte pub contre de l’or ou des éclats, seulement si l’enfant la demande. Coupé : aucune pub'), toggle('ads', p.ads))
       + row(T('Micro (actions secrètes)'), T('Coupé : le jeu ne demande jamais le micro'), toggle('mic', p.mic))
       + row(T('Code parent'), T('6 chiffres, demandé à chaque ouverture'), '<button class="sbtn pa-pill" type="button" id="paChange">' + T('Changer') + '</button>')
       + (fr ? '<button class="btn" type="button" id="paFriends">' + T('👥 Ses amis') + '</button>' : '');
