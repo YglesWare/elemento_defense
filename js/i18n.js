@@ -1276,6 +1276,8 @@ const EN = {
 " est interdite par le piment 🚫": " is forbidden by the spice 🚫",
 " : interdite par le piment 🚫": ": forbidden by the spice 🚫",
 "Seulement tes amis · piments compris": "Only your friends · spice included",
+"Politique de confidentialité": "Privacy policy",
+"· contact : yglesware@gmail.com": "· contact: yglesware@gmail.com",
 "Quitter le chapitre": "Leave the chapter",
 " de l’histoire : c’est un rêve, rien n’est sauvegardé.": " of the story: it’s a dream, nothing is saved.",
 "Retour au salon": "Back to the lobby",

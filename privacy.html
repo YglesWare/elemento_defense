@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Élémento Defense · Politique de confidentialité</title>
+<meta name="robots" content="index">
+<style>
+:root{--ink:#2a1b3d;--paper:#fff;--mist:#f1eafa;--muted:#6d5a85;--sky:#7fd3ff;--sun:#ffd23f;--pop:#ff4f81}
+*{box-sizing:border-box}
+body{margin:0;background:var(--sky);color:var(--ink);font:500 16px/1.6 'Trebuchet MS',system-ui,-apple-system,'Segoe UI',sans-serif}
+main{max-width:760px;margin:0 auto;padding:24px 16px 48px}
+.card{background:var(--paper);border:3px solid var(--ink);border-radius:20px;box-shadow:0 5px 0 var(--ink);padding:20px 22px;margin-bottom:22px}
+h1{font:900 clamp(26px,6vw,38px)/1.1 'Arial Black',Impact,sans-serif;margin:0 0 6px;letter-spacing:.5px}
+h2{font:800 20px/1.25 'Trebuchet MS',system-ui,sans-serif;margin:22px 0 6px;color:var(--pop)}
+p,li{max-width:68ch}
+ul{padding-left:22px;margin:6px 0}
+li{margin:3px 0}
+.meta{color:var(--muted);font-size:14px;margin:0}
+.lang{display:flex;gap:10px;margin:0 0 18px;flex-wrap:wrap}
+.lang a{background:var(--sun);border:2.5px solid var(--ink);border-radius:99px;padding:4px 14px;color:var(--ink);font-weight:800;text-decoration:none;box-shadow:0 2px 0 var(--ink)}
+.mail{font-weight:800;background:var(--mist);padding:1px 6px;border-radius:6px;user-select:all}
+a{color:var(--ink)}
+</style>
+</head>
+<body>
+<main>
+<nav class="lang"><a href="#fr">Français</a><a href="#en">English</a><a href="./">▶ Jouer / Play</a></nav>
+
+<article class="card" id="fr" lang="fr">
+<h1>Politique de confidentialité</h1>
+<p class="meta">Élémento Defense · mise à jour le 5 octobre 2026</p>
+
+<p>Élémento Defense est un jeu de tower defense pensé pour être joué en famille, y compris par des enfants. Cette page explique, simplement, ce que le jeu enregistre, pourquoi, et comment le faire effacer.</p>
+
+<h2>1. Ce qui reste sur ton appareil</h2>
+<p>La progression (cartes, éclats, tours débloquées, records, trophées, garde-robe), les réglages et la partie en cours sont enregistrés d'abord sur l'appareil. Le jeu fonctionne entièrement hors ligne.</p>
+
+<h2>2. Ce qui est enregistré en ligne</h2>
+<p>Pour sauvegarder la progression et jouer avec ses amis, le jeu utilise <a href="https://supabase.com" rel="noopener">Supabase</a> (base de données). Au premier lancement, un <b>compte invité</b> anonyme est créé automatiquement : il n'a ni nom, ni adresse e-mail, seulement un identifiant tiré au hasard. Sont enregistrés :</p>
+<ul>
+<li>la <b>sauvegarde de la progression</b>, pour la retrouver sur un autre appareil ;</li>
+<li>le <b>pseudo</b> choisi dans le jeu (12 caractères au plus, filtré contre les gros mots) et le <b>gardien</b> choisi comme avatar ; ils ne sont visibles que des amis ;</li>
+<li>le <b>code ami</b>, la <b>liste d'amis</b> et les <b>invitations</b> à une partie (les invitations expirent au bout d'une minute) ;</li>
+<li>les <b>meilleurs scores</b> de la carte du jour et de chaque carte (avec les « piments » utilisés), visibles seulement des amis ;</li>
+<li>un <b>journal des parties</b> : carte, difficulté, résultat, vague atteinte, durée, tours posées, version du jeu. Il sert uniquement à équilibrer et améliorer le jeu ; il n'est ni visible ni modifiable par les joueurs ;</li>
+<li>des <b>rapports techniques</b> en cas d'erreur ou de lenteur : message d'erreur, écran, version du jeu et caractéristiques de l'appareil (taille d'écran, nombre de cœurs, mémoire, modèle de navigateur). Rien de personnel.</li>
+</ul>
+
+<h2>3. Connexion avec Google</h2>
+<p>La connexion avec un compte Google est facultative : elle sert seulement à retrouver sa progression sur un autre appareil. Google transmet alors au jeu le <b>nom</b>, l'<b>adresse e-mail</b> et la <b>photo de profil</b> du compte. Ces informations servent uniquement à la connexion : elles ne sont jamais montrées aux autres joueurs ni utilisées pour autre chose. Le jeu ne demande aucun autre accès au compte Google.</p>
+
+<h2>4. Jouer en ligne avec ses amis</h2>
+<p>Les parties à plusieurs se font <b>seulement entre amis</b>, ajoutés avec leur code ami. Il n'y a <b>aucune discussion libre</b> : seules des émoticônes prédéfinies peuvent être envoyées, et aucun texte libre ne circule entre les appareils. Pour relier les appareils, le jeu utilise une connexion directe (WebRTC) : les adresses IP des appareils sont alors échangées entre eux, et des serveurs publics (Google et Cloudflare) aident à établir la connexion. Si la connexion directe échoue, les messages de la partie passent par Supabase.</p>
+
+<h2>5. Micro et capteurs</h2>
+<p>Le micro n'est utilisé que si le joueur l'accepte, et seulement pendant le brouillard, pour sentir le souffle qui le chasse. Le son est analysé sur l'appareil : <b>rien n'est enregistré ni envoyé</b>. Le jeu peut aussi lire l'inclinaison et les secousses du téléphone pour certaines actions ; ces mesures restent sur l'appareil.</p>
+
+<h2>6. Enfants et espace parents</h2>
+<p>Le jeu est conçu pour les enfants : amis par code uniquement, pas de recherche de joueurs, pas de discussion libre. Un <b>espace parents</b>, protégé par un code à 6 chiffres, permet de couper le jeu en ligne, l'ajout d'amis, les émoticônes et le micro, de gérer la liste d'amis, de limiter le temps de jeu par jour et d'interdire le jeu en ligne le soir.</p>
+
+<h2>7. Publicité, revente et suivi</h2>
+<p>Le jeu ne contient <b>pas de publicité</b> pour le moment, n'utilise <b>aucun outil de suivi</b> ni de mesure d'audience d'une autre société, et <b>ne vend ni ne partage</b> les données des joueurs. Si des publicités étaient ajoutées un jour, cette page serait mise à jour avant, et l'espace parents permettrait de les interdire.</p>
+
+<h2>8. Durée de conservation et effacement</h2>
+<ul>
+<li>Les données du compte sont gardées tant que le compte existe.</li>
+<li>Dans le jeu, <b>Profil → Compte en ligne</b> permet d'effacer la sauvegarde en ligne (la progression reste sur l'appareil).</li>
+<li>Pour faire supprimer entièrement un compte (sauvegarde, pseudo, amis, scores), il suffit d'écrire à l'adresse ci-dessous. Après la suppression, le journal des parties et les rapports techniques sont conservés pour améliorer le jeu, mais deviennent <b>anonymes</b> : ils ne sont plus reliés à aucun compte.</li>
+</ul>
+
+<h2>9. Tes droits</h2>
+<p>Conformément au RGPD, tu peux demander l'accès à tes données, leur correction ou leur suppression, et t'opposer à leur utilisation. Un parent peut faire ces demandes pour son enfant. Tu peux aussi saisir la CNIL (<a href="https://www.cnil.fr" rel="noopener">cnil.fr</a>).</p>
+
+<h2>10. Contact</h2>
+<p>Pour toute question ou demande : <span class="mail">yglesware@gmail.com</span></p>
+</article>
+
+<article class="card" id="en" lang="en">
+<h1>Privacy policy</h1>
+<p class="meta">Élémento Defense · updated October 5, 2026</p>
+
+<p>Élémento Defense is a tower defense game made to be played as a family, including by children. This page explains, simply, what the game stores, why, and how to have it erased.</p>
+
+<h2>1. What stays on your device</h2>
+<p>Progress (maps, shards, unlocked towers, records, trophies, wardrobe), settings and the current game are stored on the device first. The game works fully offline.</p>
+
+<h2>2. What is stored online</h2>
+<p>To back up progress and play with friends, the game uses <a href="https://supabase.com" rel="noopener">Supabase</a> (database). On first launch, an anonymous <b>guest account</b> is created automatically: it has no name and no email address, only a random identifier. The following is stored:</p>
+<ul>
+<li>the <b>progress backup</b>, to get it back on another device;</li>
+<li>the <b>nickname</b> chosen in the game (12 characters at most, filtered against swear words) and the <b>guardian</b> chosen as avatar; only friends can see them;</li>
+<li>the <b>friend code</b>, the <b>friends list</b> and game <b>invitations</b> (invitations expire after one minute);</li>
+<li>the <b>best scores</b> on the daily map and on each map (with the “spice” used), visible to friends only;</li>
+<li>a <b>game log</b>: map, difficulty, result, wave reached, duration, towers placed, game version. It is only used to balance and improve the game; players cannot see or change it;</li>
+<li><b>technical reports</b> in case of errors or slowness: error message, screen, game version and device characteristics (screen size, number of cores, memory, browser model). Nothing personal.</li>
+</ul>
+
+<h2>3. Signing in with Google</h2>
+<p>Signing in with a Google account is optional: it is only used to get your progress back on another device. Google then gives the game the account's <b>name</b>, <b>email address</b> and <b>profile picture</b>. This information is only used to sign in: it is never shown to other players or used for anything else. The game asks for no other access to the Google account.</p>
+
+<h2>4. Playing online with friends</h2>
+<p>Multiplayer games are played <b>with friends only</b>, added with their friend code. There is <b>no free chat</b>: only predefined emotes can be sent, and no free text travels between devices. To connect devices, the game uses a direct connection (WebRTC): the devices' IP addresses are exchanged between them, and public servers (Google and Cloudflare) help set up the connection. If the direct connection fails, game messages go through Supabase.</p>
+
+<h2>5. Microphone and sensors</h2>
+<p>The microphone is only used if the player agrees, and only during fog, to sense the breath that blows it away. Sound is analyzed on the device: <b>nothing is recorded or sent</b>. The game may also read the phone's tilt and shakes for some actions; these readings stay on the device.</p>
+
+<h2>6. Children and parent area</h2>
+<p>The game is designed for children: friends by code only, no player search, no free chat. A <b>parent area</b>, protected by a 6-digit code, can turn off online play, adding friends, emotes and the microphone, manage the friends list, limit daily play time and block online play in the evening.</p>
+
+<h2>7. Ads, selling and tracking</h2>
+<p>The game has <b>no ads</b> for now, uses <b>no tracking</b> or audience measurement tools from other companies, and <b>does not sell or share</b> players' data. If ads were ever added, this page would be updated first, and the parent area would allow blocking them.</p>
+
+<h2>8. Retention and deletion</h2>
+<ul>
+<li>Account data is kept as long as the account exists.</li>
+<li>In the game, <b>Profile → Online account</b> lets you erase the online backup (progress stays on the device).</li>
+<li>To have an account fully deleted (backup, nickname, friends, scores), just write to the address below. After deletion, the game log and technical reports are kept to improve the game, but become <b>anonymous</b>: they are no longer linked to any account.</li>
+</ul>
+
+<h2>9. Your rights</h2>
+<p>Under the GDPR, you can ask to access, correct or delete your data, and object to its use. A parent can make these requests for their child. You can also contact the French data protection authority, the CNIL (<a href="https://www.cnil.fr" rel="noopener">cnil.fr</a>).</p>
+
+<h2>10. Contact</h2>
+<p>For any question or request: <span class="mail">yglesware@gmail.com</span></p>
+</article>
+</main>
+</body>
+</html>
