@@ -259,6 +259,21 @@ function cloudPaint() {
   for (const b of box.querySelectorAll('[data-login]')) { b.hidden = !anon || !prov[b.dataset.login]; any = any || !b.hidden; }
   $('#prCloudId').textContent = T('Identifiant de progression : ') + pidShort(store.get(PID_KEY));
   $('#prLogout').hidden = anon;
+  // Invité : l'encart sous le pseudo (pour se connecter) ; connecté : tout en bas, avant « Réinitialiser la progression »
+  const anchor = anon ? $('#prNameWarn') : $('#prReset');
+  if (anchor) { if (anon && box.previousElementSibling !== anchor) anchor.after(box); else if (!anon && box.nextElementSibling !== anchor) anchor.before(box); }
+}
+// Supprimer son compte (après la confirmation d'un parent) : tout est effacé en ligne ; la progression reste sur l'appareil,
+// sur un nouveau compte invité
+async function cloudDeleteAccount() {
+  if (!CLOUD.sb || !CLOUD.user) return;
+  CLOUD.state = 'sync'; cloudPaint();
+  const { error } = await CLOUD.sb.rpc('delete_my_account');
+  if (error) { CLOUD.state = 'err'; CLOUD.err = /function|schema cache/i.test(error.message) ? T('La suppression de compte n’est pas encore activée.') : error.message; cloudPaint(); return; }
+  await CLOUD.sb.auth.signOut({ scope: 'local' }).catch(() => {});
+  CLOUD.user = null; await store.sys('syncUser', null);
+  hint(T('Compte supprimé.'), 2200);
+  await cloudEnsureUser();
 }
 document.querySelectorAll('#prCloud [data-login]').forEach(b => b.addEventListener('click', () => { Snd.init(); cloudLogin(b.dataset.login); }));
 $('#prSyncNow').addEventListener('click', () => cloudEnsureUser().then(() => cloudSync(true)));
@@ -266,5 +281,8 @@ $('#prLogout').addEventListener('click', () => cloudLogout());
 $('#prErase').addEventListener('click', () => { const b = $('#prEraseBox'); b.hidden = !b.hidden; });
 $('#prEraseNo').addEventListener('click', () => { $('#prEraseBox').hidden = true; });
 $('#prEraseYes').addEventListener('click', () => { $('#prEraseBox').hidden = true; cloudErase(); });
+$('#prDelAcct').addEventListener('click', () => { const b = $('#prDelBox'); b.hidden = !b.hidden; });
+$('#prDelNo').addEventListener('click', () => { $('#prDelBox').hidden = true; });
+$('#prDelYes').addEventListener('click', () => { $('#prDelBox').hidden = true; openParents('delacct'); });
 
 cloudStart().catch(e => { CLOUD.state = 'err'; CLOUD.err = (e && e.message) || String(e); cloudPaint(); });

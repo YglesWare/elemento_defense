@@ -168,6 +168,7 @@ async function paKey(k) {
 }
 // Code bon (ou nouveau code créé) : la rallonge du soir, ou les réglages
 function paUnlocked() {
+  if (PA.then === 'delacct') { paClose(); if (typeof cloudDeleteAccount === 'function') cloudDeleteAccount(); return; }
   if (PA.then === 'extend') { const r = playDay(); r.extra = (r.extra || 0) + 15; store.set(PDAY_KEY, r); hint(T('+15 min pour aujourd’hui'), 1800); paClose(); return; }
   PA.view = 'settings';
 }

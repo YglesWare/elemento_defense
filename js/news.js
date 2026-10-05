@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  77: [
+    ['🗑️', 'Profil : un bouton « Supprimer mon compte » (un parent confirme), et l’encart de connexion se place sous le pseudo tant qu’on n’est pas connecté.'],
+  ],
   76: [
     ['☁️', 'Profil : l’encart du compte en ligne est plus compact, et un petit bouton Google suffit pour se connecter.'],
   ],

@@ -22,7 +22,7 @@ create table if not exists public.admin_log (
 );
 alter table public.admin_log enable row level security;
 alter table public.admin_log drop constraint if exists admin_log_action_check;
-alter table public.admin_log add constraint admin_log_action_check check (action in ('export', 'delete', 'admin_add', 'admin_remove'));
+alter table public.admin_log add constraint admin_log_action_check check (action in ('export', 'delete', 'admin_add', 'admin_remove', 'self_delete'));
 
 create or replace function public._is_admin() returns boolean language sql stable security definer set search_path = public as $$
   select exists (select 1 from admins where user_id = auth.uid())
@@ -140,8 +140,23 @@ begin
   return 'ok';
 end $$;
 
+-- Le joueur supprime lui-même son compte (bouton « Supprimer mon compte » du jeu, exigé par Google Play) :
+-- même effet que admin_delete, noté dans le registre
+create or replace function public.delete_my_account() returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare uid uuid := auth.uid(); r jsonb;
+begin
+  if uid is null then raise exception 'pas connecté'; end if;
+  if exists (select 1 from admins where user_id = uid) then raise exception 'un administrateur doit d''abord se retirer de la liste des administrateurs'; end if;
+  select jsonb_build_object('sauvegarde', (select count(*) from player_data where user_id = uid), 'amis', (select count(*) from friendships where a = uid or b = uid),
+    'parties_anonymisees', (select count(*) from game_log where user_id = uid)) into r;
+  delete from auth.users where id = uid;
+  insert into admin_log (admin, action, target, note) values (null, 'self_delete', uid, r::text);
+  return r;
+end $$;
+
 do $$ declare f text; begin
-  foreach f in array array['public.admin_whoami()', 'public.admin_find(text)', 'public.admin_export(uuid)', 'public.admin_delete(uuid)', 'public.admin_list()', 'public.admin_add(text)', 'public.admin_remove(uuid)'] loop
+  foreach f in array array['public.delete_my_account()', 'public.admin_whoami()', 'public.admin_find(text)', 'public.admin_export(uuid)', 'public.admin_delete(uuid)', 'public.admin_list()', 'public.admin_add(text)', 'public.admin_remove(uuid)'] loop
     execute 'revoke all on function ' || f || ' from public, anon';
     execute 'grant execute on function ' || f || ' to authenticated';
   end loop;
