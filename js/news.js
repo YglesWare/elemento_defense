@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  79: [
+    ['👥', 'Compte : en te connectant avec Google, tes amis et ton code ami te suivent, et le jeu te demande quelle sauvegarde garder quand le téléphone et le compte en ont chacun une.'],
+  ],
   78: [
     ['👪', 'Espace parents : un nouveau réglage « Vidéos à récompense ». Sans code parent, de courtes pubs facultatives pourront bientôt offrir de l’or ou des éclats ; avec un code parent, elles sont coupées tant que le parent ne les autorise pas.'],
   ],

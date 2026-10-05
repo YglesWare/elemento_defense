@@ -98,15 +98,16 @@ async function cloudPushQueue(key, table) {
 }
 const cloudPushLog = () => cloudPushQueue(LOG_KEY, 'game_log');
 
-// Nouveau compte sur cet appareil (ou première synchro) : même progression → fusion ; une seule des deux a été jouée →
-// on la garde ; deux progressions différentes → le joueur choisit
+// Nouveau compte sur cet appareil (ou première synchro) : une seule des deux sauvegardes a été jouée → on la garde
+// (fusion si c'est celle de l'appareil) ; les deux ont été jouées → le joueur choisit laquelle garder
 async function cloudAdopt() {
   const uid = CLOUD.user.id;
   if ((await store.sys('syncUser')) === uid) return;
   const remote = await SupaSync.pull(), rm = new Map(remote.filter(r => !r.del).map(r => [r.k, r.v]));
   const rProg = progressOf(rm.get(META), rm.get(STATS)), lProg = progressOf(store.get(META), store.get(STATS));
+  // Deux sauvegardes jouées (même venant d'une même progression) : le joueur choisit laquelle garder
   let choice = 'merge';
-  if (rProg > 0 && rm.get(PID_KEY) !== store.get(PID_KEY)) {
+  if (rProg > 0) {
     if (lProg === 0) choice = 'remote';
     else {
       const lAt = Math.max(0, ...(await store.records()).filter(r => store.domain(r.k) !== 'local').map(r => r.at || 0));
@@ -156,6 +157,7 @@ function cloudSync(force) {
   CLOUD.state = 'sync'; cloudPaint();
   return CLOUD.syncing = (async () => {
     try {
+      await cloudMoveFinish().catch(() => {});
       await cloudAdopt();
       Sync.adapter = SupaSync;
       const r = await Sync.run();
@@ -218,6 +220,7 @@ async function cloudLoginError(desc) {
   let prov = 'google'; try { prov = localStorage.getItem(LOGIN_PROV) || 'google'; } catch (e) {}
   if (/already linked|already exists|identity_already_exists|manual linking/i.test(desc)) {
     hint(T('Ce compte ') + (PROVIDERS[prov] || prov) + T(' est déjà utilisé : connexion à ce compte…'), 3000);
+    await cloudMoveStart();
     const res = await CLOUD.sb.auth.signInWithOAuth({ provider: prov, options: loginOpts() });
     if (res.error) { CLOUD.err = res.error.message; CLOUD.state = 'err'; cloudPaint(); return; }
     if (NATIVE && res.data && res.data.url) location.href = res.data.url;
@@ -237,10 +240,27 @@ async function cloudLogin(provider) {
   try { localStorage.setItem(LOGIN_PROV, provider); } catch (e) {}
   const opts2 = loginOpts();
   let res = CLOUD.user && CLOUD.user.is_anonymous ? await CLOUD.sb.auth.linkIdentity({ provider, options: opts2 }) : await CLOUD.sb.auth.signInWithOAuth({ provider, options: opts2 });
-  if (res.error && /already|exists|linked|manual linking/i.test(res.error.message)) res = await CLOUD.sb.auth.signInWithOAuth({ provider, options: opts2 });
+  if (res.error && /already|exists|linked|manual linking/i.test(res.error.message)) await cloudMoveStart(), res = await CLOUD.sb.auth.signInWithOAuth({ provider, options: opts2 });
   if (res.error) { CLOUD.state = 'err'; CLOUD.err = /not enabled|unsupported provider/i.test(res.error.message) ? T('La connexion ') + PROVIDERS[provider] + T(' n’est pas encore activée.') : res.error.message; cloudPaint(); return; }
   // Dans l'app, Google refuse les WebView : la connexion s'ouvre dans le navigateur du téléphone, qui revient par le lien de l'app
   if (NATIVE && res.data && res.data.url) location.href = res.data.url;
+}
+// Invité qui se connecte à un compte Google déjà utilisé : on change de compte. Avant de partir, l'invité prend un jeton
+// (supabase/friends.sql) ; une fois connecté, le jeu le rend et les amis, le code ami et les scores suivent.
+const MOVE_KEY = 'elemento-move';
+async function cloudMoveStart() {
+  if (!CLOUD.user || !CLOUD.user.is_anonymous) return;
+  const { data, error } = await CLOUD.sb.rpc('account_move_start');
+  if (!error && data) try { localStorage.setItem(MOVE_KEY, data); } catch (e) {}
+}
+async function cloudMoveFinish() {
+  let t = null; try { t = localStorage.getItem(MOVE_KEY); } catch (e) {}
+  if (!t || !CLOUD.user || CLOUD.user.is_anonymous) return;
+  const { data, error } = await CLOUD.sb.rpc('account_move_finish', { p_token: t });
+  if (error && !/expiré|introuvable/.test(error.message)) return; // réseau… : on réessaiera à la prochaine synchro
+  try { localStorage.removeItem(MOVE_KEY); } catch (e) {}
+  if (data && data.amis) hint(T('Tes amis ont suivi sur ton compte (') + data.amis + ')', 2600);
+  if (typeof FR !== 'undefined') { FR.ok = false; if (typeof frLoad === 'function') frLoad(true); }
 }
 async function cloudLogout() {
   if (!CLOUD.sb) return;

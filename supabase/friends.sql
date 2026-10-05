@@ -174,10 +174,75 @@ begin
     and not (f.status = 'pending' and f.b = me and exists (select 1 from friendships x where x.a = me and x.b = f.a and x.status = 'blocked'));
 end $$;
 
+-- ---------- Invité → compte Google déjà existant ----------
+-- Se connecter avec un compte Google déjà utilisé fait changer de compte : sans ça, les amis de l'invité resteraient
+-- sur l'ancien compte. Avant de partir, l'invité reçoit un jeton (gardé sur son appareil) ; une fois connecté, le jeu
+-- le rend, et ses amis, son code ami (si le compte n'avait pas encore d'amis) et ses scores passent sur le compte.
+-- Puis le compte invité est supprimé (sa progression est déjà sur l'appareil, fusionnée ou remplacée au choix du joueur).
+create table if not exists public.account_moves (
+  token text primary key,
+  from_user uuid not null references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+alter table public.account_moves enable row level security;  -- aucune règle : seulement les fonctions
+
+create or replace function public.account_move_start() returns text
+language plpgsql security definer set search_path = public as $$
+declare me uuid := _me(); t text;
+begin
+  if not exists (select 1 from auth.users where id = me and is_anonymous) then raise exception 'pas un compte invité'; end if;
+  delete from account_moves where from_user = me or created_at < now() - interval '1 day';
+  t := encode(extensions.gen_random_bytes(24), 'hex');
+  insert into account_moves (token, from_user) values (t, me);
+  return t;
+end $$;
+
+-- Interne (et utilisable à la main dans SQL Editor pour réparer un ancien cas) : amis, code ami et scores de p_from vers p_to
+create or replace function public._move_account(p_from uuid, p_to uuid) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare had boolean; nf int;
+begin
+  if p_from is null or p_to is null or p_from = p_to then raise exception 'comptes invalides'; end if;
+  had := exists (select 1 from friendships where (a = p_to or b = p_to) and a <> p_from and b <> p_from);
+  -- Liens d'amitié : l'invité est remplacé par le compte ; pas de doublon, pas d'ami avec soi-même
+  insert into friendships (a, b, status, created_at)
+    select case when f.a = p_from then p_to else f.a end, case when f.b = p_from then p_to else f.b end, f.status, f.created_at
+    from friendships f, lateral (select case when f.a = p_from then f.b else f.a end as other) o
+    where (f.a = p_from or f.b = p_from) and o.other <> p_to
+      and not exists (select 1 from friendships g where (g.a = p_to and g.b = o.other) or (g.a = o.other and g.b = p_to))
+  on conflict do nothing;
+  get diagnostics nf = row_count;
+  delete from friendships where a = p_from or b = p_from;
+  -- Code ami : celui de l'invité est gardé si le compte n'avait pas encore d'amis (ses amis le connaissent)
+  if not had and exists (select 1 from profiles where user_id = p_from) then
+    delete from profiles where user_id = p_to;
+    update profiles set user_id = p_to where user_id = p_from;
+  end if;
+  -- Scores du jour et des cartes : ceux du compte restent quand les deux existent
+  update daily_scores s set user_id = p_to where s.user_id = p_from and not exists (select 1 from daily_scores d where d.user_id = p_to and d.day = s.day and d.diff = s.diff);
+  update map_scores s set user_id = p_to where s.user_id = p_from and not exists (select 1 from map_scores d where d.user_id = p_to and d.map = s.map and d.diff = s.diff);
+  return jsonb_build_object('amis', nf);
+end $$;
+revoke all on function public._move_account(uuid, uuid) from public, anon, authenticated;
+
+create or replace function public.account_move_finish(p_token text) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare me uuid := _me(); src uuid; r jsonb;
+begin
+  delete from account_moves where token = p_token and created_at > now() - interval '1 day' returning from_user into src;
+  if src is null then raise exception 'jeton expiré'; end if;
+  if src = me then return '{}'::jsonb; end if;
+  if not exists (select 1 from auth.users where id = src and is_anonymous) then raise exception 'compte invité introuvable'; end if;
+  r := _move_account(src, me);
+  delete from auth.users where id = src;
+  return r;
+end $$;
+
 -- Seuls les joueurs connectés (comptes anonymes compris) peuvent appeler ces fonctions
 do $$ declare f text; begin
   foreach f in array array['public._me()', 'public.profile_sync(text, text)', 'public.friend_new_code()', 'public.presence_ping(text)', 'public.friend_request(text)',
-    'public.friend_respond(uuid, boolean)', 'public.friend_remove(uuid)', 'public.friend_block(uuid)', 'public.friend_unblock(uuid)', 'public.friends_list()'] loop
+    'public.friend_respond(uuid, boolean)', 'public.friend_remove(uuid)', 'public.friend_block(uuid)', 'public.friend_unblock(uuid)', 'public.friends_list()',
+    'public.account_move_start()', 'public.account_move_finish(text)'] loop
     execute 'revoke all on function ' || f || ' from public, anon';
     execute 'grant execute on function ' || f || ' to authenticated';
   end loop;
