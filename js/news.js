@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  75: [
+    ['🔑', 'La connexion avec Google fonctionne aussi quand ce compte Google a déjà servi ailleurs (autre téléphone, site) : le jeu s’y connecte directement.'],
+  ],
   72: [
     ['🏷️', 'Les petites pastilles sur les boutons des tours affichent maintenant un % : c’est le bonus du terrain, du biome et de la météo, pas un prix.'],
     ['🔢', 'Les chiffres des titres et des boutons sont plus lisibles : le 7 ne ressemble plus au 1 (un prix de 70 se lisait 10).'],

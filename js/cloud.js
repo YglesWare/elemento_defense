@@ -168,10 +168,15 @@ async function cloudStart() {
   if (NATIVE) window.Capacitor.Plugins.App.addListener('appUrlOpen', async ev => {
     if (!ev.url || !ev.url.startsWith(APP_CALLBACK)) return;
     const q = new URL(ev.url.replace(APP_CALLBACK, 'https://cb/')).searchParams, code = q.get('code');
-    if (q.get('error_description')) { CLOUD.err = q.get('error_description'); CLOUD.state = 'err'; cloudPaint(); return; }
+    if (q.get('error_description')) { cloudLoginError(q.get('error_description')); return; }
     if (code) { const { error } = await CLOUD.sb.auth.exchangeCodeForSession(code); if (error) { CLOUD.err = error.message; CLOUD.state = 'err'; cloudPaint(); } else hint(T('Connecté !'), 2000); }
   });
   try { CLOUD.providers = (await (await fetch(SUPA_URL + '/auth/v1/settings', { headers: { apikey: SUPA_KEY } })).json()).external || {}; } catch (e) { CLOUD.providers = {}; }
+  // Sur le site, l'erreur de connexion revient dans l'adresse de la page : on la lit puis on nettoie l'adresse
+  if (!NATIVE) {
+    const ps = new URLSearchParams(location.search + '&' + location.hash.replace(/^#/, '')), ed = ps.get('error_description');
+    if (ed) { history.replaceState(null, '', location.origin + location.pathname); cloudLoginError(ed); }
+  }
   cloudPaint();
   await cloudEnsureUser();
   addEventListener('online', () => cloudEnsureUser().then(() => cloudSync(true)));
@@ -187,6 +192,22 @@ async function cloudEnsureUser() {
   if (error) { CLOUD.state = 'err'; CLOUD.err = error.message; cloudPaint(); }
 }
 
+const LOGIN_PROV = 'elemento.loginProv';
+const loginOpts = () => ({ redirectTo: NATIVE ? APP_CALLBACK : location.origin + location.pathname, skipBrowserRedirect: NATIVE });
+// Retour de connexion avec une erreur. Si ce compte Google appartient déjà à un autre compte du jeu (connexion faite
+// ailleurs, sur un autre appareil ou la page d'administration), on s'y connecte directement : la progression de
+// l'appareil part ensuite à la synchro (la fenêtre de choix s'ouvre si les deux comptes ont une progression)
+async function cloudLoginError(desc) {
+  let prov = 'google'; try { prov = localStorage.getItem(LOGIN_PROV) || 'google'; } catch (e) {}
+  if (/already linked|already exists|identity_already_exists|manual linking/i.test(desc)) {
+    hint(T('Ce compte ') + (PROVIDERS[prov] || prov) + T(' est déjà utilisé : connexion à ce compte…'), 3000);
+    const res = await CLOUD.sb.auth.signInWithOAuth({ provider: prov, options: loginOpts() });
+    if (res.error) { CLOUD.err = res.error.message; CLOUD.state = 'err'; cloudPaint(); return; }
+    if (NATIVE && res.data && res.data.url) location.href = res.data.url;
+    return;
+  }
+  CLOUD.err = desc; CLOUD.state = 'err'; cloudPaint();
+}
 // Connexion Google ou Discord : un compte anonyme est rattaché (sa progression le suit) ; si ce compte Google
 // est déjà utilisé ailleurs, on s'y connecte, et la progression la plus avancée est gardée
 async function cloudLogin(provider) {
@@ -196,9 +217,10 @@ async function cloudLogin(provider) {
     const st = await (await fetch(SUPA_URL + '/auth/v1/settings', { headers: { apikey: SUPA_KEY } })).json();
     if (!st.external || !st.external[provider]) { CLOUD.state = 'err'; CLOUD.err = T('La connexion ') + PROVIDERS[provider] + T(' n’est pas encore activée.'); cloudPaint(); return; }
   } catch (e) { CLOUD.state = 'offline'; cloudPaint(); return; }
-  const opts2 = { redirectTo: NATIVE ? APP_CALLBACK : location.origin + location.pathname, skipBrowserRedirect: NATIVE };
+  try { localStorage.setItem(LOGIN_PROV, provider); } catch (e) {}
+  const opts2 = loginOpts();
   let res = CLOUD.user && CLOUD.user.is_anonymous ? await CLOUD.sb.auth.linkIdentity({ provider, options: opts2 }) : await CLOUD.sb.auth.signInWithOAuth({ provider, options: opts2 });
-  if (res.error && /already|exists|linked/i.test(res.error.message)) res = await CLOUD.sb.auth.signInWithOAuth({ provider, options: opts2 });
+  if (res.error && /already|exists|linked|manual linking/i.test(res.error.message)) res = await CLOUD.sb.auth.signInWithOAuth({ provider, options: opts2 });
   if (res.error) { CLOUD.state = 'err'; CLOUD.err = /not enabled|unsupported provider/i.test(res.error.message) ? T('La connexion ') + PROVIDERS[provider] + T(' n’est pas encore activée.') : res.error.message; cloudPaint(); return; }
   // Dans l'app, Google refuse les WebView : la connexion s'ouvre dans le navigateur du téléphone, qui revient par le lien de l'app
   if (NATIVE && res.data && res.data.url) location.href = res.data.url;
