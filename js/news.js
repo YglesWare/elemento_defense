@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  76: [
+    ['☁️', 'Profil : l’encart du compte en ligne est plus compact, et un petit bouton Google suffit pour se connecter.'],
+  ],
   75: [
     ['🔑', 'La connexion avec Google fonctionne aussi quand ce compte Google a déjà servi ailleurs (autre téléphone, site) : le jeu s’y connecte directement.'],
   ],

@@ -966,3 +966,15 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
 @keyframes mustFinger{50%{transform:translate(-50%,-8px)}}
 /* Lien vers la politique de confidentialité, discret, en bas à gauche de l'accueil */
 .privlink{position:absolute;left:10px;bottom:calc(6px + env(safe-area-inset-bottom,0px));z-index:6;font:700 11px/1 "Baloo 2",system-ui,sans-serif;color:var(--ink);opacity:.55;text-decoration:underline}
+/* Compte en ligne : une ligne compacte, le reste dans « Plus d'options » */
+.cloudbox{gap:4px}
+.cloudrow{display:flex;align-items:center;gap:8px;text-align:left}
+.cloudic{font-size:20px;flex:none}
+.cloudtxt{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.2}
+.cloudtxt .cloudwho{font:800 15px/1.2 "Baloo 2",system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cloudtxt small{font-size:12px;color:var(--muted);font-weight:700}
+.loginbtn{flex:none;display:inline-flex;align-items:center;gap:6px;background:var(--paper);font:800 14px/1 "Baloo 2",system-ui,sans-serif;letter-spacing:0;padding:7px 10px}
+.loginbtn .gico{width:16px;height:16px;flex:none}
+.cloudmore{font-size:13px;text-align:left}
+.cloudmore summary{cursor:pointer;color:var(--muted);font-weight:800;padding:2px 0}
+.cloudmore[open]{display:flex;flex-direction:column;gap:6px}

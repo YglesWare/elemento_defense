@@ -243,7 +243,7 @@ async function cloudErase() {
 // ---------- Profil : bloc « Compte en ligne » ----------
 function cloudWho() {
   const u = CLOUD.user; if (!u) return null;
-  if (u.is_anonymous) return T('Invité (compte anonyme)');
+  if (u.is_anonymous) return T('Invité');
   const id = (u.identities || []).find(i => PROVIDERS[i.provider]), name = u.email || (u.user_metadata && (u.user_metadata.full_name || u.user_metadata.name)) || '';
   return (id ? PROVIDERS[id.provider] : T('Compte')) + (name ? ' · ' + name : '');
 }
@@ -252,12 +252,11 @@ function cloudPaint() {
   if (cloudOff()) { box.hidden = true; return; }
   const who = cloudWho(), ago = CLOUD.lastSync ? Math.max(0, Math.round((Date.now() - CLOUD.lastSync) / 60000)) : null;
   const st = CLOUD.state === 'sync' ? T('Synchronisation…') : CLOUD.state === 'offline' || !navigator.onLine ? T('Hors ligne : la synchro reprendra au retour du réseau.') : CLOUD.state === 'err' ? '⚠️ ' + CLOUD.err : CLOUD.state === 'erased' ? T('Sauvegarde en ligne effacée.') : ago == null ? '' : ago < 1 ? T('Synchronisée à l’instant.') : IS_EN ? 'Synced ' + ago + ' min ago.' : 'Synchronisée il y a ' + ago + ' min.';
-  $('#prCloudWho').textContent = who || T('Pas encore connecté');
+  $('#prCloudWho').textContent = who || T('Invité');
   $('#prCloudState').textContent = st;
   const anon = !CLOUD.user || CLOUD.user.is_anonymous, prov = CLOUD.providers || {};
   let any = false;
   for (const b of box.querySelectorAll('[data-login]')) { b.hidden = !anon || !prov[b.dataset.login]; any = any || !b.hidden; }
-  $('#prCloudHelp').textContent = any ? T('Connecte-toi pour retrouver ta progression sur un autre téléphone ou sur le site.') : T('Ta progression est sauvegardée en ligne automatiquement. La connexion avec Google arrive bientôt.');
   $('#prCloudId').textContent = T('Identifiant de progression : ') + pidShort(store.get(PID_KEY));
   $('#prLogout').hidden = anon;
 }
