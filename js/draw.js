@@ -564,52 +564,10 @@ function evFront(c, ev, type, r, lw, t, sdx, e) {
     else if (type === 'boss') { c.lineWidth = lw * 1.6; for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(sg * r * 0.3, -r * 0.9); c.lineTo(sg * r * 0.55, -r * 1.6); c.moveTo(sg * r * 0.43, -r * 1.25); c.lineTo(sg * r * 0.85, -r * 1.4); c.strokeStyle = INK; c.lineWidth = lw * 2.6; c.stroke(); c.strokeStyle = '#ffd23f'; c.lineWidth = lw * 1.3; c.stroke(); c.beginPath(); c.moveTo(nx + sg * r * 0.3, ny + r * 0.3); c.quadraticCurveTo(nx + sg * r * 1.0, ny + r * 0.1, nx + sg * r * 1.35, ny + r * 0.5 + Math.sin(t * 3 + sg) * r * 0.1); c.lineWidth = lw; c.strokeStyle = INK; c.stroke(); } }
   }
 }
-function drawEnemy(c, type, x, y, s, t, e) {
-  const D = ETYPES[type], r = s * D.size, lw = Math.max(1.4, s * 0.045), ev = evt(), SK = skinOf(type), HS = ev === 'halloween' ? SK : null, XS = SK && !HS ? ev : null;
-  const ZS = SK ? null : zoneSkin(type), ZA = ZS && ZS.acc;
-  const ghost = type === 'spectre' || (HS && type === 'gloop'), col = SK ? SK.color : ZS ? ZS.color : D.color, lig = SK ? SK.light : ZS ? ZS.light : D.light;
-  const fly = !!D.flying, sdx = e ? e.sdx : 1, sdy = e ? e.sdy : 0, id = e ? e.id : 0;
-  const still = e && (e.frozen > 0 || e.stun > 0);
-  const ph = e ? e.phase : t * 6;
-  const hopA = fly || still ? 0 : Math.abs(Math.sin(ph));
-  const up = (fly ? s * FLY + Math.sin(t * 5 + id) * s * 0.04 : hopA * s * 0.08) + (e && e.hopT > 0 ? Math.sin(e.hopT / 0.35 * Math.PI) * s * 0.35 : 0);
-  const sq = fly || still ? 0 : (1 - hopA) * 0.14;
-  c.save(); c.lineJoin = 'round'; c.lineCap = 'round';
-  const shk = fly ? 0.6 : 1 - hopA * 0.2;
-  c.fillStyle = 'rgba(42,27,61,.25)'; c.beginPath(); c.ellipse(x, y, r * 0.95 * shk, r * 0.3 * shk, 0, 0, TAU); c.fill();
-  if (e && e.slowA > 0 && !still) { c.beginPath(); c.ellipse(x, y, r * 1.2, r * 0.4, 0, 0, TAU); c.lineWidth = lw; c.strokeStyle = 'rgba(110,200,255,.95)'; c.stroke(); }
-  const cy = y - r * 0.85 - up;
-  c.translate(x, cy);
-  c.save();
-  if (e && e.ghost > 0) c.globalAlpha *= 0.32;
-  c.translate(0, r * 0.85); c.scale(1 + sq, 1 - sq); c.translate(0, -r * 0.85);
-  // Éléments derrière le corps
-  if (type === 'flappy') {
-    const f = Math.sin(t * 18 + id);
-    for (const sg of [-1, 1]) {
-      c.beginPath(); c.moveTo(sg * r * 0.5, -r * 0.25);
-      c.quadraticCurveTo(sg * r * 1.3, -r * (0.9 + f * 0.6), sg * r * 2.0, -r * (0.3 + f * 0.7));
-      c.quadraticCurveTo(sg * r * 1.65, -r * 0.05, sg * r * 1.5, r * 0.25);
-      c.quadraticCurveTo(sg * r * 1.15, r * 0.05, sg * r * 0.6, r * 0.35); c.closePath(); fs(c, ({ halloween: '#2b2140', noel: '#c9d8ec', paques: '#ffd23f', valentin: '#ffffff', nouvelan: '#ffd23f' })[ev] || '#4a3aa6', lw);
-      c.beginPath(); c.moveTo(sg * r * 0.3, -r * 0.8); c.lineTo(sg * r * 0.6, -r * 1.35); c.lineTo(sg * r * 0.75, -r * 0.6); c.closePath(); fs(c, col, lw);
-    }
-  } else if (type === 'boss' && (!SK || ev === 'noel') && !ZS) {
-    for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(sg * r * 0.25, -r * 0.9); c.quadraticCurveTo(sg * r * 0.55, -r * 1.35, sg * r * 0.85, -r * 1.55); c.quadraticCurveTo(sg * r * 0.75, -r * 1.05, sg * r * 0.7, -r * 0.7); c.closePath(); fs(c, '#fff1d0', lw); }
-  } else if (type === 'gresil' && HS) {
-    // Araignée : huit pattes
-    const k = Math.sin(ph * 2) * r * 0.08; c.lineWidth = lw * 1.1; c.strokeStyle = INK;
-    for (const sg of [-1, 1]) for (let i = 0; i < 4; i++) { const yy = -r * 0.35 + i * r * 0.3; c.beginPath(); c.moveTo(sg * r * 0.5, yy); c.quadraticCurveTo(sg * r * 1.25, yy - r * 0.55 + (i % 2 ? k : -k), sg * r * 1.45, yy + r * 0.45); c.stroke(); }
-  } else if (type === 'gresil' && XS !== 'noel' && XS !== 'nouvelan') {
-    for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(sg * r * 0.3, -r * 0.9); c.quadraticCurveTo(sg * r * 0.5, -r * 1.5, sg * r * 0.8, -r * 1.55); c.lineWidth = lw; c.strokeStyle = INK; c.stroke(); c.beginPath(); c.arc(sg * r * 0.8, -r * 1.55, r * 0.14, 0, TAU); fs(c, '#ffe34d', lw * 0.7); }
-  } else if (type === 'crachou') {
-    for (const sg of [-1, 1]) { c.beginPath(); c.arc(sg * r * 1.15, -r * 0.05, r * 0.3, 0, TAU); fs(c, col, lw); c.beginPath(); c.moveTo(sg * r * 1.15, -r * 0.05); c.lineTo(sg * r * 1.45, -r * 0.1); c.lineWidth = lw; c.strokeStyle = INK; c.stroke(); }
-  } else if (type === 'zip' && !still) {
-    const px = -sdy, py = sdx; c.lineWidth = lw; c.strokeStyle = INK;
-    for (const k of [-0.45, 0, 0.45]) { const x0 = -sdx * r * 1.25 + px * k * r, y0 = -sdy * r * 1.25 + py * k * r; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x0 - sdx * r * (0.7 + Math.abs(k)), y0 - sdy * r * (0.7 + Math.abs(k))); c.stroke(); }
-  }
-  if (XS || type === 'lapin') evBehind(c, XS, type, r, lw, t, col);
-  if (ZA) zoneBehind(c, ZA, r, lw, t, col, id);
-  if (HS && type === 'zip') for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(sg * r * 0.25, -r * 0.95); c.lineTo(sg * r * 0.75, -r * 1.45); c.lineTo(sg * r * 0.85, -r * 0.6); c.closePath(); fs(c, col, lw); }
+// Corps d'un ennemi (dégradé, contour, côtes, casque, chapeau, reflet, visage) : la partie la plus coûteuse à dessiner,
+// mise en cache pendant les parties (coreSprite) ; les parties animées sont dessinées en direct par drawEnemy
+function enemyCore(c, type, r, lw, o, sdx, sdy, mood, blink) {
+  const { ghost, col, lig, HS, XS, D } = o;
   const body = bodyPath(type, r, ghost);
   const g = c.createRadialGradient(-r * 0.35, -r * 0.45, r * 0.1, 0, 0, r * 1.3); g.addColorStop(0, lig); g.addColorStop(1, col);
   fsp(c, body, g, lw);
@@ -632,8 +590,6 @@ function drawEnemy(c, type, x, y, s, t, e) {
   if (type === 'magma' && !XS) {
     c.beginPath(); c.moveTo(-r * 0.7, r * 0.1); c.lineTo(-r * 0.4, r * 0.35); c.lineTo(-r * 0.5, r * 0.6); c.moveTo(r * 0.75, -r * 0.1); c.lineTo(r * 0.45, r * 0.3); c.lineTo(r * 0.6, r * 0.55);
     c.lineWidth = lw * 1.1; c.strokeStyle = '#ffe34d'; c.stroke();
-    const fl = Math.sin(t * 12 + id) * r * 0.1;
-    c.beginPath(); c.moveTo(-r * 0.3, -r * 0.95); c.quadraticCurveTo(fl, -r * 1.6, r * 0.3, -r * 0.95); c.closePath(); fs(c, HS ? '#c8ff6a' : '#ffb03d', lw * 0.8);
   } else if (type === 'tonk' && !XS) {
     c.beginPath(); c.ellipse(0, -r * 0.15, r * 0.98, r * 0.72, 0, Math.PI, TAU); c.closePath(); fs(c, HS ? '#6d6f80' : '#9aa6b8', lw);
     if (HS) { c.beginPath(); c.moveTo(0, -r * 0.85); c.quadraticCurveTo(r * 0.3, -r * 1.3, -r * 0.1, -r * 1.45); c.lineWidth = lw * 2; c.strokeStyle = '#a8344e'; c.stroke(); }
@@ -646,9 +602,99 @@ function drawEnemy(c, type, x, y, s, t, e) {
   } else if (type !== 'boss' && !pumpkinBody && !(XS && (type === 'magma' || type === 'tonk'))) {
     c.save(); c.translate(-r * 0.42, -r * 0.5); c.rotate(-0.6); c.beginPath(); c.ellipse(0, 0, r * 0.1, r * 0.2, 0, 0, TAU); c.fillStyle = 'rgba(255,255,255,.8)'; c.fill(); c.restore();
   }
-  const blink = ((t + id * 0.37) % 3.4) < 0.12 && !still;
-  const mood = e && e.flash > 0 ? 'open' : D.mood;
   face(c, sdx * r * 0.16, (type === 'tonk' ? r * 0.2 : r * 0.05) + sdy * r * 0.08, r * 0.95, sdx, sdy, mood, blink, D.angry);
+}
+const ECORE = new Map();
+let ENEMY_CACHE = true; // interrupteur du cache (false : tout est redessiné en direct, comme avant)
+// Le corps mis en image une fois (par type, apparence, taille, direction, humeur), puis recopié
+function coreSprite(type, r, lw, o, sdx, sdy, mood, skin) {
+  const d = (typeof L !== 'undefined' && L.dpr) || 1, qx = Math.round(sdx * 4) / 4, qy = Math.round(sdy * 4) / 4;
+  const key = type + '|' + skin + '|' + Math.round(r * d * 2) + '|' + qx + '|' + qy + '|' + mood;
+  let sp = ECORE.get(key);
+  if (!sp) {
+    if (ECORE.size > 600) ECORE.clear();
+    const ox = r * 1.7 + lw * 2, oy = r * 2.3 + lw * 2, w = ox * 2, h = oy + r * 1.5 + lw * 2;
+    const cv = document.createElement('canvas'); cv.width = Math.ceil(w * d); cv.height = Math.ceil(h * d);
+    const cc = cv.getContext('2d'); cc.setTransform(d, 0, 0, d, ox * d, oy * d); cc.lineJoin = 'round'; cc.lineCap = 'round';
+    enemyCore(cc, type, r, lw, o, qx, qy, mood, false);
+    sp = { cv, ox, oy, w: cv.width / d, h: cv.height / d }; ECORE.set(key, sp);
+  }
+  return sp;
+}
+function flappyWings(c, r, lw, f, wc, col) {
+  for (const sg of [-1, 1]) {
+    c.beginPath(); c.moveTo(sg * r * 0.5, -r * 0.25);
+    c.quadraticCurveTo(sg * r * 1.3, -r * (0.9 + f * 0.6), sg * r * 2.0, -r * (0.3 + f * 0.7));
+    c.quadraticCurveTo(sg * r * 1.65, -r * 0.05, sg * r * 1.5, r * 0.25);
+    c.quadraticCurveTo(sg * r * 1.15, r * 0.05, sg * r * 0.6, r * 0.35); c.closePath(); fs(c, wc, lw);
+    c.beginPath(); c.moveTo(sg * r * 0.3, -r * 0.8); c.lineTo(sg * r * 0.6, -r * 1.35); c.lineTo(sg * r * 0.75, -r * 0.6); c.closePath(); fs(c, col, lw);
+  }
+}
+function wingSprite(r, lw, fr, wc, col) {
+  const d = (typeof L !== 'undefined' && L.dpr) || 1, key = 'w|' + Math.round(r * d * 2) + '|' + fr + '|' + wc + '|' + col;
+  let sp = ECORE.get(key);
+  if (!sp) {
+    if (ECORE.size > 600) ECORE.clear();
+    const ox = r * 2.2 + lw * 2, oy = r * 1.8 + lw * 2, w = ox * 2, h = oy + r * 0.6 + lw * 2;
+    const cv = document.createElement('canvas'); cv.width = Math.ceil(w * d); cv.height = Math.ceil(h * d);
+    const cc = cv.getContext('2d'); cc.setTransform(d, 0, 0, d, ox * d, oy * d); cc.lineJoin = 'round'; cc.lineCap = 'round';
+    flappyWings(cc, r, lw, Math.sin((fr + 0.5) / 8 * TAU), wc, col);
+    sp = { cv, ox, oy, w: cv.width / d, h: cv.height / d }; ECORE.set(key, sp);
+  }
+  return sp;
+}
+function drawEnemy(c, type, x, y, s, t, e) {
+  const D = ETYPES[type], r = s * D.size, lw = Math.max(1.4, s * 0.045), ev = evt(), SK = skinOf(type), HS = ev === 'halloween' ? SK : null, XS = SK && !HS ? ev : null;
+  const ZS = SK ? null : zoneSkin(type), ZA = ZS && ZS.acc;
+  const ghost = type === 'spectre' || (HS && type === 'gloop'), col = SK ? SK.color : ZS ? ZS.color : D.color, lig = SK ? SK.light : ZS ? ZS.light : D.light;
+  const fly = !!D.flying, sdx = e ? e.sdx : 1, sdy = e ? e.sdy : 0, id = e ? e.id : 0;
+  const still = e && (e.frozen > 0 || e.stun > 0);
+  const ph = e ? e.phase : t * 6;
+  const hopA = fly || still ? 0 : Math.abs(Math.sin(ph));
+  const up = (fly ? s * FLY + Math.sin(t * 5 + id) * s * 0.04 : hopA * s * 0.08) + (e && e.hopT > 0 ? Math.sin(e.hopT / 0.35 * Math.PI) * s * 0.35 : 0);
+  const sq = fly || still ? 0 : (1 - hopA) * 0.14;
+  c.save(); c.lineJoin = 'round'; c.lineCap = 'round';
+  const shk = fly ? 0.6 : 1 - hopA * 0.2;
+  c.fillStyle = 'rgba(42,27,61,.25)'; c.beginPath(); c.ellipse(x, y, r * 0.95 * shk, r * 0.3 * shk, 0, 0, TAU); c.fill();
+  if (e && e.slowA > 0 && !still) { c.beginPath(); c.ellipse(x, y, r * 1.2, r * 0.4, 0, 0, TAU); c.lineWidth = lw; c.strokeStyle = 'rgba(110,200,255,.95)'; c.stroke(); }
+  const cy = y - r * 0.85 - up;
+  c.translate(x, cy);
+  c.save();
+  if (e && e.ghost > 0) c.globalAlpha *= 0.32;
+  c.translate(0, r * 0.85); c.scale(1 + sq, 1 - sq); c.translate(0, -r * 0.85);
+  // Éléments derrière le corps
+  if (type === 'flappy') {
+    // Ailes : 8 positions de battement mises en cache pendant les parties
+    const wc = ({ halloween: '#2b2140', noel: '#c9d8ec', paques: '#ffd23f', valentin: '#ffffff', nouvelan: '#ffd23f' })[ev] || '#4a3aa6';
+    if (e && ENEMY_CACHE) { const fr = ((Math.floor((t * 18 + id) / TAU * 8) % 8) + 8) % 8, sp = wingSprite(r, lw, fr, wc, col); c.drawImage(sp.cv, -sp.ox, -sp.oy, sp.w, sp.h); }
+    else flappyWings(c, r, lw, Math.sin(t * 18 + id), wc, col);
+  } else if (type === 'boss' && (!SK || ev === 'noel') && !ZS) {
+    for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(sg * r * 0.25, -r * 0.9); c.quadraticCurveTo(sg * r * 0.55, -r * 1.35, sg * r * 0.85, -r * 1.55); c.quadraticCurveTo(sg * r * 0.75, -r * 1.05, sg * r * 0.7, -r * 0.7); c.closePath(); fs(c, '#fff1d0', lw); }
+  } else if (type === 'gresil' && HS) {
+    // Araignée : huit pattes
+    const k = Math.sin(ph * 2) * r * 0.08; c.lineWidth = lw * 1.1; c.strokeStyle = INK;
+    for (const sg of [-1, 1]) for (let i = 0; i < 4; i++) { const yy = -r * 0.35 + i * r * 0.3; c.beginPath(); c.moveTo(sg * r * 0.5, yy); c.quadraticCurveTo(sg * r * 1.25, yy - r * 0.55 + (i % 2 ? k : -k), sg * r * 1.45, yy + r * 0.45); c.stroke(); }
+  } else if (type === 'gresil' && XS !== 'noel' && XS !== 'nouvelan') {
+    for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(sg * r * 0.3, -r * 0.9); c.quadraticCurveTo(sg * r * 0.5, -r * 1.5, sg * r * 0.8, -r * 1.55); c.lineWidth = lw; c.strokeStyle = INK; c.stroke(); c.beginPath(); c.arc(sg * r * 0.8, -r * 1.55, r * 0.14, 0, TAU); fs(c, '#ffe34d', lw * 0.7); }
+  } else if (type === 'crachou') {
+    for (const sg of [-1, 1]) { c.beginPath(); c.arc(sg * r * 1.15, -r * 0.05, r * 0.3, 0, TAU); fs(c, col, lw); c.beginPath(); c.moveTo(sg * r * 1.15, -r * 0.05); c.lineTo(sg * r * 1.45, -r * 0.1); c.lineWidth = lw; c.strokeStyle = INK; c.stroke(); }
+  } else if (type === 'zip' && !still) {
+    const px = -sdy, py = sdx; c.lineWidth = lw; c.strokeStyle = INK;
+    for (const k of [-0.45, 0, 0.45]) { const x0 = -sdx * r * 1.25 + px * k * r, y0 = -sdy * r * 1.25 + py * k * r; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x0 - sdx * r * (0.7 + Math.abs(k)), y0 - sdy * r * (0.7 + Math.abs(k))); c.stroke(); }
+  }
+  if (XS || type === 'lapin') evBehind(c, XS, type, r, lw, t, col);
+  if (ZA) zoneBehind(c, ZA, r, lw, t, col, id);
+  if (HS && type === 'zip') for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(sg * r * 0.25, -r * 0.95); c.lineTo(sg * r * 0.75, -r * 1.45); c.lineTo(sg * r * 0.85, -r * 0.6); c.closePath(); fs(c, col, lw); }
+  const blink = ((t + id * 0.37) % 3.4) < 0.12 && !still;
+  const mood = e && e.flash > 0 ? 'open' : D.mood, core = { ghost, col, lig, HS, XS, D };
+  // En partie, le corps vient du cache (sauf pendant un clignement) ; ailleurs (aperçus, portraits), il est dessiné en direct
+  if (e && !blink && ENEMY_CACHE) { const sp = coreSprite(type, r, lw, core, sdx, sdy, mood, (SK ? 'S' + ev : '') + (ZS ? 'Z' + ZA + col : '') + (ghost ? 'g' : '')); c.drawImage(sp.cv, -sp.ox, -sp.oy, sp.w, sp.h); }
+  else enemyCore(c, type, r, lw, core, sdx, sdy, mood, blink);
+  if (type === 'magma' && !XS) {
+    const fl = Math.sin(t * 12 + id) * r * 0.1;
+    c.beginPath(); c.moveTo(-r * 0.3, -r * 0.95); c.quadraticCurveTo(fl, -r * 1.6, r * 0.3, -r * 0.95); c.closePath(); fs(c, HS ? '#c8ff6a' : '#ffb03d', lw * 0.8);
+  }
+  const body = e && (e.wet > 0 || e.flash > 0) ? bodyPath(type, r, ghost) : null;
   if (XS || D.season) evFront(c, XS, type, r, lw, t, sdx, e);
   if (ZA && !(type === 'tonk' || type === 'malefik' || type === 'magma')) zoneFront(c, ZA, r, lw, t, sdx, col);
   if (HS && type === 'zip') { c.lineWidth = lw * 0.6; c.strokeStyle = '#d8d0ec'; c.beginPath(); for (const sg of [-1, 1]) for (const k of [-0.06, 0.08]) { c.moveTo(sg * r * 0.55, r * 0.3 + k * r); c.lineTo(sg * r * 1.05, r * 0.22 + k * r * 2); } c.stroke(); }

@@ -1068,12 +1068,26 @@ document.addEventListener('visibilitychange', () => {
 
 // ================= Boucle =================
 let lastT = performance.now();
+// Jeu qui rame : mesuré sur 5 s de partie ; sous 25 images/s (puis sous 15), un signalement part avec les erreurs
+// (js/errors.js → table client_errors, src « perf ») : nombre d'ennemis, de tours, vague, appareil. Une fois par niveau et par partie.
+const PERF = { t: 0, n: 0, en: 0 };
+function perfTick(ms) {
+  if (ms > 1000) { PERF.t = PERF.n = PERF.en = 0; return; } // retour d'arrière-plan : on ne compte pas
+  PERF.t += ms; PERF.n++; PERF.en = Math.max(PERF.en, G.enemies.length);
+  if (PERF.t < 5000) return;
+  const fps = PERF.n * 1000 / PERF.t, en = PERF.en; PERF.t = PERF.n = PERF.en = 0;
+  if (fps >= 25 || G.time < 5 || typeof errNote !== 'function') return;
+  const lvl = fps < 15 ? 15 : 25; if (G.perfSent && G.perfSent <= lvl) return; G.perfSent = lvl;
+  errNote('Jeu lent : moins de ' + lvl + ' images/s', 'perf', Math.round(fps), JSON.stringify({ fps: +fps.toFixed(1), enemies: en, towers: G.towers.length, wave: G.wave,
+    diff: G.diff, speed: G.speed, map: MAPS[G.map].id, cache: typeof ENEMY_CACHE !== 'undefined' && ENEMY_CACHE, cores: navigator.hardwareConcurrency || 0, mem: navigator.deviceMemory || 0,
+    screen: screen.width + 'x' + screen.height, dpr: devicePixelRatio || 1, ua: navigator.userAgent.slice(0, 160) }));
+}
 function frame(now) {
-  const dt = Math.min(0.05, Math.max(0, (now - lastT) / 1000)); lastT = now;
+  const raw = now - lastT, dt = Math.min(0.05, Math.max(0, raw / 1000)); lastT = now;
   if (G) {
     // Duel et coop ne s'arrêtent pas quand on ouvre un menu (en coop, seule la pause de l'hôte arrête tout le monde)
     const run = G.duel ? !G.over : G.coop ? !G.over && !(G.coopGuest ? G.hostPause : G.paused) : curScreen === 'game' && !G.paused && !G.over;
-    if (run) { for (let i = 0; i < G.speed; i++) update(dt); stats.time += dt; if (typeof playTick === 'function') playTick(dt); }
+    if (run) { for (let i = 0; i < G.speed; i++) update(dt); stats.time += dt; if (typeof playTick === 'function') playTick(dt); if (!document.hidden) perfTick(raw); }
     else if (G.over) update(dt);
     if (G.duel && typeof duelTick === 'function') duelTick(dt);
     if (G.coop && typeof coopTick === 'function') coopTick(dt);
