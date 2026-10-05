@@ -1828,6 +1828,7 @@ const EN = {
 "Espace parents : un nouveau réglage « Vidéos à récompense ». Sans code parent, de courtes pubs facultatives pourront bientôt offrir de l’or ou des éclats ; avec un code parent, elles sont coupées tant que le parent ne les autorise pas.": "Parent area: a new “Rewarded videos” setting. Without a parent code, short optional ads will soon offer gold or shards; with a parent code, they stay off until the parent allows them.",
 "Tes amis ont suivi sur ton compte (": "Your friends came along to your account (",
 "Compte : en te connectant avec Google, tes amis et ton code ami te suivent, et le jeu te demande quelle sauvegarde garder quand le téléphone et le compte en ont chacun une.": "Account: when you sign in with Google, your friends and friend code come along, and the game asks which save to keep when both the phone and the account have one.",
+"Écran des cartes : les piments se règlent avec le bouton 🌶 à côté de « Jouer », qui affiche leur multiplicateur quand ils sont actifs. L’aperçu de la carte n’est plus caché.": "Maps screen: spice is set with the 🌶 button next to “Play”, which shows its multiplier when active. The map preview is no longer covered.",
 };
 const T = s => (IS_EN && typeof s === 'string' && EN[s] !== undefined ? EN[s] : s);
 // Textes fixes de la page : nœuds de texte et attributs (placeholder, aria-label, title, alt)

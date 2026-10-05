@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  80: [
+    ['🌶', 'Écran des cartes : les piments se règlent avec le bouton 🌶 à côté de « Jouer », qui affiche leur multiplicateur quand ils sont actifs. L’aperçu de la carte n’est plus caché.'],
+  ],
   79: [
     ['👥', 'Compte : en te connectant avec Google, tes amis et ton code ami te suivent, et le jeu te demande quelle sauvegarde garder quand le téléphone et le compte en ont chacun une.'],
   ],

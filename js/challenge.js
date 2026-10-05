@@ -133,7 +133,7 @@ function mapRankRow(card, mi) {
   if (typeof rankOn !== 'function' || !rankOn()) return;
   const id = MAPS[mi].id, row = document.createElement('div'); row.className = 'drank';
   row.innerHTML = '<button class="sbtn drbtn" type="button">' + T('🏆 Amis') + '</button><span class="drtxt"></span>';
-  const play = card.querySelector(':scope > .sbtn'); if (play) card.insertBefore(row, play); else card.appendChild(row);
+  const play = card.querySelector(':scope > .mapact, :scope > .sbtn'); if (play) card.insertBefore(row, play); else card.appendChild(row);
   row.querySelector('button').addEventListener('click', ev => { ev.stopPropagation(); openMapRank(mi); });
   mapBoardLoad().then(by => {
     if (!by) return;
@@ -205,13 +205,14 @@ function chalPaint() {
 $('#chReset').addEventListener('click', () => { CP.cur = { m: {}, sans: [] }; chalPaint(); Snd.play('build'); });
 $('#chOk').addEventListener('click', () => { $('#chalPop').hidden = true; if (CP.o) { CP.o.set(CP.cur); if (CP.o.done) CP.o.done(); } Snd.play('clear'); });
 $('#chClose').addEventListener('click', () => { $('#chalPop').hidden = true; });
-const chalBadge = c => chalOn(c) ? '<span class="chbadge">🌶 ' + chalX(chalMult(c, null)) + '</span>' : '';
-// Engrenage d'une carte de l'écran des cartes
+// Bouton des piments d'une carte de l'écran des cartes : à gauche de « Jouer », rouge avec le multiplicateur s'ils sont actifs
 function chalCard(card, mi) {
   if (!chalOpen(mi)) return;
-  const id = MAPS[mi].id, c = chalGet(id);
-  card.insertAdjacentHTML('afterbegin', '<button class="chgear" type="button" aria-label="' + T('Piments') + '">⚙️</button>' + chalBadge(c));
-  card.querySelector('.chgear').addEventListener('click', ev => { ev.stopPropagation(); openChalMap(mi, () => renderMaps()); });
+  const id = MAPS[mi].id, c = chalGet(id), play = card.querySelector(':scope > .sbtn'); if (!play) return;
+  const row = document.createElement('div'), on = chalOn(c); row.className = 'mapact';
+  row.innerHTML = '<button class="sbtn chbtn' + (on ? ' on' : '') + '" type="button" aria-label="' + T('Piments') + '">🌶' + (on ? chalX(chalMult(c, null)) : '') + '</button>';
+  card.insertBefore(row, play); row.appendChild(play);
+  row.querySelector('.chbtn').addEventListener('click', ev => { ev.stopPropagation(); openChalMap(mi, () => renderMaps()); });
 }
 function openChalMap(mi, done) {
   const id = MAPS[mi].id;

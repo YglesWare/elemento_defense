@@ -921,9 +921,10 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
 .wkreward{background:var(--paper);border:3px solid var(--ink);border-radius:14px;box-shadow:0 4px 0 var(--ink);padding:8px 12px;font-weight:800;text-align:center;max-width:360px}
 /* Défis par carte (js/challenge.js) */
 .mapc{position:relative}
-.chgear{position:absolute;top:6px;right:6px;z-index:2;width:36px;height:36px;border-radius:50%;border:2.5px solid var(--ink);background:var(--sun);box-shadow:0 2px 0 var(--ink);font-size:18px;line-height:1;display:grid;place-items:center;padding:0;cursor:pointer}
-.chgear:active{transform:translateY(2px);box-shadow:none}
-.chbadge{position:absolute;top:9px;left:9px;z-index:2;background:var(--pop);color:#fff;border:2.5px solid var(--ink);border-radius:99px;padding:1px 8px;font:400 15px/1.2 var(--display);letter-spacing:.5px;box-shadow:0 2px 0 var(--ink);pointer-events:none}
+.mapact{display:flex;gap:6px;margin-top:auto}
+.mapact>.sbtn:last-child{flex:1 1 auto;min-width:0}
+.mapc .sbtn.chbtn{background:var(--paper);padding-inline:9px;font-size:15px}
+.mapc .sbtn.chbtn.on{background:var(--pop);color:var(--paper);font-size:13px;padding-inline:6px;letter-spacing:0}
 .chalcard{max-height:calc(100dvh - 24px);display:flex;flex-direction:column}
 .chmult{text-align:center;background:var(--sun);border:3px solid var(--ink);border-radius:14px;padding:4px 8px;box-shadow:0 3px 0 var(--ink);margin:4px 0 8px}
 .chmult b{display:block;font:400 34px/1 var(--display);letter-spacing:1px;font-variant-numeric:tabular-nums}
