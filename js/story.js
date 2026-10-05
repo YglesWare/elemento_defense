@@ -438,6 +438,7 @@ const STORY = { afterShop: null };
 $('#sBack').addEventListener('click', () => { if (STORY.afterShop) { const f = STORY.afterShop; STORY.afterShop = null; setTimeout(f, 0); } });
 function storyBattle() {
   const ch = CHAPTERS[storyRun.ch];
+  storyRun.launch = true;
   newGame(ch.map, null, 'facile');
   // Un coup de pouce à chaque nouvel essai
   Object.assign(G, { gold: ch.gold + 50 * storyRun.tries, lives: ch.lives, startLives: ch.lives, maxw: ch.waves.length });

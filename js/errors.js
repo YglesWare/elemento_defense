@@ -4,10 +4,14 @@
 'use strict';
 
 const ERR_KEY = 'elemento.errq', ERR_SENT = 'elemento.errSent', ERR_MAX = 30;
+// Jeu lancé en développement sur l'ordinateur (serveur local, tests automatiques) : ni journal des parties ni erreurs envoyés.
+// L'appli Android est servie elle aussi depuis « localhost » (Capacitor) : elle n'est jamais concernée.
+const DEV_HOST = !(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())
+  && (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) || location.protocol === 'file:');
 const ERRS = { session: new Map() };
 function errNote(msg, src, line, stack) {
   try {
-    if (window.parent !== window && window.parent.BALANCE) return;
+    if (DEV_HOST || (window.parent !== window && window.parent.BALANCE)) return;
     msg = String(msg || 'Erreur').slice(0, 500); src = String(src || '').replace(/^.*\//, '').replace(/\?.*$/, '').slice(0, 200);
     const sig = msg + '|' + src + '|' + (line | 0), seen = ERRS.session.get(sig);
     if (seen) { seen.n++; return; }

@@ -156,13 +156,17 @@ function baseState(mi, save, diff) {
     terrain: m.terrain ? diffTerrain(mi, diff) : null, gold: save ? save.gold : Df.gold + Math.round(M('gold') * 25), lives: save ? save.lives : Df.lives + Math.round(M('lives') * 2), wave: save ? save.wave : 0, score: save ? save.score : 0,
     weather: (save && save.weather) || 'clear', bossKills: save ? save.bossKills || 0 : 0, shardsPaid: save ? save.shardsPaid || 0 : 0, shardsWon: save ? save.shardsWon || 0 : 0, won: save ? !!save.won : false, reviveUsed: save ? !!save.reviveUsed : false,
     endless: save ? !!save.endless : diff === 'infini', ruins: save ? (save.ruins || []).slice() : [], bonusUsed: save ? save.bonusUsed || 0 : 0, bonusAim: null, towers: [], enemies: [], projs: [], fx: [], parts: [], texts: [], zones: [], tors: [], eprojs: [], spawnQ: [], spawnT: 0,
-    waveActive: false, speed: 1, paused: false, over: false, time: 0, shake: 0, speedLines: 0, hurtT: 0, baseHit: 0, eid: 0, onoCd: {},
+    waveActive: false, speed: 1, paused: false, over: false, time: save ? save.time || 0 : 0, shake: 0, speedLines: 0, hurtT: 0, baseHit: 0, eid: 0, onoCd: {},
     selType: null, selTower: null, hover: null, ghost: null, bad: null, autoT: 0, checkpoint: null };
 }
 function newGame(mi, save, diff) {
+  // Mode histoire (js/story.js) : un rêve, rien n'est compté. Seul storyBattle lance une partie de l'histoire ;
+  // si le joueur en est sorti par un autre chemin, la nouvelle partie quitte le rêve et rend la vraie progression.
+  const inStory = typeof storyRun !== 'undefined' && storyRun && storyRun.launch;
+  if (typeof storyRun !== 'undefined' && storyRun && !storyRun.launch) storyLeave();
   const m = MAPS[mi]; useGrid(m);
   G = baseState(mi, save, diff);
-  if (typeof storyRun !== 'undefined' && storyRun) G.story = storyRun; // mode histoire (js/story.js) : un rêve, rien n'est compté
+  if (inStory) { G.story = storyRun; storyRun.launch = false; }
   P = buildPath(m); G.deco = genDeco(mi);
   if (!save && !G.story) { stats.games++; saveStats(); const h = new Date().getHours(); if (h < 5 && typeof trophy === 'function' && !G.duel) trophy('egg_night'); }
   if (save) for (const t of save.towers) { const nt = addTower(t.type, t.c, t.r, t.lvl >= 3 && !t.br && !TOWERS[t.type].fusion ? 2 : t.lvl, t.mode, t.inv, t.br); if (hardMode() && t.hp > 0) nt.hp = Math.min(nt.maxHp, t.hp); }
@@ -183,7 +187,7 @@ function saveCheckpoint() {
   if (G.duel || duelOn || G.coop || G.story) return;
   G.checkpoint = { grid: GRIDV, rnd: MAPS[G.map].rnd || null, map: G.map, mapId: MAPS[G.map].id, diff: G.diff, banked: G.banked, gold: G.gold, lives: G.lives, wave: G.wave, score: G.score, endless: G.endless,
     bossKills: G.bossKills, shardsPaid: G.shardsPaid, shardsWon: G.shardsWon, won: G.won, reviveUsed: G.reviveUsed,
-    weather: G.weather, ruins: G.ruins, bonusUsed: G.bonusUsed || 0, towers: G.towers.map(t => ({ type: t.type, c: t.c, r: t.r, lvl: t.lvl, mode: t.mode, inv: t.inv, br: t.br, hp: Math.round(t.hp) })) };
+    weather: G.weather, ruins: G.ruins, bonusUsed: G.bonusUsed || 0, time: Math.round(G.time), towers: G.towers.map(t => ({ type: t.type, c: t.c, r: t.r, lvl: t.lvl, mode: t.mode, inv: t.inv, br: t.br, hp: Math.round(t.hp) })) };
   store.set(SAVE, G.checkpoint); store.flush(); // écrite tout de suite : un plantage juste après ne la perd pas
 }
 // Appli mise en arrière-plan entre deux vagues : on garde les tours posées pendant l'entracte

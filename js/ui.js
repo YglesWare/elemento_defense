@@ -288,6 +288,13 @@ function pause() {
   refreshOptBtns();
   if (typeof duelPauseUI === 'function') duelPauseUI(!!G.duel);
   if (G.coop && typeof coopPauseUI === 'function') coopPauseUI();
+  // Mode histoire : on ne peut que quitter le chapitre (abandonner ou ouvrir le tutoriel laisserait le jeu dans le rêve)
+  $('#pTuto').hidden = !!G.story;
+  if (G.story) {
+    $('#pCash').hidden = true;
+    $('#pQuit').textContent = T('Quitter le chapitre');
+    $('#pSave').textContent = T('Chapitre ') + G.story.ch + T(' de l’histoire : c’est un rêve, rien n’est sauvegardé.');
+  } else if (!G.duel) $('#pQuit').innerHTML = T('Retour au menu · partie gardée') + '<span class="kbd">Q</span>';
 }
 let cashArm = false;
 function refreshCash() {
@@ -299,6 +306,7 @@ function refreshCash() {
 }
 function cashOut() {
   if (!G || G.over) return;
+  if (G.story && typeof storyAbort === 'function') { storyAbort(); return; }
   G.over = true; G.paused = true; Snd.play('clear');
   const lost = revokeShards(), bank = bankGold(0), best = ((store.get(BEST2) || {})[recId(MAPS[G.map])] || {})[G.diff]; store.del(SAVE); stats.quits++; saveStats();
   if (typeof logGame === 'function') logGame('quit');

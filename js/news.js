@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  68: [
+    ['🐛', 'Histoire : quitter un chapitre en cours ne transforme plus la partie suivante en chapitre de l’histoire.'],
+  ],
   67: [
     ['🎻', 'Fini le son 8 bits : la musique est jouée avec de vrais instruments (piano, guitare, harpe, flûte, violon, cor…), plus grave et beaucoup plus douce pour les oreilles.'],
     ['🗺️', 'Chaque carte a sa musique : bossa-nova à la plage, grenouilles au marais, cor des Alpes au Pic, trot de cheval au canyon, tambours au volcan…'],
