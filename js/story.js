@@ -448,6 +448,82 @@ function drawWorldMap(c, W, H, upTo) {
   c.fillStyle = '#f2dfb0'; c.beginPath(); c.arc(0, 0, R2 * 0.15, 0, TAU); c.fill(); c.restore();
   c.font = 'bold ' + Math.round(W * 0.035) + 'px "Baloo 2", system-ui, sans-serif'; c.fillStyle = '#5a3a1e'; c.textAlign = 'center'; c.fillText('N', cx, cy - R2 - 3);
 }
+// ---------- La troupe sur la carte ----------
+// Braise (le joueur) en tête sur le chemin, puis Yglou et les copains déjà rencontrés, qui la suivent en sautillant.
+// En revenant d'un chapitre, la troupe marche jusqu'à l'étape suivante et le nouveau copain la rejoint.
+const STSEEN_KEY = 'elemento.storySeen';
+// Qui voyage avec Braise en arrivant à l'étape i : les tours rencontrées jusqu'au chapitre précédent
+const storyTeam = i => ['yglou'].concat((i > 0 ? CHAPTERS[Math.min(i, CHAPTERS.length) - 1].towers : []).filter(t => t !== 'feu'));
+const storyName = k => k === 'yglou' ? 'Yglou' : TOWERS[k].name;
+// Le chemin de la carte, découpé finement (même courbe que drawWorldMap), du départ jusqu'à l'étape i
+function storyTrail(W, H, i) {
+  const pts = NODE_POS.map(([x, y]) => [x * W, y * H]), out = [[...pts[0], 0]];
+  for (let s = 1; s <= i; s++) {
+    const [x0, y0] = pts[s - 1], [x1, y1] = pts[s], cx = (x0 + x1) / 2, cy = Math.min(y0, y1) + (y1 - y0) * 0.1 + 6;
+    for (let k = 1; k <= 24; k++) {
+      const f = k / 24, x = (1 - f) * (1 - f) * x0 + 2 * (1 - f) * f * cx + f * f * x1, y = (1 - f) * (1 - f) * y0 + 2 * (1 - f) * f * cy + f * f * y1;
+      const p = out[out.length - 1]; out.push([x, y, p[2] + Math.hypot(x - p[0], y - p[1])]);
+    }
+  }
+  return out;
+}
+// Point du chemin à la distance d (avant le départ : on recule vers la gauche)
+function trailAt(tr, d) {
+  if (d <= 0) return [tr[0][0] + d, tr[0][1] + Math.min(22, -d * 0.6)]; // avant le départ : un peu à gauche et en dessous
+  for (let k = 1; k < tr.length; k++) if (tr[k][2] >= d) { const a = tr[k - 1], b = tr[k], f = (d - a[2]) / Math.max(1e-6, b[2] - a[2]); return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]; }
+  const z = tr[tr.length - 1]; return [z[0], z[1]];
+}
+let stPartyRaf = 0;
+function storyParty(cur, W, H) {
+  cancelAnimationFrame(stPartyRaf);
+  const cv = $('#stParty'), c = prepMini(cv, W, H), tr = storyTrail(W, H, cur), end = tr[tr.length - 1][2];
+  // Dernière étape vue : si on a avancé depuis, la troupe marche jusqu'ici
+  let seen = +(store.get(STSEEN_KEY) ?? cur); if (!(seen >= 0) || seen > cur) seen = cur;
+  const team = storyTeam(cur), was = storyTeam(seen), fresh = team.filter(k => !was.includes(k));
+  const startD = seen < cur ? storyTrail(W, H, seen).pop()[2] : end, WALK = seen < cur ? 1.8 : 0, t0 = performance.now();
+  const u = Math.min(W, H) / 340, gap = 25 * u, lead = 30 * u;
+  store.set(STSEEN_KEY, cur);
+  let told = false;
+  storyTeamStrip(team, fresh);
+  const frame = now => {
+    if (!cv.isConnected || curScreen !== 'story') return;
+    const t = (now - t0) / 1000, walk = WALK ? Math.min(1, t / WALK) : 1, ease = walk < 1 ? walk * walk * (3 - 2 * walk) : 1;
+    const dHead = startD + (end - startD) * ease - lead, moving = walk < 1;
+    c.clearRect(0, 0, W, H);
+    // Du dernier au premier, pour que Braise passe devant
+    const all = ['feu'].concat(team);
+    for (let n = all.length - 1; n >= 0; n--) {
+      const k = all[n], isNew = fresh.includes(k);
+      // Le nouveau copain arrive une fois la marche finie, avec un petit saut
+      const pop = isNew && WALK ? clamp((t - WALK) / 0.45, 0, 1) : 1; if (pop <= 0) continue;
+      let [x, y] = trailAt(tr, dHead - n * gap);
+      const hop = Math.abs(Math.sin(t * (moving ? 9 : 3.2) + n * 1.3)) * (moving ? 6 : 2.5) * u, s = (k === 'feu' ? 44 : 32) * u * (pop < 1 ? 0.4 + 0.6 * Math.sin(pop * Math.PI / 2) * (1 + 0.15 * Math.sin(pop * Math.PI)) : 1);
+      c.save(); c.globalAlpha = 0.25; c.fillStyle = '#5a3a1e'; c.beginPath(); c.ellipse(x, y + 2 * u, s * 0.36, s * 0.11, 0, 0, TAU); c.fill(); c.restore();
+      if (k === 'yglou') drawYglou(c, x, y - s * 0.55 - hop - 8 * u, s * 0.95, 'happy', t, { noShadow: true, noConfetti: true });
+      else drawTower(c, k, x, y - s * 0.32 - hop, s, 1, t, 0, 0.3, 0, false);
+    }
+    // « Toi ! » au-dessus de Braise
+    const [bx, by] = trailAt(tr, dHead), ay = Math.max(14 * u, by - 62 * u) - Math.abs(Math.sin(t * 4)) * 4 * u;
+    c.save(); c.font = '800 ' + Math.round(12 * u) + 'px "Baloo 2", system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    const tw = c.measureText(T('Toi !')).width + 12 * u; c.fillStyle = '#ff4f81'; c.strokeStyle = '#2a1b3d'; c.lineWidth = 2;
+    c.beginPath(); c.roundRect(bx - tw / 2, ay - 9 * u, tw, 18 * u, 9 * u); c.fill(); c.stroke();
+    c.beginPath(); c.moveTo(bx - 5 * u, ay + 9 * u); c.lineTo(bx, ay + 15 * u); c.lineTo(bx + 5 * u, ay + 9 * u); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = '#ffffff'; c.fillText(T('Toi !'), bx, ay + 0.5); c.restore();
+    if (!told && fresh.length && t > WALK + 0.2) { told = true; Snd.play('win'); hint(fresh.map(storyName).join(T(' et ')) + (fresh.length > 1 ? T(' rejoignent l’équipe !') : T(' rejoint l’équipe !')), 2600); }
+    stPartyRaf = requestAnimationFrame(frame);
+  };
+  stPartyRaf = requestAnimationFrame(frame);
+}
+// Sous la carte : les portraits de l'équipe (les nouveaux marqués)
+function storyTeamStrip(team, fresh) {
+  const box = $('#stTeam'); if (!box) return;
+  const all = ['feu'].concat(team);
+  box.innerHTML = '<b>' + T('Ton équipe') + '</b><div class="stmates">' + all.map((k, i) => '<span class="stmate' + (fresh.includes(k) ? ' new' : '') + '"><canvas data-i="' + i + '"></canvas><small>' + (k === 'feu' ? T('Toi') : esc(storyName(k))) + '</small>' + (fresh.includes(k) ? '<em>' + T('Nouveau !') + '</em>' : '') + '</span>').join('') + '</div>';
+  box.querySelectorAll('canvas').forEach(cv => {
+    const k = all[+cv.dataset.i], c = prepMini(cv, 40, 44);
+    if (k === 'yglou') drawYglou(c, 20, 26, 30, 'happy', 0, { noShadow: true, noConfetti: true }); else drawTower(c, k, 20, 28, 34, 1, 0.4, 0, 0.3, 0, false);
+  });
+}
 function openStory() {
   Snd.init(); show('story'); screens.story.scrollTop = 0;
   const done = storyDone(), next = CHAPTERS.findIndex((c, i) => !done[i]), cur = next < 0 ? CHAPTERS.length - 1 : next;
@@ -459,11 +535,11 @@ function openStory() {
       return '<button class="stnode ' + st + '" type="button" data-i="' + i + '" style="left:' + x * 100 + '%;top:' + y * 100 + '%" aria-label="' + esc(T(t)) + '">' + (i === all.length - 1 ? '👑' : done[i] ? '✓' : i) + '</button>'
         + '<span class="stlbl" style="left:' + x * 100 + '%;top:calc(' + y * 100 + '% + 25px)">' + esc(T(t)) + '</span>';
     }).join('')
-    + '<canvas class="sttok" id="stTok" style="left:' + NODE_POS[cur][0] * 100 + '%;top:' + NODE_POS[cur][1] * 100 + '%"></canvas>';
+    + '<canvas class="stparty" id="stParty" aria-hidden="true"></canvas>';
   // La carte se dessine à la taille de son cadre
   const W = box.clientWidth || 340, H = box.clientHeight || 490;
   drawWorldMap(prepMini($('#stMap'), W, H), W, H, cur);
-  const c = prepMini($('#stTok'), 44, 48); drawTower(c, 'feu', 22, 30, 38, 1, 0.4, 0, 0.3, 0, false);
+  storyParty(cur, W, H);
   box.querySelectorAll('.stnode').forEach(b => b.addEventListener('click', () => {
     const i = +b.dataset.i;
     if (i >= CHAPTERS.length) { hint(T('La suite de l’histoire arrive bientôt !'), 2000); return; }

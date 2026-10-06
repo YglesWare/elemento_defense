@@ -1878,6 +1878,12 @@ const EN = {
 "Ce sont de grosses mutations : elles coûtent bien plus cher que les autres achats": "They are big mutations: they cost much more than the other upgrades",
 "Rocaille, Volcan et Marais ne touchent pas les volants, et Zéphyr pas le sol : la mutation leur apprend, mais elle coûte au moins 500 or par achat": "Rocky, Volcano and Swamp can’t hit flyers, and Zephyr can’t hit the ground: the mutation teaches them, but it costs at least 500 gold per upgrade",
 "Mutation": "Mutation",
+"Toi !": "You!",
+" rejoignent l’équipe !": " join the team!",
+" rejoint l’équipe !": " joins the team!",
+"Ton équipe": "Your team",
+"Nouveau !": "New!",
+"Histoire : sur la carte, ta troupe avance sur le chemin. Braise en tête, Yglou et tes copains derrière, et chaque nouveau copain rejoint l’équipe.": "Story: on the map, your party walks along the path. Ember in front, Yglou and your friends behind, and each new friend joins the team.",
 };
 const T = s => (IS_EN && typeof s === 'string' && EN[s] !== undefined ? EN[s] : s);
 // Textes fixes de la page : nœuds de texte et attributs (placeholder, aria-label, title, alt)
