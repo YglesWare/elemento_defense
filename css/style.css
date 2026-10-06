@@ -1012,3 +1012,6 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
 @media (min-width:900px){#sMaps .inner{max-width:900px}#sDiff .inner{max-width:720px}}
 /* Difficulté pas encore ouverte : le bouton verrouillé passe à la ligne au lieu d'écraser la description */
 .df .btn.alt:disabled{max-width:150px;white-space:normal;font-size:16px;line-height:1.1;padding:8px 10px}
+/* Bandeau du bas : une marge sous les boutons (Améliorer, Vendre, Cible), et la barre de gestes du téléphone en plus */
+/* (hauteur fixe : la carte ne saute pas quand on touche une tour) */
+#panel{height:calc(158px + env(safe-area-inset-bottom, 0px));padding-bottom:calc(16px + env(safe-area-inset-bottom, 0px))}
