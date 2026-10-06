@@ -33,6 +33,14 @@ const TROPHIES = [
   { id: 'time_5h', icon: '⏳', name: T('Passionné'), desc: T('Jouer 5 heures.'), r: 8 },
   { id: 'daily_7', icon: '📅', name: T('Fidèle au poste'), desc: T('Réussir la carte du jour 7 jours différents.'), r: 8 },
   { id: 'rich', icon: '🐷', name: T('Tirelire pleine'), desc: T('Avoir 5 000 or dans la cagnotte.'), r: 5 },
+  // Piments (js/challenge.js)
+  { id: 'pim_x2', icon: '🥇', name: T('Ça pique !'), desc: T('Gagner une carte avec un piment ×2 ou plus (médaille d’or).'), r: 5 },
+  { id: 'pim_gold5', icon: '🏅', name: T('Collection d’or'), desc: T('Avoir la médaille d’or sur 5 cartes.'), r: 10 },
+  { id: 'pim_mono', icon: '🎨', name: T('Monochrome'), desc: T('Gagner une carte avec un seul élément.'), r: 5 },
+  { id: 'pim_mono6', icon: '🌈', name: T('Arc-en-ciel'), desc: T('Gagner en Monochrome avec chacun des 6 éléments.'), r: 12 },
+  { id: 'pim_surprise', icon: '🎲', name: T('Surprise !'), desc: T('Gagner avec un piment surprise.'), r: 3 },
+  { id: 'pim_week', icon: '📅', name: T('Piment de la semaine'), desc: T('Gagner le piment de la semaine.'), r: 5 },
+  { id: 'pim_event', icon: '🎉', name: T('Fête pimentée'), desc: T('Gagner une carte d’événement avec son piment d’événement.'), r: 5 },
   // Easter eggs
   { id: 'egg_yglou', icon: '🦅', name: T('Kiiaaa !'), desc: T('Toucher Yglou 10 fois sur l’accueil.'), r: 5, hidden: true, hint: T('Yglou adore qu’on s’occupe de lui…') },
   { id: 'egg_house', icon: '🏠', name: T('Maison chatouilleuse'), desc: T('Toucher 10 fois la maison pendant une partie.'), r: 5, hidden: true, hint: T('Même une maison peut être chatouilleuse.') },

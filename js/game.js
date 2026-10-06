@@ -168,8 +168,15 @@ function newGame(mi, save, diff) {
   G = baseState(mi, save, diff);
   if (inStory) { G.story = storyRun; storyRun.launch = false; }
   // Défis (js/challenge.js) : le réglage de la carte en solo, ou celui de la sauvegarde ; le multijoueur pose le sien ensuite
+  // Piment de la semaine (lancé par weekPlay) et piment imposé de la carte du jour, en plus du réglage de chaque carte
   G.chal = null;
-  if (typeof chalStart === 'function' && !duelOn && !G.story && !G.demo && chalMapOk(mi)) chalStart(save ? save.chal : chalGet(m.id), !save);
+  if (typeof chalStart === 'function' && !duelOn && !G.story && !G.demo) {
+    if (chalWeekGo && !save) { G.week = chalWeekGo.id; chalStart(chalWeekGo.c, true); }
+    else if (save && save.week) { G.week = save.week; chalStart(save.chal, false); }
+    else if (m.daily) chalStart(save ? save.chal : chalDaily(m.daily), !save);
+    else if (chalMapOk(mi)) chalStart(save ? save.chal : chalGet(m.id), !save);
+  }
+  if (typeof chalWeekGo !== 'undefined') chalWeekGo = null;
   P = buildPath(m); G.deco = genDeco(mi);
   if (!save && !G.story) { stats.games++; saveStats(); const h = new Date().getHours(); if (h < 5 && typeof trophy === 'function' && !G.duel) trophy('egg_night'); }
   if (save) for (const t of save.towers) { const nt = addTower(t.type, t.c, t.r, t.up || upFromLvl(t.lvl, t.br), t.mode, t.inv); if (hardMode() && t.hp > 0) nt.hp = Math.min(nt.maxHp, t.hp); }
@@ -190,7 +197,7 @@ function saveCheckpoint() {
   if (G.duel || duelOn || G.coop || G.story) return;
   G.checkpoint = { grid: GRIDV, rnd: MAPS[G.map].rnd || null, map: G.map, mapId: MAPS[G.map].id, diff: G.diff, banked: G.banked, gold: G.gold, lives: G.lives, wave: G.wave, score: G.score, endless: G.endless,
     bossKills: G.bossKills, shardsPaid: G.shardsPaid, shardsWon: G.shardsWon, won: G.won, reviveUsed: G.reviveUsed,
-    weather: G.weather, ruins: G.ruins, bonusUsed: G.bonusUsed || 0, time: Math.round(G.time), chal: G.chal ? { m: G.chal.m, sans: G.chal.sans, used: G.chal.used } : null, towers: G.towers.map(t => ({ type: t.type, c: t.c, r: t.r, up: t.up, mode: t.mode, inv: t.inv, hp: Math.round(t.hp) })) };
+    weather: G.weather, ruins: G.ruins, bonusUsed: G.bonusUsed || 0, time: Math.round(G.time), chal: G.chal ? { m: G.chal.m, sans: G.chal.sans, sur: G.chal.sur, used: G.chal.used } : null, week: G.week || null, towers: G.towers.map(t => ({ type: t.type, c: t.c, r: t.r, up: t.up, mode: t.mode, inv: t.inv, hp: Math.round(t.hp) })) };
   store.set(SAVE, G.checkpoint); store.flush(); // écrite tout de suite : un plantage juste après ne la perd pas
 }
 // Appli mise en arrière-plan entre deux vagues : on garde les tours posées pendant l'entracte
@@ -200,7 +207,8 @@ function recordBest() {
   // Carte du jour : records gardés jour par jour (les autres cartes aléatoires n'en ont pas)
   if (MAPS[G.map].daily) {
     const all = store.get(DAILY_KEY) || {}, day = (all[MAPS[G.map].daily] = all[MAPS[G.map].daily] || {}), cur = day[G.diff] || { wave: 0, score: 0, won: false };
-    if (G.wave > cur.wave || (G.wave === cur.wave && G.score > cur.score)) { cur.wave = G.wave; cur.score = G.score; }
+    const sc = scoreFinal(); // piment du jour compris (le même pour tous)
+    if (G.wave > cur.wave || (G.wave === cur.wave && sc > cur.score)) { cur.wave = G.wave; cur.score = sc; }
     if (G.won) cur.won = true;
     day[G.diff] = cur; store.set(DAILY_KEY, all);
     if (typeof dailyQueue === 'function') dailyQueue(MAPS[G.map].daily, G.diff, cur);
@@ -266,6 +274,7 @@ function towerStats0(t) {
   // Tours réchauffées (frotter l'écran pendant un blizzard) : cadence +20 %
   if (G && G.warmT > 0) st.rate *= 1.2;
   if (G && G.chal && chalLv('longue')) st.range *= 1 + 0.05 * chalLv('longue');
+  if (G && G.chal && chalLv('brume')) st.range *= 0.85;
   return st;
 }
 // up : les achats de la tour ({ dmg, rng, … }) ; un nombre (ancien niveau 1 à 4) est converti
@@ -313,6 +322,7 @@ function upApply(t, k, cost) {
 }
 function evolve(t) { if (typeof openUpSheet === 'function') openUpSheet(t); }
 function sell(t) {
+  if (typeof chalNoSell === 'function' && chalNoSell()) { Snd.play('no'); hint(T('Pas de remboursement 🔒 : le piment interdit de vendre'), 2200); return; }
   if (G.coopGuest) { coopAct({ a: 'sell', id: t.id }); deselect(); return; }
   if (t.builtAt != null && G.time - t.builtAt < 3 && typeof trophy === 'function') trophy('egg_regret');
   const v = sellValue(t); G.gold += v;
@@ -335,8 +345,9 @@ function makeWave(w) {
   const pool = ['gloop', 'gloop'];
   if (w >= 3) pool.push('zip'); if (w >= 4) pool.push('flappy'); if (w >= 6) pool.push('tonk'); if (w >= 8) pool.push('magma'); if (w >= 7) pool.push('gresil'); if (w >= 9) pool.push('crachou');
   // Monstre propre à chaque événement, et sa vague spéciale (15, 25, 35…)
-  const ev = evt(), EV = ev && EVMOB[ev];
-  if (EV && w >= EV.from) pool.push(EV.type, EV.type);
+  const ev = evt(), EV = ev && EVMOB[ev], fe = EV && G && G.chal ? chalLv('f_' + ev) : 0;
+  if (EV && (w >= EV.from || fe)) pool.push(EV.type, EV.type);
+  for (let i = 0; i < 2 * fe; i++) pool.push(EV.type); // piment de l'événement : son monstre dès la 1re vague, de plus en plus
   let theme = null, label = '';
   if (w % 10 === 0) label = BOSSAPP[ev] || (zoneSkin('boss') || {}).app || T('Un Kaiju approche...');
   else if (EV && w >= 5 && w % 10 === 5) { theme = EV.type; label = EV.label; }
@@ -359,10 +370,12 @@ function makeWave(w) {
   const m0 = MAPS[G.map], prng = G.diff === 'facile' && !G.duel && !G.coop ? mulberry(hashStr((m0.rnd ? m0.rnd.seed : m0.id) + ':' + w)) : Math.random;
   const np = P ? P.portals.length : 1, ids = [...Array(np).keys()];
   for (let i = ids.length - 1; i > 0; i--) { const j = Math.floor(prng() * (i + 1)); [ids[i], ids[j]] = [ids[j], ids[i]]; }
-  const k = w % 10 === 0 ? np : w <= 2 ? 1 : clamp(1 + Math.floor(prng() * (1 + w / 6)), 1, np), portals = ids.slice(0, k).sort();
+  // Portails fous (piment) : tous les portails à chaque vague, et chaque ennemi prend un itinéraire au hasard
+  const wild = np > 1 && G && G.chal && chalLv('portail');
+  const k = w % 10 === 0 || wild ? np : w <= 2 ? 1 : clamp(1 + Math.floor(prng() * (1 + w / 6)), 1, np), portals = ids.slice(0, k).sort();
   const routes = P ? P.paths.map((pa, i) => i).filter(i => portals.includes(P.paths[i].pk || 0)) : [0];
   const r0 = Math.floor(prng() * routes.length);
-  list.forEach((it, i) => { it.pi = it.type === 'boss' ? routes[Math.floor(prng() * routes.length)] : routes[(r0 + i) % routes.length]; });
+  list.forEach((it, i) => { it.pi = it.type === 'boss' || wild ? routes[Math.floor((wild ? Math.random() : prng()) * routes.length)] : routes[(r0 + i) % routes.length]; });
   return { list, label, portals };
 }
 // Délai avant la vague suivante (compté à partir de la sortie du dernier ennemi), selon la difficulté ; null = pas de chrono
@@ -378,7 +391,8 @@ function waveTimer() {
 function prepNextWave() {
   G.nextWave = (!G.endless && G.wave >= G.maxw) ? null : Object.assign({ n: G.wave + 1 }, makeWave(G.wave + 1));
   // Mode histoire : pas de météo au hasard, seulement celle écrite dans le chapitre (storyWave)
-  if (G.nextWave && !G.story && !(G.chal && chalLv('soleil')) && G.nextWave.n > 1 && (G.nextWave.n - 1) % 5 === 0) {
+  const per = G.chal && chalLv('meteo') ? 3 : 5; // Ciel capricieux (piment) : toutes les 3 vagues
+  if (G.nextWave && !G.story && !(G.chal && chalLv('soleil')) && G.nextWave.n > 1 && (G.nextWave.n - 1) % per === 0) {
     const pool = (WEATHER_POOL[MAPS[G.map].wid || MAPS[G.map].id] || ['clear']).filter(w => w !== G.weather);
     G.nextWave.weather = pool.length ? pick(pool) : 'clear';
   }
@@ -565,6 +579,7 @@ function spawn(type, pi) {
   e.pi = pi != null && P.paths[pi] ? pi : D.boss ? Math.floor(rand(P.paths.length)) : (G.rr = ((G.rr || 0) + 1) % P.paths.length);
   e.d = PP(e).d0;
   if (type === 'spectre') { e.gcy = rand(1, 2.5); e.ghost = 0; }
+  else if (G.chal && chalLv('fantome')) { e.gcy = rand(2, 6); e.ghost = 0; e.ghostAll = true; } // Fantômes (piment)
   if (type === 'lapin') e.jT = rand(1.5, 3);
   if (type === 'calinou') e.abT = rand(1, 2.5);
   setPos(e); G.enemies.push(e);
@@ -654,9 +669,12 @@ function updateEnemy(e, dt) {
     G.fx.push({ kind: 'ring', gx: e.x, gy: e.y, r0: 0.2, r1: 1.6, t: 0, dur: 0.45, color: '#ff9ac6' });
     if (n) ono(T('♥ CÂLIN !'), e.x, e.y, '#ff6fa8', 0.42, 0.4, 0.8);
   }
-  if (e.type === 'spectre' && !G.demo) {
+  if ((e.type === 'spectre' || e.ghostAll) && !G.demo) {
     if (e.ghost > 0) e.ghost -= dt;
-    else if ((e.gcy -= dt) <= 0) { e.ghost = G.weather === 'moon' ? 0.8 : 1.4; e.gcy = 2.6; e.burnT = 0; ono('BOUH!', e.x, e.y, '#e6e0ff', 0.4, 0.4, 0.8); }
+    else if ((e.gcy -= dt) <= 0) {
+      const sp = e.type === 'spectre'; e.ghost = sp ? (G.weather === 'moon' ? 0.8 : 1.4) : 1; e.gcy = sp ? 2.6 : rand(4, 7); e.burnT = 0;
+      if (sp) ono('BOUH!', e.x, e.y, '#e6e0ff', 0.4, 0.4, 0.8);
+    }
   }
   if (e.flash > 0) e.flash -= dt;
   if (e.wet > 0) e.wet -= dt;

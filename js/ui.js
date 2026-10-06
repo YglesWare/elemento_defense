@@ -114,7 +114,7 @@ function refreshInfo() {
   const cheap = Math.min(...UP_KEYS.filter(k => !trackLocked(k) && (t.up[k] || 0) < towerCap(t, k)).map(k => trackPrice(t.type, t.up, k)));
   two(up, T('Améliorer ▸'), isFinite(cheap) ? T('dès ') + COIN + cheap : null, false); up.disabled = false; up.classList.toggle('poor', !(G.gold >= cheap));
   two($('#iSell'), T('Vendre'), sellValue(t));
-  if (!mine) { up.disabled = true; $('#iSell').disabled = true; } else $('#iSell').disabled = false;
+  if (!mine) { up.disabled = true; $('#iSell').disabled = true; } else $('#iSell').disabled = typeof chalNoSell === 'function' && chalNoSell();
   // Difficile : soin payant (une tour détruite ne se soigne pas : elle n'existe plus)
   const hb = $('#iHeal'); hb.hidden = !hardMode();
   if (hardMode()) { if (hc) two(hb, T('Soigner'), hc); else two(hb, T('PV au max')); hb.disabled = !mine || !hc || G.gold < hc || t.ko > 0; }
@@ -208,6 +208,7 @@ function tapCell(q, r, isMouse) {
     const D = TOWERS[G.selType];
     if (!canBuild(q, r)) { G.bad = { c: q, r, t: 0.45 }; Snd.play('no'); hint(ruinAt(q, r) ? T('Des ruines bloquent cette case') : (terrainAt(q, r) || {}).block ? T('Impossible de construire sur un obstacle') : T('Impossible de construire sur le chemin')); return; }
     if (G.gold < costOf(G.selType)) { Snd.play('no'); hint(T('Pas assez d’or : ') + D.name + T(' coûte ') + costOf(G.selType)); return; }
+    if (typeof chalFull === 'function' && chalFull()) { Snd.play('no'); hint(T('Chantier limité 🏗️ : ') + chalTowerCap() + T(' tours au plus en même temps'), 2400); return; }
     if (!isMouse && !(G.ghost && G.ghost.c === q && G.ghost.r === r)) { G.ghost = { c: q, r }; hint(T('Touche encore pour poser ') + D.name); return; }
     if (G.coopGuest) { G.ghost = null; coopAct({ a: 'build', type: G.selType, q, r }); return; }
     build(G.selType, q, r); return;
@@ -349,7 +350,7 @@ $('#hBack').addEventListener('click', () => show(helpFrom));
 $('#pQuit').addEventListener('click', () => { if (G && G.story && typeof storyAbort === 'function') { storyAbort(); return; } G = null; show('title'); });
 $('#oMenu').addEventListener('click', () => { G = null; show('title'); });
 // Rejouer une carte aléatoire en génère une nouvelle de même taille (l'ancienne a disparu avec la partie)
-$('#oRetry').addEventListener('click', () => { if (G && MAPS[G.map].random) newGame(makeRandom(MAPS[G.map].rnd.size, newSeed()), null, G.diff); else if (G) newGame(G.map, null, G.diff); else newGame(0, null, 'facile'); });
+$('#oRetry').addEventListener('click', () => { if (G && G.week && typeof weekPlay === 'function') weekPlay(); else if (G && MAPS[G.map].random) newGame(makeRandom(MAPS[G.map].rnd.size, newSeed()), null, G.diff); else if (G) newGame(G.map, null, G.diff); else newGame(0, null, 'facile'); });
 $('#oEndless').addEventListener('click', () => { G.endless = true; G.paused = false; saveCheckpoint(); show('game'); banner('MODE INFINI', T('Jusqu’où iras-tu ?')); if (opts.auto) G.autoT = 3; });
 $('#tContinue').addEventListener('click', () => { const s = store.get(SAVE), i = saveMapIndex(s); if (i >= 0) newGame(i, s); });
 
@@ -605,34 +606,49 @@ function renderMaps(boughtId) {
   $('#mBank').textContent = meta.bank || 0;
   $('#mTest').hidden = !TEST_ALL;
   if (typeof adMapsPaint === 'function') adMapsPaint();
+  // Bandeau des défis, au-dessus des onglets : carte du jour, piment de la semaine, carte aléatoire
+  const strip = $('#mStrip'); strip.innerHTML = '';
+  strip.appendChild(dailyTile()); if (typeof weekTile === 'function') strip.appendChild(weekTile()); strip.appendChild(randomTile());
   const box = $('#tMaps'), best = store.get(BEST2) || {}; box.innerHTML = '';
-  // Onglets : « Cartes » (carte aléatoire + cartes fixes) et « Événements » (en cours d'abord, puis à venir)
+  // Onglets : « L'aventure » (cartes fixes) et « Événements » (en cours d'abord, puis à venir)
   const tab = store.get('elemento.tab.maps') === 'evt' ? 'evt' : 'std', live = MAPS.some(m => m.season && inSeason(m));
   document.querySelectorAll('#mTabs [data-mt]').forEach(b => { const on = b.dataset.mt === tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
   $('#mTabs .dot').classList.toggle('has', live);
   const rank = i => inSeason(MAPS[i]) ? 0 : 1;
   // Les événements inactifs sont masqués : on annonce seulement leur date de retour
   const order = MAPS.map((m, i) => i).filter(i => !MAPS[i].random && !!MAPS[i].season === (tab === 'evt') && (tab !== 'evt' || inSeason(MAPS[i]))).sort((a, b) => rank(a) - rank(b) || a - b);
-  if (tab === 'std') { box.appendChild(dailyCard()); box.appendChild(randomCard()); }
   if (tab === 'evt') box.appendChild(upcomingCard(order.length));
-  order.forEach(i => {
-    const m = MAPS[i];
-    if (m.season) { box.appendChild(seasonCard(i, best[recId(m)] || {})); return; }
-    const own = mapOwned(i), rec = best[m.id] || {}, d = document.createElement('div');
-    d.className = 'mapc' + (own ? '' : ' locked') + (boughtId === m.id ? ' bought' : '');
-    const med = medalsHTML(rec);
-    d.innerHTML = '<canvas></canvas><span class="nm">' + (i + 1) + '. ' + m.name + '</span><span class="bio-l">Biome ' + m.biome.name.toLowerCase() + '</span><span class="medals">' + med + '</span>'
-      + (own ? '' : mapReqOk(i) ? '<span class="req ok">✓ ' + MAPS[i - 1].name + T(' réussie</span>') : T('<span class="req">Réussis d’abord ') + MAPS[i - 1].name + T(' en Facile</span>'))
-      + (own ? T('<button class="sbtn" type="button">Jouer ▸</button>')
-        : '<button class="sbtn" type="button"' + ((meta.bank || 0) < m.price || !mapReqOk(i) ? ' disabled' : '') + '>' + LOCK + T('Acheter · ') + m.price + T(' or</button>'));
-    box.appendChild(d);
-    const cv2 = d.querySelector('canvas'); drawMapMini(prepMini(cv2, 140, 90), i, 140, 90, 'moyen');
-    d.querySelector('button').addEventListener('click', () => own ? openDiff(i) : buyMap(i));
-    if (own) cv2.addEventListener('click', () => openDiff(i));
-    if (own && typeof chalCard === 'function') { chalCard(d, i); mapRankRow(d, i); }
-  });
+  order.forEach(i => box.appendChild(MAPS[i].season ? seasonRow(i, best[recId(MAPS[i])] || {}) : mapRow(i, best[MAPS[i].id] || {}, boughtId === MAPS[i].id)));
 }
-const medalsHTML = rec => DORDER.map(k => { const r = rec[k], on = k === 'infini' ? r && r.wave : r && r.won; return '<span class="medal' + (on ? ' on' : '') + '" title="' + DIFFS[k].name + '">' + (k === 'infini' ? '∞' + (r && r.wave ? ' ' + r.wave : '') : DIFFS[k].name[0]) + '</span>'; }).join('');
+$('#mInfo').addEventListener('click', () => { const p = $('#mInfoTxt'); p.hidden = !p.hidden; $('#mInfo').setAttribute('aria-expanded', !p.hidden); });
+// Progression d'une carte : un rond par difficulté (Facile, Moyen, Difficile, Infini), rempli une fois réussie
+const dotsHTML = rec => '<span class="dds">' + DORDER.map(k => { const r = rec[k], on = k === 'infini' ? r && r.wave : r && r.won; return '<span class="dd' + (on ? ' on' : '') + '" title="' + DIFFS[k].name + (k === 'infini' && r && r.wave ? T(' · vague ') + r.wave : '') + '">' + (k === 'infini' ? '∞' : DIFFS[k].name[0]) + '</span>'; }).join('') + '</span>';
+const PLAY_IC = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l7 5-7 5z"/></svg>';
+// Une ligne de la liste : petite vignette, nom, progression ; toute la ligne ouvre la carte (le ▶ aussi, au clavier).
+// side : le bouton de droite à la place du ▶ (achat d'une carte verrouillée)
+function listRow(cls, name, info, open, side) {
+  const d = document.createElement('div'); d.className = 'mrow' + (cls ? ' ' + cls : '');
+  d.innerHTML = '<canvas></canvas><div class="mmid"><span class="nm">' + name + '</span><span class="minfo">' + info + '</span></div>'
+    + (side || (open ? '<button class="mgo" type="button" aria-label="' + T('Ouvrir ') + esc(name.replace(/<[^>]+>/g, '')) + '">' + PLAY_IC + '</button>' : ''));
+  if (open) { d.classList.add('tap'); d.addEventListener('click', () => { Snd.init(); open(); }); }
+  return d;
+}
+function mapRow(i, rec, bought) {
+  const m = MAPS[i], own = mapOwned(i);
+  const d = own ? listRow(bought ? 'bought' : '', (i + 1) + '. ' + m.name, dotsHTML(rec) + (typeof mapBadge === 'function' ? mapBadge(i) : ''), () => openDiff(i))
+    : listRow('locked', (i + 1) + '. ' + m.name, mapReqOk(i) ? '<span class="mreq ok">✓ ' + MAPS[i - 1].name + T(' réussie</span>') : T('<span class="mreq">Réussis d’abord ') + MAPS[i - 1].name + T(' en Facile</span>'), null,
+      '<button class="mbuy" type="button"' + ((meta.bank || 0) < m.price || !mapReqOk(i) ? ' disabled' : '') + '>' + LOCK + m.price + T(' or') + '</button>');
+  drawMapMini(prepMini(d.querySelector('canvas'), 140, 90), i, 140, 90, 'moyen');
+  if (!own) d.querySelector('.mbuy').addEventListener('click', ev => { ev.stopPropagation(); buyMap(i); });
+  return d;
+}
+function seasonRow(i, rec) {
+  const m = MAPS[i], on = inSeason(m), S = SEASONS[m.season];
+  const d = listRow('season ' + m.season + (on ? '' : ' locked'), S.icon + ' ' + m.name,
+    '<span class="mevt">' + (on ? T('Gratuite, ') + S.until() : S.back) + '</span>' + (on ? dotsHTML(rec) + (typeof mapBadge === 'function' ? mapBadge(i) : '') : ''), on ? () => openDiff(i) : null);
+  drawMapMini(prepMini(d.querySelector('canvas'), 140, 90), i, 140, 90, 'moyen');
+  return d;
+}
 function upcomingCard(nLive) {
   const now = new Date(), list = Object.keys(SEASONS).filter(k => !SEASONS[k].on(now)).map(k => ({ k, d: nextSeasonStart(k, now) })).sort((a, b) => a.d - b.d);
   const d = document.createElement('div'); d.className = 'upcoming';
@@ -640,46 +656,32 @@ function upcomingCard(nLive) {
     + T('<b>À venir</b><ul>') + list.map(({ k, d: dt }) => '<li><span>' + SEASONS[k].icon + ' ' + SEASONS[k].name + T('</span><em>à partir du ') + frDate(dt) + (dt.getFullYear() !== now.getFullYear() ? ' ' + dt.getFullYear() : '') + '</em></li>').join('') + '</ul>';
   return d;
 }
-function seasonCard(i, rec) {
-  const m = MAPS[i], on = inSeason(m), S = SEASONS[m.season], d = document.createElement('div');
-  d.className = 'mapc season ' + m.season + (on ? ' live' : ' locked');
-  d.innerHTML = '<span class="evt">' + S.icon + T(' Événement ') + S.name + (m.edition ? T(' · édition ') + m.edition : '') + '</span><canvas></canvas><span class="nm">' + m.name + '</span><span class="bio-l">Biome ' + m.biome.name.toLowerCase() + '</span><span class="medals">' + medalsHTML(rec) + '</span>'
-    + '<span class="req ok">' + (on ? T('Gratuite, ') + S.until() : S.back) + '</span>'
-    + '<button class="sbtn" type="button"' + (on ? '' : ' disabled') + '>' + (on ? T('Jouer ▸') : T('Bientôt')) + '</button>';
-  const cv2 = d.querySelector('canvas'); drawMapMini(prepMini(cv2, 140, 90), i, 140, 90, 'moyen');
-  if (on) { d.querySelector('button').addEventListener('click', () => openDiff(i)); cv2.addEventListener('click', () => openDiff(i)); }
-  if (on && typeof chalCard === 'function') { chalCard(d, i); mapRankRow(d, i); }
+// Vignettes du bandeau des défis (bouton entier)
+function stripTile(cls, name, info, open) {
+  const d = document.createElement('button'); d.type = 'button'; d.className = 'mtile ' + cls;
+  d.innerHTML = '<canvas></canvas><span class="nm">' + name + '</span><span class="minfo">' + info + '</span>';
+  if (open) d.addEventListener('click', () => { Snd.init(); open(); }); else d.disabled = true;
   return d;
 }
-// Carte aléatoire : choix de la taille, puis écran des difficultés (avec « Nouvelle carte »)
-// Card de la carte aléatoire : un aperçu fixe surmonté d'un dé ; elle ouvre l'écran de génération
+// Carte aléatoire : un aperçu fixe surmonté d'un dé ; elle ouvre l'écran de génération
 let randCardMap = null;
-// Carte du jour : aperçu de la carte d'aujourd'hui, temps restant et records du jour
-function dailyCard() {
-  const d = document.createElement('div'), r = dailyRnd(), rec = dailyRecs()[r.daily] || {}; d.className = 'mapc rand daily';
-  const map = genRandomMap(r.size, r.seed); dailyDress(map, r.daily);
-  d.innerHTML = '<canvas></canvas><span class="nm">' + T('📅 Carte du jour') + '</span><span class="bio-l">' + T('Nouvelle carte dans ') + dailyLeft() + ' · ' + RSIZES[r.size].name + '</span>'
-    + '<span class="medals">' + medalsHTML(rec) + '</span><button class="sbtn" type="button">' + T('Jouer ▸') + '</button>';
-  const cv2 = d.querySelector('canvas'), c = prepMini(cv2, 140, 90), keep = MAPS[RI];
-  MAPS[RI] = map; drawMapMini(c, RI, 140, 90, 'moyen'); MAPS[RI] = keep;
-  const open = () => { Snd.init(); playDaily(); };
-  d.querySelector('button').addEventListener('click', open); cv2.addEventListener('click', open);
-  if (typeof rankCard === 'function') rankCard(d, r.daily);
-  return d;
-}
-function randomCard() {
-  const d = document.createElement('div'); d.className = 'mapc rand';
-  d.innerHTML = T('<canvas></canvas><span class="nm">🎲 Carte aléatoire</span><span class="bio-l">Une carte unique, générée pour ta partie</span>')
-    + T('<span class="medals"><span class="medal">Petite</span><span class="medal">Moyenne</span><span class="medal">Grande</span></span>')
-    + T('<button class="sbtn" type="button">Créer ▸</button>');
-  const cv2 = d.querySelector('canvas'), c = prepMini(cv2, 140, 90);
+function randomTile() {
+  const d = stripTile('rand', T('🎲 Aléatoire'), '<span class="msub">' + T('Carte unique') + '</span>', openRand);
+  const c = prepMini(d.querySelector('canvas'), 140, 90);
   randCardMap = randCardMap || genRandomMap('moyenne', 20261001);
   const keep = MAPS[RI]; MAPS[RI] = randCardMap; drawMapMini(c, RI, 140, 90, 'moyen'); MAPS[RI] = keep;
   const ch = miniPortrait() ? Math.round(140 * 13 / 9) : 90; // l'aperçu peut être en hauteur (écran en hauteur)
   c.fillStyle = 'rgba(42,27,61,.35)'; c.fillRect(0, 0, 140, ch);
   drawDice(c, 70, ch / 2, 26);
-  const open = () => { Snd.init(); openRand(); };
-  d.querySelector('button').addEventListener('click', open); cv2.addEventListener('click', open);
+  return d;
+}
+// Carte du jour : son petit piment imposé et le temps restant ; le classement du jour est sur son écran
+function dailyTile() {
+  const r = dailyRnd(), dc = typeof chalDaily === 'function' ? chalDaily(r.daily) : null;
+  const d = stripTile('daily', T('📅 Du jour'), (dc && chalOn(dc) ? '<span class="chchip">🌶 ' + chalX(chalMult(dc, null)) + '</span>' : '') + '<span class="msub">' + dailyLeft() + '</span>', playDaily);
+  const map = genRandomMap(r.size, r.seed); dailyDress(map, r.daily);
+  const c = prepMini(d.querySelector('canvas'), 140, 90), keep = MAPS[RI];
+  MAPS[RI] = map; drawMapMini(c, RI, 140, 90, 'moyen'); MAPS[RI] = keep;
   return d;
 }
 function drawDice(c, x, y, h) {
@@ -697,16 +699,20 @@ function buyMap(i) {
   Snd.init(); Snd.play('win'); renderMaps(m.id);
 }
 let diffMap = 0;
-function openDiff(i) {
-  diffMap = i; Snd.init(); show('diff'); screens.diff.scrollTop = 0;
+// week : le piment de la semaine (js/challenge.js weekInfo) : une seule difficulté, et son propre record
+let diffWeek = null;
+function openDiff(i, week) {
+  diffMap = i; diffWeek = week || null; Snd.init(); show('diff'); screens.diff.scrollTop = 0;
   const m = MAPS[i], rec = (store.get(BEST2) || {})[recId(m)] || {};
-  $('#dfName').textContent = (m.random ? '🎲 ' : m.season ? SEASONS[m.season].icon + ' ' : (i + 1) + '. ') + m.name;
-  $('#dfSub').textContent = m.blurb + (m.random ? T(' Graine : ') + seedCode(m.rnd) + '.' : '') + ' Biome ' + m.biome.name.toLowerCase() + T(' : ') + biomeText(m.biome) + T(', sur toute la carte.');
-  if (typeof chalDiffLine === 'function') chalDiffLine(i);
+  $('#dfName').textContent = week ? T('🌶 Piment de la semaine') : (m.random ? '🎲 ' : m.season ? SEASONS[m.season].icon + ' ' : (i + 1) + '. ') + m.name;
+  $('#dfSub').textContent = (week ? (i + 1) + '. ' + m.name + ' · ' + (week.left > 1 ? T('encore ') + week.left + T(' jours') : T('dernier jour !')) + '. ' : '') + m.blurb + (m.random ? T(' Graine : ') + seedCode(m.rnd) + '.' : '') + ' Biome ' + m.biome.name.toLowerCase() + T(' : ') + biomeText(m.biome) + T(', sur toute la carte.');
+  if (typeof chalDiffLine === 'function') chalDiffLine(i, week);
   const box = $('#dfList'); box.innerHTML = '';
-  for (const k of DORDER) {
+  const wrec = week && (store.get('elemento.mapbest') || {})[week.id + '|' + week.diff];
+  for (const k of week ? [week.diff] : DORDER) {
     const Df = DIFFS[k], r = m.random ? null : rec[k], d = document.createElement('div'); d.className = 'df';
-    const rt = m.random ? T('Carte unique') : !r ? T('Jamais jouée') : k === 'infini' ? T('Record : vague ') + r.wave : r.won ? T('✓ Réussie · record vague ') + r.wave : T('Record : vague ') + r.wave;
+    const rt = week ? (wrec ? T('Ton record : ') + wrec.score.toLocaleString(IS_EN ? 'en-US' : 'fr-FR') + (wrec.won ? ' ✓' : '') : T('Jamais jouée'))
+      : m.random ? T('Carte unique') : !r ? T('Jamais jouée') : k === 'infini' ? T('Record : vague ') + r.wave : r.won ? T('✓ Réussie · record vague ') + r.wave : T('Record : vague ') + r.wave;
     // Difficulté pas encore ouverte : il faut réussir la précédente sur cette carte
     const open = diffOpen(i, k), prev = DIFFS[DORDER[DORDER.indexOf(k) - 1]];
     if (!open) d.classList.add('locked');
@@ -714,7 +720,7 @@ function openDiff(i) {
       + (open ? '<button class="btn ' + k + T('" type="button">Jouer</button>') : '<button class="btn alt" type="button" disabled>' + LOCK + T('Réussis d’abord ') + prev.name + '</button>');
     box.appendChild(d);
     drawMapMini(prepMini(d.querySelector('canvas'), 112, 72), i, 112, 72, k);
-    if (open) d.querySelector('button').addEventListener('click', () => newGame(i, null, k));
+    if (open) d.querySelector('button').addEventListener('click', () => week ? weekPlay() : newGame(i, null, k));
   }
 }
 $('#tPlay').addEventListener('click', () => { Snd.init(); renderMaps(); show('maps'); screens.maps.scrollTop = 0; });

@@ -6,6 +6,13 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  86: [
+    ['🗺️', 'Écran des cartes plus clair : les défis (carte du jour, piment de la semaine, carte aléatoire) dans un bandeau en haut, et une ligne par carte. Touche une carte pour voir ses piments, sa médaille et le classement de tes amis.'],
+    ['✨', 'Piments : 6 règles spéciales (Chantier limité, Pas de remboursement, Ciel capricieux, Brouillard permanent, Fantômes, Portails fous), le Monochrome et un bouton 🎲 Surprise.'],
+    ['🏅', 'Médailles de piment : bronze, argent ou or sur chaque carte, selon le piment de ta meilleure victoire.'],
+    ['🌶', 'Nouveau : le piment de la semaine, la même carte et le même piment pour tous, avec son classement entre amis. La carte du jour a aussi son petit piment.'],
+    ['🎉', 'Cartes d’événement : un piment spécial pour chaque fête (Nuit des spectres, Hotte pleine…), et 7 nouveaux trophées de piments.'],
+  ],
   85: [
     ['⬆️', 'Version Google Play : quand une nouvelle version sort, le bouton « ⬆ Mise à jour » apparaît sur l’accueil et l’installe sans quitter le jeu.'],
   ],
