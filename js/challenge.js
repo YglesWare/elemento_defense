@@ -141,7 +141,7 @@ function chalRecord() {
   if (typeof trophyScan === 'function') trophyScan();
 }
 // ---------- Médailles de piment : la meilleure victoire de chaque carte, selon son multiplicateur ----------
-const MEDALS = [{ k: 'or', ic: '🥇', n: T('d’or'), x: 2 }, { k: 'argent', ic: '🥈', n: T('d’argent'), x: 1.6 }, { k: 'bronze', ic: '🥉', n: T('de bronze'), x: 1.25 }];
+const MEDALS = [{ k: 'or', ic: '🥇', n: T('d’or'), s: T('Or'), x: 2 }, { k: 'argent', ic: '🥈', n: T('d’argent'), s: T('Argent'), x: 1.6 }, { k: 'bronze', ic: '🥉', n: T('de bronze'), s: T('Bronze'), x: 1.25 }];
 const medalOf = x => MEDALS.find(M => x >= M.x) || null;
 const medalBest = id => +((store.get(MEDAL_KEY) || {})[id]) || 0;
 // Victoire en solo avec un piment : médaille, Monochrome et trophées (une seule fois par partie)
@@ -162,6 +162,11 @@ function chalWonFx() {
     const done = store.get(MONO_KEY) || []; if (!done.includes(mono)) { done.push(mono); store.set(MONO_KEY, done); }
     if (Object.keys(CHAL_ELEM).every(e => done.includes(e))) tr('pim_mono6');
   }
+}
+// Médaille en bref (écran d'une carte) : « 🥉 Bronze · 🥈 à ×1,6 »
+function medalShort(mi) {
+  const best = medalBest(MAPS[mi].id), cur = medalOf(best), next = MEDALS.slice().reverse().find(M => M.x > best);
+  return (cur ? cur.ic + ' ' + cur.s : T('🏅 Pas de médaille')) + (next ? ' · ' + next.ic + T(' à ') + chalX(next.x) : '');
 }
 // Ligne « médaille » sous le multiplicateur du panneau : la médaille de la carte et la suivante à viser
 function medalLine(mi, mult) {
@@ -360,8 +365,8 @@ function openChalMap(mi, done) {
 }
 // Écran d'une carte : la ligne du piment (réglable, imposé pour la carte du jour et la semaine), la médaille, et le classement
 function chalDiffLine(mi, week) {
-  const box = $('#dfChal'), med = $('#dfMedal'); if (!box) return;
-  med.hidden = true; chalDiffRank(mi, week);
+  const box = $('#dfChal'), med = $('#dfMedal'), meta = () => { $('#dfMeta').hidden = med.hidden && $('#dfRank').hidden; }; if (!box) return;
+  med.hidden = true; chalDiffRank(mi, week); meta();
   const fixed = week ? week.c : MAPS[mi] && MAPS[mi].daily ? chalDaily(MAPS[mi].daily) : null;
   if (fixed) {
     box.hidden = false;
@@ -373,7 +378,7 @@ function chalDiffLine(mi, week) {
   box.hidden = false;
   box.innerHTML = '<span>' + (chalOn(c) ? '🌶 <span class="chchip">' + chalX(x) + '</span> ' + esc(chalNames(c).join(' · ')) : T('Aucun piment : partie normale')) + '</span><button class="sbtn" type="button">' + T('🌶 Piments') + '</button>';
   box.querySelector('button').addEventListener('click', () => openChalMap(mi, () => openDiff(mi)));
-  med.hidden = false; med.textContent = medalLine(mi, x);
+  med.hidden = false; med.textContent = medalShort(mi); meta();
 }
 // Classement entre amis de cette carte, de la carte du jour ou du piment de la semaine
 function chalDiffRank(mi, week) {

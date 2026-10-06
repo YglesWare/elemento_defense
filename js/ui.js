@@ -701,31 +701,46 @@ function buyMap(i) {
 let diffMap = 0;
 // week : le piment de la semaine (js/challenge.js weekInfo) : une seule difficulté, et son propre record
 let diffWeek = null;
+// Pastilles d'une difficulté : vagues, vies, force des ennemis et chrono (le texte complet est derrière « i »)
+function diffFacts(k) {
+  const D = DIFFS[k], out = [D.waves === Infinity ? T('Vagues sans fin') : D.waves + T(' vagues'), D.lives + T(' vies')];
+  const hp = /(?:ennemis|enemies) ([+−-]\d+ ?%)/.exec(D.desc); if (hp) out.push(T('PV ') + hp[1]);
+  if (typeof D.timer === 'number') out.push('⏱ ' + D.timer + ' s');
+  return out;
+}
 function openDiff(i, week) {
   diffMap = i; diffWeek = week || null; Snd.init(); show('diff'); screens.diff.scrollTop = 0;
-  const m = MAPS[i], rec = (store.get(BEST2) || {})[recId(m)] || {};
-  $('#dfName').textContent = week ? T('🌶 Piment de la semaine') : (m.random ? '🎲 ' : m.season ? SEASONS[m.season].icon + ' ' : (i + 1) + '. ') + m.name;
-  $('#dfSub').textContent = (week ? (i + 1) + '. ' + m.name + ' · ' + (week.left > 1 ? T('encore ') + week.left + T(' jours') : T('dernier jour !')) + '. ' : '') + m.blurb + (m.random ? T(' Graine : ') + seedCode(m.rnd) + '.' : '') + ' Biome ' + m.biome.name.toLowerCase() + T(' : ') + biomeText(m.biome) + T(', sur toute la carte.');
+  const m = MAPS[i], rec = m.daily ? (dailyRecs()[m.daily] || {}) : (store.get(BEST2) || {})[recId(m)] || {};
+  $('#dfName').textContent = week ? T('🌶 Piment de la semaine') : (m.daily ? '📅 ' : m.random ? '🎲 ' : m.season ? SEASONS[m.season].icon + ' ' : (i + 1) + '. ') + m.name;
+  // Une seule ligne sous le titre : le biome (et la carte du piment de la semaine, ou la graine d'une carte aléatoire)
+  $('#dfSub').textContent = (week ? (i + 1) + '. ' + m.name + ' · ' + (week.left > 1 ? T('encore ') + week.left + T(' jours') : T('dernier jour !')) + ' · ' : '')
+    + (m.random && !m.daily ? T('Graine ') + seedCode(m.rnd) + ' · ' : '') + 'Biome ' + m.biome.name.toLowerCase() + T(' : ') + biomeText(m.biome);
+  drawMapMini(prepMini($('#dfThumb'), 140, 90), i, 140, 90, 'moyen');
   if (typeof chalDiffLine === 'function') chalDiffLine(i, week);
   const box = $('#dfList'); box.innerHTML = '';
   const wrec = week && (store.get('elemento.mapbest') || {})[week.id + '|' + week.diff];
   for (const k of week ? [week.diff] : DORDER) {
-    const Df = DIFFS[k], r = m.random ? null : rec[k], d = document.createElement('div'); d.className = 'df';
-    const rt = week ? (wrec ? T('Ton record : ') + wrec.score.toLocaleString(IS_EN ? 'en-US' : 'fr-FR') + (wrec.won ? ' ✓' : '') : T('Jamais jouée'))
-      : m.random ? T('Carte unique') : !r ? T('Jamais jouée') : k === 'infini' ? T('Record : vague ') + r.wave : r.won ? T('✓ Réussie · record vague ') + r.wave : T('Record : vague ') + r.wave;
-    // Difficulté pas encore ouverte : il faut réussir la précédente sur cette carte
+    const Df = DIFFS[k], r = m.random && !m.daily ? null : rec[k], d = document.createElement('div');
+    // Difficulté pas encore ouverte : une simple ligne grisée
     const open = diffOpen(i, k), prev = DIFFS[DORDER[DORDER.indexOf(k) - 1]];
-    if (!open) d.classList.add('locked');
-    d.innerHTML = '<canvas></canvas><div><b>' + Df.name + '</b><p>' + Df.desc + '</p><span class="st">' + rt + T(' · éclats ×') + fr(+(m.shards * Df.shards * ECO.shards).toFixed(2)) + '</span></div>'
-      + (open ? '<button class="btn ' + k + T('" type="button">Jouer</button>') : '<button class="btn alt" type="button" disabled>' + LOCK + T('Réussis d’abord ') + prev.name + '</button>');
+    d.className = 'df ' + k + (open ? '' : ' locked');
+    if (!open) { d.innerHTML = '<div class="dftop"><b>' + Df.name + '</b><span class="dflock">' + LOCK + T('Réussis d’abord ') + prev.name + '</span></div>'; box.appendChild(d); continue; }
+    const rt = week ? (wrec ? T('Ton record : ') + wrec.score.toLocaleString(IS_EN ? 'en-US' : 'fr-FR') + (wrec.won ? ' ✓' : '') : T('Jamais jouée'))
+      : m.random && !m.daily ? T('Carte unique') : !r ? T('Jamais jouée') : k === 'infini' ? T('Record : vague ') + r.wave : r.won ? T('✓ Réussie · record vague ') + r.wave : T('Record : vague ') + r.wave;
+    d.innerHTML = '<div class="dftop"><b>' + Df.name + '</b><button class="dfinfo" type="button" aria-expanded="false" aria-label="' + T('Détails : ') + Df.name + '">i</button><button class="btn ' + k + '" type="button">' + T('Jouer') + '</button></div>'
+      + '<div class="dffacts">' + diffFacts(k).map(f => '<span>' + f + '</span>').join('') + '</div>'
+      + '<p class="dfmore" hidden>' + Df.desc + T(' · éclats ×') + fr(+(m.shards * Df.shards * ECO.shards).toFixed(2)) + '</p>'
+      + '<span class="dfrec">' + rt + '</span>';
     box.appendChild(d);
-    drawMapMini(prepMini(d.querySelector('canvas'), 112, 72), i, 112, 72, k);
-    if (open) d.querySelector('button').addEventListener('click', () => week ? weekPlay() : newGame(i, null, k));
+    const info = d.querySelector('.dfinfo');
+    info.addEventListener('click', () => { const p = d.querySelector('.dfmore'); p.hidden = !p.hidden; info.setAttribute('aria-expanded', !p.hidden); info.classList.toggle('on', !p.hidden); });
+    d.querySelector('.btn').addEventListener('click', () => week ? weekPlay() : newGame(i, null, k));
   }
 }
 $('#tPlay').addEventListener('click', () => { Snd.init(); renderMaps(); show('maps'); screens.maps.scrollTop = 0; });
 $('#mBack').addEventListener('click', () => show('title'));
-$('#dfBack').addEventListener('click', () => { if (MAPS[diffMap] && MAPS[diffMap].random) openRand(true); else { renderMaps(); show('maps'); } });
+// La carte du jour est une carte aléatoire, mais son « Retour » ramène à l'écran des cartes, pas au générateur
+$('#dfBack').addEventListener('click', () => { const m = MAPS[diffMap]; if (m && m.random && !m.daily && !diffWeek) openRand(true); else { renderMaps(); show('maps'); } });
 function refreshTitle() {
   const seen = !!store.get('elemento.tuto'); $('#tTuto').classList.toggle('green', !seen); $('#tTuto').classList.toggle('alt', seen);
   $('#tShop').innerHTML = T('L\u2019Atelier<span class="gemc">') + GEM + meta.shards + '</span>';
@@ -1089,10 +1104,18 @@ async function keepAwake() {
   try { if ('wakeLock' in navigator && !wakeLock && document.visibilityState === 'visible') { wakeLock = await navigator.wakeLock.request('curScreen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } }
   catch (e) { wakeLock = null; }
 }
+// Retour dans l'appli : certaines WebView Android ne redessinent la page qu'au premier toucher (écran bleu vide).
+// On force un nouveau dessin : une infime retouche du style, annulée à l'image suivante.
+function repaint() {
+  const b = document.body; if (!b) return;
+  requestAnimationFrame(() => { b.style.opacity = '0.999'; requestAnimationFrame(() => { b.style.opacity = ''; if (G && curScreen === 'game' && typeof resize === 'function') resize(); }); });
+}
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') { if (curScreen === 'game') pause(); }
-  else if (G) keepAwake();
+  else { repaint(); if (G) keepAwake(); }
 });
+addEventListener('pageshow', repaint);
+if (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) window.Capacitor.Plugins.App.addListener('resume', () => { repaint(); setTimeout(repaint, 250); });
 
 // ================= Boucle =================
 let lastT = performance.now();

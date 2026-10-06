@@ -6,6 +6,11 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  87: [
+    ['📋', 'Écran d’une carte plus léger : chaque difficulté tient sur une ligne avec l’essentiel (vagues, vies, force des ennemis, chrono), et le détail s’ouvre avec le bouton « i ».'],
+    ['↩️', 'Depuis la carte du jour, « Retour » ramène bien à l’écran des cartes.'],
+    ['📱', 'En revenant dans l’appli, l’écran s’affiche tout de suite, sans devoir le toucher.'],
+  ],
   86: [
     ['🗺️', 'Écran des cartes plus clair : les défis (carte du jour, piment de la semaine, carte aléatoire) dans un bandeau en haut, et une ligne par carte. Touche une carte pour voir ses piments, sa médaille et le classement de tes amis.'],
     ['✨', 'Piments : 6 règles spéciales (Chantier limité, Pas de remboursement, Ciel capricieux, Brouillard permanent, Fantômes, Portails fous), le Monochrome et un bouton 🎲 Surprise.'],
