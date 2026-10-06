@@ -481,7 +481,7 @@ function storyParty(cur, W, H) {
   let seen = +(store.get(STSEEN_KEY) ?? cur); if (!(seen >= 0) || seen > cur) seen = cur;
   const team = storyTeam(cur), was = storyTeam(seen), fresh = team.filter(k => !was.includes(k));
   const startD = seen < cur ? storyTrail(W, H, seen).pop()[2] : end, WALK = seen < cur ? 1.8 : 0, t0 = performance.now();
-  const u = Math.min(W, H) / 340, gap = 25 * u, lead = 30 * u;
+  const u = Math.min(W, H) / 340, lead = 30 * u;
   store.set(STSEEN_KEY, cur);
   let told = false;
   storyTeamStrip(team, fresh);
@@ -490,18 +490,24 @@ function storyParty(cur, W, H) {
     const t = (now - t0) / 1000, walk = WALK ? Math.min(1, t / WALK) : 1, ease = walk < 1 ? walk * walk * (3 - 2 * walk) : 1;
     const dHead = startD + (end - startD) * ease - lead, moving = walk < 1;
     c.clearRect(0, 0, W, H);
-    // Du dernier au premier, pour que Braise passe devant
-    const all = ['feu'].concat(team);
-    for (let n = all.length - 1; n >= 0; n--) {
-      const k = all[n], isNew = fresh.includes(k);
+    // La troupe en petit tas autour de Braise : les copains juste derrière elle, Yglou qui vole au-dessus
+    const [hx, hy] = trailAt(tr, dHead), [px, py] = trailAt(tr, dHead - 8 * u), tl = Math.hypot(hx - px, hy - py) || 1;
+    const tx = dHead > 0 ? (hx - px) / tl : 1, ty = dHead > 0 ? (hy - py) / tl : 0, nx = -ty, ny = tx;
+    const SLOTS = [[-17, -12], [-17, 12], [-31, 0], [-31, -22], [-31, 22], [-45, -11], [-45, 11], [-58, 0]];
+    const mates = team.filter(k => k !== 'yglou'), who = [{ k: 'feu', b: 0, sd: 0 }];
+    mates.forEach((k, n) => { const [b, sd] = SLOTS[n % SLOTS.length]; who.push({ k, b, sd }); });
+    if (team.includes('yglou')) who.push({ k: 'yglou', b: mates.length ? -26 : -20, sd: 0, fly: 1 });
+    for (const m of who) { m.x = hx + (tx * m.b + nx * m.sd) * u; m.y = hy + (ty * m.b + ny * m.sd) * u; }
+    who.sort((a, b) => (a.fly || 0) - (b.fly || 0) || a.y - b.y);
+    who.forEach((m, n) => {
+      const k = m.k, isNew = fresh.includes(k);
       // Le nouveau copain arrive une fois la marche finie, avec un petit saut
-      const pop = isNew && WALK ? clamp((t - WALK) / 0.45, 0, 1) : 1; if (pop <= 0) continue;
-      let [x, y] = trailAt(tr, dHead - n * gap);
-      const hop = Math.abs(Math.sin(t * (moving ? 9 : 3.2) + n * 1.3)) * (moving ? 6 : 2.5) * u, s = (k === 'feu' ? 44 : 32) * u * (pop < 1 ? 0.4 + 0.6 * Math.sin(pop * Math.PI / 2) * (1 + 0.15 * Math.sin(pop * Math.PI)) : 1);
-      c.save(); c.globalAlpha = 0.25; c.fillStyle = '#5a3a1e'; c.beginPath(); c.ellipse(x, y + 2 * u, s * 0.36, s * 0.11, 0, 0, TAU); c.fill(); c.restore();
-      if (k === 'yglou') drawYglou(c, x, y - s * 0.55 - hop - 8 * u, s * 0.95, 'happy', t, { noShadow: true, noConfetti: true });
-      else drawTower(c, k, x, y - s * 0.32 - hop, s, 1, t, 0, 0.3, 0, false);
-    }
+      const pop = isNew && WALK ? clamp((t - WALK) / 0.45, 0, 1) : 1; if (pop <= 0) return;
+      const hop = Math.abs(Math.sin(t * (moving ? 9 : 3.2) + n * 1.3)) * (moving ? 5 : 2) * u, s = (k === 'feu' ? 44 : 30) * u * (pop < 1 ? 0.4 + 0.6 * Math.sin(pop * Math.PI / 2) * (1 + 0.15 * Math.sin(pop * Math.PI)) : 1);
+      if (!m.fly) { c.save(); c.globalAlpha = 0.22; c.fillStyle = '#5a3a1e'; c.beginPath(); c.ellipse(m.x, m.y + 2 * u, s * 0.36, s * 0.11, 0, 0, TAU); c.fill(); c.restore(); }
+      if (k === 'yglou') drawYglou(c, m.x, m.y - 40 * u - hop, s, 'happy', t, { noShadow: true, noConfetti: true });
+      else drawTower(c, k, m.x, m.y - s * 0.32 - hop, s, 1, t, 0, 0.3, 0, false);
+    });
     // « Toi ! » au-dessus de Braise
     const [bx, by] = trailAt(tr, dHead), ay = Math.max(14 * u, by - 62 * u) - Math.abs(Math.sin(t * 4)) * 4 * u;
     c.save(); c.font = '800 ' + Math.round(12 * u) + 'px "Baloo 2", system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
