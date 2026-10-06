@@ -49,9 +49,18 @@ function botUps(t) {
   const out = [];
   for (const k of ['dmg', 'rate', 'rng', BOT_BR[t.type] || 'sol']) {
     if (!k || (k === 'rng' && (t.up.rng || 0) >= FUSE_LV) || (t.up[k] || 0) >= upCap(t.type, k)) continue;
-    out.push({ t, k, p: trackPrice(t.type, t.up, k) });
+    out.push({ t, k, p: trackPrice(t.type, t.up, k), f: G.botFuse && G.botFuse.has(t) && ['dmg', 'rng', 'rate'].includes(k) && (t.up[k] || 0) < fuseLv() ? 0 : 1 });
   }
   return out;
+}
+// Une paire à fusionner (fusion débloquée, deux tours compatibles) : ses achats Dégâts, Portée, Cadence passent devant
+function botFusePair() {
+  if (!BOT.fuse) return null;
+  for (const a of G.towers) for (const b of G.towers) {
+    if (a === b || TOWERS[a.type].fusion || TOWERS[b.type].fusion) continue;
+    const k = fusionKey(a.type, b.type); if (k && fusionUnlocked(k)) return new Set([a, b]);
+  }
+  return null;
 }
 function botSpend(cells, st) {
   // Difficile : on soigne d'abord les tours sous 60 % de PV
@@ -77,7 +86,8 @@ function botSpend(cells, st) {
   for (let guard = 0; guard < 300; guard++) {
     const want = Math.min(BOT.base + Math.floor(G.wave * BOT.per), BOT.cap), free = cells.filter(c => canBuild(c.q, c.r));
     // upBest : on renforce d'abord les tours les mieux placées (les premières construites), sinon l'achat le moins cher
-    const ups = G.towers.flatMap(botUps).sort((a, b) => BOT.upBest ? (upTot(a.t.up) - upTot(b.t.up)) || (a.t.id - b.t.id) : a.p - b.p);
+    if (!G.botFuse || [...G.botFuse].some(t => !G.towers.includes(t))) G.botFuse = botFusePair();
+    const ups = G.towers.flatMap(botUps).sort((a, b) => (a.f - b.f) || (BOT.upBest ? (upTot(a.t.up) - upTot(b.t.up)) || (a.t.id - b.t.id) : a.p - b.p));
     const type = botPickType(st.built);
     if (G.towers.length < want && free.length && G.gold >= costOf(type)) {
       // Case la mieux placée, avec le bonus de terrain pour cet élément

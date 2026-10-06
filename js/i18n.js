@@ -1875,6 +1875,9 @@ const EN = {
 "Nouvelles améliorations : touche une tour, puis « Améliorer ». Six achats sans fin : Dégâts, Portée, Cadence, Sol, Vol et Boss. Zéphyr ne vise plus que les volants (l’achat « Sol » lui apprend le sol), et une fusion demande le niveau 5 en Dégâts, Portée et Cadence.": "New upgrades: tap a tower, then “Upgrade”. Six endless upgrades: Damage, Range, Fire rate, Ground, Air and Boss. Zephyr now only targets flyers (the “Ground” upgrade teaches it the ground), and a fusion needs level 5 in Damage, Range and Fire rate.",
 "Avec l’achat « Sol » : repousse aussi les slimes au sol, pour gagner du temps": "With the “Ground” upgrade: it also pushes back ground slimes, to buy time",
 "Ne touche pas le sol sans l’achat « Sol »": "Can’t hit the ground without the “Ground” upgrade",
+"Ce sont de grosses mutations : elles coûtent bien plus cher que les autres achats": "They are big mutations: they cost much more than the other upgrades",
+"Rocaille, Volcan et Marais ne touchent pas les volants, et Zéphyr pas le sol : la mutation, deux fois plus chère, leur apprend": "Rocky, Volcano and Swamp can’t hit flyers, and Zephyr can’t hit the ground: the mutation, twice as expensive, teaches them",
+"Mutation": "Mutation",
 };
 const T = s => (IS_EN && typeof s === 'string' && EN[s] !== undefined ? EN[s] : s);
 // Textes fixes de la page : nœuds de texte et attributs (placeholder, aria-label, title, alt)

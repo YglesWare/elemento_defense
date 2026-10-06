@@ -358,7 +358,7 @@ const TOWERS = {
 // (0 % pour une tour qui ne vise pas ce type d'ennemis : Rocaille, Volcan, Marais au vol ; Zéphyr au sol).
 const UP_KEYS = ['dmg', 'rng', 'rate', 'sol', 'air', 'boss'];
 const TRACK = {
-  dmg: { name: T('Dégâts'), ic: '⚔️', per: 0.25 },
+  dmg: { name: T('Dégâts'), ic: '⚔️', per: 0.3 },
   rng: { name: T('Portée'), ic: '🎯', per: 0.2 },
   rate: { name: T('Cadence'), ic: '⚡', per: 0.06 },
   sol: { name: T('Sol'), ic: '🟫', per: 0.25 },
@@ -576,8 +576,15 @@ function fuseUp(a, b, type) { const o = {}; for (const k of UP_KEYS) o[k] = Math
 // Niveau demandé en Dégâts, Portée et Cadence pour fusionner (plus bas dans l'histoire, où l'or est compté)
 const fuseLv = () => G && G.story ? 3 : FUSE_LV;
 const fuseReady = t => ['dmg', 'rng', 'rate'].every(k => (t.up[k] || 0) >= fuseLv());
-// Prix du prochain niveau d'un achat : prix de la tour × (0,06 + 0,04 × niveau), arrondi à 5 or
-function trackPrice(type, up, k) { const n = ((up && up[k]) || 0) + 1; return Math.max(5, Math.round(TOWERS[type].cost * (0.06 + 0.04 * n) * (1 - 0.04 * M('cheap')) / 5) * 5); }
+// Prix du prochain niveau d'un achat : prix de la tour × (0,06 + 0,04 × niveau) pour Dégâts, Portée, Cadence ;
+// Sol, Vol et Boss sont de grosses mutations : × (0,25 + 0,1 × niveau), et le double quand la tour part de 0 %
+// (Vol pour Rocaille, Volcan, Marais ; Sol pour Zéphyr). Arrondi à 5 or.
+const isMutation = (type, k) => (k === 'air' && !TOWERS[type].air) || (k === 'sol' && !!TOWERS[type].noGround);
+function trackPrice(type, up, k) {
+  const n = ((up && up[k]) || 0) + 1, spec = k === 'sol' || k === 'air' || k === 'boss';
+  const f = spec ? (0.25 + 0.1 * n) * (isMutation(type, k) ? 2 : 1) : 0.06 + 0.04 * n;
+  return Math.max(5, Math.round(TOWERS[type].cost * f * (1 - 0.04 * M('cheap')) / 5) * 5);
+}
 const sellValue = t => Math.floor(t.inv * (0.7 + 0.05 * M('resell')));
 
 // Améliorations permanentes (Atelier)

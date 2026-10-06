@@ -863,7 +863,7 @@ function renderUpSheet() {
       : '<button class="sbtn ubuy" type="button" data-k="' + k + '"' + (!mine || G.gold < price ? ' disabled' : '') + '>' + COIN + price + '</button>';
     const d = document.createElement('div');
     d.className = 'uprow' + ((k === 'sol' && !s.ground) || (k === 'air' && !s.air) ? ' zero' : '') + (max ? ' maxed' : '');
-    d.innerHTML = '<span class="uic">' + TRACK[k].ic + '</span><div class="utx"><b>' + TRACK[k].name + ' <span class="uplv">' + T('Niv. ') + lv + capTxt + '</span></b><small>' + sub + '</small></div>' + btn;
+    d.innerHTML = '<span class="uic">' + TRACK[k].ic + '</span><div class="utx"><b>' + TRACK[k].name + ' <span class="uplv">' + T('Niv. ') + lv + capTxt + '</span>' + (isMutation(t.type, k) ? '<span class="umut">' + T('Mutation') + '</span>' : '') + '</b><small>' + sub + '</small></div>' + btn;
     box.appendChild(d);
   }
 }
@@ -1015,7 +1015,7 @@ function gotoTuto(i) {
   } else if (pg.kind === 'spec') {
     name = pg.title; tag = pg.tag; what = pg.html;
     gb = gbox('good', T('Dégâts, Portée, Cadence'), [T('⚔️ Dégâts : +25 % par niveau'), T('🎯 Portée : +0,2 case par niveau'), T('⚡ Cadence : +6 % de tirs par niveau')])
-      + gbox('tip', T('Sol, Vol, Boss'), [T('🟫 Sol et 🪽 Vol : +25 % de dégâts sur ce type d’ennemis par niveau'), T('Rocaille, Volcan et Marais ne touchent pas les volants, et Zéphyr pas le sol : un achat leur apprend'), T('👹 Boss : +25 % sur les Kaiju par niveau, et 1 d’armure ignorée tous les 2 niveaux')]);
+      + gbox('tip', T('Sol, Vol, Boss'), [T('🟫 Sol et 🪽 Vol : +25 % de dégâts sur ce type d’ennemis par niveau'), T('Ce sont de grosses mutations : elles coûtent bien plus cher que les autres achats'), T('Rocaille, Volcan et Marais ne touchent pas les volants, et Zéphyr pas le sol : la mutation, deux fois plus chère, leur apprend'), T('👹 Boss : +25 % sur les Kaiju par niveau, et 1 d’armure ignorée tous les 2 niveaux')]);
     drawEmblem(ic, 'sol', 16, 44, 13); drawEmblem(ic, 'air', 32, 24, 13); drawEmblem(ic, 'boss', 48, 44, 13);
   } else if (pg.kind === 'terrain') {
     name = pg.title; tag = pg.tag; what = pg.html;
