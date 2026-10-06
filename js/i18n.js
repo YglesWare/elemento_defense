@@ -1887,6 +1887,7 @@ const EN = {
 "Maîtrise · ": "Mastery · ",
 "Longue-vue · ": "Spyglass · ",
 "Débloque la fusion d’abord": "Unlock the fusion first",
+"Version Google Play : quand une nouvelle version sort, le bouton « ⬆ Mise à jour » apparaît sur l’accueil et l’installe sans quitter le jeu.": "Google Play version: when a new version is out, the “⬆ Update” button appears on the home screen and installs it without leaving the game.",
 "Améliorer une tour : une seule ligne « Pour fusionner » montre ce qu’il manque (Dégâts, Portée, Cadence), au lieu des pastilles qui ressemblaient aux niveaux.": "Upgrading a tower: a single “To fuse” line shows what’s missing (Damage, Range, Fire rate), instead of the badges that looked like levels.",
 "Pour fusionner :": "To fuse:",
 "prête ✓": "ready ✓",

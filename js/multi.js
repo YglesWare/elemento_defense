@@ -332,8 +332,33 @@ if (NATIVE) {
   });
   // Mises à jour : l'APK installé à la main regarde la dernière release GitHub ; si elle est plus récente,
   // un bouton sur l'écran titre télécharge le nouvel APK (à installer par-dessus, même signature)
-  if (!window.STORE_BUILD) checkUpdate();
-  if (!window.STORE_BUILD) document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - (checkUpdate.at || 0) > 3600e3) checkUpdate(); });
+  // Version Google Play : la mise à jour intégrée de Google (« In-App Updates »), au même bouton de l'écran titre
+  const check = window.STORE_BUILD ? checkPlayUpdate : checkUpdate;
+  check();
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - (check.at || 0) > 3600e3) check(); });
+}
+// Le Play Store dit s'il existe une version plus récente ; le bouton ouvre l'écran de mise à jour de Google, qui télécharge
+// puis relance le jeu. Le bouton n'est que sur l'accueil : jamais de mise à jour en pleine partie.
+async function checkPlayUpdate() {
+  checkPlayUpdate.at = Date.now();
+  if (!window.Capacitor.isPluginAvailable('AppUpdate')) return;
+  const AU = window.Capacitor.Plugins.AppUpdate, b = $('#tUpdate');
+  try {
+    const info = await AU.getAppUpdateInfo();
+    // 2 : mise à jour disponible ; 3 : une mise à jour commencée puis interrompue, à reprendre
+    if (info.updateAvailability !== 2 && info.updateAvailability !== 3) { b.hidden = true; return; }
+    const v = +info.availableVersionCode;
+    b.textContent = T('⬆ Mise à jour ') + (v ? '1.0.' + v : '');
+    b.onclick = async () => {
+      Snd.init(); await store.flush();
+      try {
+        const r = info.immediateUpdateAllowed ? await AU.performImmediateUpdate() : null;
+        // 0 : fait (le jeu redémarre), 1 : le joueur a refusé ; sinon (pas permis, échec) : la page du jeu dans le Play Store
+        if (!r || r.code > 1) await AU.openAppStore();
+      } catch (e) { AU.openAppStore().catch(() => {}); }
+    };
+    b.hidden = false;
+  } catch (e) { /* pas installé depuis le Play Store, hors ligne : on réessaiera au prochain retour dans l'appli */ }
 }
 async function checkUpdate(current = BUILD) {
   checkUpdate.at = Date.now();

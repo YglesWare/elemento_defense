@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  85: [
+    ['⬆️', 'Version Google Play : quand une nouvelle version sort, le bouton « ⬆ Mise à jour » apparaît sur l’accueil et l’installe sans quitter le jeu.'],
+  ],
   84: [
     ['🔀', 'Améliorer une tour : une seule ligne « Pour fusionner » montre ce qu’il manque (Dégâts, Portée, Cadence), au lieu des pastilles qui ressemblaient aux niveaux.'],
   ],
