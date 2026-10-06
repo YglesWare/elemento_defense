@@ -976,6 +976,7 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
 .cloudtxt small{font-size:12px;color:var(--muted);font-weight:700}
 .loginbtn{flex:none;display:inline-flex;align-items:center;gap:6px;background:var(--paper);font:800 14px/1 "Baloo 2",system-ui,sans-serif;letter-spacing:0;padding:7px 10px}
 .loginbtn .gico{width:16px;height:16px;flex:none}
+.gsibox{flex:none;min-height:32px;display:flex;align-items:center}
 .cloudmore{font-size:13px;text-align:left}
 .cloudmore summary{cursor:pointer;color:var(--muted);font-weight:800;padding:2px 0}
 .cloudmore[open]{display:flex;flex-direction:column;gap:6px}

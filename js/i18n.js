@@ -1887,6 +1887,7 @@ const EN = {
 "Maîtrise · ": "Mastery · ",
 "Longue-vue · ": "Spyglass · ",
 "Débloque la fusion d’abord": "Unlock the fusion first",
+"Connexion Google plus simple et en une seule étape : sur Android, un petit panneau Google s’ouvre directement dans le jeu ; sur le site, c’est le bouton officiel de Google.": "Simpler Google sign-in, in a single step: on Android, a small Google panel opens right inside the game; on the website, it’s Google’s official button.",
 "Élémento Defense arrive bientôt sur Google Play ! Sur Android, le jeu téléchargé depuis le site s’appelle maintenant « Élémento Dev » (icône orange) : connecte-toi avec Google pour y retrouver ta progression.": "Élémento Defense is coming soon to Google Play! On Android, the game downloaded from the website is now called “Élémento Dev” (orange icon): sign in with Google to get your progress back there.",
 "Atelier : chaque fusion a maintenant sa propre Maîtrise et sa propre Longue-vue, qui s’ajoutent à celles de ses deux éléments.": "Workshop: each fusion now has its own Mastery and Spyglass, on top of those of its two elements.",
 };

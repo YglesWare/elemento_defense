@@ -229,19 +229,85 @@ async function cloudLoginError(desc) {
   }
   CLOUD.err = desc; CLOUD.state = 'err'; cloudPaint();
 }
+// Connexion Google intégrée (jeton d'identité) : sur Android, le panneau Google du téléphone ; sur le site, le bouton
+// officiel de Google. Google y montre le nom du jeu au lieu de l'adresse du serveur, et le même jeton sert à rattacher
+// l'invité ou à se connecter : une seule étape. ID client « Web » du projet Google Cloud (public, comme la clé Supabase) ;
+// vide, ou sans réglage pour cette appli : connexion par le navigateur
+const GOOGLE_WEB_CLIENT = '164389209779-e8918dq22kh2dth8f6kr1g2r1qk54cj0.apps.googleusercontent.com';
+const GID = { init: false, nonce: null, web: 'off' };
+const hex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+// Google reçoit l'empreinte du nonce, Supabase le nonce lui-même : un jeton volé ne peut pas resservir ailleurs
+async function gidNonce() {
+  const raw = hex(crypto.getRandomValues(new Uint8Array(16)));
+  return { raw, hashed: hex(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(raw))) };
+}
+const gidNative = () => NATIVE && !!GOOGLE_WEB_CLIENT && window.Capacitor.isPluginAvailable && window.Capacitor.isPluginAvailable('SocialLogin');
+// Invité : on rattache le compte Google (même compte, la progression suit) ; s'il sert déjà ailleurs, le même jeton
+// connecte à ce compte-là, et les amis, le code ami et les scores suivent (cloudMoveStart)
+async function cloudLoginIdToken(token, raw) {
+  CLOUD.state = 'sync'; cloudPaint();
+  const cred = { provider: 'google', token, nonce: raw };
+  let res = CLOUD.user && CLOUD.user.is_anonymous ? await CLOUD.sb.auth.linkIdentity(cred) : await CLOUD.sb.auth.signInWithIdToken(cred);
+  if (res.error && /already|exists|linked|manual linking/i.test(res.error.message)) { await cloudMoveStart(); res = await CLOUD.sb.auth.signInWithIdToken(cred); }
+  if (res.error) { CLOUD.state = 'err'; CLOUD.err = res.error.message; cloudPaint(); return; }
+  if (res.data && res.data.user) CLOUD.user = res.data.user;
+  hint(T('Connecté !'), 2000); cloudPaint();
+  cloudSync(true);
+}
+// Android : panneau Google du téléphone. Renvoie false si ce n'est pas possible (pas réglé dans Google Cloud…),
+// pour passer par le navigateur
+async function gidNativeLogin() {
+  const SL = window.Capacitor.Plugins.SocialLogin;
+  try {
+    if (!GID.init) { await SL.initialize({ google: { webClientId: GOOGLE_WEB_CLIENT, mode: 'online' } }); GID.init = true; }
+    const n = await gidNonce();
+    // Pas de filtre sur les comptes déjà utilisés : sinon les comptes Family Link des enfants n'apparaissent pas
+    const r = await SL.login({ provider: 'google', options: { nonce: n.hashed, style: 'bottom', filterByAuthorizedAccounts: false } });
+    const tok = r && r.result && r.result.idToken;
+    if (!tok) return false;
+    await cloudLoginIdToken(tok, n.raw);
+    return true;
+  } catch (e) {
+    const m = String(e && (e.message || e));
+    if (/cancel/i.test(m)) return true; // le joueur a fermé le panneau
+    errNote('Connexion Google native : ' + m, 'cloud.js');
+    return false;
+  }
+}
+// Site : bouton officiel « Se connecter avec Google » à la place du nôtre, une fois le script de Google chargé
+function gidWebLoad() {
+  if (NATIVE || !GOOGLE_WEB_CLIENT || GID.web !== 'off' || !navigator.onLine) return;
+  GID.web = 'loading';
+  const sc = document.createElement('script'); sc.src = 'https://accounts.google.com/gsi/client'; sc.async = true;
+  sc.onload = async () => {
+    try {
+      GID.nonce = await gidNonce();
+      google.accounts.id.initialize({ client_id: GOOGLE_WEB_CLIENT, nonce: GID.nonce.hashed, use_fedcm_for_button: true,
+        callback: r => { if (r && r.credential) cloudLoginIdToken(r.credential, GID.nonce.raw); } });
+      google.accounts.id.renderButton($('#prGsi'), { type: 'standard', theme: 'outline', size: 'medium', shape: 'pill', text: 'signin', logo_alignment: 'left', locale: IS_EN ? 'en' : 'fr' });
+      GID.web = 'ready';
+    } catch (e) { GID.web = 'fail'; }
+    cloudPaint();
+  };
+  sc.onerror = () => { GID.web = 'fail'; cloudPaint(); };
+  document.head.appendChild(sc);
+}
 // Connexion Google ou Discord : un compte anonyme est rattaché (sa progression le suit) ; si ce compte Google
 // est déjà utilisé ailleurs, on s'y connecte, et la progression la plus avancée est gardée
 async function cloudLogin(provider) {
   if (!CLOUD.sb) return;
+  if (provider === 'google' && gidNative() && await gidNativeLogin()) return;
   // Connexion pas encore activée dans Supabase : on le dit ici plutôt que d'ouvrir une page d'erreur
   try {
     const st = await (await fetch(SUPA_URL + '/auth/v1/settings', { headers: { apikey: SUPA_KEY } })).json();
     if (!st.external || !st.external[provider]) { CLOUD.state = 'err'; CLOUD.err = T('La connexion ') + PROVIDERS[provider] + T(' n’est pas encore activée.'); cloudPaint(); return; }
   } catch (e) { CLOUD.state = 'offline'; cloudPaint(); return; }
   try { localStorage.setItem(LOGIN_PROV, provider); } catch (e) {}
-  const opts2 = loginOpts();
-  let res = CLOUD.user && CLOUD.user.is_anonymous ? await CLOUD.sb.auth.linkIdentity({ provider, options: opts2 }) : await CLOUD.sb.auth.signInWithOAuth({ provider, options: opts2 });
-  if (res.error && /already|exists|linked|manual linking/i.test(res.error.message)) await cloudMoveStart(), res = await CLOUD.sb.auth.signInWithOAuth({ provider, options: opts2 });
+  // Par le navigateur, on ne sait pas d'avance si ce compte sert déjà ailleurs : tenter de le rattacher ouvrait la page
+  // de Google une 2e fois quand il servait déjà. On se connecte donc directement, et l'invité passe son jeton de
+  // déménagement (amis, code ami, scores) ; sa progression part à la synchro (la fenêtre de choix s'ouvre si besoin)
+  await cloudMoveStart();
+  const res = await CLOUD.sb.auth.signInWithOAuth({ provider, options: loginOpts() });
   if (res.error) { CLOUD.state = 'err'; CLOUD.err = /not enabled|unsupported provider/i.test(res.error.message) ? T('La connexion ') + PROVIDERS[provider] + T(' n’est pas encore activée.') : res.error.message; cloudPaint(); return; }
   // Dans l'app, Google refuse les WebView : la connexion s'ouvre dans le navigateur du téléphone, qui revient par le lien de l'app
   if (NATIVE && res.data && res.data.url) location.href = res.data.url;
@@ -295,6 +361,10 @@ function cloudPaint() {
   const anon = !CLOUD.user || CLOUD.user.is_anonymous, prov = CLOUD.providers || {};
   let any = false;
   for (const b of box.querySelectorAll('[data-login]')) { b.hidden = !anon || !prov[b.dataset.login]; any = any || !b.hidden; }
+  // Site : le bouton officiel de Google remplace le nôtre dès qu'il est prêt
+  const gb = box.querySelector('[data-login="google"]'), gsi = $('#prGsi');
+  if (gb && !gb.hidden) gidWebLoad();
+  if (gsi) { gsi.hidden = !(gb && !gb.hidden && GID.web === 'ready'); if (!gsi.hidden) gb.hidden = true; }
   $('#prCloudId').textContent = T('Identifiant de progression : ') + pidShort(store.get(PID_KEY));
   $('#prLogout').hidden = anon;
   // Invité : l'encart sous le pseudo (pour se connecter) ; connecté : tout en bas, avant « Réinitialiser la progression »

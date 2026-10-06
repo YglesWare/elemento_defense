@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  83: [
+    ['🔑', 'Connexion Google plus simple et en une seule étape : sur Android, un petit panneau Google s’ouvre directement dans le jeu ; sur le site, c’est le bouton officiel de Google.'],
+  ],
   82: [
     ['📱', 'Élémento Defense arrive bientôt sur Google Play ! Sur Android, le jeu téléchargé depuis le site s’appelle maintenant « Élémento Dev » (icône orange) : connecte-toi avec Google pour y retrouver ta progression.'],
   ],
