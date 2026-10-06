@@ -164,7 +164,7 @@ const EN = {
 "Maîtrise ": "Mastery ",
 "Longue-vue ": "Spyglass ",
 " % de portée": "% range",
-"Renforce un élément : la maîtrise augmente ses dégâts, la longue-vue sa portée. Toutes ses tours en profitent, fusions comprises. Chaque palier relève aussi d’un niveau le plafond des achats « Dégâts » (maîtrise) ou « Portée » (longue-vue) en partie.": "Strengthen an element: mastery raises its damage, the spyglass its range. All its towers benefit, fusions included. Each tier also raises by one level the cap of the “Damage” (mastery) or “Range” (spyglass) upgrades in game.",
+"Renforce un élément : la maîtrise augmente ses dégâts, la longue-vue sa portée. Toutes ses tours en profitent, fusions comprises. Chaque fusion a aussi sa propre maîtrise et sa propre longue-vue, qui s’ajoutent. Chaque palier relève aussi d’un niveau le plafond des achats « Dégâts » (maîtrise) ou « Portée » (longue-vue) en partie.": "Strengthen an element: mastery raises its damage, the spyglass its range. All its towers benefit, fusions included. Each fusion also has its own mastery and spyglass, which add up. Each tier also raises by one level the cap of the “Damage” (mastery) or “Range” (spyglass) upgrades in game.",
 "Minuscule et très rapide.": "Tiny and very fast.",
 "Moyen": "Medium",
 "Neige": "Snow",
@@ -1884,6 +1884,10 @@ const EN = {
 "Ton équipe": "Your team",
 "Nouveau !": "New!",
 "Histoire : sur la carte, ta troupe avance sur le chemin. Braise en tête, Yglou et tes copains derrière, et chaque nouveau copain rejoint l’équipe.": "Story: on the map, your party walks along the path. Ember in front, Yglou and your friends behind, and each new friend joins the team.",
+"Maîtrise · ": "Mastery · ",
+"Longue-vue · ": "Spyglass · ",
+"Débloque la fusion d’abord": "Unlock the fusion first",
+"Atelier : chaque fusion a maintenant sa propre Maîtrise et sa propre Longue-vue, qui s’ajoutent à celles de ses deux éléments.": "Workshop: each fusion now has its own Mastery and Spyglass, on top of those of its two elements.",
 };
 const T = s => (IS_EN && typeof s === 'string' && EN[s] !== undefined ? EN[s] : s);
 // Textes fixes de la page : nœuds de texte et attributs (placeholder, aria-label, title, alt)

@@ -555,7 +555,7 @@ const hpMul = w => 1 + (w - 1) * 0.16 + (w - 1) * (w - 1) * 0.011;
 
 function statsOf(type, up) {
   up = upOf(up);
-  const D = TOWERS[type], i = upStage(up) - 1, avg = id => D.parents ? (M(id + D.parents[0]) + M(id + D.parents[1])) / 2 : M(id + type), ms = avg('m_'), pr = avg('p_');
+  const D = TOWERS[type], i = upStage(up) - 1, avg = id => D.parents ? (M(id + D.parents[0]) + M(id + D.parents[1])) / 2 + M(id + type) : M(id + type), ms = avg('m_'), pr = avg('p_');
   const st = Object.assign({}, D, D.lv[Math.min(i, 2)], {
     dmg: D.dmg * (1 + TRACK.dmg.per * up.dmg) * (1 + 0.1 * ms),
     range: D.range * (1 + RANGE_UP * pr) + (ms >= 5 ? 0.2 : 0) + TRACK.rng.per * up.rng,
@@ -567,8 +567,8 @@ function statsOf(type, up) {
   return st;
 }
 const costOf = type => Math.round(TOWERS[type].cost * (1 - 0.04 * M('cheap')));
-// Paliers de Maîtrise (m_) ou de Longue-vue (p_) achetés dans l'Atelier ; une fusion prend la moyenne de ses deux éléments
-const atelierTiers = (type, p) => { const D = TOWERS[type], raw = id => (meta.lv && meta.lv[id]) || 0; return D.parents ? Math.floor((raw(p + D.parents[0]) + raw(p + D.parents[1])) / 2) : raw(p + type); };
+// Paliers de Maîtrise (m_) ou de Longue-vue (p_) achetés dans l'Atelier ; une fusion : moyenne de ses deux éléments + les siens
+const atelierTiers = (type, p) => { const D = TOWERS[type], raw = id => (meta.lv && meta.lv[id]) || 0; return D.parents ? Math.floor((raw(p + D.parents[0]) + raw(p + D.parents[1])) / 2) + raw(p + type) : raw(p + type); };
 // Plafond d'un achat : Dégâts et Portée, plafond de base + 1 par palier de Maîtrise / Longue-vue ; les autres sans fin
 const upCap = (type, k) => k === 'dmg' ? CAP_BASE.dmg + atelierTiers(type, 'm_') : k === 'rng' ? CAP_BASE.rng + atelierTiers(type, 'p_') : Infinity;
 // Fusion : la nouvelle tour reçoit, pour chaque achat, la moyenne des niveaux des deux tours (sans dépasser ses plafonds)
@@ -614,6 +614,11 @@ const UPGRADES = [
     fx: l => TOWERS[t].name + ' : +' + nf(l * 10) + T(' % de dégâts') + (l >= 5 ? T(', +0,2 de portée') : '') },
     { id: 'p_' + t, tower: t, range: true, name: T('Longue-vue ') + MASTERY[t], max: 5, base: 8, inf: 0.4,
       fx: l => TOWERS[t].name + ' : +' + nf(l * RANGE_UP * 100) + T(' % de portée') }]),
+  // Chaque fusion : sa propre maîtrise et sa propre longue-vue, en plus de la moyenne de ses deux éléments
+  ...Object.keys(FUSIONS).flatMap(k => [{ id: 'm_' + k, tower: k, name: T('Maîtrise · ') + FUSIONS[k].name, max: 5, base: 15, inf: 0.5,
+    fx: l => FUSIONS[k].name + ' : +' + nf(l * 10) + T(' % de dégâts') + (l >= 5 ? T(', +0,2 de portée') : '') },
+    { id: 'p_' + k, tower: k, range: true, name: T('Longue-vue · ') + FUSIONS[k].name, max: 5, base: 12, inf: 0.4,
+      fx: l => FUSIONS[k].name + ' : +' + nf(l * RANGE_UP * 100) + T(' % de portée') }]),
 ];
 // Paliers : u.k par niveau d'origine, u.max paliers en tout ; prix d'un palier ≈ prix d'origine du niveau / k (même total à ECO.atelier = 1)
 for (const u of UPGRADES) { u.k = upK(u.id); u.max *= u.k; if (u.inf) UP_INF[u.id] = { max: u.max / u.k, f: u.inf }; }
@@ -630,10 +635,12 @@ const UNLOCK = { terre: 15, vent: 20, glace: 30, foudre: 40 };
 for (const t in UNLOCK) UNLOCK[t] = Math.round(UNLOCK[t] * ECO.unlock);
 for (const k in FUSIONS) FUSIONS[k].unlock = Math.round(FUSIONS[k].unlock * ECO.unlock);
 const unlocked = type => !UNLOCK[type] || M('u_' + type) > 0;
+// Tour disponible pour ses améliorations d'Atelier : débloquée, ou fusion débloquée
+const towerReady = type => TOWERS[type] && TOWERS[type].fusion ? fusionUnlocked(type) : unlocked(type);
 function canBuyAnything() {
   for (const t in UNLOCK) if (!unlocked(t) && meta.shards >= UNLOCK[t]) return true;
   for (const k in FUSIONS) if (!fusionUnlocked(k) && FUSIONS[k].parents.every(unlocked) && meta.shards >= FUSIONS[k].unlock) return true;
-  return UPGRADES.some(u => !upFull(u) && (!u.tower || unlocked(u.tower)) && meta.shards >= upPrice(u));
+  return UPGRADES.some(u => !upFull(u) && (!u.tower || towerReady(u.tower)) && meta.shards >= upPrice(u));
 }
 
 // ================= Son (synthétisé) =================

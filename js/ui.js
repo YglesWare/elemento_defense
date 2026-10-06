@@ -489,7 +489,7 @@ function renderShop(boughtId) {
     tow: TORDER.some(t => !unlocked(t) && meta.shards >= UNLOCK[t]),
     fus: Object.keys(FUSIONS).some(k => !fusionUnlocked(k) && FUSIONS[k].parents.every(unlocked) && meta.shards >= FUSIONS[k].unlock),
     camp: UPGRADES.some(u => !u.tower && !upFull(u) && meta.shards >= upPrice(u)),
-    mast: UPGRADES.some(u => u.tower && unlocked(u.tower) && !upFull(u) && meta.shards >= upPrice(u)),
+    mast: UPGRADES.some(u => u.tower && towerReady(u.tower) && !upFull(u) && meta.shards >= upPrice(u)),
   };
   document.querySelectorAll('#sTabs [data-tab]').forEach(b => b.querySelector('.dot').classList.toggle('has', !!can[b.dataset.tab]));
   const tb = $('#sTow'); tb.innerHTML = '';
@@ -505,7 +505,7 @@ function renderShop(boughtId) {
   for (const [box, list] of [[$('#sBase'), UPGRADES.filter(u => !u.tower)], [$('#sMast'), UPGRADES.filter(u => u.tower)]]) {
     box.innerHTML = '';
     for (const u of list) {
-      const l = upLv(u), maxed = upFull(u), beyond = u.inf && l >= u.max, price = upPrice(u), d = document.createElement('div'), lockT = u.tower && !unlocked(u.tower);
+      const l = upLv(u), maxed = upFull(u), beyond = u.inf && l >= u.max, price = upPrice(u), d = document.createElement('div'), lockT = u.tower && !towerReady(u.tower);
       d.className = 'up' + (u.id === 'revive' ? ' wide' : '') + (maxed ? ' maxed' : '') + (lockT ? ' lockd' : '') + (boughtId === u.id ? ' bought' : '');
       // Améliorations infinies (Maîtrises, Longue-vue, Remparts) : juste le niveau, sans plafond affiché ;
       // les autres : jusqu'à 10 paliers, des pastilles, au-delà une jauge
@@ -514,7 +514,7 @@ function renderShop(boughtId) {
       else pips = '<span class="upbar"><i style="width:' + Math.round(l * 100 / u.max) + '%"></i></span><span class="upn">' + l + '/' + u.max + '</span>';
       d.innerHTML = '<canvas></canvas><span class="un">' + u.name + T('</span><span class="pips" aria-label="Niveau ') + l + (u.inf ? '' : T(' sur ') + u.max) + '">' + pips + '</span>'
         + '<p>' + (l ? u.fx(upEff(u, l)) : T('Pas encore acheté')) + (maxed ? '' : T('<br><span class="nx">Niveau ') + (l + 1) + T(' : ') + u.fx(upEff(u, l + 1)) + '</span>') + '</p>'
-        + '<button class="sbtn buy" type="button"' + (maxed || lockT || meta.shards < price ? ' disabled' : '') + '>' + (lockT ? T('Débloque ') + TOWERS[u.tower].name + T(' d’abord') : maxed ? T('Niveau max') : T('Acheter ') + GEM + price) + '</button>';
+        + '<button class="sbtn buy" type="button"' + (maxed || lockT || meta.shards < price ? ' disabled' : '') + '>' + (lockT ? (TOWERS[u.tower].fusion ? T('Débloque la fusion d’abord') : T('Débloque ') + TOWERS[u.tower].name + T(' d’abord')) : maxed ? T('Niveau max') : T('Acheter ') + GEM + price) + '</button>';
       box.appendChild(d);
       const c = prepMini(d.querySelector('canvas'), 44, 48);
       if (u.tower) drawTower(c, u.tower, 22, 27, 37, l ? Math.min(3, Math.ceil(l / u.k * 3 / 5)) : 1, 0.5, 0, 0.3, 0, false);
@@ -528,7 +528,7 @@ function renderShop(boughtId) {
 }
 function buyUp(u) {
   const l = upLv(u), price = upPrice(u);
-  if (upFull(u) || (u.tower && !unlocked(u.tower))) return;
+  if (upFull(u) || (u.tower && !towerReady(u.tower))) return;
   if (meta.shards < price) { Snd.play('no'); return; }
   meta.shards -= price; meta.lv[u.id] = l + 1; saveMeta();
   if (G && shopFrom === 'game') {
