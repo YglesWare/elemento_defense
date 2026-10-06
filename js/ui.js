@@ -846,8 +846,9 @@ function renderUpSheet() {
   $('#trGold').textContent = G.gold;
   // Fusion : où en est la tour (niveau demandé en Dégâts, Portée et Cadence)
   const fl = fuseLv(), canFuse = !D.fusion && Object.keys(FUSIONS).some(k => FUSIONS[k].parents.includes(t.type));
-  $('#trPath').innerHTML = canFuse ? '<span class="node' + (fuseReady(t) ? ' done' : '') + '">' + T('Fusion') + (fuseReady(t) ? ' ✓' : '') + '</span>'
-    + ['dmg', 'rng', 'rate'].map(k => '<span class="node' + ((t.up[k] || 0) >= fl ? ' done' : '') + '">' + TRACK[k].name + ' ' + Math.min(t.up[k] || 0, fl) + '/' + fl + '</span>').join('') : '';
+  // Une ligne de texte, pour ne pas ressembler aux niveaux (« Niv. 3 / 10 ») ni à un bouton
+  $('#trPath').innerHTML = !canFuse ? '' : '<b>🔀 ' + T('Pour fusionner :') + '</b> ' + (fuseReady(t) ? '<span class="fzok">' + T('prête ✓') + '</span>'
+    : ['dmg', 'rng', 'rate'].map(k => { const v = t.up[k] || 0; return v >= fl ? '<span class="fzok">' + TRACK[k].name + ' ✓</span>' : '<span>' + TRACK[k].name + ' ' + v + '/' + fl + '</span>'; }).join(' · '));
   $('#trPath').hidden = !canFuse;
   $('#trNote').textContent = T('Chaque achat coûte un peu plus que le précédent. Dégâts et Portée ont un plafond, relevé par la Maîtrise et la Longue-vue de l’Atelier.');
   const box = $('#trBrs'); box.innerHTML = '';

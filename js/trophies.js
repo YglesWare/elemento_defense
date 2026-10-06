@@ -146,10 +146,11 @@ $('#sTitle .logo').addEventListener('click', () => {
   if (++logoTaps === 7) trophy('egg_logo');
 });
 // Pseudo du créateur : le trouver donne le trophée, mais « Ygles » lui est réservé (variantes comprises : YGLES, Ygl3s, Y g l e s…).
-// Seuls ses appareils, reconnus à leur identifiant de progression (Profil → Compte en ligne), peuvent le porter.
+// Peuvent le porter : ses appareils, reconnus à leur identifiant de progression (Profil → Compte en ligne), et tout appareil
+// où il est connecté avec un compte administrateur (vérifié par Supabase, js/cloud.js flagsLoad)
 const CREATOR_IDS = ['7D08-EE30'];
 const pidShortOf = id => String(id || '').replace(/-/g, '').slice(0, 8).toUpperCase().replace(/(.{4})(.{4})/, '$1-$2');
-const isCreator = () => CREATOR_IDS.includes(pidShortOf(store.get('elemento.playerId')));
+const isCreator = () => CREATOR_IDS.includes(pidShortOf(store.get('elemento.playerId'))) || store.get('elemento.creator') === true;
 const reservedName = n => String(n || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/3/g, 'e').replace(/[1!|]/g, 'l').replace(/[^a-z]/g, '') === 'ygles';
 const trophyName = n => { if (reservedName(n)) trophy('egg_ygles'); };
 // Rend un pseudo utilisable : le pseudo réservé redevient « fallback » (le pseudo d'avant), avec le trophée en cadeau

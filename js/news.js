@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  84: [
+    ['🔀', 'Améliorer une tour : une seule ligne « Pour fusionner » montre ce qu’il manque (Dégâts, Portée, Cadence), au lieu des pastilles qui ressemblaient aux niveaux.'],
+  ],
   83: [
     ['🔑', 'Connexion Google plus simple et en une seule étape : sur Android, un petit panneau Google s’ouvre directement dans le jeu ; sur le site, c’est le bouton officiel de Google.'],
   ],

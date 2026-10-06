@@ -140,13 +140,17 @@ function cloudRehydrate() {
 // Fonctions en bêta (page admin.html, table feature_flags) : coupées, réservées aux administrateurs, ou ouvertes à tous.
 // Le dernier état reçu reste sur l'appareil ; sans réponse du serveur (jamais connecté), tout est coupé.
 // Réglages du jeu (table game_settings) : des nombres changés depuis admin.html, sinon la valeur par défaut du code.
-const FLAGS_KEY = 'elemento.flags', SETTINGS_KEY = 'elemento.settings';
+const FLAGS_KEY = 'elemento.flags', SETTINGS_KEY = 'elemento.settings', CREATOR_KEY = 'elemento.creator';
 const flagOn = k => !!(store.get(FLAGS_KEY) || {})[k];
 const setting = (k, def) => { const v = (store.get(SETTINGS_KEY) || {})[k]; return typeof v === 'number' ? v : def; };
 async function flagsLoad() {
   const [f, s] = await Promise.all([CLOUD.sb.rpc('flags_get'), CLOUD.sb.rpc('settings_get')]);
   if (!f.error) store.set(FLAGS_KEY, f.data || {});
   if (!s.error) store.set(SETTINGS_KEY, s.data || {});
+  // Compte administrateur (tableau admins de supabase/admin.sql) : il peut porter le pseudo réservé « Ygles »
+  // (js/trophies.js), sur n'importe quel appareil où il se connecte. Un invité ne l'est jamais.
+  if (CLOUD.user && CLOUD.user.is_anonymous) store.set(CREATOR_KEY, false);
+  else if (CLOUD.user) { const w = await CLOUD.sb.rpc('admin_whoami'); if (!w.error) store.set(CREATOR_KEY, !!(w.data && w.data.admin)); }
   if (typeof adPaintAll === 'function') adPaintAll();
 }
 
