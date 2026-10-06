@@ -578,12 +578,15 @@ const fuseLv = () => G && G.story ? 3 : FUSE_LV;
 const fuseReady = t => ['dmg', 'rng', 'rate'].every(k => (t.up[k] || 0) >= fuseLv());
 // Prix du prochain niveau d'un achat : prix de la tour × (0,06 + 0,04 × niveau) pour Dégâts, Portée, Cadence ;
 // Sol, Vol et Boss sont de grosses mutations : × (0,25 + 0,1 × niveau), et le double quand la tour part de 0 %
-// (Vol pour Rocaille, Volcan, Marais ; Sol pour Zéphyr). Arrondi à 5 or.
+// (Vol pour Rocaille, Volcan, Marais ; Sol pour Zéphyr), avec au moins MUT_MIN or par achat : une tour qui apprend
+// à tout toucher change la partie. Arrondi à 5 or.
+const MUT_MIN = 500;
 const isMutation = (type, k) => (k === 'air' && !TOWERS[type].air) || (k === 'sol' && !!TOWERS[type].noGround);
 function trackPrice(type, up, k) {
   const n = ((up && up[k]) || 0) + 1, spec = k === 'sol' || k === 'air' || k === 'boss';
   const f = spec ? (0.25 + 0.1 * n) * (isMutation(type, k) ? 2 : 1) : 0.06 + 0.04 * n;
-  return Math.max(5, Math.round(TOWERS[type].cost * f * (1 - 0.04 * M('cheap')) / 5) * 5);
+  const p = Math.max(5, Math.round(TOWERS[type].cost * f * (1 - 0.04 * M('cheap')) / 5) * 5);
+  return spec && isMutation(type, k) ? Math.max(MUT_MIN, p) : p;
 }
 const sellValue = t => Math.floor(t.inv * (0.7 + 0.05 * M('resell')));
 

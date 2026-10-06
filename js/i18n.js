@@ -1876,7 +1876,7 @@ const EN = {
 "Avec l’achat « Sol » : repousse aussi les slimes au sol, pour gagner du temps": "With the “Ground” upgrade: it also pushes back ground slimes, to buy time",
 "Ne touche pas le sol sans l’achat « Sol »": "Can’t hit the ground without the “Ground” upgrade",
 "Ce sont de grosses mutations : elles coûtent bien plus cher que les autres achats": "They are big mutations: they cost much more than the other upgrades",
-"Rocaille, Volcan et Marais ne touchent pas les volants, et Zéphyr pas le sol : la mutation, deux fois plus chère, leur apprend": "Rocky, Volcano and Swamp can’t hit flyers, and Zephyr can’t hit the ground: the mutation, twice as expensive, teaches them",
+"Rocaille, Volcan et Marais ne touchent pas les volants, et Zéphyr pas le sol : la mutation leur apprend, mais elle coûte au moins 500 or par achat": "Rocky, Volcano and Swamp can’t hit flyers, and Zephyr can’t hit the ground: the mutation teaches them, but it costs at least 500 gold per upgrade",
 "Mutation": "Mutation",
 };
 const T = s => (IS_EN && typeof s === 'string' && EN[s] !== undefined ? EN[s] : s);
