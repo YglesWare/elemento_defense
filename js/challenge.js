@@ -1,4 +1,4 @@
-// Élémento Defense : défis par carte (l'engrenage ⚙️) et classement des cartes entre amis (voir supabase/maps.sql).
+// Élémento Defense : défis par carte (le bouton 🌶) et classement des cartes entre amis (voir supabase/maps.sql).
 // Sur une carte déjà gagnée une fois, le joueur règle des malus (plus de points) et des bonus (moins de points).
 // Les défis ne changent que les points : ni or gagné, ni éclats. Le réglage est retenu par carte, sur l'appareil.
 // Le meilleur score par carte et par difficulté part à la synchro (hors ligne, il attend) ; on ne voit que ses amis.
@@ -175,7 +175,7 @@ const CP = { cur: null, done: null };
 // o : { title, sub, get: () => réglage, set: réglage => …, done: () => … }
 function openChal(o) {
   Snd.init(); CP.cur = chalClean(o.get()); CP.o = o;
-  $('#chTitle').textContent = o.title || T('⚙️ Piments'); $('#chSub').textContent = o.sub || '';
+  $('#chTitle').textContent = o.title || T('🌶 Piments'); $('#chSub').textContent = o.sub || '';
   $('#chPre').innerHTML = Object.entries(CHAL_PRESETS).map(([k, [ic, n]]) => '<button type="button" data-pre="' + k + '"><span>' + ic + '</span>' + n + '</button>').join('');
   $('#chPre').querySelectorAll('[data-pre]').forEach(b => b.addEventListener('click', () => { CP.cur = chalClean({ m: CHAL_PRESETS[b.dataset.pre][2] }); chalPaint(); Snd.play('build'); }));
   $('#chalPop').hidden = false; chalPaint();
@@ -216,7 +216,7 @@ function chalCard(card, mi) {
 }
 function openChalMap(mi, done) {
   const id = MAPS[mi].id;
-  openChal({ title: T('⚙️ Piments · ') + MAPS[mi].name, sub: T('Les piments ne changent que les points, pas l’or ni les éclats.'), get: () => chalGet(id), set: c => chalSet(id, c), done });
+  openChal({ title: T('🌶 Piments · ') + MAPS[mi].name, sub: T('Les piments ne changent que les points, pas l’or ni les éclats.'), get: () => chalGet(id), set: c => chalSet(id, c), done });
 }
 // Ligne des défis sur l'écran des difficultés
 function chalDiffLine(mi) {
@@ -224,7 +224,7 @@ function chalDiffLine(mi) {
   if (!chalOpen(mi)) { box.hidden = true; return; }
   const c = chalGet(MAPS[mi].id);
   box.hidden = false;
-  box.innerHTML = '<span>' + (chalOn(c) ? '🌶 <b>' + chalX(chalMult(c, null)) + '</b> · ' + esc(chalNames(c).join(' · ')) : T('Aucun piment : partie normale')) + '</span><button class="sbtn" type="button">' + T('⚙️ Piments') + '</button>';
+  box.innerHTML = '<span>' + (chalOn(c) ? '🌶 <b>' + chalX(chalMult(c, null)) + '</b> · ' + esc(chalNames(c).join(' · ')) : T('Aucun piment : partie normale')) + '</span><button class="sbtn" type="button">' + T('🌶 Piments') + '</button>';
   box.querySelector('button').addEventListener('click', () => openChalMap(mi, () => openDiff(mi)));
 }
 
@@ -258,6 +258,6 @@ function chalLobbyHTML(canPick) {
     + (canPick ? '<button class="sbtn" type="button" data-a="chal">' + T('⚙️ Régler') + '</button>' : '') + '</div>';
 }
 function chalLobbyOpen() {
-  openChal({ title: T('⚙️ Piments de la partie'), sub: T('Les mêmes piments pour tous les joueurs. Pas de classement en multijoueur.'),
+  openChal({ title: T('🌶 Piments de la partie'), sub: T('Les mêmes piments pour tous les joueurs. Pas de classement en multijoueur.'),
     get: () => DUEL.lobbyChal, set: c => { DUEL.lobbyChal = chalClean(c); }, done: () => { if (typeof sendLobby === 'function') sendLobby(); if (typeof renderMP === 'function') renderMP(); } });
 }

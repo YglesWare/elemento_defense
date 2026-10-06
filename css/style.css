@@ -1008,3 +1008,7 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
 .sbtn.ubuy svg{width:15px;height:15px}
 .sbtn.ubuy.max{background:#e6dcf3;color:var(--muted)}
 #trPath .node{font-size:13px}
+/* Grand écran (site sur ordinateur) : l'écran des cartes s'élargit pour que ses 4 colonnes respirent */
+@media (min-width:900px){#sMaps .inner{max-width:900px}#sDiff .inner{max-width:720px}}
+/* Difficulté pas encore ouverte : le bouton verrouillé passe à la ligne au lieu d'écraser la description */
+.df .btn.alt:disabled{max-width:150px;white-space:normal;font-size:16px;line-height:1.1;padding:8px 10px}
