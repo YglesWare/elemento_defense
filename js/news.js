@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  88: [
+    ['🌍', 'En ligne : la liste des parties de tes amis, avec leur état (joignable, en cours, complète). Touche « Rejoindre » : ton ami accepte, et tu entres dans son salon.'],
+  ],
   87: [
     ['📋', 'Écran d’une carte plus léger : chaque difficulté tient sur une ligne avec l’essentiel (vagues, vies, force des ennemis, chrono), et le détail s’ouvre avec le bouton « i ».'],
     ['↩️', 'Depuis la carte du jour, « Retour » ramène bien à l’écran des cartes.'],

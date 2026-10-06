@@ -1105,3 +1105,20 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
 .dflock svg{width:13px;height:13px}
 @media (max-width:520px){.df .dftop .btn{grid-column:auto}}
 .df .dfrec{font-size:12px;font-weight:800;color:var(--muted);line-height:1.2}
+
+/* Multijoueur en ligne : les salons des amis (js/online.js) */
+.onlrooms{display:flex;flex-direction:column;gap:7px;margin:4px 0 2px}
+.onlroom{display:flex;align-items:center;gap:9px;background:var(--mist);border:2.5px solid var(--ink);border-radius:14px;padding:7px 8px;text-align:left}
+.onlroom .frav{flex:none}
+.orm{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:3px}
+.orm b{font-size:15px;line-height:1.1}
+.orm .ippills{justify-content:flex-start;margin:0}
+.ost{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;line-height:1.2}
+.ost i{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--ink);flex:none}
+.ost.ok{color:#226b2c}.ost.ok i{background:#4fd36a}
+.ost.busy{color:#9a4a10}.ost.busy i{background:#ff8a2b}
+.ost.full{color:var(--muted)}.ost.full i{background:#b9b0c9}
+.onlroom .btn{flex:none;width:auto;margin:0;padding:9px 11px;font-size:16px}
+.orm .ippills{display:flex;flex-direction:row;flex-wrap:wrap;gap:4px}
+.orm .pill{font-size:11px;padding:0 6px;line-height:1.5;border-width:1.5px}
+.onlroom .btn:disabled{background:#e6dcf3;color:var(--muted);box-shadow:none;opacity:1}

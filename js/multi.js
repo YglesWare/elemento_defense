@@ -275,7 +275,7 @@ $('#mpBody').addEventListener('click', ev => {
   }
   const a = el.dataset.a;
   if (a === 'back') { show('title'); }
-  else if (a === 'tab-near' || a === 'tab-online') { MP.tab = a.slice(4); MP.err = ''; renderMP(); if (MP.tab === 'online' && typeof frLoad === 'function') frLoad(true).then(() => { if (MP.state === 'home') renderMP(); }); }
+  else if (a === 'tab-near' || a === 'tab-online') { MP.tab = a.slice(4); MP.err = ''; renderMP(); if (MP.tab === 'online' && typeof frLoad === 'function') frLoad(true).then(() => { if (MP.state === 'home') renderMP(); if (typeof pollFriendRooms === 'function') pollFriendRooms(); }); }
   else if (a === 'ocreate') { (async () => { mpGo('busy', { busyText: T('Ouverture du salon…') }); if (await onlineCreate()) mpGo('host'); })(); }
   else if (a === 'create') { const n = needName(); if (!n) return; Net.host(n); keepAwake(); mpGo('host'); }
   else if (a === 'join') { const n = needName(); if (!n) return; keepAwake(); mpGo('scan', { scanFor: 'offer' }); }

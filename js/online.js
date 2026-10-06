@@ -146,6 +146,7 @@ async function onlineCreate() {
     const room = await frRpc('room_create');
     ONL.room = room; ONL.host = true;
     await onlineChannel(room);
+    roomBeat();
     return true;
   } catch (e) { Net.reset(); mpGo('home', { tab: 'online', err: T('Impossible d’ouvrir un salon en ligne. Réessaie.') }); return false; }
 }
@@ -206,12 +207,91 @@ function paintOnlineFriends() {
 // Onglet « En ligne » de l'écran Multijoueur
 function onlineHomeHTML() {
   const fr = FR.list.filter(f => f.kind === 'friend'), on = fr.filter(f => f.online).length, live = frLive();
-  return '<p class="trnote">' + T('Joue avec tes amis, <b>où qu’ils soient</b>. Ouvre un salon, puis invite tes amis en ligne : ils reçoivent l’invitation sur leur téléphone.') + '</p>'
+  return '<p class="trnote">' + T('Joue avec tes amis, <b>où qu’ils soient</b> : rejoins la partie d’un ami, ou ouvre ton salon et invite-les.') + '</p>'
     + '<p class="fine">' + T('Ton pseudo : ') + '<b>' + esc(cleanPseudo()) + '</b>' + T(' (modifiable dans le Profil)') + '</p>'
     + (!live ? '<p class="mp-err">' + T('Il faut internet pour jouer en ligne.') + '</p>' : '')
     + '<p class="fine">' + (fr.length ? T('Amis en ligne : ') + on + ' / ' + fr.length : T('Pas encore d’amis : ajoute-en depuis la page Amis de l’accueil.')) + '</p>'
+    + (live && fr.length ? '<span class="mp-label">' + T('Parties de tes amis') + '</span><div class="onlrooms" id="onlRooms">' + friendRoomsHTML() + '</div>'
+      + '<p class="fine">' + T('Seulement tes amis · la liste se met à jour toute seule') + '</p>' : '')
     + '<button class="btn" type="button" data-a="ocreate"' + (live && fr.length ? '' : ' disabled') + '>' + T('Créer un salon en ligne') + '</button>';
 }
+
+// ---------- Salons des amis (supabase/rooms_join.sql) ----------
+// L'hôte dit où en est son salon ; ses amis le voient dans l'onglet « En ligne » et demandent à entrer ; l'hôte accepte ou refuse
+ONL.rooms = null; ONL.ask = null; ONL.reqSeen = new Set();
+const onlineMode = () => (typeof DUEL !== 'undefined' && DUEL.on) || (typeof COOP !== 'undefined' && COOP.on) ? 'game' : 'lobby';
+async function roomBeat() {
+  if (!ONL.host || !ONL.room || !frLive()) return;
+  const inGame = onlineMode() === 'game';
+  frRpc('room_update', { p_room: ONL.room, p_state: inGame ? 'game' : 'lobby', p_mode: DUEL.lobbyMode || 'duel', p_map: DUEL.lobbyMap || 0, p_diff: DUEL.lobbyDiff || 'moyen',
+    p_players: Net.players.length || 1, p_wave: inGame && G ? G.wave || 0 : 0 }).catch(() => {});
+}
+function friendRoomsHTML() {
+  if (ONL.rooms == null) return '<p class="fine">' + T('Recherche des parties…') + '</p>';
+  if (!ONL.rooms.length) return '<p class="fine">' + T('Aucun ami n’a de salon ouvert. Crée le tien et invite-les !') + '</p>';
+  return ONL.rooms.map((r, i) => {
+    const info = r.info || {}, m = MAPS[info.map] || MAPS[0], full = r.players >= NET_MAX, game = r.state === 'game';
+    const st = game ? ['busy', T('Partie en cours') + (info.wave ? T(' · vague ') + info.wave : '')] : full ? ['full', T('Complète · ') + r.players + '/' + NET_MAX] : ['ok', T('Joignable · ') + r.players + '/' + NET_MAX];
+    return '<div class="onlroom"><span class="frav"><canvas data-av="' + esc(r.avatar || 'feu') + '"></canvas></span><span class="orm"><b>' + esc(r.pseudo) + '</b>'
+      + '<span class="ippills"><span class="pill">' + (info.mode === 'coop' ? T('🤝 Coop') : T('⚔️ Duel')) + '</span><span class="pill">' + esc(m.random ? T('Carte aléatoire') : m.name) + '</span>'
+      + (info.mode === 'coop' && DIFFS[info.diff] ? '<span class="pill">' + esc(DIFFS[info.diff].name) + '</span>' : '') + '</span>'
+      + '<span class="ost ' + st[0] + '"><i></i>' + st[1] + '</span></span>'
+      + '<button class="btn green" type="button" data-room="' + i + '"' + (game || full ? ' disabled' : '') + '>' + (game ? T('En cours') : full ? T('Complète') : T('Rejoindre')) + '</button></div>';
+  }).join('');
+}
+function paintFriendRooms() {
+  const box = $('#onlRooms'); if (!box) return;
+  box.innerHTML = friendRoomsHTML(); if (typeof frAvatars === 'function') frAvatars(box);
+  box.querySelectorAll('[data-room]').forEach(b => b.addEventListener('click', () => askJoin(ONL.rooms[+b.dataset.room])));
+}
+async function pollFriendRooms() {
+  if (!frLive() || document.visibilityState !== 'visible' || curScreen !== 'multi' || MP.state !== 'home' || MP.tab !== 'online' || Net.role) return;
+  try { ONL.rooms = (await frRpc('friend_rooms')) || []; } catch (e) { ONL.rooms = ONL.rooms || []; }
+  paintFriendRooms();
+}
+const ASK_ERR = { gone: 'Ce salon vient de fermer.', started: 'La partie a déjà commencé.', full: 'Ce salon est complet.', not_friend: 'Ce joueur n’est plus dans tes amis.', too_many: 'Trop de demandes : attends une minute.' };
+// Demander à entrer : on attend la réponse de l'hôte (30 s), puis on se connecte comme avec une invitation
+async function askJoin(r) {
+  if (!r || ONL.ask) return;
+  if (typeof timeUp === 'function' && timeUp()) { showTimeUp(); return; }
+  Snd.init();
+  let res; try { res = await frRpc('room_ask', { p_room: r.room }); } catch (e) { hint(T('Oups, ça n’a pas marché. Réessaie.'), 1800); return; }
+  if (!res || res.err) { hint(T(ASK_ERR[res && res.err] || 'Oups, ça n’a pas marché. Réessaie.'), 2400); pollFriendRooms(); return; }
+  const ask = ONL.ask = { id: res.id, pseudo: r.pseudo, end: Date.now() + 32000 };
+  mpGo('busy', { busyText: T('On demande à ') + r.pseudo + T(' si tu peux entrer…') });
+  while (ONL.ask === ask) {
+    await new Promise(ok => setTimeout(ok, 1500));
+    if (ONL.ask !== ask) return;
+    // Annulé depuis l'écran (bouton Annuler) : on retire la demande
+    if (MP.state !== 'busy') { ONL.ask = null; frRpc('room_ask_cancel', { p_id: ask.id }).catch(() => {}); return; }
+    let st; try { st = await frRpc('room_ask_status', { p_id: ask.id }); } catch (e) { continue; }
+    if (st && st.status === 'accepted') {
+      ONL.ask = null; MP.busyText = T('Connexion à la partie de ') + ask.pseudo + '…'; renderMP();
+      try { await onlineJoin(st.room); } catch (e) { Net.reset(); mpGo('home', { tab: 'online', err: e.message || T('Impossible de rejoindre la partie.') }); }
+      return;
+    }
+    if (st && st.status === 'pending' && Date.now() < ask.end) continue;
+    ONL.ask = null;
+    mpGo('home', { tab: 'online', err: st && st.status === 'declined' ? ask.pseudo + T(' ne peut pas te prendre pour l’instant.') : T('Pas de réponse de ') + ask.pseudo + '.' });
+    return;
+  }
+}
+// Hôte : les demandes d'amis qui veulent entrer, dans la fenêtre d'invitation (« Léa veut te rejoindre ! »)
+async function pollJoinRequests() {
+  if (!ONL.host || !ONL.room || !frLive() || ONL.pop || onlineMode() === 'game' || Net.players.length >= NET_MAX) return;
+  try {
+    const rows = await frRpc('room_requests', { p_room: ONL.room });
+    const q = (rows || []).find(x => !ONL.reqSeen.has(x.id));
+    if (q) showAsk(q);
+  } catch (e) {}
+}
+function showAsk(q) {
+  ONL.reqSeen.add(q.id);
+  showInvite({ id: q.id, ask: true, pseudo: q.pseudo, avatar: q.avatar, secs: q.secs, total: 30, info: { mode: DUEL.lobbyMode || 'duel', map: DUEL.lobbyMap || 0, diff: DUEL.lobbyDiff } });
+  $('#ipName').textContent = q.pseudo + T(' veut te rejoindre !');
+}
+setInterval(() => { roomBeat(); }, 8000);
+setInterval(() => { pollFriendRooms(); pollJoinRequests(); }, 4000);
 
 // ---------- Invité : fenêtre d'invitation, puis connexion ----------
 async function pollInvites() {
@@ -233,16 +313,18 @@ function showInvite(r) {
   const end = Date.now() + r.secs * 1000;
   const tick = () => {
     const left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
-    $('#ipSecs').textContent = left; $('#ipRing').style.setProperty('--p', Math.round(left / 60 * 100));
+    $('#ipSecs').textContent = left; $('#ipRing').style.setProperty('--p', Math.round(left / (r.total || 60) * 100));
     if (!left) closeInvite();
   };
   clearInterval(ONL.popT); ONL.popT = setInterval(tick, 250); tick();
   box.hidden = false; Snd.play('clear'); try { navigator.vibrate && navigator.vibrate([80, 60, 80]); } catch (e) {}
 }
 function closeInvite() { clearInterval(ONL.popT); $('#invPop').hidden = true; ONL.pop = null; }
-$('#ipNo').addEventListener('click', () => { const r = ONL.pop; closeInvite(); if (r) frRpc('invite_respond', { p_id: r.id, p_accept: false }).catch(() => {}); });
+$('#ipNo').addEventListener('click', () => { const r = ONL.pop; closeInvite(); if (r) frRpc(r.ask ? 'room_request_respond' : 'invite_respond', { p_id: r.id, p_accept: false }).catch(() => {}); });
 $('#ipYes').addEventListener('click', async () => {
   const r = ONL.pop; closeInvite(); if (!r) return;
+  // Hôte qui accepte un ami : il arrive dans le salon par le canal, comme un invité
+  if (r.ask) { const res = await frRpc('room_request_respond', { p_id: r.id, p_accept: true }).catch(() => null); hint(res && res.ok ? r.pseudo + T(' arrive…') : T('Trop tard : la demande n’est plus valable.'), 2000); return; }
   if (typeof timeUp === 'function' && timeUp()) { frRpc('invite_respond', { p_id: r.id, p_accept: false }).catch(() => {}); showTimeUp(); return; }
   Snd.init(); ONL.busy = true;
   show('multi'); screens.multi.scrollTop = 0;
