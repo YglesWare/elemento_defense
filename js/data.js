@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 80;
+const BUILD = 81;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -343,8 +343,8 @@ const TOWERS = {
   terre: { name: T('Rocaille'), elem: T('Terre'), cost: 80, range: 3.0, rate: 0.45, dmg: 34, air: false, kind: 'zone', color: '#c08a58',
     desc: T('Gros rochers de zone. Ne touche pas les volants.'),
     lv: [{ splash: 1.0, stun: 0 }, { splash: 1.1, stun: 0.12 }, { splash: 1.25, stun: 0.25 }] },
-  vent: { name: T('Zéphyr'), elem: T('Vent'), cost: 70, range: 2.9, rate: 0.7, dmg: 7, air: true, kind: 'mono', color: '#5fe0bd', airBonus: 2.5,
-    desc: T('Rafales qui repoussent. Dégâts ×2,5 sur les volants.'),
+  vent: { name: T('Zéphyr'), elem: T('Vent'), cost: 70, range: 2.9, rate: 0.7, dmg: 7, air: true, noGround: true, kind: 'mono', color: '#5fe0bd', airBonus: 2.5,
+    desc: T('Rafales qui repoussent. Ne vise que les volants (dégâts ×2,5) ; l’achat « Sol » lui apprend à toucher le sol.'),
     lv: [{ knock: 0.6 }, { knock: 0.8 }, { knock: 1.1 }] },
   foudre: { name: T('Voltie'), elem: T('Éclair'), cost: 100, range: 2.5, rate: 0.8, dmg: 15, air: true, kind: 'chaine', color: '#ffd23f',
     desc: T('Un éclair qui rebondit d’ennemi en ennemi.'),
@@ -353,7 +353,29 @@ const TOWERS = {
     desc: T('Onde glacée autour d’elle : ralentit, puis gèle.'),
     lv: [{ slow: 0.4, every: 4, freeze: 0.8 }, { slow: 0.48, every: 3, freeze: 1.0 }, { slow: 0.55, every: 2, freeze: 1.2 }] },
 };
-const LVL = { dmg: [1, 1.7, 2.6, 3.6], range: [0, 0.2, 0.35, 0.5], rate: [1, 1.15, 1.3, 1.45] };
+// Améliorations d'une tour en partie : six achats sans fin, chacun un peu plus cher à chaque fois (t.up = { dmg: 3, rng: 1, … }).
+// Dégâts et Portée ont un plafond relevé par la Maîtrise et la Longue-vue de l'Atelier ; Sol et Vol partent de 100 %
+// (0 % pour une tour qui ne vise pas ce type d'ennemis : Rocaille, Volcan, Marais au vol ; Zéphyr au sol).
+const UP_KEYS = ['dmg', 'rng', 'rate', 'sol', 'air', 'boss'];
+const TRACK = {
+  dmg: { name: T('Dégâts'), ic: '⚔️', per: 0.25 },
+  rng: { name: T('Portée'), ic: '🎯', per: 0.2 },
+  rate: { name: T('Cadence'), ic: '⚡', per: 0.06 },
+  sol: { name: T('Sol'), ic: '🟫', per: 0.25 },
+  air: { name: T('Vol'), ic: '🪽', per: 0.25 },
+  boss: { name: T('Boss'), ic: '👹', per: 0.25 },
+};
+const FUSE_LV = 5;  // fusion : Dégâts, Portée et Cadence au niveau 5 sur les deux tours (3 dans l'histoire)
+// Plafonds sans Atelier : 10 niveaux de Dégâts (×3,5, comme l'ancien niveau max), 5 de Portée (+1 case)
+const CAP_BASE = { dmg: 10, rng: 5 };
+const upOf = up => { const o = {}; for (const k of UP_KEYS) o[k] = Math.max(0, Math.floor((up && up[k]) || 0)); return o; };
+const upTot = up => UP_KEYS.reduce((a, k) => a + ((up && up[k]) || 0), 0);
+// Allure de la tour (1 à 4) selon le nombre d'achats : 2ᵉ forme à 6, 3ᵉ à 15, couronne à 30
+const upStage = up => { const n = upTot(up); return n >= 30 ? 4 : n >= 15 ? 3 : n >= 6 ? 2 : 1; };
+// Spécialité la plus achetée (couleur et emblème de la tour), ou rien
+const upSpec = up => { let b = null; for (const k of ['sol', 'air', 'boss']) if ((up[k] || 0) > 0 && (!b || up[k] > up[b])) b = k; return b; };
+// Ancien format (niveau 1 à 4 et branche) → achats équivalents : sauvegardes, ruines et multijoueur d'avant
+function upFromLvl(lvl, br) { const n = Math.max(0, (lvl || 1) - 1) * 2, up = upOf({ dmg: n, rng: n, rate: n }); if (br && TRACK[br]) up[br] = Math.max(0, (lvl || 1) - 2) * 2; return up; }
 const BRANCHES = ['sol', 'air', 'boss'];
 const BRANCH = {
   sol: { name: T('Écrase-sol'), short: T('Sol'), color: '#8fdc6a', target: T('Contre les ennemis au sol'), vs: T('au sol'), mul: [1.5, 2.0],
@@ -363,7 +385,7 @@ const BRANCH = {
   boss: { name: T('Tueur de Kaiju'), short: 'Boss', color: '#ff4f6e', target: T('Contre les boss'), vs: T('sur boss'), mul: [1.7, 2.5],
     ranks: [T('Dégâts ×1,7 contre les Kaiju, ignore 3 d’armure'), T('Dégâts ×2,5 contre les Kaiju, ignore toute l’armure')] },
 };
-function rankText(key, r, type) {
+function rankText(key, r, type) { // (ancien arbre de spécialisation, gardé pour l'aide)
   let x = BRANCH[key].ranks[r - 1];
   if (r === 1 && key === 'air' && !TOWERS[type].air) x += T('. Rocaille peut enfin toucher les volants');
   if (r === 1 && key === 'boss' && type === 'glace') x += T('. Gèle aussi les Kaiju longtemps');
@@ -531,18 +553,31 @@ const BOSSNAME = { halloween: 'ROI CITROUILLE', noel: T('YÉTI'), paques: T('LAP
 const BOSSAPP = { halloween: T('Le Roi Citrouille approche...'), noel: T('Le Yéti approche...'), paques: T('Le Lapin en chocolat approche...'), valentin: T('La Reine des Cœurs approche...'), nouvelan: T('Le Dragon approche...') };
 const hpMul = w => 1 + (w - 1) * 0.16 + (w - 1) * (w - 1) * 0.011;
 
-function statsOf(type, lvl, br) {
-  const D = TOWERS[type], i = lvl - 1, avg = id => D.parents ? (M(id + D.parents[0]) + M(id + D.parents[1])) / 2 : M(id + type), ms = avg('m_'), pr = avg('p_'), rank = br ? Math.max(0, lvl - 2) : 0;
-  const st = Object.assign({}, D, D.lv[Math.min(i, 2)], { dmg: D.dmg * LVL.dmg[i] * (1 + 0.1 * ms), range: D.range * (1 + RANGE_UP * pr) + LVL.range[i] + (ms >= 5 ? 0.2 : 0), rate: D.rate * LVL.rate[i], br: br || null, rank });
-  if (br && rank > 0) {
-    st.brMul = BRANCH[br].mul[rank - 1];
-    if (br === 'air') { st.range += 0.2 * rank; st.air = true; }
-    if (br === 'boss') st.pierce = rank >= 2 ? 99 : 3;
-  }
+function statsOf(type, up) {
+  up = upOf(up);
+  const D = TOWERS[type], i = upStage(up) - 1, avg = id => D.parents ? (M(id + D.parents[0]) + M(id + D.parents[1])) / 2 : M(id + type), ms = avg('m_'), pr = avg('p_');
+  const st = Object.assign({}, D, D.lv[Math.min(i, 2)], {
+    dmg: D.dmg * (1 + TRACK.dmg.per * up.dmg) * (1 + 0.1 * ms),
+    range: D.range * (1 + RANGE_UP * pr) + (ms >= 5 ? 0.2 : 0) + TRACK.rng.per * up.rng,
+    rate: D.rate * (1 + TRACK.rate.per * up.rate),
+    solMul: (D.noGround ? 0 : 1) + TRACK.sol.per * up.sol, airMul: (D.air ? 1 : 0) + TRACK.air.per * up.air, bossMul: 1 + TRACK.boss.per * up.boss,
+    solLv: up.sol, bossLv: up.boss, pierce: Math.floor(up.boss / 2), br: upSpec(up),
+  });
+  st.air = st.airMul > 0; st.ground = st.solMul > 0;
   return st;
 }
 const costOf = type => Math.round(TOWERS[type].cost * (1 - 0.04 * M('cheap')));
-function upCost(t, lvl = t.lvl) { if (lvl >= (TOWERS[t.type].fusion ? 3 : 4)) return 0; return Math.round(TOWERS[t.type].cost * [0.9, 1.6, 2.4][lvl - 1] * (1 - 0.04 * M('cheap')) / 5) * 5; }
+// Paliers de Maîtrise (m_) ou de Longue-vue (p_) achetés dans l'Atelier ; une fusion prend la moyenne de ses deux éléments
+const atelierTiers = (type, p) => { const D = TOWERS[type], raw = id => (meta.lv && meta.lv[id]) || 0; return D.parents ? Math.floor((raw(p + D.parents[0]) + raw(p + D.parents[1])) / 2) : raw(p + type); };
+// Plafond d'un achat : Dégâts et Portée, plafond de base + 1 par palier de Maîtrise / Longue-vue ; les autres sans fin
+const upCap = (type, k) => k === 'dmg' ? CAP_BASE.dmg + atelierTiers(type, 'm_') : k === 'rng' ? CAP_BASE.rng + atelierTiers(type, 'p_') : Infinity;
+// Fusion : la nouvelle tour reçoit, pour chaque achat, la moyenne des niveaux des deux tours (sans dépasser ses plafonds)
+function fuseUp(a, b, type) { const o = {}; for (const k of UP_KEYS) o[k] = Math.min(upCap(type, k), Math.floor((((a.up || {})[k] || 0) + ((b.up || {})[k] || 0)) / 2)); return o; }
+// Niveau demandé en Dégâts, Portée et Cadence pour fusionner (plus bas dans l'histoire, où l'or est compté)
+const fuseLv = () => G && G.story ? 3 : FUSE_LV;
+const fuseReady = t => ['dmg', 'rng', 'rate'].every(k => (t.up[k] || 0) >= fuseLv());
+// Prix du prochain niveau d'un achat : prix de la tour × (0,06 + 0,04 × niveau), arrondi à 5 or
+function trackPrice(type, up, k) { const n = ((up && up[k]) || 0) + 1; return Math.max(5, Math.round(TOWERS[type].cost * (0.06 + 0.04 * n) * (1 - 0.04 * M('cheap')) / 5) * 5); }
 const sellValue = t => Math.floor(t.inv * (0.7 + 0.05 * M('resell')));
 
 // Améliorations permanentes (Atelier)

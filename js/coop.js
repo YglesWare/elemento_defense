@@ -93,12 +93,9 @@ function hostAction(pid, a) {
       burst(t.x, t.y, 0.1, 12, ['#ffffff', '#f1eafa', TOWERS[type].color], 2.2, 0.09, 3, 0.5, 'star'); Snd.play('build');
     } else if (a.a === 'up') {
       const t = tw(a.id); if (!own(t)) return;
-      const cost = upCost(t); if (!cost || G.gold < cost) return;
-      const fus = TOWERS[t.type].fusion;
-      if (t.lvl === 2 && !t.br && !fus && !BRANCH[a.br]) return;
-      if (a.br && t.br && a.br !== t.br) return;
-      G.gold -= cost; t.lvl++; if (t.lvl >= 3 && !t.br && !fus) t.br = a.br; t.inv += cost; t.s = towerStats(t); t.recoil = 1; if (!(t.ko > 0)) healTower(t, !hardMode());
-      burst(t.x, t.y, 0.4, 16, ['#ffd23f', '#ffffff', TOWERS[t.type].color], 2.6, 0.1, 2, 0.7, 'star'); Snd.play('up');
+      if (!TRACK[a.k] || (t.up[a.k] || 0) >= towerCap(t, a.k)) return;
+      const cost = trackPrice(t.type, t.up, a.k); if (G.gold < cost) return;
+      G.gold -= cost; upApply(t, a.k, cost); Snd.play('up');
     } else if (a.a === 'sell') {
       const t = tw(a.id); if (!own(t)) return;
       G.gold += sellValue(t); G.towers = G.towers.filter(x => x !== t);
@@ -116,7 +113,7 @@ function hostAction(pid, a) {
       const F = TOWERS[r.k]; G.gold -= F.fee;
       G.towers = G.towers.filter(x => x !== src && x !== dst);
       if (G.selTower === src || G.selTower === dst) deselect();
-      const nt = addTower(r.k, dst.c, dst.r, 1, dst.mode, src.inv + dst.inv + F.fee); nt.recoil = 1;
+      const nt = addTower(r.k, dst.c, dst.r, fuseUp(src, dst, r.k), dst.mode, src.inv + dst.inv + F.fee); nt.recoil = 1;
       G.fx.push({ kind: 'ring', gx: dst.x, gy: dst.y, r0: 0.2, r1: 2.2, t: 0, dur: 0.6, color: '#ff6ad5' });
       ono('FUSION !', dst.x, dst.y, '#ff6ad5', 0.8, 0, 1.1); Snd.play('win');
     }
@@ -131,9 +128,9 @@ const NOTICE = {
 function coopNotice(kind, d) { const f = NOTICE[kind]; if (!f) return; hint(f(d), 2200); Net.send('all', { k: 'cmsg', kind, d: { p: d.p, v: Math.round(+d.v || 0), to: d.to } }); }
 
 // ---------- État envoyé par l'hôte ----------
-const towerSig = () => G.towers.map(t => [t.id, t.type, t.lvl, t.br || '', t.mode, t.own].join(':')).join('|') + '#' + (G.ruins || []).length;
+const towerSig = () => G.towers.map(t => [t.id, t.type, UP_KEYS.map(k => t.up[k]).join(','), t.mode, t.own].join(':')).join('|') + '#' + (G.ruins || []).length;
 function sendTowers() {
-  Net.send('all', { k: 'ct', t: G.towers.map(t => ({ id: t.id, type: t.type, c: t.c, r: t.r, lvl: t.lvl, br: t.br, mode: t.mode, inv: t.inv, own: t.own, rg: +t.s.range.toFixed(2), rt: +t.s.rate.toFixed(3), air: !!t.s.air })), ru: G.ruins || [] });
+  Net.send('all', { k: 'ct', t: G.towers.map(t => ({ id: t.id, type: t.type, c: t.c, r: t.r, up: t.up, mode: t.mode, inv: t.inv, own: t.own, rg: +t.s.range.toFixed(2), rt: +t.s.rate.toFixed(3), air: !!t.s.air, gr: t.s.ground !== false })), ru: G.ruins || [] });
 }
 function sendSnapshot() {
   const fl = e => (e.frozen > 0 ? 1 : 0) | (e.stun > 0 ? 2 : 0) | (e.burnT > 0 ? 4 : 0) | (e.wet > 0 ? 8 : 0) | (e.ghost > 0 ? 16 : 0);
@@ -162,16 +159,16 @@ function applyTowers(list) {
   for (const d of list) {
     let t = keep.get(d.id);
     if (!t || t.type !== d.type) {
-      COOP.actor = d.own; t = addTower(d.type, d.c, d.r, d.lvl, d.mode, d.inv, d.br); COOP.actor = null;
+      COOP.actor = d.own; t = addTower(d.type, d.c, d.r, d.up || upFromLvl(d.lvl, d.br), d.mode, d.inv); COOP.actor = null;
       G.towers.pop(); t.id = d.id; t.recoil = 1;
       burst(t.x, t.y, 0.1, 10, ['#ffffff', '#f1eafa', TOWERS[d.type].color], 2.2, 0.09, 3, 0.5, 'star');
       if (d.own === coopMe()) Snd.play('build');
-    } else if (t.lvl !== d.lvl || t.br !== d.br) {
-      t.lvl = d.lvl; t.br = d.br; t.recoil = 1; t.s = towerStats(t);
+    } else if (d.up && UP_KEYS.some(k => (t.up[k] || 0) !== (d.up[k] || 0))) {
+      setUp(t, d.up); t.recoil = 1; t.s = towerStats(t);
       if (d.own === coopMe()) Snd.play('up');
     }
     Object.assign(t, { mode: d.mode, inv: d.inv, own: d.own });
-    t.s.range = d.rg; t.s.rate = d.rt; t.s.air = d.air;
+    t.s.range = d.rg; t.s.rate = d.rt; t.s.air = d.air; t.s.ground = d.gr !== false;
     next.push(t);
   }
   for (const t of G.towers) if (!next.includes(t)) { burst(t.x, t.y, 0.3, 10, ['#cdbfe0', '#ffffff', '#ffd23f'], 2, 0.09, 3, 0.5); if (G.selTower === t) deselect(); }

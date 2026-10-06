@@ -6,6 +6,10 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  81: [
+    ['🛠️', 'Nouvelles améliorations : touche une tour, puis « Améliorer ». Six achats sans fin : Dégâts, Portée, Cadence, Sol, Vol et Boss. Zéphyr ne vise plus que les volants (l’achat « Sol » lui apprend le sol), et une fusion demande le niveau 5 en Dégâts, Portée et Cadence.'],
+    ['📈', 'Atelier : les Maîtrises, Longues-vues et Remparts affichent simplement leur niveau (« Niv. 12 »), car ils n’ont pas de limite.'],
+  ],
   80: [
     ['🌶', 'Écran des cartes : les piments se règlent avec le bouton 🌶 à côté de « Jouer », qui affiche leur multiplicateur quand ils sont actifs. L’aperçu de la carte n’est plus caché.'],
   ],

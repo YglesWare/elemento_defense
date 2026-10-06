@@ -871,7 +871,8 @@ html.cvd .tbtn .bio.bad{background:#ffe2c4}
 #micMeter i{display:block;width:54px;height:9px;border:2px solid var(--ink);border-radius:99px;overflow:hidden;background:var(--mist)}
 #micMeter b{display:block;height:100%;width:0;background:var(--sky);transition:width .08s}
 #micMeter.on b{background:var(--leaf)}
-.upbar.inf i{background:linear-gradient(90deg,var(--grape),var(--pop))}
+.uplv{font:400 15px/1 var(--display);letter-spacing:.5px;background:var(--sun2);border:2px solid var(--ink);border-radius:99px;padding:2px 8px;white-space:nowrap}
+.uplv.far{background:linear-gradient(90deg,var(--grape),var(--pop));color:var(--paper)}
 /* Ligne « Amis » de la carte du jour : poussée en bas, juste au-dessus du bouton « Jouer » */
 .mapc>.drank{margin-top:auto}
 .mapc>.drank+.sbtn{margin-top:0}
@@ -992,3 +993,18 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
 .adplay .btn{width:100%}
 #adAsk .intro-foot .btn{white-space:nowrap;font-size:20px;padding-inline:8px}
 #questPop .btn.adbtn{font-size:17px}
+/* Améliorations d'une tour : six lignes (achat, niveau, effet actuel → prochain, prix) */
+#iUp.poor{opacity:.75}
+#trBrs{display:flex;flex-direction:column;gap:8px}
+.uprow{display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:8px;border:2.5px solid var(--ink);border-radius:12px;background:var(--mist);padding:6px 8px}
+.uprow.zero{background:var(--nobg)}
+.uprow .uic{font-size:22px;text-align:center}
+.uprow .utx{min-width:0;display:flex;flex-direction:column;gap:2px}
+.uprow .utx b{font-family:var(--display);font-weight:400;font-size:19px;letter-spacing:.5px;line-height:1.05;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.uprow .utx small{font-size:13px;font-weight:700;color:var(--muted);line-height:1.25}
+.uprow .utx small b{display:inline;font:inherit;color:var(--ink);font-weight:800}
+.uprow .uplv{font-size:13px;padding:1px 7px}
+.sbtn.ubuy{flex:none;min-width:72px;height:40px;background:var(--sun);display:flex;align-items:center;justify-content:center;gap:3px;font-size:17px}
+.sbtn.ubuy svg{width:15px;height:15px}
+.sbtn.ubuy.max{background:#e6dcf3;color:var(--muted)}
+#trPath .node{font-size:13px}

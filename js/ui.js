@@ -81,7 +81,7 @@ function statChips(t) {
     vent: T('Recul ') + fr(s.knock), foudre: s.chain + ' cibles', glace: T('Gèle 1 onde / ') + s.every,
   }[t.type] || D.fx(s);
   const ch = [['', T('<i>Dégâts</i>') + Math.round(s.dmg)], ['', T('<i>Portée</i>') + fr(s.range.toFixed(1))], ['', T('<i>Cadence</i>') + fr(s.rate.toFixed(2)) + '/s'], ['', extra]];
-  if (s.brMul) ch.push(['good', '×' + fr(s.brMul) + ' ' + BRANCH[s.br].vs]);
+  if (s.solMul != null) for (const [k, v] of [['sol', s.solMul], ['air', s.airMul], ['boss', s.bossMul]]) if (v !== 1) ch.push([v > 1 ? 'good' : 'bad', TRACK[k].ic + ' ' + TRACK[k].name + ' ' + pctOf(v)]);
   if (s.terr && s.aff) ch.push([s.aff > 0 ? 'good' : 'bad', s.terr.name + ' ' + fmtAff(s.aff)]);
   if (s.terr && s.terr.range) ch.push(['good', s.terr.name + T(' +0,4 portée')]);
   if (s.bio) ch.push([s.bio > 0 ? 'good' : 'bad', 'Biome ' + fmtAff(s.bio)]);
@@ -100,20 +100,19 @@ function selectTower(t) {
 }
 function refreshInfo() {
   const t = G && G.selTower; if (!t) return;
-  const D = TOWERS[t.type], cost = upCost(t);
-  const hc = healCost(t), key = [t.type, t.lvl, t.br, t.mode, G.gold >= cost, G.gold >= hc, Math.ceil(t.hp), Math.ceil(t.shield || 0), Math.ceil(t.ko || 0), t.stun > 0, Math.ceil(t.evil || 0)].join('|');
+  const D = TOWERS[t.type];
+  const hc = healCost(t), key = [t.type, UP_KEYS.map(k => t.up[k]).join(','), t.mode, G.gold, G.gold >= hc, Math.ceil(t.hp), Math.ceil(t.shield || 0), Math.ceil(t.ko || 0), t.stun > 0, Math.ceil(t.evil || 0)].join('|');
   if (hudCache.info === key) return;
   hudCache.info = key;
   $('#iName').textContent = D.name + (G.coop && t.own && t.own !== coopMe() ? ' · ' + coopName(t.own) : '');
   const mine = !(G.coop && t.own && t.own !== coopMe());
-  $('#iStars').textContent = (D.fusion ? '★'.repeat(t.lvl) + '☆'.repeat(3 - t.lvl) + ' · Fusion' : '★'.repeat(t.lvl) + '☆'.repeat(4 - t.lvl) + (t.br ? ' · ' + BRANCH[t.br].short : '')) + ' · ' + KIND[D.kind];
+  $('#iStars').textContent = '★'.repeat(t.lvl) + ' · ' + upTot(t.up) + T(' achats') + (D.fusion ? ' · Fusion' : '') + ' · ' + KIND[D.kind];
   const ic = $('#iStats'); ic.innerHTML = statChips(t); ic.scrollLeft = 0; ic.classList.toggle('more', ic.scrollWidth > ic.clientWidth + 2);
   // Boutons sur deux lignes : l'action en petit, le prix dessous (jamais coupé, même avec 4 boutons)
   const up = $('#iUp'), two = (el, label, price, coin = true) => { el.classList.toggle('two', price != null); el.innerHTML = price != null ? '<span class="bl">' + label + '</span><span class="bp">' + (coin ? COIN : '') + price + '</span>' : label; };
-  if (D.fusion) { if (cost) { two(up, T('Améliorer'), cost); up.disabled = G.gold < cost; } else { two(up, T('Niveau max')); up.disabled = true; } }
-  else if (t.lvl === 2 && !t.br) { if (typeof storyLocked === 'function' && storyLocked('spec')) { two(up, T('🔒 Plus tard')); up.disabled = true; } else { two(up, T('Spécialiser ▸'), cost); up.disabled = false; } }
-  else if (t.lvl >= 4) { two(up, T('Arbre ▸')); up.disabled = false; }
-  else { two(up, t.br ? BRANCH[t.br].short + ' II' : T('Améliorer'), cost); up.disabled = G.gold < cost; }
+  // Le moins cher des achats possibles, pour savoir d'un coup d'œil si on peut améliorer
+  const cheap = Math.min(...UP_KEYS.filter(k => !trackLocked(k) && (t.up[k] || 0) < towerCap(t, k)).map(k => trackPrice(t.type, t.up, k)));
+  two(up, T('Améliorer ▸'), isFinite(cheap) ? T('dès ') + COIN + cheap : null, false); up.disabled = false; up.classList.toggle('poor', !(G.gold >= cheap));
   two($('#iSell'), T('Vendre'), sellValue(t));
   if (!mine) { up.disabled = true; $('#iSell').disabled = true; } else $('#iSell').disabled = false;
   // Difficile : soin payant (une tour détruite ne se soigne pas : elle n'existe plus)
@@ -262,7 +261,7 @@ cv.addEventListener('pointerleave', () => { if (G) G.hover = null; });
 cv.addEventListener('contextmenu', ev => { ev.preventDefault(); deselect(); });
 document.addEventListener('pointerdown', () => Snd.init(), { passive: true });
 document.addEventListener('keydown', ev => {
-  if (curScreen === 'tree') { if (ev.key === 'Escape') closeTree(); return; }
+  if (curScreen === 'tree') { if (ev.key === 'Escape') closeUpSheet(); return; }
   if (curScreen === 'tuto') { if (ev.key === 'ArrowRight') $('#uNext').click(); else if (ev.key === 'ArrowLeft') gotoTuto(tIdx - 1); else if (ev.key === 'Escape') closeTuto(); return; }
   if (curScreen === 'pause') { if (ev.key === 'Escape') resume(); else if (ev.key.toLowerCase() === 'q') $('#pQuit').click(); return; }
   if ((curScreen === 'help' || curScreen === 'shop') && (ev.key === 'ArrowRight' || ev.key === 'ArrowLeft')) { (curScreen === 'help' ? helpTabs : shopTabs).step(ev.key === 'ArrowRight' ? 1 : -1); return; }
@@ -508,12 +507,12 @@ function renderShop(boughtId) {
     for (const u of list) {
       const l = upLv(u), maxed = upFull(u), beyond = u.inf && l >= u.max, price = upPrice(u), d = document.createElement('div'), lockT = u.tower && !unlocked(u.tower);
       d.className = 'up' + (u.id === 'revive' ? ' wide' : '') + (maxed ? ' maxed' : '') + (lockT ? ' lockd' : '') + (boughtId === u.id ? ' bought' : '');
-      // Jusqu'à 10 paliers : des pastilles ; au-delà, une jauge
-      // Au-delà du maximum (amélioration infinie) : la jauge pleine et « ∞ » avec les paliers en plus
-      let pips = ''; if (beyond) pips = '<span class="upbar inf"><i style="width:100%"></i></span><span class="upn">∞ +' + (l - u.max) + '</span>';
+      // Améliorations infinies (Maîtrises, Longue-vue, Remparts) : juste le niveau, sans plafond affiché ;
+      // les autres : jusqu'à 10 paliers, des pastilles, au-delà une jauge
+      let pips = ''; if (u.inf) pips = '<span class="uplv' + (beyond ? ' far' : '') + '">' + T('Niv. ') + l + '</span>';
       else if (u.max <= 10) for (let i = 0; i < u.max; i++) pips += '<span class="pip' + (i < l ? ' on' : '') + '"></span>';
       else pips = '<span class="upbar"><i style="width:' + Math.round(l * 100 / u.max) + '%"></i></span><span class="upn">' + l + '/' + u.max + '</span>';
-      d.innerHTML = '<canvas></canvas><span class="un">' + u.name + T('</span><span class="pips" aria-label="Niveau ') + l + T(' sur ') + u.max + '">' + pips + '</span>'
+      d.innerHTML = '<canvas></canvas><span class="un">' + u.name + T('</span><span class="pips" aria-label="Niveau ') + l + (u.inf ? '' : T(' sur ') + u.max) + '">' + pips + '</span>'
         + '<p>' + (l ? u.fx(upEff(u, l)) : T('Pas encore acheté')) + (maxed ? '' : T('<br><span class="nx">Niveau ') + (l + 1) + T(' : ') + u.fx(upEff(u, l + 1)) + '</span>') + '</p>'
         + '<button class="sbtn buy" type="button"' + (maxed || lockT || meta.shards < price ? ' disabled' : '') + '>' + (lockT ? T('Débloque ') + TOWERS[u.tower].name + T(' d’abord') : maxed ? T('Niveau max') : T('Acheter ') + GEM + price) + '</button>';
       box.appendChild(d);
@@ -761,7 +760,7 @@ function fuseCheck(src, dst) {
   const F = TOWERS[k];
   if (typeof chalBanned === 'function' && chalBanned(k)) return { k, why: F.name + T(' : interdite par le piment 🚫') };
   if (!fusionUnlocked(k)) return { k, why: F.name + T(' : à débloquer dans l’Atelier (') + F.unlock + T(' éclats)') };
-  if (src.lvl < 2 || dst.lvl < 2) return { k, why: F.name + T(' : les deux tours doivent être au niveau 2') };
+  if (!fuseReady(src) || !fuseReady(dst)) return { k, why: F.name + T(' : les deux tours doivent avoir le niveau ') + fuseLv() + T(' en Dégâts, Portée et Cadence') };
   if (G.gold < F.fee) return { k, why: F.name + T(' : il faut ') + F.fee + T(' or') };
   if (G.coop && (src.own !== coopActor() || dst.own !== coopActor())) return { k, why: T('En coop, tu ne peux fusionner que tes propres tours') };
   return { k, ok: true };
@@ -812,7 +811,7 @@ function doFuse(src, dst, k) {
   const F = TOWERS[k];
   G.gold -= F.fee;
   G.towers = G.towers.filter(x => x !== src && x !== dst);
-  const nt = addTower(k, dst.c, dst.r, 1, dst.mode, src.inv + dst.inv + F.fee); nt.recoil = 1;
+  const nt = addTower(k, dst.c, dst.r, fuseUp(src, dst, k), dst.mode, src.inv + dst.inv + F.fee); nt.recoil = 1;
   for (const o of [src, dst]) burst(o.x, o.y, 0.4, 18, [TOWERS[o.type].color, '#ffffff', '#ff6ad5'], 3, 0.1, 1, 0.8, 'star');
   G.fx.push({ kind: 'ring', gx: dst.x, gy: dst.y, r0: 0.2, r1: 2.2, t: 0, dur: 0.6, color: '#ff6ad5' });
   ono('FUSION !', dst.x, dst.y, '#ff6ad5', 0.8, 0, 1.1);
@@ -823,49 +822,59 @@ function doFuse(src, dst, k) {
   banner(F.name.toUpperCase(), F.elem);
 }
 
-// Arbre de spécialisation
-let treeT = null;
-function openTree(t) {
+// Améliorations d'une tour : six achats sans fin (écran « tree », le jeu est en pause en solo)
+let upT = null, upKey = '';
+function openUpSheet(t) {
   if (!G || G.over) return;
-  treeT = t; if (!G.coop) G.paused = true; show('tree'); screens.tree.scrollTop = 0; renderTree();
+  upT = t; if (!G.coop) G.paused = true; show('tree'); screens.tree.scrollTop = 0; upKey = ''; renderUpSheet();
 }
-function closeTree() { treeT = null; resume(); }
-function renderTree() {
-  const t = treeT, D = TOWERS[t.type], cost = upCost(t);
-  const ic = prepMini($('#trIcon'), 64, 68); drawTower(ic, t.type, 32, 40, 54, t.lvl, 1, 0, 0.3, 0, false, t.br);
+function closeUpSheet() { upT = null; resume(); }
+const pctOf = v => Math.round(v * 100) + ' %';
+// Valeur d'un achat pour la tour, avec ses statistiques s
+const UPVAL = {
+  dmg: s => String(Math.round(s.dmg)), rng: s => fr(s.range.toFixed(1)) + T(' cases'), rate: s => fr(s.rate.toFixed(2)) + T(' tirs/s'),
+  sol: s => pctOf(s.solMul), air: s => pctOf(s.airMul), boss: s => pctOf(s.bossMul),
+};
+function renderUpSheet() {
+  const t = upT; if (!t || curScreen !== 'tree' || !G) return;
+  const mine = !(G.coop && t.own && t.own !== coopMe()), key = [UP_KEYS.map(k => t.up[k]).join(','), G.gold, mine].join('|');
+  if (key === upKey) return; upKey = key;
+  const D = TOWERS[t.type], s = t.s;
+  drawTower(prepMini($('#trIcon'), 64, 68), t.type, 32, 40, 54, t.lvl, 1, 0, 0.3, 0, false, t.br);
   $('#trName').textContent = D.name;
-  $('#trSub').textContent = T('Niveau ') + t.lvl + ' · ' + KIND[D.kind] + ' · ' + D.elem;
+  $('#trSub').textContent = upTot(t.up) + T(' achats') + ' · ' + KIND[D.kind] + ' · ' + D.elem;
   $('#trGold').textContent = G.gold;
-  $('#trPath').innerHTML = T('<span class="node done">Niv. 1 ✓</span><span class="arr">▶</span><span class="node') + (t.lvl >= 2 ? ' done' : '') + '">Niv. 2' + (t.lvl >= 2 ? ' ✓' : '') + '</span><span class="arr">▶</span><span class="node' + (t.br ? ' done' : '') + '">' + (t.br ? BRANCH[t.br].name + ' ✓' : T('Spécialisation')) + '</span>';
-  $('#trNote').textContent = t.br ? T('Branche ') + BRANCH[t.br].name + T(' choisie. Les deux autres sont fermées pour cette tour.')
-    : t.lvl < 2 ? T('Monte cette tour au niveau 2 pour choisir sa spécialisation.')
-    : T('Choisis une branche pour cette tour. Ce choix est définitif : les deux autres se fermeront.');
+  // Fusion : où en est la tour (niveau demandé en Dégâts, Portée et Cadence)
+  const fl = fuseLv(), canFuse = !D.fusion && Object.keys(FUSIONS).some(k => FUSIONS[k].parents.includes(t.type));
+  $('#trPath').innerHTML = canFuse ? '<span class="node' + (fuseReady(t) ? ' done' : '') + '">' + T('Fusion') + (fuseReady(t) ? ' ✓' : '') + '</span>'
+    + ['dmg', 'rng', 'rate'].map(k => '<span class="node' + ((t.up[k] || 0) >= fl ? ' done' : '') + '">' + TRACK[k].name + ' ' + Math.min(t.up[k] || 0, fl) + '/' + fl + '</span>').join('') : '';
+  $('#trPath').hidden = !canFuse;
+  $('#trNote').textContent = T('Chaque achat coûte un peu plus que le précédent. Dégâts et Portée ont un plafond, relevé par la Maîtrise et la Longue-vue de l’Atelier.');
   const box = $('#trBrs'); box.innerHTML = '';
-  for (const key of BRANCHES) {
-    const B = BRANCH[key], closed = !!t.br && t.br !== key, d = document.createElement('div');
-    d.className = 'br' + (closed ? ' closed' : '') + (t.br === key ? ' chosen' : '');
-    let html = '<div class="brh"><canvas></canvas><div><b>' + B.name + '</b><span>' + B.target + '</span></div></div><div class="rks">';
-    for (let r = 1; r <= 2; r++) {
-      const lvl = r + 2, done = t.br === key && t.lvl >= lvl;
-      const next = !closed && t.lvl === lvl - 1 && (r === 1 ? !t.br : t.br === key);
-      // Prix sur sa propre ligne, pour qu'il reste lisible sur les petits écrans ; rangs à venir : prix indiqué aussi
-      let foot; const price = upCost(t, lvl - 1), tag = '<span class="pr">' + COIN + price + '</span>';
-      if (done) foot = '<span class="st">✓ Acquis</span>';
-      else if (next) foot = '<button class="sbtn tbuy" type="button" data-br="' + key + '"' + (G.gold < cost ? ' disabled' : '') + '><span>' + (r === 1 ? T('Choisir') : T('Améliorer')) + '</span>' + tag + '</button>';
-      else if (closed) foot = T('<span class="st">Branche fermée</span>');
-      else foot = '<span class="st">' + (r === 1 ? T('Dès le niveau 2') : T('Après le rang I')) + ' · ' + tag + '</span>';
-      html += '<div class="rk' + (done ? ' done' : '') + '"><span class="rn">Rang ' + (r === 1 ? 'I' : 'II') + '</span><p>' + rankText(key, r, t.type) + '</p>' + foot + '</div>';
-    }
-    d.innerHTML = html + '</div>';
+  for (const k of UP_KEYS) {
+    const lv = t.up[k] || 0, cap = towerCap(t, k), price = trackPrice(t.type, t.up, k), locked = trackLocked(k), max = lv >= cap;
+    const nx = max || locked ? null : towerStats(Object.assign({}, t, { up: Object.assign({}, t.up, { [k]: lv + 1 }) }));
+    let sub = UPVAL[k](s) + (nx ? ' → <b>' + UPVAL[k](nx) + '</b>' : '');
+    if (k === 'sol' && !s.ground) sub = T('Ne touche pas les ennemis au sol') + (nx ? ' → <b>' + UPVAL[k](nx) + '</b>' : '');
+    if (k === 'air' && !s.air) sub = T('Ne touche pas les volants') + (nx ? ' → <b>' + UPVAL[k](nx) + '</b>' : '');
+    const capTxt = cap < Infinity ? ' / ' + cap : '';
+    const btn = locked ? '<button class="sbtn ubuy" type="button" disabled>' + T('🔒 Plus tard') + '</button>'
+      : max ? '<button class="sbtn ubuy max" type="button" disabled>' + T('Max') + '</button>'
+      : '<button class="sbtn ubuy" type="button" data-k="' + k + '"' + (!mine || G.gold < price ? ' disabled' : '') + '>' + COIN + price + '</button>';
+    const d = document.createElement('div');
+    d.className = 'uprow' + ((k === 'sol' && !s.ground) || (k === 'air' && !s.air) ? ' zero' : '') + (max ? ' maxed' : '');
+    d.innerHTML = '<span class="uic">' + TRACK[k].ic + '</span><div class="utx"><b>' + TRACK[k].name + ' <span class="uplv">' + T('Niv. ') + lv + capTxt + '</span></b><small>' + sub + '</small></div>' + btn;
     box.appendChild(d);
-    drawEmblem(prepMini(d.querySelector('canvas'), 34, 34), key, 17, 17, 14);
   }
 }
 $('#trBrs').addEventListener('click', ev => {
-  const b = ev.target.closest('button[data-br]'); if (!b || !treeT) return;
-  upgrade(treeT, b.dataset.br); renderTree();
+  const b = ev.target.closest('button[data-k]'); if (!b || !upT || !G) return;
+  if (G.coop && upT.own && upT.own !== coopMe()) return;
+  upgrade(upT, b.dataset.k); upKey = ''; renderUpSheet();
 });
-$('#trClose').addEventListener('click', closeTree);
+$('#trClose').addEventListener('click', closeUpSheet);
+// En coop, le jeu continue : l'or et les achats changent pendant que l'écran est ouvert
+setInterval(() => { if (curScreen === 'tree' && upT) { if (!G || !G.towers.includes(upT)) closeUpSheet(); else renderUpSheet(); } }, 400);
 
 // Tutoriel
 const TINFO = {
@@ -878,9 +887,9 @@ const TINFO = {
   terre: { what: T('Rocaille lance un gros rocher en cloche qui écrase tout un petit groupe. Elle tire lentement mais frappe très fort. Aux niveaux 2 et 3, le choc peut étourdir.'),
     good: [T('Les groupes serrés'), T('Tonk : un gros coup traverse son casque'), T('La plus longue portée du jeu')],
     bad: [T('Ne touche jamais les volants (Flappy)'), T('Lente : les Zippy passent entre deux rochers')] },
-  vent: { what: T('Zéphyr envoie une rafale qui fait reculer l’ennemi sur le chemin. Les volants prennent 2,5 fois plus de dégâts.'),
-    good: [T('Les Flappy'), T('Longue portée : elle couvre beaucoup de chemin'), T('Gagner du temps pour les autres tours')],
-    bad: [T('Une seule cible à la fois'), T('Tonk et le Kaiju reculent à peine'), T('Dégâts faibles au sol')] },
+  vent: { what: T('Zéphyr envoie une rafale qui fait reculer l’ennemi. Elle ne vise que les volants, qui prennent 2,5 fois plus de dégâts. L’achat « Sol » lui apprend à toucher aussi les ennemis au sol.'),
+    good: [T('Les Flappy'), T('Longue portée : elle couvre beaucoup de chemin'), T('Avec l’achat « Sol » : repousse aussi les slimes au sol, pour gagner du temps')],
+    bad: [T('Une seule cible à la fois'), T('Tonk et le Kaiju reculent à peine'), T('Ne touche pas le sol sans l’achat « Sol »')] },
   foudre: { what: T('Voltie frappe instantanément, puis l’éclair rebondit d’ennemi en ennemi : 3 cibles, puis 4 et 6 aux niveaux supérieurs. Chaque rebond est un peu plus faible.'),
     good: [T('Les files d’ennemis serrés'), T('Les ennemis mouillés : dégâts ×2')],
     bad: [T('La tour la plus chère'), T('Moins utile contre un ennemi isolé')] },
@@ -899,7 +908,7 @@ const DEMOS = {
   c_zap: { towers: [['eau', 5, 3], ['foudre', 7, 5]], waves: ['gloop', 'gloop', 'gloop', 'gloop'], gap: 0.5, lvl: 1 },
   c_crack: { towers: [['glace', 6, 3], ['terre', 7, 5]], waves: ['gloop', 'gloop', 'gloop', 'tonk'], gap: 0.6, lvl: 2 },
   fus: { towers: [['tornade', 6, 3]], waves: ['gloop', 'gloop', 'gloop', 'zip', 'gloop'], gap: 0.5, lvl: 1 },
-  c_fwoosh: { towers: [['feu', 5, 3], ['vent', 7, 5]], waves: ['gloop', 'gloop', 'gloop', 'gloop', 'gloop'], gap: 0.35, lvl: 1 },
+  c_fwoosh: { towers: [['feu', 5, 3], ['vent', 7, 5]], waves: ['flappy', 'flappy', 'flappy', 'flappy', 'flappy'], gap: 0.35, lvl: 1 },
 };
 const TUTO = [
   { kind: 'intro', demo: 'intro', title: T('Bienvenue !'), tag: T('Les bases'), html: '<ul>'
@@ -913,18 +922,18 @@ const TUTO = [
     tips: [T('Place Ondine en amont de Voltie sur le chemin'), T('Les deux cercles de portée doivent se recouvrir')] },
   { kind: 'combo', demo: 'c_crack', title: 'CRACK x2!', tag: T('Glace puis Terre'), towers: ['glace', 'terre'],
     what: T('Quand Givrette gèle des ennemis, le prochain rocher de Rocaille les brise : dégâts ×2, et le gel s’arrête.'),
-    tips: [T('Monte Givrette au niveau 2 ou 3 pour geler plus souvent'), T('Rocaille doit viser la zone de Givrette')] },
+    tips: [T('Renforce la Cadence de Givrette pour geler plus souvent'), T('Rocaille doit viser la zone de Givrette')] },
   { kind: 'combo', demo: 'c_fwoosh', title: 'FWOOSH!', tag: T('Feu puis Vent'), towers: ['feu', 'vent'],
     what: T('Quand une rafale de Zéphyr frappe un ennemi en feu, les flammes sautent sur tous ses voisins proches.'),
-    tips: [T('Idéal contre les longues files de Gloop'), T('Magmo, lui, ne brûle jamais')] },
-  { kind: 'spec', title: T('Spécialisations'), tag: T('Niveaux 3 et 4'), html: T('<p style="margin:0">Au niveau 2, chaque tour posée peut se spécialiser contre les ennemis au sol, les volants ou les Kaiju. Le choix vaut pour <b>cette tour uniquement</b>, et il est définitif : les deux autres branches se ferment. Deux Braise peuvent donc avoir des spécialisations différentes.</p>') },
-  { kind: 'fusion', demo: 'fus', title: 'Fusions', tag: T('Deux éléments, une tour'), html: T('<p style="margin:0">Touche une tour, puis une autre tour d’élément compatible (entourée de rose), toutes deux au niveau 2 ou plus : un menu propose de les fusionner. Tu peux aussi faire glisser l’une sur l’autre. Elles deviennent une seule tour, plus puissante, avec son propre effet, à la place de la seconde. Chaque fusion se débloque une par une dans l’Atelier. Ici, une Tornade de feu.</p>') },
+    tips: [T('Idéal contre les nuées de Flappy'), T('Avec l’achat « Sol », Zéphyr le fait aussi sur les Gloop'), T('Magmo, lui, ne brûle jamais')] },
+  { kind: 'spec', title: T('Améliorations'), tag: T('Six achats sans fin'), html: T('<p style="margin:0">Touche une tour posée, puis « Améliorer » : tu choisis ce que tu renforces, avec l’or de la partie. Chaque achat coûte un peu plus que le précédent, et il n’y a pas de fin. Dégâts et Portée ont un plafond, que la Maîtrise et la Longue-vue de l’Atelier relèvent. Deux Braise peuvent donc être renforcées très différemment.</p>') },
+  { kind: 'fusion', demo: 'fus', title: 'Fusions', tag: T('Deux éléments, une tour'), html: T('<p style="margin:0">Touche une tour, puis une autre tour d’élément compatible (entourée de rose), toutes deux au niveau 5 en Dégâts, Portée et Cadence : un menu propose de les fusionner. Tu peux aussi faire glisser l’une sur l’autre. Elles deviennent une seule tour, plus puissante, avec son propre effet, à la place de la seconde. Elle garde la moyenne des niveaux des deux tours. Chaque fusion se débloque une par une dans l’Atelier. Ici, une Tornade de feu.</p>') },
   { kind: 'terrain', title: 'Terrains', tag: T('Bonus et malus'), html: T('<p style="margin:0">Certaines cases changent la puissance des tours posées dessus. Une Ondine sur l’eau frappe 40 % plus fort, mais perd 40 % sur le sable. L’eau et la lave ont les effets les plus forts, le marécage des effets plus doux. Une fusion prend la moyenne de ses deux éléments : un Volcan sur l’eau a donc un malus. Quand tu choisis une tour, les cases s’affichent en vert (bonus) ou en rouge (malus). Chaque carte a aussi un biome qui renforce ou affaiblit certains éléments sur toute la carte. Le tableau complet est dans l’Aide.</p>') },
   { kind: 'end', title: T('À toi de jouer !'), tag: T('Récap'), html: '<ul>'
     + T('<li>Commence avec Ondine et Braise près d’un virage : les ennemis y restent plus longtemps à portée.</li>')
     + T('<li>Débloque vite Zéphyr (contre les Flappy volants, dès la vague 4) et Rocaille (contre les Tonk casqués, dès la vague 6).</li>')
     + T('<li>Garde de l’or pour la vague 10 : le Kaiju encaisse énormément.</li>')
-    + T('<li>Au niveau 2, spécialise chaque tour selon la menace : Sol, Air ou Boss.</li>')
+    + T('<li>Renforce chaque tour selon la menace : Sol, Vol ou Boss.</li>')
     + T('<li>À tout moment, ouvre l’Atelier (bouton violet en haut) pour débloquer des tours et les renforcer.</li></ul>') },
 ];
 const EFFECT = {
@@ -932,16 +941,17 @@ const EFFECT = {
   terre: [T('Étourdit'), s => s.stun ? Math.round(s.stun * 100) + ' %' : '—'], vent: [T('Recul'), s => fr(s.knock) + ' case'],
   foudre: [T('Cibles'), s => String(s.chain)], glace: [T('Gel'), s => '1 onde / ' + s.every],
 };
+// Une tour au départ, puis avec 5 et 10 niveaux en Dégâts, Portée et Cadence
 function tutoTable(type) {
-  const rows = [[T('Dégâts')], [T('Portée')], [T('Attaques/s')], [EFFECT[type][0]], [T('Prix')]];
-  for (let l = 1; l <= 4; l++) {
-    const st = statsOf(type, l);
+  const rows = [[T('Dégâts')], [T('Portée')], [T('Attaques/s')], [EFFECT[type][0]], [T('Prix d’un achat')]];
+  for (const n of [0, 5, 10]) {
+    const up = { dmg: n, rng: n, rate: n }, st = statsOf(type, up);
     rows[0].push(Math.round(st.dmg)); rows[1].push(fr(st.range.toFixed(1))); rows[2].push(fr(st.rate.toFixed(2)));
-    rows[3].push(EFFECT[type][1](st)); rows[4].push(l === 1 ? costOf(type) : '+' + upCost({ type, lvl: l - 1 }));
+    rows[3].push(EFFECT[type][1](st)); rows[4].push(trackPrice(type, up, 'dmg'));
   }
-  return T('<table class="ttable"><thead><tr><th></th><th>Niv. 1</th><th>Niv. 2</th><th>Spé. I</th><th>Spé. II</th></tr></thead><tbody>')
+  return T('<table class="ttable"><thead><tr><th></th><th>Départ</th><th>Niv. 5</th><th>Niv. 10</th></tr></thead><tbody>')
     + rows.map(r => '<tr>' + r.map(v => '<td>' + v + '</td>').join('') + '</tr>').join('') + '</tbody></table>'
-    + T('<p class="fine" style="text-align:left;margin-top:6px">Spé. I et II : stats de base, sans le bonus de la branche choisie (Sol, Air ou Boss).</p>');
+    + T('<p class="fine" style="text-align:left;margin-top:6px">Niv. 5 et 10 : autant de niveaux en Dégâts, Portée et Cadence. Prix posée : ') + costOf(type) + T(' or.</p>');
 }
 const gbox = (cls, title, items) => '<div class="' + cls + '"><b>' + title + '</b><ul>' + items.map(i => '<li>' + i + '</li>').join('') + '</ul></div>';
 
@@ -972,7 +982,7 @@ function makeDemo(key, el) {
 function setDemoLvl(n) {
   if (!demo) return;
   demo.lvl = n;
-  for (const t of demo.G.towers) { t.lvl = n; t.s = statsOf(t.type, n); t.recoil = 1; }
+  for (const t of demo.G.towers) { setUp(t, upFromLvl(n)); t.s = statsOf(t.type, t.up); t.recoil = 1; }
   document.querySelectorAll('#uLvls button').forEach(b => b.classList.toggle('on', +b.dataset.l === n));
 }
 function stepDemo(dt) {
@@ -999,12 +1009,13 @@ function gotoTuto(i) {
   let name, tag, tagColor = '#ffd23f', what, gb = '', table = '';
   if (pg.kind === 'tower') {
     const D = TOWERS[pg.tower], I = TINFO[pg.tower];
-    name = D.name; tag = D.elem + ' · ' + kindLine(pg.tower) + (D.air ? '' : ' · sol uniquement') + (unlocked(pg.tower) ? '' : T(' · à débloquer')); tagColor = D.color; what = '<p style="margin:0">' + I.what + '</p>';
+    name = D.name; tag = D.elem + ' · ' + kindLine(pg.tower) + (D.air ? (D.noGround ? T(' · volants uniquement') : '') : T(' · sol uniquement')) + (unlocked(pg.tower) ? '' : T(' · à débloquer')); tagColor = D.color; what = '<p style="margin:0">' + I.what + '</p>';
     gb = gbox('good', T('Efficace'), I.good) + gbox('bad', T('Attention'), I.bad); table = tutoTable(pg.tower);
     drawTower(ic, pg.tower, 32, 40, 54, 1, 0.5, 0, 0.3, 0, false);
   } else if (pg.kind === 'spec') {
     name = pg.title; tag = pg.tag; what = pg.html;
-    gb = ['sol', 'boss', 'air'].map((k, i) => gbox(['good', 'bad', 'tip'][i], BRANCH[k].name + ' · ' + BRANCH[k].short, BRANCH[k].ranks.map((x, j) => T('Rang ') + (j ? 'II' : 'I') + T(' : ') + x))).join('');
+    gb = gbox('good', T('Dégâts, Portée, Cadence'), [T('⚔️ Dégâts : +25 % par niveau'), T('🎯 Portée : +0,2 case par niveau'), T('⚡ Cadence : +6 % de tirs par niveau')])
+      + gbox('tip', T('Sol, Vol, Boss'), [T('🟫 Sol et 🪽 Vol : +25 % de dégâts sur ce type d’ennemis par niveau'), T('Rocaille, Volcan et Marais ne touchent pas les volants, et Zéphyr pas le sol : un achat leur apprend'), T('👹 Boss : +25 % sur les Kaiju par niveau, et 1 d’armure ignorée tous les 2 niveaux')]);
     drawEmblem(ic, 'sol', 16, 44, 13); drawEmblem(ic, 'air', 32, 24, 13); drawEmblem(ic, 'boss', 48, 44, 13);
   } else if (pg.kind === 'terrain') {
     name = pg.title; tag = pg.tag; what = pg.html;

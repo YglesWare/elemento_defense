@@ -99,7 +99,7 @@ function useBonus(b, q, r) {
   else if (b.id === 'nettoyage') { G.ruins = G.ruins.filter(u => !(u.c === q && u.r === r)); burst(cx, cy, 0.2, 14, ['#cdbfe0', '#ffffff'], 2, 0.08, 3, 0.5); }
   else if (b.id === 'resurrection') {
     const u = G.ruins.find(x => x.c === q && x.r === r); G.ruins = G.ruins.filter(x => x !== u);
-    const t = addTower(u.type, q, r, u.lvl || 1, u.mode || 'premier', u.inv, u.br); t.recoil = 1;
+    const t = addTower(u.type, q, r, u.up || upFromLvl(u.lvl, u.br), u.mode || 'premier', u.inv); t.recoil = 1;
     burst(t.x, t.y, 0.4, 24, ['#ffd23f', '#ffffff', '#b8f5c0'], 3, 0.1, 2, 0.8, 'star'); ono(T('DE RETOUR !'), t.x, t.y, '#5cd86a', 0.6, 0, 1.1);
   }
   meta.bonus[b.id] = bonusOwned(b.id) - 1; saveMeta();

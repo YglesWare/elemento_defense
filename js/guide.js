@@ -29,7 +29,7 @@ const GSTEPS = [
   { text: T('Tout est prêt : lance la <b>première vague</b> avec ce bouton.'), target: () => $('#bWave'), wait: () => G.wave >= 1 },
   { text: T('Tes tours attaquent <b>toutes seules</b>. Chaque slime vaincu te rapporte de l’or (en haut). Attends la fin de la vague…'), target: () => $('#hGoldChip'), wait: () => G.wave >= 1 && !G.waveActive && !G.spawnQ.length },
   { text: T('Bravo ! Touche ta <b>Braise</b> sur la carte pour ouvrir son panneau.'), target: () => { const t = G.towers.find(x => x.type === 'feu'); return t ? { cell: { q: t.c, r: t.r } } : null; }, wait: () => (G.selTower && G.selTower.type === 'feu') || G.towers.some(t => t.lvl >= 2) },
-  { text: T('Touche <b>« Améliorer »</b> : plus de dégâts et plus de portée. Au niveau 2, chaque tour pourra aussi choisir une spécialisation.'), target: () => $('#iUp'), wait: () => G.towers.some(t => t.lvl >= 2) },
+  { text: T('Touche <b>« Améliorer »</b>, puis achète des <b>Dégâts</b> : chaque achat renforce la tour, et coûte un peu plus que le précédent.'), target: () => curScreen === 'tree' ? $('#trBrs button[data-k="dmg"]') : $('#iUp'), wait: () => G.towers.some(t => upTot(t.up) >= 1) },
   { text: T('Sous la carte, l’<b>aperçu</b> montre la prochaine vague et la météo à venir. Pratique pour choisir tes tours !'), target: () => $('#nextWave'), btn: T('Suivant'), enter: () => deselect() },
   { text: T('Le bouton violet ouvre l’<b>Atelier</b> : tu y dépenses tes éclats (gagnés à chaque vague) pour débloquer d’autres tours, des fusions et des bonus.'), target: () => $('#bShop'), btn: T('Suivant') },
   { text: T('Lance la <b>vague 2</b>. Astuce : la lancer avant la fin de la vague en cours rapporte un <b>bonus d’audace</b>.'), target: () => $('#bWave'), wait: () => G.wave >= 2 },

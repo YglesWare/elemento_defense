@@ -43,15 +43,25 @@ const botCellValue = (c, type) => { const Tt = terrainAt(c.q, c.r); return c.sco
 // Dépense l'or : on améliore la tour la moins chère à monter si on a déjà assez de tours, sinon on construit
 // Réglages de jeu du bot : nombre de tours visé (base + par vague, plafond) et choix des améliorations
 const BOT = { base: 5, per: 1 / 2, cap: 20, upBest: false, fuse: true };
+// Achats qu'il envisage pour une tour : Dégâts, Cadence, Portée (jusqu'au niveau 5, de quoi fusionner) et la spécialité
+// de l'élément (Vol pour Zéphyr, Boss pour Rocaille, Sol pour les autres)
+function botUps(t) {
+  const out = [];
+  for (const k of ['dmg', 'rate', 'rng', BOT_BR[t.type] || 'sol']) {
+    if (!k || (k === 'rng' && (t.up.rng || 0) >= FUSE_LV) || (t.up[k] || 0) >= upCap(t.type, k)) continue;
+    out.push({ t, k, p: trackPrice(t.type, t.up, k) });
+  }
+  return out;
+}
 function botSpend(cells, st) {
   // Difficile : on soigne d'abord les tours sous 60 % de PV
   if (hardMode()) for (const t of G.towers.filter(t => t.hp < t.maxHp * 0.6).sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)) if (G.gold >= healCost(t)) healPaid(t);
-  // Fusions : deux tours compatibles au niveau 2 → une tour fusionnée, sur la case la mieux placée des deux
+  // Fusions : deux tours compatibles prêtes (niveau 5 en Dégâts, Portée, Cadence) → une tour fusionnée, sur la case la mieux placée des deux
   if (BOT.fuse) for (let guard = 0; guard < 6; guard++) {
     const score = t => { const c = cells.find(c => c.q === t.c && c.r === t.r); return c ? c.score : 0; };
     let best = null;
     for (const a of G.towers) for (const b of G.towers) {
-      if (a === b || TOWERS[a.type].fusion || TOWERS[b.type].fusion || a.lvl < 2 || b.lvl < 2) continue;
+      if (a === b || TOWERS[a.type].fusion || TOWERS[b.type].fusion || !fuseReady(a) || !fuseReady(b)) continue;
       const k = fusionKey(a.type, b.type); if (!k || !fusionUnlocked(k) || G.gold < TOWERS[k].fee) continue;
       const [src, dst] = score(a) >= score(b) ? [b, a] : [a, b];
       if (!best || score(dst) > best.v) best = { src, dst, k, v: score(dst) };
@@ -64,17 +74,19 @@ function botSpend(cells, st) {
     const free = cells.filter(c => canBuild(c.q, c.r));
     if (free.length) { const best = free.slice(0, 12).sort((a, b) => botCellValue(b, 'vent') - botCellValue(a, 'vent'))[0]; build('vent', best.q, best.r); st.built++; }
   }
-  for (let guard = 0; guard < 40; guard++) {
+  for (let guard = 0; guard < 300; guard++) {
     const want = Math.min(BOT.base + Math.floor(G.wave * BOT.per), BOT.cap), free = cells.filter(c => canBuild(c.q, c.r));
-    // upBest : on monte d'abord les tours les mieux placées (les premières construites), sinon la moins chère
-    const ups = G.towers.filter(t => upCost(t) > 0).sort((a, b) => BOT.upBest ? (a.lvl - b.lvl) || (a.id - b.id) : upCost(a) - upCost(b));
+    // upBest : on renforce d'abord les tours les mieux placées (les premières construites), sinon l'achat le moins cher
+    const ups = G.towers.flatMap(botUps).sort((a, b) => BOT.upBest ? (upTot(a.t.up) - upTot(b.t.up)) || (a.t.id - b.t.id) : a.p - b.p);
     const type = botPickType(st.built);
     if (G.towers.length < want && free.length && G.gold >= costOf(type)) {
       // Case la mieux placée, avec le bonus de terrain pour cet élément
       const best = free.slice(0, 12).sort((a, b) => botCellValue(b, type) - botCellValue(a, type))[0];
       build(type, best.q, best.r); st.built++; continue;
     }
-    if (ups.length && G.gold >= upCost(ups[0])) { const t = ups[0]; upgrade(t, t.br || BOT_BR[t.type] || 'sol'); continue; }
+    // Il manque des tours : on garde l'or pour la prochaine (les achats, peu chers, la retarderaient sans fin)
+    if (G.towers.length < want && free.length) break;
+    if (ups.length && G.gold >= ups[0].p) { upgrade(ups[0].t, ups[0].k); continue; }
     if (free.length && G.gold >= costOf(type) && G.towers.length < 22) { const c = free[0]; build(type, c.q, c.r); st.built++; continue; }
     break;
   }

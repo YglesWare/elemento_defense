@@ -135,7 +135,7 @@ const CHAPTERS = [
       ['papi', 'Hé hé hé… Mon petit Yglou ! Et tu m’amènes des amis. Entrez, entrez, il fait frisquet.'],
       ['glace', 'B-b-bonjour… Je suis Givrette. J’aide Papi à garder la montagne.'],
       ['papi', 'Écoutez bien, jeunes gardiens : deux amis qui unissent leurs pouvoirs, ça décoiffe. Même moi, et j’ai plus beaucoup de plumes.'],
-      ['papi', 'Monte deux tours au niveau 2, puis fais glisser l’une sur l’autre : elles fusionnent ! Essaie Braise et Zéphyr : ça fait une Tornade de feu.'],
+      ['papi', 'Renforce deux tours jusqu’au niveau 3 en Dégâts, Portée et Cadence, puis fais glisser l’une sur l’autre : elles fusionnent ! Essaie Braise et Zéphyr : ça fait une Tornade de feu.'],
     ],
     // La météo : le brouillard tombe à la vague 4 et se lève à la 6
     weather: { 4: 'fog', 6: 'clear' },
@@ -160,11 +160,11 @@ const CHAPTERS = [
     waves: [[['gloop', 14]], [['flappy', 12]], [['tonk', 10], ['gloop', 8]], [['gloop', 10], ['boss', 1]], [['flappy', 14], ['zip', 10]], [['tonk', 12], ['magma', 8]], [['gloop', 20], ['boss', 1]]],
     intro: [
       ['narr', 'Au pied du volcan, Papi Yglou a encore une leçon…'],
-      ['papi', 'Une tour, ça peut se spécialiser. Monte-la au niveau 3 et choisis son talent : écraser le sol, chasser le ciel… ou terrasser les Kaiju !'],
-      ['terre', 'Grmbl… Moi, je choisis Tueur de Kaiju. Évidemment.'],
-      ['vent', 'Moi, Chasse-ciel. Les nuages, c’est chez moi.'],
+      ['papi', 'Une tour, ça peut se spécialiser. Touche-la, puis « Améliorer » : Sol pour écraser les slimes, Vol pour chasser le ciel… ou Boss pour terrasser les Kaiju !'],
+      ['terre', 'Grmbl… Moi, je prends Boss. Évidemment.'],
+      ['vent', 'Moi, Vol. Les nuages, c’est chez moi.'],
     ],
-    events: { start4: [['yglou', 'Un Kaiju ! Une tour « Tueur de Kaiju » lui fait très mal.']] },
+    events: { start4: [['yglou', 'Un Kaiju ! Une tour renforcée en « Boss » lui fait très mal.']] },
     outro: [
       ['papi', 'Vous êtes prêts. Le Roi Gloop vous attend dans la Toundra. Courage, mes petits !'],
       ['feu', 'On arrive, Roi Gloop ! Prépare-toi à fondre !'],
