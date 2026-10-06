@@ -1887,6 +1887,7 @@ const EN = {
 "Maîtrise · ": "Mastery · ",
 "Longue-vue · ": "Spyglass · ",
 "Débloque la fusion d’abord": "Unlock the fusion first",
+"Élémento Defense arrive bientôt sur Google Play ! Sur Android, le jeu téléchargé depuis le site s’appelle maintenant « Élémento Dev » (icône orange) : connecte-toi avec Google pour y retrouver ta progression.": "Élémento Defense is coming soon to Google Play! On Android, the game downloaded from the website is now called “Élémento Dev” (orange icon): sign in with Google to get your progress back there.",
 "Atelier : chaque fusion a maintenant sa propre Maîtrise et sa propre Longue-vue, qui s’ajoutent à celles de ses deux éléments.": "Workshop: each fusion now has its own Mastery and Spyglass, on top of those of its two elements.",
 };
 const T = s => (IS_EN && typeof s === 'string' && EN[s] !== undefined ? EN[s] : s);

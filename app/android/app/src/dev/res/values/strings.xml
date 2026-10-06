@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- Version dev (APK GitHub) : un autre nom, pour l'avoir à côté de la version Play Store -->
+<resources>
+    <string name="app_name">Élémento Dev</string>
+    <string name="title_activity_main">Élémento Dev</string>
+</resources>

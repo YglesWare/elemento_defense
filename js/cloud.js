@@ -7,7 +7,8 @@
 
 // Clé publique : faite pour être visible ; la clé secrète ne doit jamais être dans le jeu
 const SUPA_URL = 'https://iqxeeauemqedudbqnihb.supabase.co', SUPA_KEY = 'sb_publishable_w1tE_arugsOhYTQkxWSJEw_-NWpcljf';
-const APP_CALLBACK = 'io.github.yglesware.elemento://login-callback';
+// Lien de retour de connexion dans l'appli : la version Play Store et la version dev (APK GitHub) ont chacune le leur
+const APP_CALLBACK = window.STORE_BUILD ? 'io.github.yglesware.elemento://login-callback' : 'io.github.yglesware.elemento.dev://login-callback';
 const CLOUD = { sb: null, user: null, state: 'off', err: '', lastSync: 0, syncing: null };
 const PROVIDERS = { google: 'Google', discord: 'Discord' };
 

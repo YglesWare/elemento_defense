@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  82: [
+    ['📱', 'Élémento Defense arrive bientôt sur Google Play ! Sur Android, le jeu téléchargé depuis le site s’appelle maintenant « Élémento Dev » (icône orange) : connecte-toi avec Google pour y retrouver ta progression.'],
+  ],
   81: [
     ['⚗️', 'Atelier : chaque fusion a maintenant sa propre Maîtrise et sa propre Longue-vue, qui s’ajoutent à celles de ses deux éléments.'],
     ['🗺️', 'Histoire : sur la carte, ta troupe avance sur le chemin. Braise en tête, Yglou et tes copains derrière, et chaque nouveau copain rejoint l’équipe.'],

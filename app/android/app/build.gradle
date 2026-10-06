@@ -33,6 +33,20 @@ android {
             }
         }
     }
+    // Deux variantes, installables côte à côte : « store » (Google Play, l'identifiant définitif) et « dev »
+    // (APK des releases GitHub : autre identifiant, nom « Élémento Dev », icône orange, ressources dans src/dev)
+    flavorDimensions = ['canal']
+    productFlavors {
+        store {
+            dimension 'canal'
+            manifestPlaceholders = [authScheme: 'io.github.yglesware.elemento']
+        }
+        dev {
+            dimension 'canal'
+            applicationIdSuffix '.dev'
+            manifestPlaceholders = [authScheme: 'io.github.yglesware.elemento.dev']
+        }
+    }
     buildTypes {
         release {
             if (keyFile.exists()) signingConfig signingConfigs.release
