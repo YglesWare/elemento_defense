@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  94: [
+    ['🔑', 'Connexion Google plus solide : si elle se perd (après une mise à jour par exemple), l’appli se reconnecte toute seule au même compte, sans créer de compte invité à la place.'],
+  ],
   93: [
     ['🐷', 'Début de partie plus léger : plus de grand texte sur la cagnotte. Touche ton or pour un petit rappel.'],
   ],

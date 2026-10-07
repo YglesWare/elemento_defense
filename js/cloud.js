@@ -182,9 +182,13 @@ function cloudSync(force) {
 async function cloudStart() {
   if (cloudOff()) return;
   // realtime : le multi en ligne peut passer par Supabase quand la liaison directe échoue (une dizaine de messages par seconde)
-  CLOUD.sb = supabase.createClient(SUPA_URL, SUPA_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: !NATIVE, flowType: 'pkce' }, realtime: { params: { eventsPerSecond: 40 } } });
+  CLOUD.sb = supabase.createClient(SUPA_URL, SUPA_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: !NATIVE, flowType: 'pkce' }, realtime: { params: { eventsPerSecond: 40 } },
+    global: { fetch: acctFetch } });
   CLOUD.sb.auth.onAuthStateChange((ev, session) => {
     const u = session ? session.user : null, changed = (u && u.id) !== (CLOUD.user && CLOUD.user.id);
+    if (u && !u.is_anonymous) acctRemember(u);
+    // Session perdue sans que le joueur se déconnecte : on note pourquoi (rapports techniques), pour corriger la cause
+    if (ev === 'SIGNED_OUT' && !CLOUD.leaving && acctGet()) errNote('Session Google perdue : ' + (CLOUD.refreshErr || 'raison inconnue'), 'cloud.js');
     CLOUD.user = u; cloudPaint();
     if (u && changed) setTimeout(() => cloudSync(true), 0);
   });
@@ -206,12 +210,38 @@ async function cloudStart() {
   addEventListener('online', () => cloudEnsureUser().then(() => cloudSync(true)));
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') cloudSync(true); });
 }
-// Une session, sinon un compte anonyme (il faut être en ligne)
+// ---------- Compte retenu sur l'appareil ----------
+// Le jeu retient que l'appareil était connecté à Google. Si la session se perd (jeton refusé au redémarrage, par
+// exemple après une mise à jour de l'appli), il ne crée plus de compte invité à la place : dans l'appli il se reconnecte
+// tout seul au même compte Google, sinon il demande de se reconnecter (la progression reste sur l'appareil).
+const ACCT_KEY = 'elemento.account';
+function acctGet() { try { return JSON.parse(localStorage.getItem(ACCT_KEY) || 'null'); } catch (e) { return null; } }
+function acctRemember(u) {
+  const id = (u.identities || []).find(i => PROVIDERS[i.provider]); if (!id) return;
+  try { localStorage.setItem(ACCT_KEY, JSON.stringify({ prov: id.provider, email: u.email || '', id: u.id })); } catch (e) {}
+}
+function acctForget() { try { localStorage.removeItem(ACCT_KEY); } catch (e) {} }
+// Les réponses d'erreur du renouvellement de session, pour savoir pourquoi une session se perd
+async function acctFetch(url, opts) {
+  const r = await fetch(url, opts);
+  if (!r.ok && /grant_type=refresh_token/.test(String(url))) r.clone().text().then(t => { CLOUD.refreshErr = r.status + ' ' + t.slice(0, 200); }).catch(() => {});
+  return r;
+}
+
+// Une session, sinon (appareil jamais connecté) un compte anonyme ; il faut être en ligne
 async function cloudEnsureUser() {
   if (!CLOUD.sb) return;
   const { data } = await CLOUD.sb.auth.getSession();
   if (data && data.session) { CLOUD.user = data.session.user; cloudPaint(); return cloudSync(true); }
   if (!navigator.onLine) { CLOUD.state = 'offline'; cloudPaint(); return; }
+  const acct = acctGet();
+  if (acct) {
+    // Appli : reconnexion silencieuse au compte Google déjà autorisé (Google affiche juste « Connexion en tant que… »)
+    if (acct.prov === 'google' && gidNative() && await gidNativeLogin(true)) return;
+    CLOUD.state = 'relogin'; cloudPaint();
+    if (!cloudEnsureUser.told) { cloudEnsureUser.told = true; hint(T('🔑 Reconnecte-toi à Google dans le Profil pour retrouver ta sauvegarde en ligne.'), 3500); }
+    return;
+  }
   const { error } = await CLOUD.sb.auth.signInAnonymously();
   if (error) { CLOUD.state = 'err'; CLOUD.err = error.message; cloudPaint(); }
 }
@@ -260,19 +290,21 @@ async function cloudLoginIdToken(token, raw) {
 }
 // Android : panneau Google du téléphone. Renvoie false si ce n'est pas possible (pas réglé dans Google Cloud…),
 // pour passer par le navigateur
-async function gidNativeLogin() {
+// silent : reconnexion automatique, seulement au compte déjà autorisé, sans rien demander au joueur
+async function gidNativeLogin(silent) {
   const SL = window.Capacitor.Plugins.SocialLogin;
   try {
     if (!GID.init) { await SL.initialize({ google: { webClientId: GOOGLE_WEB_CLIENT, mode: 'online' } }); GID.init = true; }
     const n = await gidNonce();
-    // Pas de filtre sur les comptes déjà utilisés : sinon les comptes Family Link des enfants n'apparaissent pas
-    const r = await SL.login({ provider: 'google', options: { nonce: n.hashed, style: 'bottom', filterByAuthorizedAccounts: false } });
+    // Pas de filtre sur les comptes déjà utilisés quand le joueur choisit : sinon les comptes Family Link des enfants n'apparaissent pas
+    const r = await SL.login({ provider: 'google', options: { nonce: n.hashed, style: 'bottom', filterByAuthorizedAccounts: !!silent, autoSelectEnabled: !!silent } });
     const tok = r && r.result && r.result.idToken;
     if (!tok) return false;
     await cloudLoginIdToken(tok, n.raw);
     return true;
   } catch (e) {
     const m = String(e && (e.message || e));
+    if (silent) return false; // pas de reconnexion automatique possible : le joueur le fera depuis le Profil
     if (/cancel/i.test(m)) return true; // le joueur a fermé le panneau
     errNote('Connexion Google native : ' + m, 'cloud.js');
     return false;
@@ -336,7 +368,9 @@ async function cloudMoveFinish() {
 async function cloudLogout() {
   if (!CLOUD.sb) return;
   await cloudSync(true);
-  await CLOUD.sb.auth.signOut();
+  CLOUD.leaving = true; acctForget();
+  await CLOUD.sb.auth.signOut().catch(() => {});
+  CLOUD.leaving = false;
   CLOUD.user = null; await store.sys('syncUser', null);
   await cloudEnsureUser();
 }
@@ -350,7 +384,9 @@ async function cloudErase() {
 
 // ---------- Profil : bloc « Compte en ligne » ----------
 function cloudWho() {
-  const u = CLOUD.user; if (!u) return null;
+  const u = CLOUD.user, a = !u && CLOUD.state === 'relogin' && acctGet();
+  if (a) return (PROVIDERS[a.prov] || T('Compte')) + (a.email ? ' · ' + a.email : '');
+  if (!u) return null;
   if (u.is_anonymous) return T('Invité');
   const id = (u.identities || []).find(i => PROVIDERS[i.provider]), name = u.email || (u.user_metadata && (u.user_metadata.full_name || u.user_metadata.name)) || '';
   return (id ? PROVIDERS[id.provider] : T('Compte')) + (name ? ' · ' + name : '');
@@ -359,7 +395,7 @@ function cloudPaint() {
   const box = $('#prCloud'); if (!box) return;
   if (cloudOff()) { box.hidden = true; return; }
   const who = cloudWho(), ago = CLOUD.lastSync ? Math.max(0, Math.round((Date.now() - CLOUD.lastSync) / 60000)) : null;
-  const st = CLOUD.state === 'sync' ? T('Synchronisation…') : CLOUD.state === 'offline' || !navigator.onLine ? T('Hors ligne : la synchro reprendra au retour du réseau.') : CLOUD.state === 'err' ? '⚠️ ' + CLOUD.err : CLOUD.state === 'erased' ? T('Sauvegarde en ligne effacée.') : ago == null ? '' : ago < 1 ? T('Synchronisée à l’instant.') : IS_EN ? 'Synced ' + ago + ' min ago.' : 'Synchronisée il y a ' + ago + ' min.';
+  const st = CLOUD.state === 'relogin' ? T('🔑 Connexion expirée : touche « Se connecter » pour retrouver ta sauvegarde.') : CLOUD.state === 'sync' ? T('Synchronisation…') : CLOUD.state === 'offline' || !navigator.onLine ? T('Hors ligne : la synchro reprendra au retour du réseau.') : CLOUD.state === 'err' ? '⚠️ ' + CLOUD.err : CLOUD.state === 'erased' ? T('Sauvegarde en ligne effacée.') : ago == null ? '' : ago < 1 ? T('Synchronisée à l’instant.') : IS_EN ? 'Synced ' + ago + ' min ago.' : 'Synchronisée il y a ' + ago + ' min.';
   $('#prCloudWho').textContent = who || T('Invité');
   $('#prCloudState').textContent = st;
   const anon = !CLOUD.user || CLOUD.user.is_anonymous, prov = CLOUD.providers || {};
@@ -370,7 +406,8 @@ function cloudPaint() {
   if (gb && !gb.hidden) gidWebLoad();
   if (gsi) { gsi.hidden = !(gb && !gb.hidden && GID.web === 'ready'); if (!gsi.hidden) gb.hidden = true; }
   $('#prCloudId').textContent = T('Identifiant de progression : ') + pidShort(store.get(PID_KEY));
-  $('#prLogout').hidden = anon;
+  // Connexion expirée : « Se déconnecter » permet aussi de continuer en invité (le compte retenu est oublié)
+  $('#prLogout').hidden = anon && CLOUD.state !== 'relogin';
   // Invité : l'encart sous le pseudo (pour se connecter) ; connecté : tout en bas, avant « Réinitialiser la progression »
   const anchor = anon ? $('#prNameWarn') : $('#prReset');
   if (anchor) { if (anon && box.previousElementSibling !== anchor) anchor.after(box); else if (!anon && box.nextElementSibling !== anchor) anchor.before(box); }
@@ -382,7 +419,9 @@ async function cloudDeleteAccount() {
   CLOUD.state = 'sync'; cloudPaint();
   const { error } = await CLOUD.sb.rpc('delete_my_account');
   if (error) { CLOUD.state = 'err'; CLOUD.err = /function|schema cache/i.test(error.message) ? T('La suppression de compte n’est pas encore activée.') : error.message; cloudPaint(); return; }
+  CLOUD.leaving = true; acctForget();
   await CLOUD.sb.auth.signOut({ scope: 'local' }).catch(() => {});
+  CLOUD.leaving = false;
   CLOUD.user = null; await store.sys('syncUser', null);
   hint(T('Compte supprimé.'), 2200);
   await cloudEnsureUser();
