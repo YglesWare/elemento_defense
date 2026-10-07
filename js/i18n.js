@@ -1887,6 +1887,7 @@ const EN = {
 "Maîtrise · ": "Mastery · ",
 "Longue-vue · ": "Spyglass · ",
 "Débloque la fusion d’abord": "Unlock the fusion first",
+"Début plus doux : en Facile, les premières cartes ont des slimes plus fragiles. Le vrai défi commence ensuite !": "Gentler start: on Easy, the first maps have weaker slimes. The real challenge starts after that!",
 "Profil : les administrateurs voient si les fonctions en bêta sont actives sur leur appareil.": "Profile: admins can see whether beta features are on for their device.",
 "pubs : ": "ads: ",
 "coupées par le code parent": "blocked by the parent code",

@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  96: [
+    ['🌱', 'Début plus doux : en Facile, les premières cartes ont des slimes plus fragiles. Le vrai défi commence ensuite !'],
+  ],
   95: [
     ['🛠️', 'Profil : les administrateurs voient si les fonctions en bêta sont actives sur leur appareil.'],
     ['❤️', 'K.O. : une vidéo peut t’offrir 5 vies une fois par partie, même après la Seconde chance de l’Atelier.'],

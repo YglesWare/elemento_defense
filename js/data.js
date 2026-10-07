@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 95;
+const BUILD = 96;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -170,7 +170,10 @@ for (const m of MAPS) if (m.price) m.price = Math.round(m.price * ECO.mapPrice /
 // Progression des cartes : chaque carte (hors événements et cartes aléatoires) est plus coriace et rapporte plus que la précédente
 MAPS.filter(m => !m.season && !m.random).forEach((m, i) => { m.hpMul = +Math.pow(ECO.mapHp, i).toFixed(2); m.shards = +(1 + ECO.mapShards * i).toFixed(2); m.prog = true; });
 // PV de la carte selon la difficulté (cartes de la progression seulement)
-const mapHpFor = (mi, diff) => { const m = MAPS[mi]; const e = m.prog && ECO.mapHpDiff ? ECO.mapHpDiff[diff] ?? 1 : 1; return Math.pow(m.hpMul, e); };
+// Entrée en douceur : en Facile, les premières cartes ont des ennemis plus fragiles (palier par carte), pour ne pas
+// décourager un nouveau joueur ; le défi et le farm commencent ensuite (la difficulté n'est pas linéaire)
+const EASY_START = [0.72, 0.82, 0.92];
+const mapHpFor = (mi, diff) => { const m = MAPS[mi]; const e = m.prog && ECO.mapHpDiff ? ECO.mapHpDiff[diff] ?? 1 : 1; const k = m.prog && diff === 'facile' ? EASY_START[MAPS.filter(x => x.prog).indexOf(m)] ?? 1 : 1; return Math.pow(m.hpMul, e) * k; };
 const BEST2 = 'elemento.best2';
 // Clé des records d'une carte (les cartes d'événement ont des records par édition annuelle)
 const recId = m => m.rid || m.id;
