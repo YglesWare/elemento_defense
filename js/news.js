@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  92: [
+    ['📱', 'Plein écran : le décor va aussi sous l’appareil photo du téléphone, sans bande unie en haut.'],
+  ],
   91: [
     ['✏️', 'Profil : touche le crayon sur Yglou (ou Yglou lui-même) pour ouvrir sa garde-robe.'],
     ['📱', 'Appli en plein écran, comme un vrai jeu : l’heure et les boutons du téléphone se cachent, et le décor va jusqu’au bord de l’écran. Balaie depuis le bord pour les revoir un instant.'],

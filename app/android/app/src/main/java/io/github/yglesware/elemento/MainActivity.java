@@ -23,9 +23,15 @@ public class MainActivity extends BridgeActivity {
         // Couleur derrière les barres du téléphone, assortie à l'écran affiché (js/ui.js barsColor)
         registerPlugin(BarsColorPlugin.class);
         super.onCreate(savedInstanceState);
-        // Le jeu va jusque sous l'encoche de l'appareil photo (le contenu s'en écarte, css/style.css --sat)
+        // Le jeu va jusque sous l'encoche de l'appareil photo (le contenu s'en écarte, css/style.css --sat). Le réglage
+        // ne s'applique qu'en renvoyant les attributs à la fenêtre (setAttributes)
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            getWindow().getAttributes().layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            WindowManager.LayoutParams lp = getWindow().getAttributes();
+            lp.layoutInDisplayCutoutMode = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+                ? WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+                : WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
+            getWindow().setAttributes(lp);
         }
         immersive();
         safeArea();

@@ -1887,6 +1887,7 @@ const EN = {
 "Maîtrise · ": "Mastery · ",
 "Longue-vue · ": "Spyglass · ",
 "Débloque la fusion d’abord": "Unlock the fusion first",
+"Plein écran : le décor va aussi sous l’appareil photo du téléphone, sans bande unie en haut.": "Full screen: the scenery now also goes under the phone’s camera, with no plain band at the top.",
 "Profil : touche le crayon sur Yglou (ou Yglou lui-même) pour ouvrir sa garde-robe.": "Profile: tap the pencil on Yglou (or Yglou himself) to open his wardrobe.",
 "Garde-robe d’Yglou": "Yglou’s wardrobe",
 "Appli en plein écran, comme un vrai jeu : l’heure et les boutons du téléphone se cachent, et le décor va jusqu’au bord de l’écran. Balaie depuis le bord pour les revoir un instant.": "Full-screen app, like a real game: the phone’s clock and buttons hide, and the scenery reaches the edge of the screen. Swipe from the edge to see them for a moment.",
