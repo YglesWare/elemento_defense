@@ -100,6 +100,7 @@ $('#wrCancel').addEventListener('click', () => { WR.sel = null; wrRender(); });
 $('#wrTabs').addEventListener('click', ev => { const b = ev.target.closest('[data-t]'); if (!b) return; WR.tab = b.dataset.t; WR.sel = null; wrRender(); });
 $('#wrBack').addEventListener('click', () => { WR.sel = null; openProfile(); });
 $('#prWardrobe').addEventListener('click', openWardrobe);
+$('#prCv').addEventListener('click', openWardrobe); // toucher Yglou ouvre aussi la garde-robe
 // Aperçu animé (appelé par la boucle de la mascotte)
 function wardrobeTick(t) {
   if (curScreen !== 'wardrobe') return;

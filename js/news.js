@@ -6,6 +6,10 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  91: [
+    ['✏️', 'Profil : touche le crayon sur Yglou (ou Yglou lui-même) pour ouvrir sa garde-robe.'],
+    ['📱', 'Appli en plein écran, comme un vrai jeu : l’heure et les boutons du téléphone se cachent, et le décor va jusqu’au bord de l’écran. Balaie depuis le bord pour les revoir un instant.'],
+  ],
   90: [
     ['📶', 'À côté : le même écran que l’onglet En ligne, avec les parties du Wi-Fi et un bouton pour scanner un QR code.'],
   ],

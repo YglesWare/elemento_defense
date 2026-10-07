@@ -2,6 +2,7 @@
 @font-face{font-family:'DispNum';src:url('../fonts/Baloo2-latin-800.woff2') format('woff2');font-weight:800;unicode-range:U+0030-0039;size-adjust:108%;font-display:swap}
 /* Layout : console de poche plein écran. HUD en haut, terrain au centre (paysage ou portrait selon l'écran),
    palette de tours en bas. Esthétique planche de manga : encre épaisse, ombres pleines, trames, fond en rayons. */
+:root{--sat:max(env(safe-area-inset-top,0px),var(--safe-area-inset-top,0px));--sab:max(env(safe-area-inset-bottom,0px),var(--safe-area-inset-bottom,0px))}
 :root{
   --ink:#2a1b3d;
   --paper:#ffffff;
@@ -575,9 +576,9 @@ button:disabled{cursor:default}
 #tPlay{font-size:clamp(23px,3.4vh,26px)}
 #tStory small{font:800 14px/1 "Baloo 2",system-ui,sans-serif;letter-spacing:0;opacity:.75;margin-left:4px;white-space:nowrap}
 .bubble::after{z-index:-1}
-.profchip{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));right:12px;z-index:6;display:flex;align-items:center;gap:4px;padding:3px 12px 3px 4px;background:var(--paper);border:3px solid var(--ink);border-radius:99px;box-shadow:0 3px 0 var(--ink);font:800 14px/1 "Baloo 2",system-ui,sans-serif;color:var(--ink);cursor:pointer;max-width:46vw}
-.build{position:absolute;right:10px;bottom:calc(6px + env(safe-area-inset-bottom,0px));z-index:6;font:700 11px/1 "Baloo 2",system-ui,sans-serif;color:var(--ink);opacity:.4;pointer-events:none}
-.updchip{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));left:12px;z-index:6;padding:7px 12px;background:var(--leaf);border:3px solid var(--ink);border-radius:99px;box-shadow:0 3px 0 var(--ink);font:800 14px/1 "Baloo 2",system-ui,sans-serif;color:var(--ink);cursor:pointer;animation:updpulse 1.6s ease-in-out infinite}
+.profchip{position:absolute;top:calc(10px + var(--sat));right:12px;z-index:6;display:flex;align-items:center;gap:4px;padding:3px 12px 3px 4px;background:var(--paper);border:3px solid var(--ink);border-radius:99px;box-shadow:0 3px 0 var(--ink);font:800 14px/1 "Baloo 2",system-ui,sans-serif;color:var(--ink);cursor:pointer;max-width:46vw}
+.build{position:absolute;right:10px;bottom:calc(6px + var(--sab));z-index:6;font:700 11px/1 "Baloo 2",system-ui,sans-serif;color:var(--ink);opacity:.4;pointer-events:none}
+.updchip{position:absolute;top:calc(10px + var(--sat));left:12px;z-index:6;padding:7px 12px;background:var(--leaf);border:3px solid var(--ink);border-radius:99px;box-shadow:0 3px 0 var(--ink);font:800 14px/1 "Baloo 2",system-ui,sans-serif;color:var(--ink);cursor:pointer;animation:updpulse 1.6s ease-in-out infinite}
 .updchip:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
 @keyframes updpulse{50%{transform:scale(1.06)}}
 @media (prefers-reduced-motion:reduce){.updchip{animation:none}}
@@ -631,7 +632,7 @@ button:disabled{cursor:default}
 #hFus{grid-template-columns:minmax(0,1fr)}
 
 /* Trophées : bannière, liste du Profil, logo qui gigote */
-.trophytoast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:70;display:flex;align-items:center;gap:10px;max-width:calc(100% - 24px);padding:8px 14px 8px 10px;background:var(--paper);border:3px solid var(--ink);border-radius:16px;box-shadow:0 4px 0 var(--ink);animation:ttIn .3s ease-out;pointer-events:none}
+.trophytoast{position:fixed;left:50%;top:calc(12px + var(--sat));transform:translateX(-50%);z-index:70;display:flex;align-items:center;gap:10px;max-width:calc(100% - 24px);padding:8px 14px 8px 10px;background:var(--paper);border:3px solid var(--ink);border-radius:16px;box-shadow:0 4px 0 var(--ink);animation:ttIn .3s ease-out;pointer-events:none}
 .trophytoast.out{opacity:0;transform:translate(-50%,-12px);transition:opacity .3s,transform .3s}
 @keyframes ttIn{from{transform:translate(-50%,-16px);opacity:0}}
 .tt-ico{font-size:28px;line-height:1}
@@ -680,10 +681,10 @@ button:disabled{cursor:default}
 .ccard small{opacity:.7;margin-top:2px}
 
 /* Amis (js/friends.js) */
-.frchip{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));left:12px;z-index:6;display:flex;align-items:center;gap:4px;padding:2px 13px 2px 4px;background:var(--paper);border:3px solid var(--ink);border-radius:99px;box-shadow:0 3px 0 var(--ink);font:800 14px/1 "Baloo 2",system-ui,sans-serif;color:var(--ink)}
+.frchip{position:absolute;top:calc(10px + var(--sat));left:12px;z-index:6;display:flex;align-items:center;gap:4px;padding:2px 13px 2px 4px;background:var(--paper);border:3px solid var(--ink);border-radius:99px;box-shadow:0 3px 0 var(--ink);font:800 14px/1 "Baloo 2",system-ui,sans-serif;color:var(--ink)}
 .frchip canvas{width:40px;height:32px;flex:none}
 .frchip:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
-.hasfr .updchip{top:calc(58px + env(safe-area-inset-top,0px))}
+.hasfr .updchip{top:calc(58px + var(--sat))}
 .frbadge{position:absolute;top:-8px;right:-8px;min-width:21px;height:21px;padding:0 5px;border-radius:99px;background:var(--pop);color:#fff;border:2.5px solid var(--ink);font:800 12px/16px "Baloo 2",system-ui,sans-serif;text-align:center}
 .fr{gap:9px}
 .frcode{display:flex;align-items:center;gap:10px;border:2.5px solid var(--ink);border-radius:14px;background:var(--mist);padding:8px 10px}
@@ -857,7 +858,7 @@ html.cvd .tbtn .bio.bad{background:#ffe2c4}
 .prnameres{background:#fff8d6;border:2px solid var(--ink);border-radius:12px;padding:6px 10px;font-weight:800;color:var(--ink)}
 
 /* Reconnexion en ligne (js/online.js) */
-.reconn{position:fixed;left:50%;top:calc(64px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:70;display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;background:var(--paper);border:3px solid var(--ink);border-radius:16px;box-shadow:0 4px 0 var(--ink);padding:8px 14px;max-width:calc(100% - 24px)}
+.reconn{position:fixed;left:50%;top:calc(64px + var(--sat));transform:translateX(-50%);z-index:70;display:grid;grid-template-columns:auto 1fr;column-gap:10px;align-items:center;background:var(--paper);border:3px solid var(--ink);border-radius:16px;box-shadow:0 4px 0 var(--ink);padding:8px 14px;max-width:calc(100% - 24px)}
 .reconn b{font-family:var(--display);font-weight:400;font-size:20px;letter-spacing:.5px}
 .reconn small{grid-column:2;font-weight:700;font-size:12.5px;color:var(--muted)}
 .reconn-spin{grid-row:1/3;width:26px;height:26px;border-radius:50%;border:4px solid var(--mist);border-top-color:var(--pop);animation:spin .8s linear infinite}
@@ -892,7 +893,7 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
 .stnode.lock,.stnode.soon{background:#d8c49a;color:#8a7350}
 @media (prefers-reduced-motion:reduce){.stnode.cur{animation:none}}
 .stlbl{position:absolute;transform:translateX(-50%);font-weight:800;font-size:11px;color:#4a2f17;background:#fff8e6;border:1.5px solid #5a3a1e;border-radius:6px;padding:0 6px;white-space:nowrap;z-index:2;pointer-events:none;box-shadow:0 1px 0 #5a3a1e}
-.comic{position:fixed;inset:0;z-index:75;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;padding:calc(12px + env(safe-area-inset-top,0px)) 12px calc(10px + env(safe-area-inset-bottom,0px));
+.comic{position:fixed;inset:0;z-index:75;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;padding:calc(12px + var(--sat)) 12px calc(10px + var(--sab));
   background:radial-gradient(rgba(255,255,255,.07) 1.4px,transparent 1.6px) 0 0/10px 10px,#2a1b3d;animation:cmFade .25s ease-out}
 @keyframes cmFade{from{opacity:0}to{opacity:1}}
 @keyframes cmBlink{50%{opacity:.35}}
@@ -973,7 +974,7 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
 @keyframes mustPulse{50%{box-shadow:0 0 0 5px var(--pop),0 3px 0 var(--ink);transform:translateY(-4px)}}
 @keyframes mustFinger{50%{transform:translate(-50%,-8px)}}
 /* Lien vers la politique de confidentialité, discret, en bas à gauche de l'accueil */
-.privlink{position:absolute;left:10px;bottom:calc(6px + env(safe-area-inset-bottom,0px));z-index:6;font:700 11px/1 "Baloo 2",system-ui,sans-serif;color:var(--ink);opacity:.55;text-decoration:underline}
+.privlink{position:absolute;left:10px;bottom:calc(6px + var(--sab));z-index:6;font:700 11px/1 "Baloo 2",system-ui,sans-serif;color:var(--ink);opacity:.55;text-decoration:underline}
 /* Compte en ligne : une ligne compacte, le reste dans « Plus d'options » */
 .cloudbox{gap:4px}
 .cloudrow{display:flex;align-items:center;gap:8px;text-align:left}
@@ -1023,7 +1024,7 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
 .df .btn.alt:disabled{max-width:150px;white-space:normal;font-size:16px;line-height:1.1;padding:8px 10px}
 /* Bandeau du bas : une marge sous les boutons (Améliorer, Vendre, Cible), et la barre de gestes du téléphone en plus */
 /* (hauteur fixe : la carte ne saute pas quand on touche une tour) */
-#panel{height:calc(158px + env(safe-area-inset-bottom, 0px));padding-bottom:calc(16px + env(safe-area-inset-bottom, 0px))}
+#panel{height:calc(158px + var(--sab));padding-bottom:calc(16px + var(--sab))}
 .uprow .umut{font:800 11px/1 var(--body);background:var(--fusion);color:var(--paper);border:2px solid var(--ink);border-radius:99px;padding:2px 7px;letter-spacing:0}
 /* Histoire : la troupe sur la carte et l'équipe sous la carte */
 .stparty{position:absolute;inset:0;width:100%;height:100%;z-index:5;pointer-events:none}
@@ -1143,3 +1144,18 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
 .mpempty b{font-family:var(--display);font-weight:400;font-size:20px;letter-spacing:.5px;line-height:1.05}
 .mpempty p{margin:0;font-size:13px;font-weight:700;color:var(--muted);line-height:1.3}
 .mp-me{white-space:nowrap}.mp-me .mp-input{padding:6px 10px;font-size:16px;height:auto}
+
+/* Appli Android en plein écran (et site installé sur iPhone) : la page passe sous les barres du téléphone (heure,
+   boutons), le fond continue jusqu'au bord, et le contenu s'écarte de la hauteur des barres. Capacitor donne cette
+   hauteur dans --safe-area-inset-* quand la WebView ne la donne pas elle-même (env) ; sinon les deux valent 0. */
+.screen{padding-top:calc(16px + var(--sat));padding-bottom:calc(16px + var(--sab))}
+.stickyb{bottom:var(--sab)}
+#hud{padding-top:calc(8px + var(--sat))}
+.intro{padding:calc(16px + var(--sat)) 16px calc(16px + var(--sab))}
+
+/* Profil : la garde-robe s'ouvre par le petit crayon sur Yglou (ou en touchant Yglou) */
+.profav{position:relative;flex:none;display:inline-block;line-height:0}
+.profav canvas{cursor:pointer}
+.avedit{position:absolute;right:-6px;bottom:-4px;width:34px;height:34px;border-radius:50%;border:2.5px solid var(--ink);background:var(--paper);box-shadow:0 2px 0 var(--ink);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
+.avedit svg{width:18px;height:18px}
+.avedit:active{transform:translateY(1px);box-shadow:none}

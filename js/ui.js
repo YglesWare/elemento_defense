@@ -6,7 +6,18 @@ const GEM = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l7 7-7 13
 const LOCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="11" rx="3" fill="#ffd23f" stroke="#2a1b3d" stroke-width="2.2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke="#2a1b3d" stroke-width="2.4"/><circle cx="12" cy="16" r="1.6" fill="#2a1b3d"/></svg>';
 const screens = { profile: $('#sProfile'), title: $('#sTitle'), help: $('#sHelp'), pause: $('#sPause'), over: $('#sOver'), shop: $('#sShop'), tuto: $('#sTuto'), tree: $('#sTree'), maps: $('#sMaps'), diff: $('#sDiff') };
 let curScreen = 'title', helpFrom = 'title', shopFrom = 'title', hudCache = {};
-function show(name) { for (const k in screens) screens[k].hidden = k !== name; curScreen = name; if (name === 'title') { refreshTitle(); if (typeof trophyScan === 'function') { trophyPay(); trophyScan(); } if (typeof cloudSync === 'function') cloudSync(); } }
+// Appli Android dont les barres du téléphone restent à part (WebView ancienne) : elles prennent la couleur du fond
+// de l'écran affiché (jaune pour l'accueil et le profil, violet pour l'Atelier…, bleu ciel ailleurs)
+// [haut, bas] ; en partie, le bas est le panneau blanc des tours
+const BAR_BG = { title: ['--sun'], profile: ['--sun'], shop: ['--grape'], parents: ['--grape'], wardrobe: ['--grape'], game: ['--sky', '--paper'] };
+function barsColor(name) {
+  const C = window.Capacitor; if (!C || !C.isPluginAvailable || !C.isPluginAvailable('BarsColor')) return;
+  const css = getComputedStyle(document.documentElement), [a, b] = BAR_BG[name] || ['--sky'];
+  const top = css.getPropertyValue(a).trim(), bottom = css.getPropertyValue(b || a).trim(), key = top + bottom;
+  if (top && bottom && key !== barsColor.last) { barsColor.last = key; C.Plugins.BarsColor.set({ top, bottom }).catch(() => {}); }
+}
+function show(name) { for (const k in screens) screens[k].hidden = k !== name; curScreen = name; barsColor(name); if (name === 'title') { refreshTitle(); if (typeof trophyScan === 'function') { trophyPay(); trophyScan(); } if (typeof cloudSync === 'function') cloudSync(); } }
+barsColor(curScreen);
 function setText(el, key, v) { if (hudCache[key] !== v) { hudCache[key] = v; el.textContent = v; } }
 function setHTML(el, key, v) { if (hudCache[key] !== v) { hudCache[key] = v; el.innerHTML = v; } }
 

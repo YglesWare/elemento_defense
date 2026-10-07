@@ -13,10 +13,8 @@ let html = readFileSync(join(www, 'index.html'), 'utf8');
 const before = html;
 html = html.replace(/<link rel="preconnect"[^>]*fonts\.g[^>]*>\s*/g, '').replace(/<link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com[^"]*">/, '<link rel="stylesheet" href="fonts/fonts.css">');
 if (html === before || html.includes('fonts.googleapis')) throw new Error('Lien Google Fonts introuvable dans index.html');
-// Pas de « viewport-fit=cover » dans l'APK : Android garde ses barres (heure, boutons de navigation) hors du jeu,
-// au lieu de les dessiner par-dessus sur les téléphones à WebView récente
-html = html.replace(/,\s*viewport-fit=cover/, '');
-if (html.includes('viewport-fit=cover')) throw new Error('viewport-fit=cover toujours présent');
+// « viewport-fit=cover » gardé : avec une WebView récente (140+), Capacitor laisse la page passer sous les barres du
+// téléphone et donne leur hauteur (--safe-area-inset-*, css/style.css) ; avec une plus ancienne, les barres restent à part
 // Version Google Play (npm run aab) : pas de mise à jour par les releases GitHub (le Play Store s'en charge, et il interdit
 // qu'une appli se mette à jour toute seule)
 const store = process.argv.includes('--store');

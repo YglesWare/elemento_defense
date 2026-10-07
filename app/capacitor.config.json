@@ -15,6 +15,10 @@
         "twitter": false
       },
       "logLevel": 1
+    },
+    "SystemBars": {
+      "insetsHandling": "disable",
+      "style": "LIGHT"
     }
   }
 }

@@ -83,7 +83,7 @@
 <section class="screen" id="sProfile" hidden>
   <div class="inner">
     <div class="panelbox col prof">
-      <div class="profhead"><canvas id="prCv" aria-hidden="true"></canvas><div><h2 class="ptitle" style="margin:0">Profil</h2></div></div>
+      <div class="profhead"><span class="profav"><canvas id="prCv" aria-hidden="true"></canvas><button class="avedit" id="prWardrobe" type="button" aria-label="Garde-robe d’Yglou" title="Garde-robe d’Yglou"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M13.6 2.9l3.5 3.5L7 16.5l-4.3.8.8-4.3z" fill="#ffd23f" stroke="#2a1b3d" stroke-width="1.8" stroke-linejoin="round"/><path d="M11.5 5l3.5 3.5" stroke="#2a1b3d" stroke-width="1.8"/></svg></button></span><div><h2 class="ptitle" style="margin:0">Profil</h2></div></div>
       <label class="mp-label" for="prName">Ton pseudo (utilisé en multijoueur)</label>
       <input id="prName" class="mp-input" maxlength="12" autocomplete="nickname" placeholder="Ton pseudo">
       <p class="fine prnameres" id="prNameRes" hidden>🧑‍🎨 Bravo, tu as trouvé le nom du créateur ! Mais ce pseudo lui est réservé : tu gardes le tien.</p>
@@ -117,7 +117,6 @@
           </div>
         </details>
       </div>
-      <button class="btn alt" id="prWardrobe" type="button">🎩 Garde-robe d’Yglou</button>
       <button class="btn alt" id="prComfort" type="button">👓 Confort et accessibilité</button>
       <button class="btn alt" id="prParents" type="button">👪 Espace parents</button>
       <button class="btn alt" id="prNews" type="button">🆕 Nouveautés</button>
