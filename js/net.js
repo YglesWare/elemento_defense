@@ -147,8 +147,11 @@ const Net = {
   // Annonce de la partie sur le Wi-Fi, pour les invités qui ont l'app (mise à jour à chaque changement de joueurs)
   lanAnnounce() {
     const L = lanPlugin(); if (!L || !this.lan || this.role !== 'host') return;
-    L.announce({ text: this.inGame() ? '' : JSON.stringify({ g: 'eld', v: NET_VER, url: this.lan.url, host: this.me.name, n: this.players.length, max: NET_MAX }) });
+    // st : 'game' pendant une partie (elle reste visible, « Partie en cours ») ; les anciennes versions l'ignorent
+    L.announce({ text: JSON.stringify({ g: 'eld', v: NET_VER, url: this.lan.url, host: this.me.name, n: this.players.length, max: NET_MAX, st: this.inGame() ? 'game' : 'lobby' }) });
   },
+  // Toutes les 3 s : l'annonce suit le début et la fin des parties
+  lanTick() { if (this.role === 'host' && this.lan) this.lanAnnounce(); },
   inGame() { return typeof G !== 'undefined' && !!G && !!(G.duel || G.coop) && !G.over; },
   // Invité dans l'app : écoute les parties annoncées sur le Wi-Fi ; onFound({ url, host, n, max })
   discover(onFound) {
@@ -319,3 +322,5 @@ const Net = {
     this.peers = new Map(); this.lanConns = new Map(); this.lan = null; this.pending = null; this.hostPc = null; this.role = null; this.players = []; this.online = false;
   },
 };
+
+setInterval(() => { if (typeof Net !== 'undefined') Net.lanTick(); }, 3000);

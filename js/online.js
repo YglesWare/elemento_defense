@@ -208,13 +208,15 @@ function paintOnlineFriends() {
 function onlineHomeHTML() {
   const fr = FR.list.filter(f => f.kind === 'friend'), on = fr.filter(f => f.online).length, live = frLive();
   return '<p class="trnote">' + T('Joue avec tes amis, <b>où qu’ils soient</b> : rejoins la partie d’un ami, ou ouvre ton salon et invite-les.') + '</p>'
-    + '<p class="fine">' + T('Ton pseudo : ') + '<b>' + esc(cleanPseudo()) + '</b>' + T(' (modifiable dans le Profil)') + '</p>'
+    + '<div class="mpchips"><span class="mpchip">🙂 ' + esc(cleanPseudo()) + '</span>' + (fr.length ? '<span class="mpchip' + (on ? ' on' : '') + '"><i></i>' + on + (on > 1 ? T(' amis en ligne sur ') : T(' ami en ligne sur ')) + fr.length + '</span>' : '') + '</div>'
     + (!live ? '<p class="mp-err">' + T('Il faut internet pour jouer en ligne.') + '</p>' : '')
-    + '<p class="fine">' + (fr.length ? T('Amis en ligne : ') + on + ' / ' + fr.length : T('Pas encore d’amis : ajoute-en depuis la page Amis de l’accueil.')) + '</p>'
-    + (live && fr.length ? '<span class="mp-label">' + T('Parties de tes amis') + '</span><div class="onlrooms" id="onlRooms">' + friendRoomsHTML() + '</div>'
-      + '<p class="fine">' + T('Seulement tes amis · la liste se met à jour toute seule') + '</p>' : '')
-    + '<button class="btn" type="button" data-a="ocreate"' + (live && fr.length ? '' : ' disabled') + '>' + T('Créer un salon en ligne') + '</button>';
+    + (!fr.length ? emptyBoxHTML('👋', T('Pas encore d’amis'), T('Ajoute-en depuis la page Amis de l’accueil, avec leur code ami.'))
+      : live ? '<span class="mp-label">' + T('Parties de tes amis') + '</span><div class="onlrooms" id="onlRooms">' + friendRoomsHTML() + '</div>' : '')
+    + '<button class="btn" type="button" data-a="ocreate"' + (live && fr.length ? '' : ' disabled') + '>' + T('Créer un salon en ligne') + '</button>'
+    + (live && fr.length ? '<p class="fine">' + T('Seulement tes amis · la liste se met à jour toute seule') + '</p>' : '');
 }
+// Encadré « rien pour l'instant » (pointillés, une icône, un titre et une phrase)
+const emptyBoxHTML = (ic, title, txt) => '<div class="mpempty"><span class="mpe-ic" aria-hidden="true">' + ic + '</span><b>' + title + '</b>' + (txt ? '<p>' + txt + '</p>' : '') + '</div>';
 
 // ---------- Salons des amis (supabase/rooms_join.sql) ----------
 // L'hôte dit où en est son salon ; ses amis le voient dans l'onglet « En ligne » et demandent à entrer ; l'hôte accepte ou refuse
@@ -227,8 +229,8 @@ async function roomBeat() {
     p_players: Net.players.length || 1, p_wave: inGame && G ? G.wave || 0 : 0 }).catch(() => {});
 }
 function friendRoomsHTML() {
-  if (ONL.rooms == null) return '<p class="fine">' + T('Recherche des parties…') + '</p>';
-  if (!ONL.rooms.length) return '<p class="fine">' + T('Aucun ami n’a de salon ouvert. Crée le tien et invite-les !') + '</p>';
+  if (ONL.rooms == null) return emptyBoxHTML('📡', T('Recherche des parties…'), '');
+  if (!ONL.rooms.length) return emptyBoxHTML('😴', T('Aucun ami ne joue en ligne'), T('Ouvre ton salon : tes amis le verront ici, et tu pourras aussi les inviter.'));
   return ONL.rooms.map((r, i) => {
     const info = r.info || {}, m = MAPS[info.map] || MAPS[0], full = r.players >= NET_MAX, game = r.state === 'game';
     const st = game ? ['busy', T('Partie en cours') + (info.wave ? T(' · vague ') + info.wave : '')] : full ? ['full', T('Complète · ') + r.players + '/' + NET_MAX] : ['ok', T('Joignable · ') + r.players + '/' + NET_MAX];

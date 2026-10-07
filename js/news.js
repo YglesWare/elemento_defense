@@ -6,6 +6,10 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  89: [
+    ['📶', 'À côté : les parties sur le même Wi-Fi s’affichent tout de suite, avec leur état (joignable, en cours). La caméra ne sert plus qu’à scanner un QR code.'],
+    ['🌍', 'En ligne : un écran plus clair quand aucun ami ne joue, avec ton pseudo et tes amis en ligne en un coup d’œil.'],
+  ],
   88: [
     ['🌍', 'En ligne : la liste des parties de tes amis, avec leur état (joignable, en cours, complète). Touche « Rejoindre » : ton ami accepte, et tu entres dans son salon.'],
   ],

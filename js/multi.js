@@ -74,16 +74,21 @@ function camError(e) {
 // ---------- Parties trouvées sur le Wi-Fi (invité dans l'app) ----------
 let foundTimer = 0;
 const MPF = new Map();
+// Une ligne par partie annoncée (même présentation que les salons des amis en ligne) ; vide : on explique comment faire
 function foundHTML() {
   const now = Date.now(), list = [...MPF.values()].filter(f => now - f.t < 4000);
-  if (!list.length) return '';
-  return '<p class="mp-label">' + T('Parties sur ce Wi-Fi') + '</p>' + list.map(f => '<button class="btn green" type="button" data-a="lan-join" data-url="' + esc(f.url) + '"' + (f.n >= f.max ? ' disabled' : '') + '>'
-    + T('Rejoindre ') + esc(f.host) + ' · ' + f.n + '/' + f.max + '</button>').join('');
+  if (!list.length) return '<p class="mp-hint">' + T('On cherche… Ton ami n’apparaît pas ? Il doit d’abord toucher « Créer une partie ».') + '</p>';
+  return list.map(f => {
+    const game = f.st === 'game', full = f.n >= f.max;
+    const st = game ? ['busy', T('Partie en cours')] : full ? ['full', T('Complète · ') + f.n + '/' + f.max] : ['ok', T('Joignable · ') + f.n + '/' + f.max];
+    return '<div class="onlroom"><span class="frav lanav" aria-hidden="true">📶</span><span class="orm"><b>' + esc(f.host) + '</b><span class="ost ' + st[0] + '"><i></i>' + st[1] + '</span></span>'
+      + '<button class="btn green" type="button" data-a="lan-join" data-url="' + esc(f.url) + '"' + (game || full ? ' disabled' : '') + '>' + (game ? T('En cours') : full ? T('Complète') : T('Rejoindre')) + '</button></div>';
+  }).join('') + '<p class="mp-hint">' + T('Ton ami n’apparaît pas ? Il doit d’abord toucher « Créer une partie ».') + '</p>';
 }
 function startFound() {
   MPF.clear();
   const paint = () => { const el = $('#mpFound'); if (el) el.innerHTML = foundHTML(); };
-  if (!Net.discover(f => { const had = MPF.has(f.url); MPF.set(f.url, { ...f, t: Date.now() }); if (!had) paint(); })) return;
+  if (!Net.discover(f => { const old = MPF.get(f.url); MPF.set(f.url, { ...f, t: Date.now() }); if (!old || old.st !== f.st || old.n !== f.n) paint(); })) return;
   foundTimer = setInterval(paint, 1000);
 }
 function stopFound() { clearInterval(foundTimer); foundTimer = 0; MPF.clear(); Net.stopDiscover(); }
@@ -153,10 +158,13 @@ function renderMP() {
     const onl = typeof frOn === 'function' && frOn();
     if (onl) h += '<div class="mp-seg mp-tabs"><button class="sbtn' + (MP.tab !== 'online' ? ' on' : '') + '" type="button" data-a="tab-near">' + T('📶 À côté') + '</button><button class="sbtn' + (MP.tab === 'online' ? ' on' : '') + '" type="button" data-a="tab-online">' + T('🌍 En ligne') + '</button></div>';
     if (onl && MP.tab === 'online') h += onlineHomeHTML();
-    else h += T('<p class="trnote">De 2 à 4 joueurs, téléphones côte à côte, <b>sans internet</b>. Connectez-vous au même Wi-Fi, ou activez le partage de connexion d’un des téléphones et connectez les autres dessus.</p>')
-      + T('<label class="mp-label" for="mpName">Ton pseudo</label><input id="mpName" class="mp-input" maxlength="12" autocomplete="nickname" placeholder="Ex. Léa" value="') + esc(name) + '">'
+    // Dans l'app, les parties du Wi-Fi s'affichent toutes seules ; le QR code sert au navigateur et en secours
+    else h += '<p class="trnote">' + T('De 2 à 4 joueurs sur le même Wi-Fi (ou le partage de connexion d’un téléphone), <b>sans internet</b>.') + '</p>'
+      + '<label class="mp-me" for="mpName">' + T('Ton pseudo') + '<input id="mpName" class="mp-input" maxlength="12" autocomplete="nickname" placeholder="Ex. Léa" value="' + esc(name) + '"></label>'
+      + (NATIVE ? '<span class="mp-label mp-radar"><i aria-hidden="true"></i>' + T('Parties sur ce Wi-Fi') + '</span><div class="onlrooms" id="mpFound">' + foundHTML() + '</div>' : '')
       + T('<button class="btn" type="button" data-a="create">Créer une partie</button>')
-      + T('<button class="btn green" type="button" data-a="join">Rejoindre une partie</button>');
+      + '<button class="btn alt mp-qrbtn" type="button" data-a="join"><svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="6" height="6" rx="1"/><rect x="12" y="2" width="6" height="6" rx="1"/><rect x="2" y="12" width="6" height="6" rx="1"/><path d="M12 12h2v2h-2zM16 16h2v2h-2zM16 12v2M12 16v2"/></svg>'
+        + T('Scanner un QR code') + '</button>';
     h += T('<button class="btn alt" type="button" data-a="back">Retour</button>');
   } else if (S === 'busy') {
     h += '<p class="mp-busy">' + esc(MP.busyText || T('Un instant…')) + T('</p><button class="btn alt" type="button" data-a="cancel">Annuler</button>');
@@ -183,7 +191,6 @@ function renderMP() {
       + manualHTML(MP.code) + T('<button class="btn alt" type="button" data-a="cancel">Annuler</button>');
   } else if (S === 'scan') {
     h += '<h3 class="mp-h">' + (MP.scanFor === 'answer' ? T('Vise le QR de réponse de ton ami') : T('Vise le QR code affiché par l’hôte')) + '</h3>'
-      + (MP.scanFor !== 'answer' ? '<div id="mpFound">' + foundHTML() + '</div>' : '')
       + (MP.facing === 'user' && MP.scanFor !== 'answer' ? '<p class="mp-step">' + T('Mets ton téléphone <b>écran contre écran</b> avec celui de l’hôte, dans le même sens, à 15–20 cm.') + '</p>' : '')
       + camHTML()
       + manualHTML(null)
@@ -203,7 +210,7 @@ function renderMP() {
   b.querySelectorAll('canvas.mp-yg').forEach(cv => drawYglou(prepMini(cv, 34, 34), 17, 19, 30, 'happy', 0, { crest: ['#ff4f81', '#3fa9ff', '#4fd36a', '#ffb03d'][+cv.dataset.i % 4], noShadow: true }));
   if (S === 'host' && Net.online && typeof paintOnlineFriends === 'function') paintOnlineFriends();
   const qr = $('#mpQr'); if (qr && MP.code) { try { drawQR(qr, MP.code); } catch (e) { MP.err = T('Impossible de dessiner le QR code.'); } }
-  if (S === 'scan' && MP.scanFor !== 'answer' && !foundTimer) startFound();
+  if (S === 'home' && MP.tab !== 'online' && NATIVE && !foundTimer) startFound();
   if (S === 'invite' && !MP.camFail && !MP.lan) { const st = MP.cam; MP.cam = null; startScan(hostGotAnswer, MP.facing, st).catch(e => { if (MP.state !== 'invite') return; stopScan(); MP.camFail = true; MP.manual = true; MP.err = camError(e); renderMP(); }); }
   if (S === 'scan' && !MP.camFail) startScan((txt, cam) => MP.scanFor === 'answer' ? hostGotAnswer(txt, cam) : guestGotOffer(txt, cam), MP.facing).catch(e => { if (MP.state !== 'scan') return; stopScan(); MP.camFail = true; MP.manual = true; MP.err = camError(e); renderMP(); });
 }
@@ -274,8 +281,8 @@ $('#mpBody').addEventListener('click', ev => {
     return;
   }
   const a = el.dataset.a;
-  if (a === 'back') { show('title'); }
-  else if (a === 'tab-near' || a === 'tab-online') { MP.tab = a.slice(4); MP.err = ''; renderMP(); if (MP.tab === 'online' && typeof frLoad === 'function') frLoad(true).then(() => { if (MP.state === 'home') renderMP(); if (typeof pollFriendRooms === 'function') pollFriendRooms(); }); }
+  if (a === 'back') { stopFound(); show('title'); }
+  else if (a === 'tab-near' || a === 'tab-online') { MP.tab = a.slice(4); MP.err = ''; if (MP.tab === 'online') stopFound(); renderMP(); if (MP.tab === 'online' && typeof frLoad === 'function') frLoad(true).then(() => { if (MP.state === 'home') renderMP(); if (typeof pollFriendRooms === 'function') pollFriendRooms(); }); }
   else if (a === 'ocreate') { (async () => { mpGo('busy', { busyText: T('Ouverture du salon…') }); if (await onlineCreate()) mpGo('host'); })(); }
   else if (a === 'create') { const n = needName(); if (!n) return; Net.host(n); keepAwake(); mpGo('host'); }
   else if (a === 'join') { const n = needName(); if (!n) return; keepAwake(); mpGo('scan', { scanFor: 'offer' }); }
