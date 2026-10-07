@@ -189,8 +189,6 @@ function newGame(mi, save, diff) {
   if (save) banner('REPRISE', T('Vague ') + (G.wave + 1) + T(' prête'));
   else {
     banner(T('PRÊT ?'), MAPS[mi].name + ' · ' + DIFFS[G.diff].name + (G.endless ? T(' · vagues infinies') : ' · ' + G.maxw + T(' vagues')) + (G.chal ? ' · 🌶 ' + chalX(G.chal.mult) : ''));
-    const seen = store.get('elemento.bankhint') || 0;
-    if (seen < 3 && !G.story) { store.set('elemento.bankhint', seen + 1); setTimeout(() => { if (G && G.map === mi && !G.over && !G.duel && !G.guide) bankHint(5000); }, 2400); }
   }
 }
 function saveCheckpoint() {

@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  93: [
+    ['🐷', 'Début de partie plus léger : plus de grand texte sur la cagnotte. Touche ton or pour un petit rappel.'],
+  ],
   92: [
     ['📱', 'Plein écran : le décor va aussi sous l’appareil photo du téléphone, sans bande unie en haut.'],
   ],

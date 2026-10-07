@@ -157,7 +157,8 @@ document.addEventListener('pointerdown', ev => { const box = $('#modePick'); if 
 
 // HUD
 const fmtK = n => n >= 100000 ? Math.round(n / 1000) + 'k' : n >= 10000 ? fr((n / 1000).toFixed(1)) + 'k' : String(n);
-function bankHint(ms) { if (G) hint(T('Or de la partie : ') + G.gold + T('. À la fin, il rejoint la cagnotte 🐷 (') + (meta.bank || 0) + T(' or), qui sert à acheter des cartes : ') + bankShares() + T('. Un abandon ne rapporte rien (ni or, ni éclats).'), ms || 5000); }
+// Toucher l'or : une bulle courte (plus de grand texte automatique en début de partie, personne ne le lisait)
+function bankHint(ms) { if (G) hint(T('🐷 L’or qui te reste à la fin va dans la cagnotte, pour acheter des cartes.'), ms || 3000); }
 $('#hGoldChip').addEventListener('click', () => bankHint());
 const elLives = $('#hLives'), elGold = $('#hGold'), bWave = $('#bWave');
 function refreshHUD() {

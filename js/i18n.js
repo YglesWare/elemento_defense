@@ -1887,6 +1887,8 @@ const EN = {
 "Maîtrise · ": "Mastery · ",
 "Longue-vue · ": "Spyglass · ",
 "Débloque la fusion d’abord": "Unlock the fusion first",
+"Début de partie plus léger : plus de grand texte sur la cagnotte. Touche ton or pour un petit rappel.": "Lighter game start: no more big text about the piggy bank. Tap your gold for a short reminder.",
+"🐷 L’or qui te reste à la fin va dans la cagnotte, pour acheter des cartes.": "🐷 The gold you have left at the end goes into the piggy bank, to buy maps.",
 "Plein écran : le décor va aussi sous l’appareil photo du téléphone, sans bande unie en haut.": "Full screen: the scenery now also goes under the phone’s camera, with no plain band at the top.",
 "Profil : touche le crayon sur Yglou (ou Yglou lui-même) pour ouvrir sa garde-robe.": "Profile: tap the pencil on Yglou (or Yglou himself) to open his wardrobe.",
 "Garde-robe d’Yglou": "Yglou’s wardrobe",
