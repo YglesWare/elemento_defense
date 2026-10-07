@@ -48,7 +48,7 @@ public class MainActivity extends BridgeActivity {
             v.setPadding(0, 0, 0, kb ? insets.getInsets(WindowInsetsCompat.Type.ime()).bottom : 0);
             float d = getResources().getDisplayMetrics().density;
             String js = String.format(Locale.US,
-                "document.documentElement.style.setProperty('--safe-area-inset-top','%dpx');document.documentElement.style.setProperty('--safe-area-inset-bottom','%dpx');",
+                "(function(){var d=document.documentElement;if(!d)return;d.style.setProperty('--safe-area-inset-top','%dpx');d.style.setProperty('--safe-area-inset-bottom','%dpx');})();",
                 (int) (cut.top / d), kb ? 0 : (int) (cut.bottom / d));
             WebView wv = getBridge() != null ? getBridge().getWebView() : null;
             if (wv != null) wv.post(() -> wv.evaluateJavascript(js, null));

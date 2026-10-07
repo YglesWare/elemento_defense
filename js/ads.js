@@ -148,13 +148,15 @@ function adQuestPaint() {
 
 // ---------- D · K.O. : continuer avec 5 vies (une fois par jour, pas si la seconde chance de l'Atelier a servi) ----------
 // Pas sur la carte du jour ni avec des piments : leurs classements entre amis doivent rester justes
-function adCanRevive() { return adSolo() && !G.reviveUsed && !G.chal && !MAPS[G.map].daily && !adDay().revive && adReady(); }
+// Une seconde chance par pub par partie (dans la limite des pubs du jour), même après la Seconde chance gratuite de
+// l'Atelier (G.reviveUsed). Proposée une seule fois : refusée, elle ne revient pas dans la même partie
+function adCanRevive() { return adSolo() && !G.adRevived && !G.chal && !MAPS[G.map].daily && adReady(); }
 function adKoAsk(B) {
-  G.paused = true; G.koAsk = true;
+  G.paused = true; G.koAsk = true; G.adRevived = true;
   adSeen('revive');
   adOffer({ kind: 'revive', amount: ADS_REVIVE, unit: 'lives', title: T('K.O. ! Une seconde chance ?'), reward: '♥ ' + ADS_REVIVE + T(' vies'), no: T('Abandonner'),
     cancel: () => { if (!G) return; G.koAsk = false; gameOver(); },
-    give: () => { if (!G) return; G.koAsk = false; G.paused = false; G.reviveUsed = true; reviveFx(B); } });
+    give: () => { if (!G) return; G.koAsk = false; G.paused = false; reviveFx(B); } });
 }
 
 function adPaintAll() {

@@ -162,6 +162,9 @@ function cloudSync(force) {
   CLOUD.state = 'sync'; cloudPaint();
   return CLOUD.syncing = (async () => {
     try {
+      // Fonctions en bêta et statut admin d'abord : elles ne dépendent pas de la sauvegarde (une fenêtre de choix
+      // ou une erreur de synchro ne doivent pas les bloquer)
+      await flagsLoad().catch(() => {});
       await cloudMoveFinish().catch(() => {});
       await cloudAdopt();
       Sync.adapter = SupaSync;
@@ -172,7 +175,6 @@ function cloudSync(force) {
       if (typeof cloudPushDaily === 'function') await cloudPushDaily().catch(() => {});
       if (typeof cloudPushMaps === 'function') await cloudPushMaps().catch(() => {});
       if (typeof ADLOG_KEY !== 'undefined') await cloudPushQueue(ADLOG_KEY, 'ad_log').catch(() => {});
-      await flagsLoad().catch(() => {});
       CLOUD.lastSync = Date.now(); CLOUD.state = 'ok'; CLOUD.err = '';
     } catch (e) { CLOUD.state = 'err'; CLOUD.err = (e && e.message) || String(e); }
     finally { CLOUD.syncing = null; cloudPaint(); }
@@ -406,6 +408,12 @@ function cloudPaint() {
   if (gb && !gb.hidden) gidWebLoad();
   if (gsi) { gsi.hidden = !(gb && !gb.hidden && GID.web === 'ready'); if (!gsi.hidden) gb.hidden = true; }
   $('#prCloudId').textContent = T('Identifiant de progression : ') + pidShort(store.get(PID_KEY));
+  // Administrateur : état des fonctions en bêta sur cet appareil (pour comprendre pourquoi un bouton n'apparaît pas)
+  const adm = $('#prAdmin');
+  if (adm) {
+    adm.hidden = store.get(CREATOR_KEY) !== true;
+    if (!adm.hidden) adm.textContent = '🛠️ Admin · ' + T('pubs : ') + (flagOn('ads') ? (typeof adsAllowed === 'function' && !adsAllowed() ? T('coupées par le code parent') : T('actives') + (typeof AD_TEST !== 'undefined' && !AD_TEST && typeof admob === 'function' && !admob() ? T(' (mais pas de bloc AdMob : rien ne s’affiche)') : '')) : T('coupées (fonction en bêta)'));
+  }
   // Connexion expirée : « Se déconnecter » permet aussi de continuer en invité (le compte retenu est oublié)
   $('#prLogout').hidden = anon && CLOUD.state !== 'relogin';
   // Invité : l'encart sous le pseudo (pour se connecter) ; connecté : tout en bas, avant « Réinitialiser la progression »

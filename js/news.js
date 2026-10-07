@@ -6,6 +6,10 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  95: [
+    ['🛠️', 'Profil : les administrateurs voient si les fonctions en bêta sont actives sur leur appareil.'],
+    ['❤️', 'K.O. : une vidéo peut t’offrir 5 vies une fois par partie, même après la Seconde chance de l’Atelier.'],
+  ],
   94: [
     ['🔑', 'Connexion Google plus solide : si elle se perd (après une mise à jour par exemple), l’appli se reconnecte toute seule au même compte, sans créer de compte invité à la place.'],
   ],
