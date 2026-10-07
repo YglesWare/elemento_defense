@@ -6,6 +6,12 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  97: [
+    ['🎬', 'Appli : les vidéos à récompense passent par Google AdMob, réglé pour les enfants (pubs tous publics, sans ciblage). Elles restent facultatives, et l’espace parents peut les couper.'],
+    ['⏳', 'Nouveau dans l’Atelier : le Sablier. La Cadence a maintenant un plafond, comme les Dégâts et la Portée, et chaque Sablier le relève.'],
+    ['💰', 'Sol, Vol et Boss commencent à 100 or (500 pour une mutation), et les cartes coûtent un peu plus cher.'],
+    ['🎩', 'Garde-robe : une vidéo peut t’offrir −20 % sur un habit d’Yglou, pour la journée.'],
+  ],
   96: [
     ['🌱', 'Début plus doux : en Facile, les premières cartes ont des slimes plus fragiles. Le vrai défi commence ensuite !'],
   ],

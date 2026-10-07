@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 96;
+const BUILD = 97;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -32,7 +32,7 @@ if (!meta.lv) meta.lv = {};
 // Améliorations de l'Atelier en petits paliers : k paliers par niveau d'origine (effet et prix divisés d'autant).
 // meta.lv garde le nombre de paliers achetés ; M(id) rend le niveau équivalent (fractionnaire) utilisé par le jeu.
 const UPK = { gold: 5, lives: 2, loot: 3, bonus: 4, cheap: 4, resell: 5, remparts: 4, bouclier: 3, paratonnerre: 5, talisman: 5, revive: 1 };
-const upK = id => UPK[id] || (id.startsWith('m_') ? 5 : id.startsWith('p_') ? 2 : 1);
+const upK = id => UPK[id] || (id.startsWith('m_') ? 5 : id.startsWith('p_') || id.startsWith('c_') ? 2 : 1);
 // Améliorations infinies (Maîtrises, Longue-vue, Remparts) : au-delà du niveau maximum, l'effet continue, réduit (UP_INF[id].f)
 const UP_INF = {};
 const lvOf = (lv, id) => { const raw = ((lv && lv[id]) || 0) / upK(id), I = UP_INF[id]; return I && raw > I.max ? I.max + (raw - I.max) * I.f : raw; };
@@ -63,7 +63,7 @@ const bankShares = () => IS_EN ? pct(ECO.bankWin) + ' of the remaining gold if y
 // Si on change hp, bankWin ou bankKo, mettre à jour les textes des difficultés (DIFFS) et de l'aide (index.html).
 // mapHp / mapShards : PV des ennemis ×mapHp et éclats +mapShards à chaque carte suivante (cartes 1 à 10) ;
 // mapHpDiff : part de cette hausse de PV gardée selon la difficulté (en Difficile, les PV de base sont déjà très hauts)
-const ECO = Object.assign({ shards: 0.4, bankWin: 0.85, bankKo: 0.4, mapPrice: 1.1, atelier: 4.5, unlock: 2.5, mapHp: 1.1, mapShards: 0.15, mapHpDiff: { facile: 1, moyen: 0.75, difficile: 0.5 }, range: 0.8, hp: { facile: 0.8, moyen: 1.3, difficile: 2.3 }, diffShards: { facile: 0.35 } },
+const ECO = Object.assign({ shards: 0.4, bankWin: 0.85, bankKo: 0.4, mapPrice: 1.43, atelier: 4.5, unlock: 2.5, mapHp: 1.1, mapShards: 0.15, mapHpDiff: { facile: 1, moyen: 0.75, difficile: 0.5 }, range: 0.8, hp: { facile: 0.8, moyen: 1.3, difficile: 2.3 }, diffShards: { facile: 0.35 } },
   // Outil d'équilibrage seulement : la page tools/balance.html essaie d'autres réglages dans une iframe
   (() => { try { return window.parent !== window && window.parent.BALANCE ? JSON.parse(new URLSearchParams(location.search).get('eco') || '{}') : {}; } catch (e) { return {}; } })());
 
@@ -357,7 +357,7 @@ const TOWERS = {
     lv: [{ slow: 0.4, every: 4, freeze: 0.8 }, { slow: 0.48, every: 3, freeze: 1.0 }, { slow: 0.55, every: 2, freeze: 1.2 }] },
 };
 // Améliorations d'une tour en partie : six achats sans fin, chacun un peu plus cher à chaque fois (t.up = { dmg: 3, rng: 1, … }).
-// Dégâts et Portée ont un plafond relevé par la Maîtrise et la Longue-vue de l'Atelier ; Sol et Vol partent de 100 %
+// Dégâts, Portée et Cadence ont un plafond relevé par la Maîtrise, la Longue-vue et le Sablier de l'Atelier ; Sol et Vol partent de 100 %
 // (0 % pour une tour qui ne vise pas ce type d'ennemis : Rocaille, Volcan, Marais au vol ; Zéphyr au sol).
 const UP_KEYS = ['dmg', 'rng', 'rate', 'sol', 'air', 'boss'];
 const TRACK = {
@@ -370,7 +370,7 @@ const TRACK = {
 };
 const FUSE_LV = 5;  // fusion : Dégâts, Portée et Cadence au niveau 5 sur les deux tours (3 dans l'histoire)
 // Plafonds sans Atelier : 10 niveaux de Dégâts (×3,5, comme l'ancien niveau max), 5 de Portée (+1 case)
-const CAP_BASE = { dmg: 10, rng: 5 };
+const CAP_BASE = { dmg: 10, rng: 5, rate: 5 };
 const upOf = up => { const o = {}; for (const k of UP_KEYS) o[k] = Math.max(0, Math.floor((up && up[k]) || 0)); return o; };
 const upTot = up => UP_KEYS.reduce((a, k) => a + ((up && up[k]) || 0), 0);
 // Allure de la tour (1 à 4) selon le nombre d'achats : 2ᵉ forme à 6, 3ᵉ à 15, couronne à 30
@@ -558,11 +558,11 @@ const hpMul = w => 1 + (w - 1) * 0.16 + (w - 1) * (w - 1) * 0.011;
 
 function statsOf(type, up) {
   up = upOf(up);
-  const D = TOWERS[type], i = upStage(up) - 1, avg = id => D.parents ? (M(id + D.parents[0]) + M(id + D.parents[1])) / 2 + M(id + type) : M(id + type), ms = avg('m_'), pr = avg('p_');
+  const D = TOWERS[type], i = upStage(up) - 1, avg = id => D.parents ? (M(id + D.parents[0]) + M(id + D.parents[1])) / 2 + M(id + type) : M(id + type), ms = avg('m_'), pr = avg('p_'), cr = avg('c_');
   const st = Object.assign({}, D, D.lv[Math.min(i, 2)], {
     dmg: D.dmg * (1 + TRACK.dmg.per * up.dmg) * (1 + 0.1 * ms),
     range: D.range * (1 + RANGE_UP * pr) + (ms >= 5 ? 0.2 : 0) + TRACK.rng.per * up.rng,
-    rate: D.rate * (1 + TRACK.rate.per * up.rate),
+    rate: D.rate * (1 + RATE_UP * cr) * (1 + TRACK.rate.per * up.rate),
     solMul: (D.noGround ? 0 : 1) + TRACK.sol.per * up.sol, airMul: (D.air ? 1 : 0) + TRACK.air.per * up.air, bossMul: 1 + TRACK.boss.per * up.boss,
     solLv: up.sol, bossLv: up.boss, pierce: Math.floor(up.boss / 2), br: upSpec(up),
   });
@@ -570,10 +570,10 @@ function statsOf(type, up) {
   return st;
 }
 const costOf = type => Math.round(TOWERS[type].cost * (1 - 0.04 * M('cheap')));
-// Paliers de Maîtrise (m_) ou de Longue-vue (p_) achetés dans l'Atelier ; une fusion : moyenne de ses deux éléments + les siens
+// Paliers de Maîtrise (m_), de Longue-vue (p_) ou de Sablier (c_) achetés dans l'Atelier ; une fusion : moyenne de ses deux éléments + les siens
 const atelierTiers = (type, p) => { const D = TOWERS[type], raw = id => (meta.lv && meta.lv[id]) || 0; return D.parents ? Math.floor((raw(p + D.parents[0]) + raw(p + D.parents[1])) / 2) + raw(p + type) : raw(p + type); };
-// Plafond d'un achat : Dégâts et Portée, plafond de base + 1 par palier de Maîtrise / Longue-vue ; les autres sans fin
-const upCap = (type, k) => k === 'dmg' ? CAP_BASE.dmg + atelierTiers(type, 'm_') : k === 'rng' ? CAP_BASE.rng + atelierTiers(type, 'p_') : Infinity;
+// Plafond d'un achat : Dégâts, Portée et Cadence, plafond de base + 1 par palier de Maîtrise / Longue-vue / Sablier ; les autres sans fin
+const upCap = (type, k) => k === 'dmg' ? CAP_BASE.dmg + atelierTiers(type, 'm_') : k === 'rng' ? CAP_BASE.rng + atelierTiers(type, 'p_') : k === 'rate' ? CAP_BASE.rate + atelierTiers(type, 'c_') : Infinity;
 // Fusion : la nouvelle tour reçoit, pour chaque achat, la moyenne des niveaux des deux tours (sans dépasser ses plafonds)
 function fuseUp(a, b, type) { const o = {}; for (const k of UP_KEYS) o[k] = Math.min(upCap(type, k), Math.floor((((a.up || {})[k] || 0) + ((b.up || {})[k] || 0)) / 2)); return o; }
 // Niveau demandé en Dégâts, Portée et Cadence pour fusionner (plus bas dans l'histoire, où l'or est compté)
@@ -585,17 +585,21 @@ const fuseReady = t => ['dmg', 'rng', 'rate'].every(k => (t.up[k] || 0) >= fuseL
 // à tout toucher change la partie. Arrondi à 5 or.
 const MUT_MIN = 500;
 const isMutation = (type, k) => (k === 'air' && !TOWERS[type].air) || (k === 'sol' && !!TOWERS[type].noGround);
+// Sol, Vol et Boss : 100 or le premier achat (une mutation : MUT_MIN), +30 % à chaque achat suivant ;
+// Dégâts, Portée et Cadence : selon le prix de la tour
+const SPEC_MIN = 100;
 function trackPrice(type, up, k) {
-  const n = ((up && up[k]) || 0) + 1, spec = k === 'sol' || k === 'air' || k === 'boss';
-  const f = spec ? (0.25 + 0.1 * n) * (isMutation(type, k) ? 2 : 1) : 0.06 + 0.04 * n;
-  const p = Math.max(5, Math.round(TOWERS[type].cost * f * (1 - 0.04 * M('cheap')) / 5) * 5);
-  return spec && isMutation(type, k) ? Math.max(MUT_MIN, p) : p;
+  const n = ((up && up[k]) || 0) + 1, spec = k === 'sol' || k === 'air' || k === 'boss', cheap = 1 - 0.04 * M('cheap');
+  if (spec) return Math.round((isMutation(type, k) ? MUT_MIN : SPEC_MIN) * (1 + 0.3 * (n - 1)) * cheap / 5) * 5;
+  return Math.max(5, Math.round(TOWERS[type].cost * (0.06 + 0.04 * n) * cheap / 5) * 5);
 }
 const sellValue = t => Math.floor(t.inv * (0.7 + 0.05 * M('resell')));
 
 // Améliorations permanentes (Atelier)
 // Longue-vue : +2,5 % de portée de base par niveau (5 niveaux en 10 paliers), fusions comprises (moyenne des deux éléments)
 const RANGE_UP = 0.025;
+// Sablier : +2 % de cadence de base par niveau, et +1 au plafond des achats de Cadence en partie par palier
+const RATE_UP = 0.02;
 const MASTERY = { feu: T('du feu'), eau: T('de l’eau'), terre: T('de la terre'), vent: T('du vent'), foudre: T('de l’éclair'), glace: T('de la glace') };
 // Nombres des textes d'amélioration : les paliers donnent des niveaux à virgule (22 paliers / 5 = 4,4),
 // d'où des 110.00000000000001 sans arrondi ; une décimale au plus, avec la virgule en français
@@ -616,12 +620,16 @@ const UPGRADES = [
   ...TORDER.flatMap(t => [{ id: 'm_' + t, tower: t, name: T('Maîtrise ') + MASTERY[t], max: 5, base: 10, inf: 0.5,
     fx: l => TOWERS[t].name + ' : +' + nf(l * 10) + T(' % de dégâts') + (l >= 5 ? T(', +0,2 de portée') : '') },
     { id: 'p_' + t, tower: t, range: true, name: T('Longue-vue ') + MASTERY[t], max: 5, base: 8, inf: 0.4,
-      fx: l => TOWERS[t].name + ' : +' + nf(l * RANGE_UP * 100) + T(' % de portée') }]),
+      fx: l => TOWERS[t].name + ' : +' + nf(l * RANGE_UP * 100) + T(' % de portée') },
+    { id: 'c_' + t, tower: t, rate: true, name: T('Sablier ') + MASTERY[t], max: 5, base: 8, inf: 0.4,
+      fx: l => TOWERS[t].name + ' : +' + nf(l * RATE_UP * 100) + T(' % de cadence') }]),
   // Chaque fusion : sa propre maîtrise et sa propre longue-vue, en plus de la moyenne de ses deux éléments
   ...Object.keys(FUSIONS).flatMap(k => [{ id: 'm_' + k, tower: k, name: T('Maîtrise · ') + FUSIONS[k].name, max: 5, base: 15, inf: 0.5,
     fx: l => FUSIONS[k].name + ' : +' + nf(l * 10) + T(' % de dégâts') + (l >= 5 ? T(', +0,2 de portée') : '') },
     { id: 'p_' + k, tower: k, range: true, name: T('Longue-vue · ') + FUSIONS[k].name, max: 5, base: 12, inf: 0.4,
-      fx: l => FUSIONS[k].name + ' : +' + nf(l * RANGE_UP * 100) + T(' % de portée') }]),
+      fx: l => FUSIONS[k].name + ' : +' + nf(l * RANGE_UP * 100) + T(' % de portée') },
+    { id: 'c_' + k, tower: k, rate: true, name: T('Sablier · ') + FUSIONS[k].name, max: 5, base: 12, inf: 0.4,
+      fx: l => FUSIONS[k].name + ' : +' + nf(l * RATE_UP * 100) + T(' % de cadence') }]),
 ];
 // Paliers : u.k par niveau d'origine, u.max paliers en tout ; prix d'un palier ≈ prix d'origine du niveau / k (même total à ECO.atelier = 1)
 for (const u of UPGRADES) { u.k = upK(u.id); u.max *= u.k; if (u.inf) UP_INF[u.id] = { max: u.max / u.k, f: u.inf }; }

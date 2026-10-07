@@ -299,7 +299,7 @@ function build(type, q, r) {
 const trackLocked = k => (k === 'sol' || k === 'air' || k === 'boss') && typeof storyLocked === 'function' && storyLocked('spec');
 function upgrade(t, k) {
   if (!TRACK[k] || trackLocked(k)) return;
-  if ((t.up[k] || 0) >= towerCap(t, k)) { hint(TRACK[k].name + T(' : maximum atteint. La Maîtrise et la Longue-vue de l’Atelier relèvent ce plafond.'), 2600); Snd.play('no'); return; }
+  if ((t.up[k] || 0) >= towerCap(t, k)) { hint(TRACK[k].name + T(' : maximum atteint. La Maîtrise, la Longue-vue et le Sablier de l’Atelier relèvent ce plafond.'), 2600); Snd.play('no'); return; }
   const cost = trackPrice(t.type, t.up, k);
   if (G.gold < cost) { hint(T('Pas assez d’or pour améliorer')); Snd.play('no'); return; }
   if (G.coopGuest) { coopAct({ a: 'up', id: t.id, k }); return; }

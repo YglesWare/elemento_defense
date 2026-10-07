@@ -412,7 +412,7 @@ function cloudPaint() {
   const adm = $('#prAdmin');
   if (adm) {
     adm.hidden = store.get(CREATOR_KEY) !== true;
-    if (!adm.hidden) adm.textContent = '🛠️ Admin · ' + T('pubs : ') + (flagOn('ads') ? (typeof adsAllowed === 'function' && !adsAllowed() ? T('coupées par le code parent') : T('actives') + (typeof AD_TEST !== 'undefined' && !AD_TEST && typeof admob === 'function' && !admob() ? T(' (mais pas de bloc AdMob : rien ne s’affiche)') : '')) : T('coupées (fonction en bêta)'));
+    if (!adm.hidden) adm.textContent = '🛠️ Admin · ' + T('pubs : ') + (flagOn('ads') ? (typeof adsAllowed === 'function' && !adsAllowed() ? T('coupées par le code parent') : T('actives') + (typeof admob === 'function' && admob() ? T(' (vidéos de test pour toi)') : typeof AD_TEST !== 'undefined' && !AD_TEST ? T(' (pas de pub sur le site)') : '')) : T('coupées (fonction en bêta)'));
   }
   // Connexion expirée : « Se déconnecter » permet aussi de continuer en invité (le compte retenu est oublié)
   $('#prLogout').hidden = anon && CLOUD.state !== 'relogin';

@@ -3,7 +3,8 @@
 // carte suivante), défis du jour (2e coffre), K.O. (continuer avec 5 vies). 10 pubs par jour au plus (réglable dans admin.html).
 // Rien ne s'affiche si l'espace parents les coupe (js/parents.js), dans l'histoire, en multijoueur, ni sur le site,
 // ni tant que la fonction en bêta « ads » n'est pas ouverte dans admin.html (js/cloud.js, flagOn).
-// Tant que le compte AdMob n'existe pas, une « pub d'essai » de 3 secondes la remplace (localhost et APK GitHub).
+// Vraies vidéos AdMob dans l'appli Google Play ; vidéos de test de Google dans l'appli Dev (pour ne jamais cliquer sur ses
+// propres vraies pubs) ; une « pub d'essai » de 3 secondes sur l'ordinateur (localhost). Jamais de pub sur le site.
 'use strict';
 
 const ADS_KEY = 'elemento.ads', ADS_CHEST = 100, ADS_REVIVE = 5;
@@ -11,9 +12,12 @@ const ADS_KEY = 'elemento.ads', ADS_CHEST = 100, ADS_REVIVE = 5;
 const adsMax = () => typeof setting === 'function' ? setting('ads_max', 10) : 10;
 const adsMapMax = () => typeof setting === 'function' ? setting('ads_map_max', 3) : 3;
 STORE_DOMAINS[ADS_KEY] = 'progress';
-const ADMOB_REWARD_ID = null; // identifiant du bloc d'annonces « avec récompense », à remplir avec le compte AdMob
-const admob = () => ADMOB_REWARD_ID && window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.AdMob;
-const AD_TEST = DEV_HOST || (NATIVE && !window.STORE_BUILD);
+// Bloc d'annonces « avec récompense » d'AdMob (public). Vidéos de test de Google dans l'appli Dev, et pour les
+// administrateurs même dans l'appli Google Play : AdMob interdit de regarder ses propres vraies pubs
+const ADMOB_REWARD_ID = !NATIVE ? null : 'ca-app-pub-9401011606624621/8389498544', ADMOB_TEST_ID = 'ca-app-pub-3940256099942544/5224354917';
+const adTestUnit = () => !window.STORE_BUILD || store.get('elemento.creator') === true;
+const admob = () => ADMOB_REWARD_ID && window.Capacitor && Capacitor.isPluginAvailable && Capacitor.isPluginAvailable('AdMob') && Capacitor.Plugins.AdMob;
+const AD_TEST = DEV_HOST;
 // Compteur du jour : n pubs en tout, map coups de pouce en cagnotte, revive (une seconde chance par jour)
 function adDay() { const r = store.get(ADS_KEY) || {}; return r.d === dayKey() ? r : { d: dayKey(), n: 0, map: 0, revive: false }; }
 function adCount(k) { const r = adDay(); r.n++; if (k === 'map') r.map = (r.map || 0) + 1; if (k === 'revive') r.revive = true; store.set(ADS_KEY, r); }
@@ -62,7 +66,7 @@ $('#adGo').addEventListener('click', async () => {
   try { ok = admob() ? await adShowAdmob() : await adShowTest(); } catch (e) { ok = false; err = true; }
   AD = null;
   adLog(o.kind, ok ? 'done' : err ? 'err' : 'skip', o);
-  if (!ok) { hint(T('Pas de récompense cette fois : la pub n’a pas été vue jusqu’au bout.'), 2400); if (o.cancel) o.cancel(); return; }
+  if (!ok) { hint(err ? T('Pas de vidéo disponible pour l’instant : réessaie un peu plus tard.') : T('Pas de récompense cette fois : la pub n’a pas été vue jusqu’au bout.'), 2600); if (o.cancel) o.cancel(); return; }
   adCount(o.kind); o.give(); Snd.play('win');
   adPaintAll();
 });
@@ -87,16 +91,24 @@ function adShowTest() {
 
 // Vraie pub (module @capacitor-community/admob) : pubs « destinées aux enfants », non personnalisées, tous publics.
 // La récompense n'est donnée qu'au signal de Google (vidéo vue). À vérifier sur un téléphone au branchement du compte.
+// Le module ne répond qu'à la récompense gagnée : on attend aussi la fermeture de la vidéo (sans récompense) ou son échec.
 let adInit = null;
 async function adShowAdmob() {
   const A = admob();
-  if (!adInit) adInit = A.initialize({ tagForChildDirectedTreatment: true, tagForUnderAgeOfConsent: true, maxAdContentRating: 'General' });
+  if (!adInit) adInit = A.initialize({ tagForChildDirectedTreatment: true, tagForUnderAgeOfConsent: true, maxAdContentRating: 'General' }).catch(e => { adInit = null; throw e; });
   await adInit;
-  await A.prepareRewardVideoAd({ adId: ADMOB_REWARD_ID, npa: true });
-  let got = false;
-  const h = await A.addListener('onRewardedVideoAdReward', () => { got = true; });
-  try { await A.showRewardVideoAd(); } finally { h.remove(); } // la musique se coupe seule : l'appli passe en arrière-plan
-  return got;
+  hint(T('Chargement de la vidéo…'), 4000);
+  const test = adTestUnit();
+  await A.prepareRewardVideoAd({ adId: test ? ADMOB_TEST_ID : ADMOB_REWARD_ID, npa: true, isTesting: test });
+  $('#hint').hidden = true;
+  return new Promise(async res => {
+    let got = false, done = false; const hs = [];
+    const end = ok => { if (done) return; done = true; hs.forEach(h => h.remove()); res(ok); };
+    hs.push(await A.addListener('onRewardedVideoAdReward', () => { got = true; }));
+    hs.push(await A.addListener('onRewardedVideoAdDismissed', () => setTimeout(() => end(got), 300)));
+    hs.push(await A.addListener('onRewardedVideoAdFailedToShow', () => end(false)));
+    A.showRewardVideoAd().then(() => { got = true; }, () => end(false)); // la musique se coupe seule : l'appli passe en arrière-plan
+  });
 }
 
 // ---------- A · Fin de partie : doubler les éclats (une fois par partie) ----------

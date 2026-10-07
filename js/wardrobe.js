@@ -52,13 +52,19 @@ function wrLook(it) {
   else look.aura = it.key === 'on';
   return look;
 }
+// Vidéo à récompense (js/ads.js) : −20 % sur l'objet essayé, pour la journée ; une fois par objet et par jour
+const WEAR_DEAL_KEY = 'elemento.wearDeal', WEAR_DEAL = 0.2;
+const wrDeals = () => { const d = store.get(WEAR_DEAL_KEY) || {}; return d.d === dayKey() ? d : { d: dayKey(), ids: [] }; };
+const wrDeal = it => wrDeals().ids.includes(it.id);
+const wrPrice = it => wrDeal(it) ? Math.round(it.price * (1 - WEAR_DEAL) / 50) * 50 : it.price;
+const wrDealOk = it => !wrOwn(it) && !it.lock && it.price > 0 && !wrDeal(it) && typeof adReady === 'function' && adReady();
 function openWardrobe() { Snd.init(); WR.sel = null; show('wardrobe'); screens.wardrobe.scrollTop = 0; wrRender(); }
 function wrRender() {
   $('#wrBank').textContent = (meta.bank || 0).toLocaleString(IS_EN ? 'en-US' : 'fr-FR');
   $('#wrTabs').querySelectorAll('[data-t]').forEach(b => b.classList.toggle('on', b.dataset.t === WR.tab));
   const box = $('#wrTiles');
   box.innerHTML = wrItems().map((it, i) => {
-    const own = wrOwn(it), worn = wrWorn(it), poor = !own && (meta.bank || 0) < it.price;
+    const own = wrOwn(it), worn = wrWorn(it), poor = !own && (meta.bank || 0) < wrPrice(it);
     const st = worn ? '<span class="wst worn">' + T('✓ Porté') + '</span>' : own ? '<span class="wst own">' + T('À toi') + '</span>' : it.lock ? '<span class="wst poor">' + T('🔒 Histoire') + '</span>' : '<span class="wst ' + (poor ? 'poor' : 'buy') + '">' + COIN + it.price.toLocaleString(IS_EN ? 'en-US' : 'fr-FR') + '</span>';
     return '<button class="wtile' + (worn ? ' worn' : '') + (poor ? ' poor' : '') + (WR.sel && WR.sel.id === it.id ? ' sel' : '') + '" type="button" data-i="' + i + '"><canvas></canvas><b>' + T(it.name) + '</b>' + st + '</button>';
   }).join('');
@@ -71,14 +77,16 @@ function wrRender() {
   const sel = WR.sel, p = $('#wrSel');
   p.hidden = !sel;
   if (sel) {
-    const own = wrOwn(sel), poor = (meta.bank || 0) < sel.price;
+    const own = wrOwn(sel), price = wrPrice(sel), poor = (meta.bank || 0) < price, nf = n => n.toLocaleString(IS_EN ? 'en-US' : 'fr-FR');
     $('#wrSelName').textContent = T(sel.name);
-    $('#wrSelPrice').innerHTML = own ? T('À toi') : COIN + sel.price.toLocaleString(IS_EN ? 'en-US' : 'fr-FR');
+    $('#wrSelPrice').innerHTML = own ? T('À toi') : (wrDeal(sel) ? '<s>' + nf(sel.price) + '</s> ' : '') + COIN + nf(price);
     const buy = $('#wrBuy');
-    buy.innerHTML = own ? T('Porter') : T('Acheter ') + COIN + sel.price.toLocaleString(IS_EN ? 'en-US' : 'fr-FR');
+    buy.innerHTML = own ? T('Porter') : T('Acheter ') + COIN + nf(price);
     buy.disabled = !own && poor;
     $('#wrPoor').hidden = own || !poor;
-    if (!own && poor) $('#wrPoor').textContent = T('Il manque ') + (sel.price - (meta.bank || 0)).toLocaleString(IS_EN ? 'en-US' : 'fr-FR') + T(' or : gagne des parties et réussis les défis du jour !');
+    if (!own && poor) $('#wrPoor').textContent = T('Il manque ') + nf(price - (meta.bank || 0)) + T(' or : gagne des parties et réussis les défis du jour !');
+    const ad = $('#wrAd'); ad.hidden = !wrDealOk(sel);
+    if (!ad.hidden) { if (typeof adSeen === 'function') adSeen('wear'); ad.innerHTML = T('🎬 −20 % avec une vidéo') + ' <small>' + T('PUB') + '</small>'; }
   }
 }
 function wrPut(it) {
@@ -90,13 +98,19 @@ function wrPut(it) {
 $('#wrBuy').addEventListener('click', () => {
   const it = WR.sel; if (!it) return;
   if (!wrOwn(it)) {
-    if ((meta.bank || 0) < it.price) { Snd.play('no'); return; }
-    meta.bank -= it.price; wear().own.push(it.id); Snd.play('win'); hint(T('Nouveau ! ') + T(it.name), 1600);
+    const price = wrPrice(it);
+    if ((meta.bank || 0) < price) { Snd.play('no'); return; }
+    meta.bank -= price; wear().own.push(it.id); Snd.play('win'); hint(T('Nouveau ! ') + T(it.name), 1600);
   } else Snd.play('up');
   wrPut(it); saveMeta(); WR.sel = null; wrRender();
   if (typeof FR !== 'undefined') FR.sent = ''; // les amis verront la nouvelle tenue à la prochaine synchro
 });
 $('#wrCancel').addEventListener('click', () => { WR.sel = null; wrRender(); });
+$('#wrAd').addEventListener('click', () => {
+  const it = WR.sel; if (!it || !wrDealOk(it)) return;
+  adOffer({ kind: 'wear', amount: Math.round(it.price * WEAR_DEAL), unit: 'gold', title: T('Une réduction pour Yglou ?'), reward: '−20 % · ' + T(it.name),
+    give: () => { const d = wrDeals(); d.ids.push(it.id); store.set(WEAR_DEAL_KEY, d); hint(T('−20 % sur ') + T(it.name) + T(' jusqu’à ce soir !'), 2200); wrRender(); } });
+});
 $('#wrTabs').addEventListener('click', ev => { const b = ev.target.closest('[data-t]'); if (!b) return; WR.tab = b.dataset.t; WR.sel = null; wrRender(); });
 $('#wrBack').addEventListener('click', () => { WR.sel = null; openProfile(); });
 $('#prWardrobe').addEventListener('click', openWardrobe);

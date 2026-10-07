@@ -533,6 +533,7 @@ function renderShop(boughtId) {
       if (u.tower) drawTower(c, u.tower, 22, 27, 37, l ? Math.min(3, Math.ceil(l / u.k * 3 / 5)) : 1, 0.5, 0, 0.3, 0, false);
       // Longue-vue : un cercle de portée en pointillés autour de la tour
       if (u.range) { c.save(); c.setLineDash([3, 3]); c.lineWidth = 1.5; c.strokeStyle = TOWERS[u.tower].color; c.globalAlpha = 0.9; c.beginPath(); c.arc(22, 26, 19 + Math.min(1, l / u.max) * 2, 0, Math.PI * 2); c.stroke(); c.restore(); }
+      else if (u.rate) { c.font = '15px sans-serif'; c.textAlign = 'center'; c.fillText('⏳', 36, 42); } // Sablier : un petit sablier sur la tour
       else drawUpIcon(c, u.id, 22, 25, 40);
       d.querySelector('button').addEventListener('click', () => buyUp(u));
     }
@@ -883,7 +884,7 @@ function renderUpSheet() {
   $('#trPath').innerHTML = !canFuse ? '' : '<b>🔀 ' + T('Pour fusionner :') + '</b> ' + (fuseReady(t) ? '<span class="fzok">' + T('prête ✓') + '</span>'
     : ['dmg', 'rng', 'rate'].map(k => { const v = t.up[k] || 0; return v >= fl ? '<span class="fzok">' + TRACK[k].name + ' ✓</span>' : '<span>' + TRACK[k].name + ' ' + v + '/' + fl + '</span>'; }).join(' · '));
   $('#trPath').hidden = !canFuse;
-  $('#trNote').textContent = T('Chaque achat coûte un peu plus que le précédent. Dégâts et Portée ont un plafond, relevé par la Maîtrise et la Longue-vue de l’Atelier.');
+  $('#trNote').textContent = T('Chaque achat coûte un peu plus que le précédent. Dégâts, Portée et Cadence ont un plafond, relevé par la Maîtrise, la Longue-vue et le Sablier de l’Atelier.');
   const box = $('#trBrs'); box.innerHTML = '';
   for (const k of UP_KEYS) {
     const lv = t.up[k] || 0, cap = towerCap(t, k), price = trackPrice(t.type, t.up, k), locked = trackLocked(k), max = lv >= cap;
@@ -960,7 +961,7 @@ const TUTO = [
   { kind: 'combo', demo: 'c_fwoosh', title: 'FWOOSH!', tag: T('Feu puis Vent'), towers: ['feu', 'vent'],
     what: T('Quand une rafale de Zéphyr frappe un ennemi en feu, les flammes sautent sur tous ses voisins proches.'),
     tips: [T('Idéal contre les nuées de Flappy'), T('Avec l’achat « Sol », Zéphyr le fait aussi sur les Gloop'), T('Magmo, lui, ne brûle jamais')] },
-  { kind: 'spec', title: T('Améliorations'), tag: T('Six achats sans fin'), html: T('<p style="margin:0">Touche une tour posée, puis « Améliorer » : tu choisis ce que tu renforces, avec l’or de la partie. Chaque achat coûte un peu plus que le précédent, et il n’y a pas de fin. Dégâts et Portée ont un plafond, que la Maîtrise et la Longue-vue de l’Atelier relèvent. Deux Braise peuvent donc être renforcées très différemment.</p>') },
+  { kind: 'spec', title: T('Améliorations'), tag: T('Six achats au choix'), html: T('<p style="margin:0">Touche une tour posée, puis « Améliorer » : tu choisis ce que tu renforces, avec l’or de la partie. Chaque achat coûte un peu plus que le précédent. Dégâts, Portée et Cadence ont un plafond, que la Maîtrise, la Longue-vue et le Sablier de l’Atelier relèvent ; Sol, Vol et Boss n’en ont pas. Deux Braise peuvent donc être renforcées très différemment.</p>') },
   { kind: 'fusion', demo: 'fus', title: 'Fusions', tag: T('Deux éléments, une tour'), html: T('<p style="margin:0">Touche une tour, puis une autre tour d’élément compatible (entourée de rose), toutes deux au niveau 5 en Dégâts, Portée et Cadence : un menu propose de les fusionner. Tu peux aussi faire glisser l’une sur l’autre. Elles deviennent une seule tour, plus puissante, avec son propre effet, à la place de la seconde. Elle garde la moyenne des niveaux des deux tours. Chaque fusion se débloque une par une dans l’Atelier. Ici, une Tornade de feu.</p>') },
   { kind: 'terrain', title: 'Terrains', tag: T('Bonus et malus'), html: T('<p style="margin:0">Certaines cases changent la puissance des tours posées dessus. Une Ondine sur l’eau frappe 40 % plus fort, mais perd 40 % sur le sable. L’eau et la lave ont les effets les plus forts, le marécage des effets plus doux. Une fusion prend la moyenne de ses deux éléments : un Volcan sur l’eau a donc un malus. Quand tu choisis une tour, les cases s’affichent en vert (bonus) ou en rouge (malus). Chaque carte a aussi un biome qui renforce ou affaiblit certains éléments sur toute la carte. Le tableau complet est dans l’Aide.</p>') },
   { kind: 'end', title: T('À toi de jouer !'), tag: T('Récap'), html: '<ul>'
