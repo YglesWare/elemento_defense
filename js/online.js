@@ -208,12 +208,18 @@ function paintOnlineFriends() {
 function onlineHomeHTML() {
   const fr = FR.list.filter(f => f.kind === 'friend'), on = fr.filter(f => f.online).length, live = frLive();
   return '<p class="trnote">' + T('Joue avec tes amis, <b>où qu’ils soient</b> : rejoins la partie d’un ami, ou ouvre ton salon et invite-les.') + '</p>'
-    + '<div class="mpchips"><span class="mpchip">🙂 ' + esc(cleanPseudo()) + '</span>' + (fr.length ? '<span class="mpchip' + (on ? ' on' : '') + '"><i></i>' + on + (on > 1 ? T(' amis en ligne sur ') : T(' ami en ligne sur ')) + fr.length + '</span>' : '') + '</div>'
+    + '<div class="mpchips"><span class="mpchip">🙂 ' + esc(cleanPseudo()) + '</span>' + friendsChipHTML() + '</div>'
     + (!live ? '<p class="mp-err">' + T('Il faut internet pour jouer en ligne.') + '</p>' : '')
     + (!fr.length ? emptyBoxHTML('👋', T('Pas encore d’amis'), T('Ajoute-en depuis la page Amis de l’accueil, avec leur code ami.'))
       : live ? '<span class="mp-label">' + T('Parties de tes amis') + '</span><div class="onlrooms" id="onlRooms">' + friendRoomsHTML() + '</div>' : '')
     + '<button class="btn" type="button" data-a="ocreate"' + (live && fr.length ? '' : ' disabled') + '>' + T('Créer un salon en ligne') + '</button>'
     + (live && fr.length ? '<p class="fine">' + T('Seulement tes amis · la liste se met à jour toute seule') + '</p>' : '');
+}
+// Pastille des amis connectés (« 1/3 en ligne »), aussi sur l'onglet « À côté »
+function friendsChipHTML() {
+  if (typeof FR === 'undefined' || typeof frOn !== 'function' || !frOn()) return '';
+  const fr = FR.list.filter(f => f.kind === 'friend'), on = fr.filter(f => f.online).length;
+  return fr.length ? '<span class="mpchip' + (on ? ' on' : '') + '"><i></i>' + on + '/' + fr.length + T(' en ligne') + '</span>' : '';
 }
 // Encadré « rien pour l'instant » (pointillés, une icône, un titre et une phrase)
 const emptyBoxHTML = (ic, title, txt) => '<div class="mpempty"><span class="mpe-ic" aria-hidden="true">' + ic + '</span><b>' + title + '</b>' + (txt ? '<p>' + txt + '</p>' : '') + '</div>';

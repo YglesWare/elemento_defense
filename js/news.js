@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  90: [
+    ['📶', 'À côté : le même écran que l’onglet En ligne, avec les parties du Wi-Fi et un bouton pour scanner un QR code.'],
+  ],
   89: [
     ['📶', 'À côté : les parties sur le même Wi-Fi s’affichent tout de suite, avec leur état (joignable, en cours). La caméra ne sert plus qu’à scanner un QR code.'],
     ['🌍', 'En ligne : un écran plus clair quand aucun ami ne joue, avec ton pseudo et tes amis en ligne en un coup d’œil.'],
