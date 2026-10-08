@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  107: [
+    ['✨', 'Sur téléphone, plus de cadre rose autour du dernier bouton touché.'],
+  ],
   106: [
     ['⬆️', 'Appli : les nouvelles versions sont repérées en revenant sur l’accueil, sans avoir à fermer le jeu.'],
   ],

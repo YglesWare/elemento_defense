@@ -30,6 +30,9 @@ body{background:var(--sky);color:var(--ink);font-family:var(--body);font-size:15
   -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
 button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 button:focus-visible{outline:3px solid var(--pop);outline-offset:2px}
+/* Écran tactile : pas de cadre de sélection (le bouton Retour d'Android imite la touche Échap, et le navigateur
+   encadrait alors le dernier bouton touché, comme au clavier) */
+@media (hover:none){button:focus-visible{outline:none}}
 button:disabled{cursor:default}
 
 #app{height:100%;display:flex;flex-direction:column;
