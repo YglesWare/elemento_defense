@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  114: [
+    ['💰', 'Facile : 150 pièces au départ.'],
+  ],
   113: [
     ['🌱', 'Facile : l’aide des trois premières cartes reste valable toute la partie.'],
   ],
