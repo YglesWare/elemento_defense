@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 112;
+const BUILD = 113;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -175,10 +175,7 @@ MAPS.filter(m => !m.season && !m.random).forEach((m, i) => { m.hpMul = +Math.pow
 // Entrée en douceur : en Facile, les premières cartes ont des ennemis plus fragiles (palier par carte), pour ne pas
 // décourager un nouveau joueur ; le défi et le farm commencent ensuite (la difficulté n'est pas linéaire)
 const EASY_START = [0.72, 0.82, 0.92];
-// L'aide ne vaut que pour le début de la partie : entière jusqu'à la vague 6, puis elle s'efface jusqu'à la vague 13
-// (la fin de partie et le double Kaiju de la vague 20 redeviennent un vrai défi)
-const easyFade = (k, w) => w == null || w <= 6 ? k : w >= 13 ? 1 : k + (1 - k) * (w - 6) / 7;
-const mapHpFor = (mi, diff, w) => { const m = MAPS[mi]; const e = m.prog && ECO.mapHpDiff ? ECO.mapHpDiff[diff] ?? 1 : 1; const k = m.prog && diff === 'facile' ? EASY_START[MAPS.filter(x => x.prog).indexOf(m)] ?? 1 : 1; return Math.pow(m.hpMul, e) * easyFade(k, w); };
+const mapHpFor = (mi, diff) => { const m = MAPS[mi]; const e = m.prog && ECO.mapHpDiff ? ECO.mapHpDiff[diff] ?? 1 : 1; const k = m.prog && diff === 'facile' ? EASY_START[MAPS.filter(x => x.prog).indexOf(m)] ?? 1 : 1; return Math.pow(m.hpMul, e) * k; };
 const BEST2 = 'elemento.best2';
 // Clé des records d'une carte (les cartes d'événement ont des records par édition annuelle)
 const recId = m => m.rid || m.id;

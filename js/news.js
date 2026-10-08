@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  113: [
+    ['🌱', 'Facile : l’aide des trois premières cartes reste valable toute la partie.'],
+  ],
   112: [
     ['⚖️', 'Facile : 130 pièces au départ, et l’aide des premières cartes s’efface après la vague 6 : la fin de partie redevient un vrai défi.'],
     ['🔢', 'Fin de partie : les grands scores tiennent dans leur case.'],
