@@ -1343,7 +1343,7 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
   /* Accueil : le logo et les gardiens à gauche, les boutons à droite */
   #sTitle .tinner{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto auto;align-content:center;column-gap:28px;
     max-width:none;margin:0;min-height:100%;padding:34px 0 8px}
-  #sTitle #tYglou{grid-column:1;grid-row:1}
+  #sTitle #tYglou{grid-column:1;grid-row:1;height:clamp(80px,28vh,120px);margin:0 auto 4px}
   #sTitle .logo{grid-column:1;grid-row:2}
   #tShow{grid-column:1;grid-row:3;margin-top:6px}
   #sTitle .bubble{display:none}

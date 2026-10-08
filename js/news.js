@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  108: [
+    ['🦉', 'Accueil en paysage : Yglou ne cache plus le titre du jeu.'],
+  ],
   107: [
     ['✨', 'Sur téléphone, plus de cadre rose autour du dernier bouton touché.'],
   ],
