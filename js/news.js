@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  105: [
+    ['🎯', 'Paysage : les boutons Améliorer et Cible s’affichent en entier, et le choix de la cible s’ouvre sur le plateau.'],
+  ],
   104: [
     ['🔒', 'Coup de pouce de la première partie : seul ce qu’il montre peut être touché, le reste est grisé jusqu’à la première vague.'],
     ['🪟', 'Paysage : l’étiquette des fenêtres (Nouveau monstre…) n’est plus coupée.'],

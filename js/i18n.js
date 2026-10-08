@@ -1887,6 +1887,7 @@ const EN = {
 "Maîtrise · ": "Mastery · ",
 "Longue-vue · ": "Spyglass · ",
 "Débloque la fusion d’abord": "Unlock the fusion first",
+"Paysage : les boutons Améliorer et Cible s’affichent en entier, et le choix de la cible s’ouvre sur le plateau.": "Landscape: the Upgrade and Target buttons show in full, and the target choice opens over the board.",
 "Coup de pouce de la première partie : seul ce qu’il montre peut être touché, le reste est grisé jusqu’à la première vague.": "First-game helping hand: only what it shows can be tapped, everything else is greyed out until the first wave.",
 "Paysage : l’étiquette des fenêtres (Nouveau monstre…) n’est plus coupée.": "Landscape: window labels (New monster…) are no longer cut off.",
 "Multijoueur en paysage : les boutons à gauche, la liste des parties à droite, et le salon sur deux colonnes.": "Multiplayer in landscape: buttons on the left, the list of games on the right, and the lobby in two columns.",

@@ -1238,7 +1238,9 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
   #iActions{gap:5px}
   .ichips.more{-webkit-mask-image:none;mask-image:none}
   #iActions{flex-direction:column}
-  #iActions .sbtn{height:36px;flex:none}
+  #iActions .sbtn{height:auto;min-height:36px;flex:none;padding-block:4px}
+  /* Choix de la cible : à gauche de la fiche, centré en hauteur (au-dessus, il sortirait de l'écran) */
+  .modepick{position:fixed;right:calc(108px + var(--sx) + 10px);top:50%;bottom:auto;transform:translateY(-50%);width:min(280px,calc(100vw - 140px));max-height:calc(100dvh - 16px);overflow-y:auto}
   #duelTabs{flex-wrap:wrap}
   .ihead{gap:4px}
   #iCv{display:none}
