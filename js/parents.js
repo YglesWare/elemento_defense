@@ -96,18 +96,18 @@ function paRender() {
   const b = $('#paBody'), p = parent(), lk = plock(), wait = Math.max(0, Math.ceil((lk.u - Date.now()) / 60000));
   let h = '';
   if (PA.view === 'pin') {
-    h = '<span class="mp-label">' + T('Code parent') + '</span><p class="pa-q">' + T('Tape les 6 chiffres') + '</p>' + paDots(PA.entry.length)
+    h = '<div class="pahead"><span class="mp-label">' + T('Code parent') + '</span><p class="pa-q">' + T('Tape les 6 chiffres') + '</p>' + paDots(PA.entry.length)
       + (wait ? '<p class="fine pa-err">' + T('Trop d’erreurs : réessaie dans ') + wait + ' min.</p>' : PA.msg ? '<p class="fine pa-err">' + PA.msg + '</p>' : '')
-      + paPad() + '<button class="linkbtn" id="paForgot" type="button">' + T('Code oublié ?') + '</button>';
+      + '<button class="linkbtn" id="paForgot" type="button">' + T('Code oublié ?') + '</button></div>' + paPad();
   } else if (PA.view === 'math') {
-    h = '<span class="mp-label">' + T('Réservé aux adultes') + '</span>'
+    h = '<div class="pahead"><span class="mp-label">' + T('Réservé aux adultes') + '</span>'
       + '<p class="pa-q">' + (parent().pin ? T('Pour refaire le code parent, écris en chiffres le résultat de :') : T('Pour créer le code parent, écris en chiffres le résultat de :')) + '</p>'
       + '<p class="pa-math">' + PA.math.q + '</p><div class="pa-ans">' + (PA.entry || '&nbsp;') + '</div>'
-      + (PA.msg ? '<p class="fine pa-err">' + PA.msg + '</p>' : '')
+      + (PA.msg ? '<p class="fine pa-err">' + PA.msg + '</p>' : '') + '</div>'
       + '<div class="papad">' + [1, 2, 3, 4, 5, 6, 7, 8, 9, '⌫', 0, 'OK'].map(k => '<button class="sbtn' + (k === 'OK' ? ' ok' : '') + '" type="button" data-k="' + k + '">' + k + '</button>').join('') + '</div>';
   } else if (PA.view === 'new' || PA.view === 'new2') {
-    h = '<span class="mp-label">' + T('Nouveau code parent') + '</span><p class="pa-q">' + (PA.view === 'new' ? T('Choisis 6 chiffres que l’enfant ne connaît pas') : T('Tape-les une deuxième fois')) + '</p>'
-      + paDots(PA.entry.length) + (PA.msg ? '<p class="fine pa-err">' + PA.msg + '</p>' : '') + paPad();
+    h = '<div class="pahead"><span class="mp-label">' + T('Nouveau code parent') + '</span><p class="pa-q">' + (PA.view === 'new' ? T('Choisis 6 chiffres que l’enfant ne connaît pas') : T('Tape-les une deuxième fois')) + '</p>'
+      + paDots(PA.entry.length) + (PA.msg ? '<p class="fine pa-err">' + PA.msg + '</p>' : '') + '</div>' + paPad();
   } else if (PA.view === 'settings') {
     const played = Math.round(playDay().s / 60), fr = typeof frOn === 'function' && typeof cloudOff === 'function' && !cloudOff();
     const row = (title, sub, ctl) => '<div class="paset"><div><b>' + title + '</b>' + (sub ? '<small>' + sub + '</small>' : '') + '</div>' + ctl + '</div>';

@@ -530,6 +530,9 @@ function storyTeamStrip(team, fresh) {
     if (k === 'yglou') drawYglou(c, 20, 26, 30, 'happy', 0, { noShadow: true, noConfetti: true }); else drawTower(c, k, 20, 28, 34, 1, 0.4, 0, 0.3, 0, false);
   });
 }
+// Menus en paysage (css/style.css) : la carte à gauche, l'équipe et les boutons à droite ; redessinée quand on tourne
+const STORY_LAND = matchMedia('(orientation:landscape) and (min-aspect-ratio:23/20) and (max-height:560px)');
+STORY_LAND.addEventListener('change', () => { if (curScreen === 'story') openStory(); });
 function openStory() {
   Snd.init(); show('story'); screens.story.scrollTop = 0;
   const done = storyDone(), next = CHAPTERS.findIndex((c, i) => !done[i]), cur = next < 0 ? CHAPTERS.length - 1 : next;
@@ -542,7 +545,8 @@ function openStory() {
         + '<span class="stlbl" style="left:' + x * 100 + '%;top:calc(' + y * 100 + '% + 25px)">' + esc(T(t)) + '</span>';
     }).join('')
     + '<canvas class="stparty" id="stParty" aria-hidden="true"></canvas>';
-  // La carte se dessine à la taille de son cadre
+  // La carte se dessine à la taille de son cadre ; en paysage elle garde sa taille de portrait, réduite pour tenir en hauteur
+  box.style.zoom = STORY_LAND.matches ? Math.min(1, (innerHeight - 24) / 499).toFixed(3) : '';
   const W = box.clientWidth || 340, H = box.clientHeight || 490;
   drawWorldMap(prepMini($('#stMap'), W, H), W, H, cur);
   storyParty(cur, W, H);

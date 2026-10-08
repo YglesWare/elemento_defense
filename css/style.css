@@ -727,6 +727,10 @@ button:disabled{cursor:default}
 .pa-ans{font-family:var(--display);font-size:34px;letter-spacing:4px;text-align:center;border:3px solid var(--ink);border-radius:14px;padding:4px 8px 0;min-height:52px}
 .pa-err{color:#c2185b;font-weight:800;text-align:center;margin:0}
 .padots{display:flex;justify-content:center;gap:10px;margin:4px 0}
+/* Code parent : la question puis le clavier ; « Code oublié ? » sous le clavier (en paysage, question et clavier côte à côte) */
+.pahead{display:contents}
+.pa .papad{order:1}
+.pa #paForgot{order:2}
 .padots span{width:22px;height:22px;border-radius:50%;border:2.5px solid var(--ink);background:var(--paper)}
 .padots span.on{background:var(--ink)}
 .papad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
@@ -737,8 +741,8 @@ button:disabled{cursor:default}
 .paset b{display:block;font-weight:800;font-size:15px}
 .paset small{display:block;font-weight:700;font-size:12px;color:var(--muted)}
 .patog{flex:none;width:52px;height:30px;border-radius:99px;border:2.5px solid var(--ink);background:#d6cde0;position:relative;padding:0}
-.patog::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;border:2px solid var(--ink);transition:left .15s}
-.patog.on{background:var(--leaf)}.patog.on::after{left:24px}
+.patog::after{content:'';position:absolute;top:50%;left:2px;box-sizing:border-box;width:21px;height:21px;transform:translateY(-50%);border-radius:50%;background:#fff;border:2px solid var(--ink);transition:left .15s}
+.patog.on{background:var(--leaf)}.patog.on::after{left:calc(100% - 23px)}
 .sbtn.pa-pill{flex:none;height:36px;padding:6px 12px;font-size:16px;background:var(--sun)}
 
 /* Multi en ligne (js/online.js) */
@@ -1288,6 +1292,18 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
   .prtiles{grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);height:calc(100dvh - 20px - var(--sat) - var(--sab))}
   .prtile{align-items:center;justify-content:center;text-align:center;padding:8px}
   .prtile .te{font-size:28px}
+  /* Code parent : la question à gauche, le clavier à droite, touches plus petites */
+  .pa:has(.papad){flex-direction:row;align-items:center;gap:18px}
+  .pahead{display:flex;flex:1 1 0;min-width:0;flex-direction:column;gap:8px}
+  .pa .papad{flex:1 1 0;min-width:0;gap:6px}
+  .papad .sbtn{height:44px;font-size:20px}
+  .pa-ans{font-size:28px;min-height:46px}
+  .pa-math{font-size:16px}
+  .pa #paForgot{order:0}
+  /* Histoire : la carte (taille de portrait, réduite par js/story.js) à gauche, l'équipe et les boutons à droite */
+  #sStory .inner{display:grid;grid-template-columns:auto minmax(0,1fr);align-content:center;align-items:start;gap:10px 16px}
+  #sStory .stworld{grid-row:1/span 4;width:340px;height:491px;max-height:none;aspect-ratio:auto}
+  #sStory .stteam,#sStory #stPlay,#sStory #storyBack{grid-column:2}
   /* Cartes, Atelier */
   #tMaps{grid-template-columns:repeat(2,minmax(0,1fr))}
   .srail .ybub canvas{width:56px;height:56px}

@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  100: [
+    ['🧭', 'Paysage : la carte de l’histoire garde sa forme, le code parent tient dans l’écran, et les interrupteurs des Réglages sont bien centrés.'],
+  ],
   99: [
     ['🎯', 'Paysage : le jeu est centré sur l’écran, même sur les téléphones avec un appareil photo dans l’écran.'],
   ],
