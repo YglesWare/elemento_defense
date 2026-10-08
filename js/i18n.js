@@ -1887,6 +1887,7 @@ const EN = {
 "Maîtrise · ": "Mastery · ",
 "Longue-vue · ": "Spyglass · ",
 "Débloque la fusion d’abord": "Unlock the fusion first",
+"Paysage : l’aperçu de la vague et la fiche des tours sont plus compacts et tiennent toujours dans l’écran.": "Landscape: the wave preview and the tower card are more compact and always fit on the screen.",
 "Facile : 150 pièces au départ.": "Easy: 150 coins to start.",
 "Facile : l’aide des trois premières cartes reste valable toute la partie.": "Easy: the help on the first three maps lasts the whole game again.",
 "Facile : 130 pièces au départ, et l’aide des premières cartes s’efface après la vague 6 : la fin de partie redevient un vrai défi.": "Easy: 130 coins to start, and the early-map help fades after wave 6: the end of the game is a real challenge again.",
