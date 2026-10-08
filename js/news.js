@@ -6,6 +6,10 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  112: [
+    ['⚖️', 'Facile : 130 pièces au départ, et l’aide des premières cartes s’efface après la vague 6 : la fin de partie redevient un vrai défi.'],
+    ['🔢', 'Fin de partie : les grands scores tiennent dans leur case.'],
+  ],
   111: [
     ['💰', 'Facile : 100 pièces au départ.'],
     ['👆', 'Coup de pouce : Braise peut se poser sur n’importe quelle case près du chemin, et la case conseillée est celle qui surveille le plus de chemin.'],

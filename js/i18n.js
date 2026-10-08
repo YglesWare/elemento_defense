@@ -1887,6 +1887,8 @@ const EN = {
 "Maîtrise · ": "Mastery · ",
 "Longue-vue · ": "Spyglass · ",
 "Débloque la fusion d’abord": "Unlock the fusion first",
+"Facile : 130 pièces au départ, et l’aide des premières cartes s’efface après la vague 6 : la fin de partie redevient un vrai défi.": "Easy: 130 coins to start, and the early-map help fades after wave 6: the end of the game is a real challenge again.",
+"Fin de partie : les grands scores tiennent dans leur case.": "End of game: big scores now fit in their box.",
 "Facile : 100 pièces au départ.": "Easy: 100 coins to start.",
 "Coup de pouce : Braise peut se poser sur n’importe quelle case près du chemin, et la case conseillée est celle qui surveille le plus de chemin.": "Helping hand: Ember can go on any tile near the path, and the suggested tile is the one watching the most path.",
 "Moins d’or au départ (170 en Facile, 140 en Moyen, 125 en Difficile) et premiers achats à 10 or : on ne peut plus tout améliorer avant la première vague.": "Less starting gold (170 in Easy, 140 in Medium, 125 in Hard) and first upgrades at 10 gold: you can no longer max everything before the first wave.",

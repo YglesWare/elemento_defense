@@ -585,7 +585,7 @@ function gameOver() {
 
 // ---------- Ennemis ----------
 function spawn(type, pi) {
-  const D = ETYPES[type], w = G.wave, m = hpMul(w) * mapHpFor(G.map, G.diff) * (G.hpd || 1) * (G.coopHp || 1) * (G.chal ? chalHp() : 1);
+  const D = ETYPES[type], w = G.wave, m = hpMul(w) * mapHpFor(G.map, G.diff, w) * (G.hpd || 1) * (G.coopHp || 1) * (G.chal ? chalHp() : 1);
   const e = { id: ++G.eid, type, hp: D.hp * m, maxHp: D.hp * m, speed: D.speed * rand(0.95, 1.05) * (G.spd || 1) * (G.chal ? chalSpd() : 1),
     armor: (D.armor ? D.armor + Math.floor(w / 10) : 0) + (G.chal ? chalLv('armure') : 0), flying: !!D.flying, d: 0, x: 0, y: 0, sdx: 1, sdy: 0,
     slowA: 0, slowT: 0, wet: 0, burn: 0, burnT: 0, frozen: 0, stun: 0, flash: 0, phase: rand(TAU), dead: false, lifeCost: D.lifeCost ?? 1, abT: 1.2 };

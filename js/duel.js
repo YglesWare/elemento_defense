@@ -281,6 +281,7 @@ function showDuelScreen(final, why, abortText) {
   $('#dRank').innerHTML = final && !abortText ? rank.map((id, i) => '<li' + (id === me ? ' class="you"' : '') + '><b>' + (i + 1) + '</b> ' + esc(dname(id)) + (id === me ? ' (toi)' : '') + '</li>').join('') : '';
   $('#dRank').hidden = !final || !!abortText;
   $('#dWave').textContent = DUEL.wave; $('#dSent').textContent = DUEL.sent; $('#dInc').textContent = DUEL.income;
+  if (typeof statFit === 'function') statFit('#dWave', '#dSent', '#dInc');
   const host = Net.role === 'host' && Net.players.length >= 2;
   $('#dRematch').hidden = !final || !host; $('#dWait').hidden = !final || host || !!abortText || !Net.role;
   $('#dWatch').hidden = final;

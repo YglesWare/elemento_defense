@@ -16,6 +16,8 @@ function barsColor(name) {
   const top = css.getPropertyValue(a).trim(), bottom = css.getPropertyValue(b || a).trim(), key = top + bottom;
   if (top && bottom && key !== barsColor.last) { barsColor.last = key; C.Plugins.BarsColor.set({ top, bottom }).catch(() => {}); }
 }
+// Grands chiffres des fins de partie : plus petits quand ils sont longs (16 440 ne tient pas en 28 px dans une case)
+function statFit(...sels) { for (const s of sels) { const e = $(s), n = e.textContent.length; e.style.fontSize = n >= 6 ? '17px' : n === 5 ? '21px' : n === 4 ? '24px' : ''; } }
 function show(name) { for (const k in screens) screens[k].hidden = k !== name; curScreen = name; barsColor(name); if (name === 'title') { refreshTitle(); if (typeof updCheck === 'function') updCheck(); if (typeof trophyScan === 'function') { trophyPay(); trophyScan(); } if (typeof cloudSync === 'function') cloudSync(); } }
 barsColor(curScreen);
 function setText(el, key, v) { if (hudCache[key] !== v) { hudCache[key] = v; el.textContent = v; } }
@@ -379,6 +381,7 @@ function showOver(win, best, award, bank, quit, lostShards) {
   $('#oText').textContent = quit ? T('Partie abandonnée : elle ne rapporte ni or ni éclats.') : win ? T('Les ') + G.maxw + T(' vagues sont repoussées. La petite maison est sauve !') : T('Les slimes ont envahi la petite maison. Retente ta chance !');
   $('#oWave').textContent = G.wave; $('#oScore').textContent = typeof scoreFinal === 'function' ? scoreFinal() : G.score;
   $('#oBest').textContent = best ? best.wave : G.wave;
+  statFit('#oWave', '#oScore', '#oBest');
   $('#oEndless').hidden = !win;
   const a = award || { gain: 0, parts: { wave: 0, score: 0, boss: 0, win: 0 }, mult: 1, before: 0 }, p = a.parts;
   $('#oShards').textContent = quit ? (lostShards ? '−' + lostShards : '0') : '+' + G.shardsPaid;
