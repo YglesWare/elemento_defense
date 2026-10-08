@@ -1887,6 +1887,8 @@ const EN = {
 "Maîtrise · ": "Mastery · ",
 "Longue-vue · ": "Spyglass · ",
 "Débloque la fusion d’abord": "Unlock the fusion first",
+"Coup de pouce de la première partie : seul ce qu’il montre peut être touché, le reste est grisé jusqu’à la première vague.": "First-game helping hand: only what it shows can be tapped, everything else is greyed out until the first wave.",
+"Paysage : l’étiquette des fenêtres (Nouveau monstre…) n’est plus coupée.": "Landscape: window labels (New monster…) are no longer cut off.",
 "Multijoueur en paysage : les boutons à gauche, la liste des parties à droite, et le salon sur deux colonnes.": "Multiplayer in landscape: buttons on the left, the list of games on the right, and the lobby in two columns.",
 "Paysage : menus et fenêtres un peu plus petits, et les titres ne sont plus coupés.": "Landscape: menus and windows are a bit smaller, and titles are no longer cut off.",
 "Première partie : un coup de pouce montre comment poser sa première tour, l’améliorer et lancer la vague.": "First game: a helping hand shows how to place your first tower, upgrade it and start the wave.",

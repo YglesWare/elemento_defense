@@ -473,6 +473,10 @@ button:disabled{cursor:default}
 #coachBox p small{display:block;font-size:11.5px;color:var(--muted);font-weight:700}
 #coachBox .ctag{position:absolute;right:30px;top:-12px;background:var(--sun);border:2.5px solid var(--ink);border-radius:99px;font:800 10.5px/1 var(--body);padding:3px 8px;white-space:nowrap}
 #coachBox .cskip{position:absolute;right:4px;top:4px;width:22px;height:22px;border-radius:50%;border:2px solid var(--ink);background:var(--paper);font:800 11px/1 var(--body);color:var(--ink);padding:0;cursor:pointer}
+html.coaching :is(#hud .ibtn,#bWave,.tbtn,#iActions .sbtn,#iClose,#iWhat,#bBonus,#bEmo,#trBrs .uprow,#trClose):not(.coachT){opacity:.35;filter:grayscale(.7)}
+html.coaching #trBrs .uprow:has(.coachT){opacity:1;filter:none}
+#coachRing.nudge{animation:cnudge .35s ease-out}
+@keyframes cnudge{0%,100%{transform:scale(1)}40%{transform:scale(1.18)}}
 @keyframes cring{50%{box-shadow:0 0 0 3px var(--ink),0 0 0 14px rgba(255,210,63,.15)}}
 @keyframes chand{to{transform:translateY(-6px)}}
 @media (prefers-reduced-motion:reduce){#coachRing,#coachHand{animation:none}}
@@ -1298,6 +1302,8 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
   .intro{padding:calc(8px + var(--sat)) calc(16px + var(--sx)) calc(8px + var(--sab)) calc(16px + var(--sx))}
   .intro-card{width:min(560px,100%);max-height:100%;overflow-y:auto;padding:12px 16px 10px}
   .intro-card h2{font-size:26px}
+  /* Étiquette (Nouveau monstre, Pub d'essai) : dans la fenêtre, qui peut défiler et rognerait ce qui dépasse */
+  .intro-tag{position:static;transform:none;align-self:center;margin:0 0 2px}
   /* Fenêtre trop haute : elle défile, mais son dernier bouton (Fermer, Valider…) reste visible en bas */
   .intro-card>.btn:last-child{position:sticky;bottom:-10px;z-index:2;flex:none;box-shadow:0 4px 0 var(--ink),0 10px 0 var(--paper),0 -8px 0 var(--paper)}
   /* Défis du jour : les trois défis côte à côte */

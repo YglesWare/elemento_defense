@@ -122,28 +122,31 @@ const coachRows = () => {
 };
 // hand : où se met la main par rapport à la cible (au-dessus, en dessous, à droite)
 const CSTEPS = [
-  { text: T('Touche <b>Braise</b> pour choisir ta première tour.<small>Elle crache du feu sur les slimes.</small>'), hand: 'above',
+  { text: T('Touche <b>Braise</b> pour choisir ta première tour.<small>Elle crache du feu sur les slimes.</small>'), hand: 'above', allow: () => [palBtns.feu],
     target: () => palBtns.feu, done: () => G.selType === 'feu' || G.towers.length > 0 },
   { text: T('Touche <b>deux fois</b> la case qui brille : juste à côté du chemin, Braise touchera les slimes.'), hand: 'below', round: true,
     target: () => COACH.cell && { cell: COACH.cell }, done: () => G.towers.length > 0, back: () => G.selType !== 'feu' && !G.towers.length ? 0 : null },
   { text: T('Bien joué ! Touche maintenant <b>ta Braise</b> pour la rendre plus forte.'), hand: 'below', round: true,
     target: () => coachTower() && { cell: { q: coachTower().c, r: coachTower().r } }, done: () => !!G.selTower },
-  { text: T('Touche <b>Améliorer</b> : avec ton or, tu achètes des niveaux pour ta tour.'), hand: 'right',
+  { text: T('Touche <b>Améliorer</b> : avec ton or, tu achètes des niveaux pour ta tour.'), hand: 'right', allow: () => [$('#iUp')],
     target: () => $('#iUp'), done: () => curScreen === 'tree', back: () => !G.selTower && curScreen === 'game' ? 2 : null },
   { text: T('<b>⚔️ Dégâts</b> : chaque tir fait plus mal.<br><b>🎯 Portée</b> : elle tire plus loin.<br><b>⚡ Cadence</b> : elle tire plus vite.<small>Achètes-en un, puis touche « Retour au jeu ».</small>'), hand: 'inside',
+    allow: () => [...document.querySelectorAll('#trBrs [data-k=dmg], #trBrs [data-k=rng], #trBrs [data-k=rate]'), $('#trClose')],
     target: coachRows, done: () => curScreen === 'game' },
-  { text: T('Tout est prêt ! Lance la <b>vague</b> : tes tours tirent toutes seules.<small>Pose d’autres tours quand tu as de l’or.</small>'), hand: 'below',
+  { text: T('Tout est prêt ! Lance la <b>vague</b> : tes tours tirent toutes seules.<small>Pose d’autres tours quand tu as de l’or.</small>'), hand: 'below', allow: () => [$('#bWave')],
     target: () => $('#bWave'), done: () => G.wave >= 1 },
 ];
 function coachStart() {
   if (store.get(COACH_KEY) || stats.towers || store.get('elemento.guideDone') || !G || G.demo || G.duel || G.coop || G.story || G.guide) return;
   Object.assign(COACH, { on: true, i: 0, cell: guideCells()[0] });
+  document.documentElement.classList.add('coaching');
   clearInterval(COACH.timer); COACH.timer = setInterval(coachTick, 150);
   coachRender();
 }
 function coachStop(done) {
   COACH.on = false; clearInterval(COACH.timer);
   coachRing.hidden = coachHand.hidden = coachBox.hidden = true;
+  document.documentElement.classList.remove('coaching'); coachLight([]);
   if (done) store.set(COACH_KEY, true);
 }
 function coachRender() {
@@ -162,6 +165,7 @@ function coachTick() {
   }
   const b = st.back && st.back(); if (b != null && b !== COACH.i) { COACH.i = b; coachRender(); return; }
   const show = curScreen === 'game' || curScreen === 'tree';
+  coachLight(show && st.allow ? st.allow() : []);
   const tg = show ? st.target() : null; // un cadre déjà calculé (les lignes d'achat) passe tel quel
   const r0 = !tg ? null : tg.cell || tg.getBoundingClientRect ? targetRect(tg) : tg;
   const r = r0 && { left: r0.left, top: r0.top, width: r0.width, height: r0.height, right: r0.left + r0.width, bottom: r0.top + r0.height };
@@ -189,6 +193,40 @@ function coachTick() {
   const top = low ? (above >= 6 ? above : fitB ? below : 6) : (fitB ? below : above >= 6 ? above : 6);
   coachBox.style.top = top + 'px';
 }
+// Ce que montre l'étape est mis en avant ; le reste est grisé (css/style.css html.coaching)
+function coachLight(list) {
+  const keep = new Set(list.filter(Boolean));
+  for (const e of document.querySelectorAll('.coachT')) if (!keep.has(e)) e.classList.remove('coachT');
+  for (const e of keep) e.classList.add('coachT');
+}
+// Pendant le coup de pouce, seul ce qu'il montre répond : la bonne tour, la bonne case, le bon bouton. La bulle (et son ✕)
+// et les fenêtres (présentation d'un monstre…) restent utilisables ; les autres écrans (pause…) ne sont pas concernés.
+function coachAllows(ev) {
+  const el = ev.target instanceof Element ? ev.target : null;
+  if (!el || (curScreen !== 'game' && curScreen !== 'tree')) return true;
+  if (el.closest('#coachBox, .intro:not([hidden]), .comic:not([hidden])')) return true;
+  const st = CSTEPS[COACH.i];
+  if (st.allow && st.allow().some(x => x && x.contains(el))) return true;
+  if (st.round && el.closest('#stage')) {
+    const p = ev.changedTouches ? ev.changedTouches[0] : ev, tg = st.target(), r = tg && targetRect(tg);
+    if (r && p.clientX >= r.left - 4 && p.clientX <= r.left + r.width + 4 && p.clientY >= r.top - 4 && p.clientY <= r.top + r.height + 4) return true;
+  }
+  return false;
+}
+let coachNudgeAt = 0;
+const coachBlock = ev => {
+  if (!COACH.on || coachAllows(ev)) return;
+  ev.preventDefault(); ev.stopImmediatePropagation();
+  // Un toucher à côté : l'anneau sursaute pour montrer où toucher
+  if ((ev.type === 'pointerdown' || ev.type === 'touchstart') && performance.now() - coachNudgeAt > 400) {
+    coachNudgeAt = performance.now(); coachRing.classList.remove('nudge'); void coachRing.offsetWidth; coachRing.classList.add('nudge');
+  }
+};
+for (const t of ['pointerdown', 'pointerup', 'mousedown', 'mouseup', 'touchstart', 'touchend', 'click', 'dblclick', 'contextmenu'])
+  window.addEventListener(t, coachBlock, { capture: true, passive: false });
+window.addEventListener('keydown', ev => {
+  if (COACH.on && (curScreen === 'game' || curScreen === 'tree') && !(ev.target instanceof Element && ev.target.closest('#coachBox, .intro:not([hidden])'))) { ev.preventDefault(); ev.stopImmediatePropagation(); }
+}, true);
 coachBox.addEventListener('click', ev => {
   if (ev.target.closest('.cskip')) { coachStop(true); hint(T('Coup de pouce arrêté.'), 1800); }
 });
