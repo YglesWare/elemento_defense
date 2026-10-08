@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  99: [
+    ['🎯', 'Paysage : le jeu est centré sur l’écran, même sur les téléphones avec un appareil photo dans l’écran.'],
+  ],
   98: [
     ['📱', 'Appli : le jeu se joue aussi en paysage. Tourne ton téléphone : le plateau, les menus et les fenêtres s’adaptent. Dans Réglages, choisis Auto, Portrait ou Paysage.'],
     ['⚙️', 'Profil plus court : la langue, le son, l’écran et le confort sont regroupés dans une nouvelle page Réglages.'],
