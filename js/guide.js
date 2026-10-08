@@ -102,3 +102,93 @@ guideBox.addEventListener('click', ev => {
   else guideNext();
 });
 $('#mGuide').addEventListener('click', startGuide);
+
+// ---------- Coup de pouce de la toute première partie ----------
+// Pour un joueur qui n'a encore jamais posé de tour (et n'a pas fait le tutoriel) : en 6 temps, un anneau, une main et
+// une petite bulle d'Yglou montrent quoi toucher (choisir Braise, la poser, l'améliorer, lancer la vague). Il revient à
+// chaque partie tant qu'il n'est pas fini ; « ✕ » l'arrête pour de bon.
+const COACH_KEY = 'elemento.coachDone';
+const COACH = { on: false, i: 0, timer: 0, cell: null };
+const coachRing = document.createElement('div'), coachHand = document.createElement('div'), coachBox = document.createElement('div');
+coachRing.id = 'coachRing'; coachHand.id = 'coachHand'; coachBox.id = 'coachBox';
+for (const e of [coachRing, coachHand, coachBox]) { e.hidden = true; document.body.appendChild(e); }
+const coachTower = () => G.towers[0] || null;
+const coachRows = () => {
+  const rows = [...document.querySelectorAll('#trBrs .uprow')].slice(0, 3).map(e => e.getBoundingClientRect()).filter(r => r.width);
+  if (!rows.length) return null;
+  COACH.first = rows[0]; // la main montre l'achat de Dégâts
+  const l = Math.min(...rows.map(r => r.left)), t = Math.min(...rows.map(r => r.top)), rr = Math.max(...rows.map(r => r.right)), b = Math.max(...rows.map(r => r.bottom));
+  return { left: l, top: t, width: rr - l, height: b - t };
+};
+// hand : où se met la main par rapport à la cible (au-dessus, en dessous, à droite)
+const CSTEPS = [
+  { text: T('Touche <b>Braise</b> pour choisir ta première tour.<small>Elle crache du feu sur les slimes.</small>'), hand: 'above',
+    target: () => palBtns.feu, done: () => G.selType === 'feu' || G.towers.length > 0 },
+  { text: T('Touche <b>deux fois</b> la case qui brille : juste à côté du chemin, Braise touchera les slimes.'), hand: 'below', round: true,
+    target: () => COACH.cell && { cell: COACH.cell }, done: () => G.towers.length > 0, back: () => G.selType !== 'feu' && !G.towers.length ? 0 : null },
+  { text: T('Bien joué ! Touche maintenant <b>ta Braise</b> pour la rendre plus forte.'), hand: 'below', round: true,
+    target: () => coachTower() && { cell: { q: coachTower().c, r: coachTower().r } }, done: () => !!G.selTower },
+  { text: T('Touche <b>Améliorer</b> : avec ton or, tu achètes des niveaux pour ta tour.'), hand: 'right',
+    target: () => $('#iUp'), done: () => curScreen === 'tree', back: () => !G.selTower && curScreen === 'game' ? 2 : null },
+  { text: T('<b>⚔️ Dégâts</b> : chaque tir fait plus mal.<br><b>🎯 Portée</b> : elle tire plus loin.<br><b>⚡ Cadence</b> : elle tire plus vite.<small>Achètes-en un, puis touche « Retour au jeu ».</small>'), hand: 'inside',
+    target: coachRows, done: () => curScreen === 'game' },
+  { text: T('Tout est prêt ! Lance la <b>vague</b> : tes tours tirent toutes seules.<small>Pose d’autres tours quand tu as de l’or.</small>'), hand: 'below',
+    target: () => $('#bWave'), done: () => G.wave >= 1 },
+];
+function coachStart() {
+  if (store.get(COACH_KEY) || stats.towers || store.get('elemento.guideDone') || !G || G.demo || G.duel || G.coop || G.story || G.guide) return;
+  Object.assign(COACH, { on: true, i: 0, cell: guideCells()[0] });
+  clearInterval(COACH.timer); COACH.timer = setInterval(coachTick, 150);
+  coachRender();
+}
+function coachStop(done) {
+  COACH.on = false; clearInterval(COACH.timer);
+  coachRing.hidden = coachHand.hidden = coachBox.hidden = true;
+  if (done) store.set(COACH_KEY, true);
+}
+function coachRender() {
+  coachBox.innerHTML = '<canvas aria-hidden="true"></canvas><p>' + CSTEPS[COACH.i].text + '</p><span class="ctag">' + T('Coup de pouce · ') + (COACH.i + 1) + '/' + CSTEPS.length + '</span>'
+    + '<button class="cskip" type="button" aria-label="' + T('Arrêter le coup de pouce') + '">✕</button>';
+  drawYglou(prepMini(coachBox.querySelector('canvas'), 40, 44), 20, 27, 30, 'happy', 0, { noShadow: true, noConfetti: true });
+  coachTick();
+}
+function coachTick() {
+  if (!COACH.on) return;
+  if (!G || G.over || G.guide || G.story || G.duel || G.coop) { coachStop(false); return; }
+  const st = CSTEPS[COACH.i];
+  if (st.done()) {
+    if (COACH.i + 1 >= CSTEPS.length) { coachStop(true); return; }
+    COACH.i++; Snd.play('build'); coachRender(); return;
+  }
+  const b = st.back && st.back(); if (b != null && b !== COACH.i) { COACH.i = b; coachRender(); return; }
+  const show = curScreen === 'game' || curScreen === 'tree';
+  const tg = show ? st.target() : null; // un cadre déjà calculé (les lignes d'achat) passe tel quel
+  const r0 = !tg ? null : tg.cell || tg.getBoundingClientRect ? targetRect(tg) : tg;
+  const r = r0 && { left: r0.left, top: r0.top, width: r0.width, height: r0.height, right: r0.left + r0.width, bottom: r0.top + r0.height };
+  coachBox.hidden = !show; coachRing.hidden = coachHand.hidden = !r;
+  if (!r) return;
+  const pad = 6, W = innerWidth, H = innerHeight;
+  coachRing.classList.toggle('round', !!st.round);
+  Object.assign(coachRing.style, { left: (r.left - pad) + 'px', top: (r.top - pad) + 'px', width: (r.width + pad * 2) + 'px', height: (r.height + pad * 2) + 'px' });
+  // La main : du côté demandé, ou de l'autre s'il n'y a pas la place (paysage)
+  let side = st.hand, hx, hy;
+  if (side === 'right' && r.right + 52 > W) side = 'left';
+  if (side === 'above' && r.top < 56) side = r.left > 60 ? 'left' : 'below';
+  if (side === 'below' && r.bottom + 56 > H) side = 'above';
+  const cx = r.left + r.width / 2 - 22;
+  if (side === 'above') { hx = cx; hy = r.top - 54; coachHand.textContent = '👇'; }
+  else if (side === 'below') { hx = cx; hy = r.bottom + 4; coachHand.textContent = '👆'; }
+  else if (side === 'right') { hx = r.right + 6; hy = r.top + r.height / 2 - 24; coachHand.textContent = '👈'; }
+  else if (side === 'left') { hx = r.left - 52; hy = r.top + r.height / 2 - 24; coachHand.textContent = '👉'; }
+  else { const f = COACH.first || r; hx = f.left + f.width - 56; hy = f.top + f.height - 30; coachHand.textContent = '👆'; }
+  Object.assign(coachHand.style, { left: Math.max(2, Math.min(W - 48, hx)) + 'px', top: Math.max(2, Math.min(H - 50, hy)) + 'px' });
+  // La bulle : de l'autre côté de la cible, sans la cacher
+  const bh = coachBox.offsetHeight || 70, low = r.top + r.height / 2 > H * 0.55;
+  const above = r.top - bh - (side === 'above' ? 62 : 14), below = r.bottom + (side === 'below' || side === 'inside' ? 58 : 14), fitB = below + bh <= H - 6;
+  // Ni au-dessus ni en dessous (paysage) : tout en haut de l'écran
+  const top = low ? (above >= 6 ? above : fitB ? below : 6) : (fitB ? below : above >= 6 ? above : 6);
+  coachBox.style.top = top + 'px';
+}
+coachBox.addEventListener('click', ev => {
+  if (ev.target.closest('.cskip')) { coachStop(true); hint(T('Coup de pouce arrêté.'), 1800); }
+});

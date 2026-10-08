@@ -193,6 +193,7 @@ function newGame(mi, save, diff) {
   saveCheckpoint();
   hudCache = {}; const bp = $('#bonusPop'); if (bp) bp.hidden = true;
   resize(); refreshCosts(); showPanel('palette'); refreshPalette();
+  if (typeof coachStart === 'function') setTimeout(coachStart, 0); // coup de pouce de la toute première partie (js/guide.js)
   $('#bSpeed').textContent = 'x1';
   show('game'); keepAwake();
   prepNextWave();
@@ -298,7 +299,7 @@ function addTower(type, q, r, up, mode = 'premier', inv, br) {
 function setUp(t, up) { t.up = upOf(up); t.lvl = upStage(t.up); t.br = upSpec(t.up); }
 function build(type, q, r) {
   const D = TOWERS[type], cost = costOf(type); G.gold -= cost;
-  const t = addTower(type, q, r); t.recoil = 1; t.builtAt = G.time;
+  const t = addTower(type, q, r); t.recoil = 1; t.builtAt = G.time; G.nPlaced = (G.nPlaced || 0) + 1;
   if (G.chal && chalLv('pouce') && !G.chal.used && !D.fusion) { G.chal.used = true; setUp(t, { dmg: 2, rng: 2, rate: 2 }); t.s = towerStats(t); healTower(t, true); ono(T('🎁 +2 PARTOUT !'), t.x, t.y - 0.4, '#ffd23f', 0.5, 0, 1.2); } if (!G.demo && !G.story) { stats.towers++; if (typeof questEvent === 'function') questEvent('tower'); }
   burst(t.x, t.y, 0.1, 12, ['#ffffff', '#f1eafa', D.color], 2.2, 0.09, 3, 0.5, 'star');
   ono('POP!', t.x, t.y, '#fff', 0.45, 0.1, 0.9);
@@ -313,7 +314,7 @@ function upgrade(t, k) {
   const cost = trackPrice(t.type, t.up, k);
   if (G.gold < cost) { hint(T('Pas assez d’or pour améliorer')); Snd.play('no'); return; }
   if (G.coopGuest) { coopAct({ a: 'up', id: t.id, k }); return; }
-  G.gold -= cost; upApply(t, k, cost);
+  G.gold -= cost; upApply(t, k, cost); G.nUps = (G.nUps || 0) + 1;
   ono(TRACK[k].ic + ' ' + TRACK[k].name.toUpperCase() + ' ' + t.up[k] + ' !', t.x, t.y, '#ffd23f', 0.6, 0, 1.2);
   Snd.play('up'); refreshInfo(); if (typeof renderUpSheet === 'function') renderUpSheet();
 }
@@ -333,7 +334,7 @@ function sell(t) {
   if (typeof chalNoSell === 'function' && chalNoSell()) { Snd.play('no'); hint(T('Pas de remboursement 🔒 : le piment interdit de vendre'), 2200); return; }
   if (G.coopGuest) { coopAct({ a: 'sell', id: t.id }); deselect(); return; }
   if (t.builtAt != null && G.time - t.builtAt < 3 && typeof trophy === 'function') trophy('egg_regret');
-  const v = sellValue(t); G.gold += v;
+  const v = sellValue(t); G.gold += v; G.nSold = (G.nSold || 0) + 1;
   G.towers = G.towers.filter(x => x !== t);
   burst(t.x, t.y, 0.3, 12, ['#cdbfe0', '#ffffff', '#ffd23f'], 2, 0.09, 3, 0.5);
   G.texts.push({ txt: '+' + v, gx: t.x, gy: t.y, oy: -0.5, t: 0, dur: 0.9, color: '#ffd23f', size: 0.36, rot: 0 });
@@ -705,7 +706,7 @@ function reachBase(e) {
   if (G.demo || G.coopGuest) { e.dead = true; return; }
   const B = PP(e).base;
   if (!e.lifeCost) { e.dead = true; ono(T('FILÉE !'), B[0], B[1], '#ffd23f', 0.5, 0.2, 1.1); return; }
-  e.dead = true; G.lives -= e.lifeCost; G.lostLife = true; G.shake = Math.max(G.shake, 0.45); G.hurtT = 0.5; G.baseHit = 0.4; G.hitBase = B;
+  e.dead = true; G.lives -= e.lifeCost; G.lostLife = true; if (G.firstLeak == null) G.firstLeak = G.wave; G.shake = Math.max(G.shake, 0.45); G.hurtT = 0.5; G.baseHit = 0.4; G.hitBase = B;
   ono(e.lifeCost > 1 ? '-' + e.lifeCost + ' ♥' : T('AÏE!'), B[0], B[1], '#ff4f6e', 0.6, 0.2, 1.1);
   Snd.play('hurt');
   // Un ennemi qui atteint la maison n'abandonne pas, il repart du début du chemin avec les PV qui lui restent, et coûte
@@ -722,7 +723,7 @@ function reachBase(e) {
   }
 }
 function reviveFx(B) {
-  G.lives = 5;
+  G.lives = 5; G.revives = (G.revives || 0) + 1;
   for (const o of G.enemies) if (!o.dead) knock(o, 2.5);
   G.fx.push({ kind: 'ring', gx: B[0], gy: B[1], r0: 0.2, r1: 4, t: 0, dur: 0.7, color: '#ffd23f' });
   burst(B[0], B[1], 0.5, 30, ['#ffd23f', '#ffffff', '#ff4f81'], 4, 0.12, 2, 0.8, 'star');

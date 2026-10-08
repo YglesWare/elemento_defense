@@ -143,7 +143,10 @@ function dailyLeft() {
   const now = new Date(), next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1), mn = Math.max(1, Math.round((next - now) / 60000));
   return mn >= 60 ? Math.floor(mn / 60) + ' h ' + String(mn % 60).padStart(2, '0') : mn + ' min';
 }
-function playDaily() { const r = dailyRnd(); makeRandom(r.size, r.seed, r.daily); openDiff(RI); }
+function playDaily() {
+  if (typeof dailyOpen === 'function' && !dailyOpen()) { hint(T('Gagne d’abord ') + MAPS[0].name, 2200); return; }
+  const r = dailyRnd(); makeRandom(r.size, r.seed, r.daily); openDiff(RI);
+}
 // ui.js a déjà affiché l'écran titre : on le rafraîchit pour proposer de reprendre une partie sur carte aléatoire
 if (typeof refreshTitle === 'function') refreshTitle();
 

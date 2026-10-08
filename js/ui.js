@@ -91,7 +91,8 @@ function statChips(t) {
     feu: T('Brûlure ') + Math.round(s.burn) + '/s', eau: T('Ralentit ') + Math.round(s.slow * 100) + ' %', terre: s.stun ? T('Étourdit ') + Math.round(s.stun * 100) + ' %' : T('Zone'),
     vent: T('Recul ') + fr(s.knock), foudre: s.chain + ' cibles', glace: T('Gèle 1 onde / ') + s.every,
   }[t.type] || D.fx(s);
-  const ch = [['', T('<i>Dégâts</i>') + Math.round(s.dmg)], ['', T('<i>Portée</i>') + fr(s.range.toFixed(1))], ['', T('<i>Cadence</i>') + fr(s.rate.toFixed(2)) + '/s'], ['', extra]];
+  // Troisième valeur : le genre de puce (en paysage, css/style.css : icônes à la place des mots, grille compacte)
+  const ch = [['', T('<i>Dégâts</i>') + Math.round(s.dmg), 'dmg'], ['', T('<i>Portée</i>') + fr(s.range.toFixed(1)), 'rng'], ['', T('<i>Cadence</i>') + fr(s.rate.toFixed(2)) + '/s', 'rate'], ['', extra, 'fx']];
   if (s.solMul != null) for (const [k, v] of [['sol', s.solMul], ['air', s.airMul], ['boss', s.bossMul]]) if (v !== 1) ch.push([v > 1 ? 'good' : 'bad', TRACK[k].ic + ' ' + TRACK[k].name + ' ' + pctOf(v)]);
   if (s.terr && s.aff) ch.push([s.aff > 0 ? 'good' : 'bad', s.terr.name + ' ' + fmtAff(s.aff)]);
   if (s.terr && s.terr.range) ch.push(['good', s.terr.name + T(' +0,4 portée')]);
@@ -99,10 +100,10 @@ function statChips(t) {
   if (s.wea) ch.push([s.wea > 0 ? 'good' : 'bad', T('Météo ') + fmtAff(s.wea)]);
   if (G.weather === 'fog') ch.push(['bad', T('Brouillard −0,4 portée')]);
   if (s.affTot != null && Math.abs(s.affTot) >= 0.6) ch.push(['', 'plafond ±60 %']);
-  ch.unshift([t.ko > 0 ? 'bad' : t.hp < t.maxHp * 0.5 ? 'bad' : '', t.ko > 0 ? T('Assommée ') + Math.ceil(t.ko) + ' s' : T('<i>PV</i>') + Math.ceil(t.hp) + '/' + t.maxHp + (t.shield > 0 ? ' +' + Math.ceil(t.shield) + ' 🛡' : '')]);
+  ch.unshift([t.ko > 0 ? 'bad' : t.hp < t.maxHp * 0.5 ? 'bad' : '', t.ko > 0 ? T('Assommée ') + Math.ceil(t.ko) + ' s' : T('<i>PV</i>') + Math.ceil(t.hp) + '/' + t.maxHp + (t.shield > 0 ? ' +' + Math.ceil(t.shield) + ' 🛡' : ''), t.ko > 0 ? '' : 'hp']);
   if (t.stun > 0) ch.unshift(['bad', T('Paralysée')]);
   if (t.evil > 0) ch.unshift(['bad', T('Pervertie ') + Math.ceil(t.evil) + ' s']);
-  return ch.map(([c, v]) => '<span class="ichip ' + c + '">' + v + '</span>').join('');
+  return ch.map(([c, v, k]) => '<span class="ichip ' + c + '"' + (k ? ' data-k="' + k + '"' : '') + '>' + v + '</span>').join('');
 }
 function selectTower(t) {
   G.selTower = t; G.selType = null; G.ghost = null; refreshPalette();
@@ -187,7 +188,7 @@ function refreshHUD() {
   refreshPalette(); refreshInfo();
 }
 bWave.addEventListener('click', () => { Snd.init(); if (G && !G.paused) startWave(); });
-$('#bSpeed').addEventListener('click', () => { if (!G || G.duel || G.coopGuest) return; G.speed = G.speed % 3 + 1; $('#bSpeed').textContent = 'x' + G.speed; });
+$('#bSpeed').addEventListener('click', () => { if (!G || G.duel || G.coopGuest) return; G.speed = G.speed % 3 + 1; G.maxSpd = Math.max(G.maxSpd || 1, G.speed); $('#bSpeed').textContent = 'x' + G.speed; });
 $('#bPause').addEventListener('click', () => pause());
 
 // Aperçu de la prochaine vague
@@ -688,10 +689,13 @@ function randomTile() {
   drawDice(c, 70, ch / 2, 26);
   return d;
 }
-// Carte du jour : son petit piment imposé et le temps restant ; le classement du jour est sur son écran
+// Carte du jour : son petit piment imposé et le temps restant ; le classement du jour est sur son écran.
+// Fermée tant que Prairie Mochi n'est pas réussie (comme la carte 2) : les débutants commencent par la carte 1
+const dailyOpen = () => mapReqOk(1);
 function dailyTile() {
-  const r = dailyRnd(), dc = typeof chalDaily === 'function' ? chalDaily(r.daily) : null;
-  const d = stripTile('daily', T('📅 Du jour'), (dc && chalOn(dc) ? '<span class="chchip">🌶 ' + chalX(chalMult(dc, null)) + '</span>' : '') + '<span class="msub">' + dailyLeft() + '</span>', playDaily);
+  const r = dailyRnd(), dc = typeof chalDaily === 'function' ? chalDaily(r.daily) : null, ok = dailyOpen();
+  const d = stripTile('daily', T('📅 Du jour'), !ok ? '<span class="msub">' + T('Gagne d’abord ') + MAPS[0].name + '</span>'
+    : (dc && chalOn(dc) ? '<span class="chchip">🌶 ' + chalX(chalMult(dc, null)) + '</span>' : '') + '<span class="msub">' + dailyLeft() + '</span>', ok ? playDaily : null);
   const map = genRandomMap(r.size, r.seed); dailyDress(map, r.daily);
   const c = prepMini(d.querySelector('canvas'), 140, 90), keep = MAPS[RI];
   MAPS[RI] = map; drawMapMini(c, RI, 140, 90, 'moyen'); MAPS[RI] = keep;

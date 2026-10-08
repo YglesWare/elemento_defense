@@ -6,6 +6,11 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  102: [
+    ['👆', 'Première partie : un coup de pouce montre comment poser sa première tour, l’améliorer et lancer la vague.'],
+    ['📅', 'La carte du jour s’ouvre une fois Prairie Mochi réussie.'],
+    ['🪟', 'Paysage : la fiche des tours, les défis du jour, les piments, le code ami et la fin de partie tiennent dans l’écran.'],
+  ],
   101: [
     ['🗺️', 'Histoire en paysage : la carte se couche et prend toute la place, le chemin va de gauche à droite, et l’équipe passe à côté.'],
   ],

@@ -74,12 +74,30 @@ function logGame(result, award) {
     result, wave: G.wave, waves: G.maxw, lives: Math.max(0, G.lives), game_n: stats.games, secs: Math.round(G.time),
     shards: award ? award.gain : 0, shards_left: meta.shards, earned: meta.earned || 0, atelier: Object.values(meta.lv).reduce((a, b) => a + (b || 0), 0),
     towers, hard: typeof hardMode === 'function' ? hardMode() : false,
+    // Ce que le joueur a fait pendant la partie, son expérience, et où étaient ses tours
+    placed: G.nPlaced || 0, sold: G.nSold || 0, ups: G.nUps || 0, first_leak: G.firstLeak ?? null, revives: G.revives || 0,
+    ad_offer: !!G.adRevived, max_speed: G.maxSpd || 1, xp: logXp(), layout: logLayout(),
   };
   const log = store.get(LOG_KEY) || [];
   log.push(e);
   // Longtemps hors ligne : on garde les plus récentes
   while (log.length > LOG_MAX) log.shift();
   store.set(LOG_KEY, log);
+}
+// Expérience du joueur au moment de la partie : pour distinguer un débutant perdu d'un vrai mur de difficulté
+function logXp() {
+  const best = store.get(BEST2) || {}, won = Object.values(best).filter(r => Object.values(r).some(x => x && x.won)).length;
+  return { games: stats.games, wins: stats.wins, ko: stats.ko, quits: stats.quits, towers: stats.towers, mins: Math.round(stats.time / 60), maps_won: won,
+    guide: !!store.get('elemento.guideDone'), story: typeof storyDone === 'function' ? Object.values(storyDone()).filter(Boolean).length : 0 };
+}
+// Tours en place à la fin : case, distance au chemin le plus proche et portée (en cases, de centre à centre), nombre
+// d'achats. Une tour plus loin du chemin que sa portée ne touche jamais rien
+function logLayout() {
+  const path = [...P.cells].map(k => k.split(',').map(Number)), r1 = v => Math.round(v * 10) / 10;
+  return G.towers.map(t => {
+    let d = Infinity; for (const [q, r] of path) d = Math.min(d, Math.hypot(q - t.c, r - t.r));
+    return { t: t.type, q: t.c, r: t.r, d: r1(d), rg: r1(t.s.range || 0), n: upTot(t.up) };
+  });
 }
 // Envoi d'un journal gardé sur l'appareil (parties, pubs) vers sa table
 async function cloudPushQueue(key, table) {

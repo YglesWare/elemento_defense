@@ -463,6 +463,19 @@ button:disabled{cursor:default}
 #guideBox .gbtns{display:flex;gap:6px;justify-content:flex-end}
 #guideBox .gbtns .sbtn{flex:0 0 auto;padding:6px 14px}
 @media (prefers-reduced-motion:reduce){#guideRing{animation:none}}
+/* Coup de pouce de la première partie (js/guide.js) : au-dessus des écrans (Amélioration), sous les fenêtres */
+#coachRing{position:fixed;z-index:35;pointer-events:none;border:4px solid var(--sun);border-radius:16px;box-shadow:0 0 0 3px var(--ink),0 0 0 9px rgba(255,210,63,.4);animation:cring 1s ease-in-out infinite}
+#coachRing.round{border-radius:50%}
+#coachHand{position:fixed;z-index:36;pointer-events:none;font-size:42px;line-height:1;filter:drop-shadow(0 3px 0 var(--ink));animation:chand .8s ease-in-out infinite alternate}
+#coachBox{position:fixed;left:14px;right:14px;z-index:36;max-width:430px;margin:0 auto;display:flex;align-items:center;gap:8px;background:var(--paper);border:3px solid var(--ink);border-radius:16px;box-shadow:0 4px 0 var(--ink);padding:8px 30px 8px 6px}
+#coachBox canvas{flex:none;width:40px;height:44px}
+#coachBox p{margin:0;font-weight:800;font-size:14px;line-height:1.28}
+#coachBox p small{display:block;font-size:11.5px;color:var(--muted);font-weight:700}
+#coachBox .ctag{position:absolute;right:30px;top:-12px;background:var(--sun);border:2.5px solid var(--ink);border-radius:99px;font:800 10.5px/1 var(--body);padding:3px 8px;white-space:nowrap}
+#coachBox .cskip{position:absolute;right:4px;top:4px;width:22px;height:22px;border-radius:50%;border:2px solid var(--ink);background:var(--paper);font:800 11px/1 var(--body);color:var(--ink);padding:0;cursor:pointer}
+@keyframes cring{50%{box-shadow:0 0 0 3px var(--ink),0 0 0 14px rgba(255,210,63,.15)}}
+@keyframes chand{to{transform:translateY(-6px)}}
+@media (prefers-reduced-motion:reduce){#coachRing,#coachHand{animation:none}}
 
 @media (max-width:370px){
   #hud{gap:4px}
@@ -1200,7 +1213,7 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
   #bShop svg{width:18px;height:18px}
   #bShop .cnt{position:static;background:none;color:var(--ink);font-size:14px;padding:0}
   #stage{grid-column:2;grid-row:1}
-  #panel{grid-column:3;grid-row:1;height:auto;background:none;border-top:0;justify-content:flex-start;
+  #panel{grid-column:3;grid-row:1;height:auto;background:none;border-top:0;justify-content:flex-start;overflow-y:auto;scrollbar-width:none;
     padding:calc(6px + var(--sat)) calc(6px + var(--sx)) calc(6px + var(--sab)) 0}
   #palette{flex:1;grid-template-columns:1fr;grid-auto-rows:minmax(0,1fr);max-width:none;gap:6px}
   .tbtn{flex-direction:row;justify-content:center;gap:2px;padding:0 4px;background:var(--paper)}
@@ -1209,11 +1222,19 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
   .tbtn .cost{font-size:15px}
   .tbtn .lock{top:50%;left:30%;transform:translate(-50%,-50%) rotate(-8deg);width:26px;height:26px}
   #info{max-width:none;gap:6px;background:var(--paper);border:3px solid var(--ink);border-radius:14px;box-shadow:0 3px 0 var(--ink);padding:5px}
-  .ichips{flex-wrap:wrap;overflow:visible;gap:4px}
-  .ichip{font-size:10.5px;padding:3px 5px;gap:3px;max-width:100%;white-space:normal;line-height:1.15}
+  /* Fiche de tour : grille compacte, icônes à la place des mots (Dégâts et Portée côte à côte), bonus sur une ligne fine */
+  .ichips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible;gap:3px}
+  .ichip{grid-column:1/-1;justify-content:center;font-size:10.5px;padding:2px 4px;gap:3px;max-width:100%;white-space:normal;line-height:1.15;text-align:center}
+  .ichip[data-k=dmg],.ichip[data-k=rng]{grid-column:auto}
+  .ichip[data-k] i{display:none}
+  .ichip[data-k=hp]::before{content:'❤️'}
+  .ichip[data-k=dmg]::before{content:'⚔️'}
+  .ichip[data-k=rng]::before{content:'🎯'}
+  .ichip[data-k=rate]::before{content:'⚡'}
+  #iActions{gap:5px}
   .ichips.more{-webkit-mask-image:none;mask-image:none}
   #iActions{flex-direction:column}
-  #iActions .sbtn{height:38px;flex:none}
+  #iActions .sbtn{height:36px;flex:none}
   #duelTabs{flex-wrap:wrap}
   .ihead{gap:4px}
   #iCv{display:none}
@@ -1275,6 +1296,37 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
   .intro{padding:calc(8px + var(--sat)) calc(16px + var(--sx)) calc(8px + var(--sab)) calc(16px + var(--sx))}
   .intro-card{width:min(560px,100%);max-height:100%;overflow-y:auto;padding:12px 16px 10px}
   .intro-card h2{font-size:26px}
+  /* Fenêtre trop haute : elle défile, mais son dernier bouton (Fermer, Valider…) reste visible en bas */
+  .intro-card>.btn:last-child{position:sticky;bottom:-10px;z-index:2;flex:none;box-shadow:0 4px 0 var(--ink),0 10px 0 var(--paper),0 -8px 0 var(--paper)}
+  /* Défis du jour : les trois défis côte à côte */
+  .qlist{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .qlist .qt{font-size:12px}
+  /* Mon code ami : le QR code à gauche, le code et l'explication à droite */
+  #frQr .intro-card{width:min(600px,100%);display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto 1fr auto;
+    column-gap:18px;align-items:center;text-align:left}
+  #frQr .fqcv{grid-column:1;grid-row:1/-1;width:auto;height:min(240px,calc(100dvh - 60px))}
+  #frQr h2,#frQr .fqcode,#frQr .fine,#frQr #fqClose{grid-column:2}
+  #frQr #fqClose{position:static;box-shadow:0 4px 0 var(--ink)}
+  .intro-card>.btn:last-child{align-self:stretch}
+  /* Piments : réglages à gauche (multiplicateur, préréglages, Valider, Annuler), la liste des piments à droite */
+  #chalPop .chalcard{width:min(780px,100%);height:100%;max-height:none;overflow:hidden;display:grid;grid-template-columns:minmax(0,250px) minmax(0,1fr);
+    grid-template-rows:auto auto auto auto auto 1fr auto auto;column-gap:16px;row-gap:4px;align-items:stretch;text-align:center}
+  #chalPop .chalcard>*{grid-column:1;margin:0}
+  #chTitle{grid-row:1;font-size:20px;line-height:1.05}
+  #chSub{grid-row:2}
+  #chalPop .chmult{grid-row:3}
+  #chMedal{grid-row:4}
+  #chalPop .chpre{grid-row:5;grid-template-columns:repeat(4,1fr);gap:4px}
+  #chalPop .chpre button{font-size:10px;padding:3px 1px}
+  #chalPop .chpre button span{font-size:16px}
+  #chSub,#chMedal{font-size:11.5px;line-height:1.25}
+  #chalPop .chmult{padding:2px 6px;box-shadow:0 2px 0 var(--ink)}
+  #chalPop .chmult b{font-size:26px}
+  #chalPop .chmult small{font-size:11px}
+  #chalPop .chfoot{grid-row:7}
+  #chalPop #chClose{grid-row:8;position:static;box-shadow:0 4px 0 var(--ink)}
+  #chalPop .chmods{grid-column:2;grid-row:1/-1;min-height:0;margin:0}
+  #chalPop .chfoot .btn,#chalPop #chClose{font-size:17px;padding-block:7px}
   /* Accueil : le logo et les gardiens à gauche, les boutons à droite */
   #sTitle .tinner{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto auto;align-content:center;column-gap:28px;
     max-width:none;margin:0;min-height:100%;padding:34px 0 8px}
@@ -1293,6 +1345,20 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
   .prtiles{grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);height:calc(100dvh - 20px - var(--sat) - var(--sab))}
   .prtile{align-items:center;justify-content:center;text-align:center;padding:8px}
   .prtile .te{font-size:28px}
+  /* Amélioration d'une tour : les six achats sur deux colonnes, la note en petit */
+  #sTree>.inner{max-width:none}
+  #trBrs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+  #sTree .trhead canvas{width:44px;height:48px}
+  #sTree .trhead h2{font-size:24px}
+  #sTree .trnote{font-size:11.5px;margin-bottom:6px}
+  #sTree .panelbox{padding:10px 12px}
+  /* Fin de partie : le contenu sur deux colonnes, les boutons en bas à droite */
+  #sOver .panelbox{display:block;columns:2;column-gap:16px;padding:10px 12px}
+  #sOver .panelbox>*{break-inside:avoid;margin:0 0 8px}
+  #sOver .panelbox>.btn,#sOver .panelbox>.row{width:100%}
+  #sOver .stats b{font-size:22px}
+  #sOver .gain{padding:5px}
+  #sOver .fine{font-size:11.5px}
   /* Code parent : la question à gauche, le clavier à droite, touches plus petites */
   .pa:has(.papad){flex-direction:row;align-items:center;gap:18px}
   .pahead{display:flex;flex:1 1 0;min-width:0;flex-direction:column;gap:8px}

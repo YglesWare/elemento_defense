@@ -26,6 +26,18 @@ alter table public.game_log drop constraint if exists game_log_user_id_fkey;
 alter table public.game_log add constraint game_log_user_id_fkey foreign key (user_id) references auth.users (id) on delete set null;
 create index if not exists game_log_player on public.game_log (player_id, at);
 
+-- Version 102 : ce que le joueur a fait pendant la partie, son expérience et l'emplacement de ses tours
+-- (pour distinguer un débutant perdu, qui pose ses tours loin du chemin, d'un vrai mur de difficulté)
+alter table public.game_log add column if not exists placed int;       -- tours posées pendant la partie
+alter table public.game_log add column if not exists sold int;         -- tours vendues
+alter table public.game_log add column if not exists ups int;          -- achats d'amélioration (Dégâts, Portée…)
+alter table public.game_log add column if not exists first_leak int;   -- vague du premier slime entré dans la maison
+alter table public.game_log add column if not exists revives int;      -- secondes chances utilisées (Atelier ou pub)
+alter table public.game_log add column if not exists ad_offer boolean; -- seconde chance par pub proposée
+alter table public.game_log add column if not exists max_speed int;    -- vitesse maximale utilisée (1 à 3)
+alter table public.game_log add column if not exists xp jsonb;         -- expérience : parties, victoires, minutes de jeu, cartes réussies, tutoriel, histoire
+alter table public.game_log add column if not exists layout jsonb;     -- tours en fin de partie : [{t, q, r, d (distance au chemin), rg (portée), n (achats)}]
+
 -- Sécurité : ajout de ses propres parties seulement (ni lecture, ni modification, ni suppression depuis le jeu)
 alter table public.game_log enable row level security;
 drop policy if exists "game_log: lire les siennes" on public.game_log;
@@ -36,6 +48,8 @@ create policy "game_log: ajouter les siennes" on public.game_log
 
 -- Pour toi dans le tableau de bord (SQL Editor) : les parties avec le pseudo du joueur.
 -- Invisible depuis le jeu : la vue n'est pas ouverte aux comptes joueurs.
+-- Recréée à chaque fois : elle reprend les colonnes ajoutées au journal
+drop view if exists public.game_log_view;
 create or replace view public.game_log_view with (security_invoker = true) as
 select g.*, p.v #>> '{}' as pseudo, to_timestamp(g.at / 1000.0) as ended
 from public.game_log g
