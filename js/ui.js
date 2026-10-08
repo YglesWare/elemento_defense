@@ -16,7 +16,7 @@ function barsColor(name) {
   const top = css.getPropertyValue(a).trim(), bottom = css.getPropertyValue(b || a).trim(), key = top + bottom;
   if (top && bottom && key !== barsColor.last) { barsColor.last = key; C.Plugins.BarsColor.set({ top, bottom }).catch(() => {}); }
 }
-function show(name) { for (const k in screens) screens[k].hidden = k !== name; curScreen = name; barsColor(name); if (name === 'title') { refreshTitle(); if (typeof trophyScan === 'function') { trophyPay(); trophyScan(); } if (typeof cloudSync === 'function') cloudSync(); } }
+function show(name) { for (const k in screens) screens[k].hidden = k !== name; curScreen = name; barsColor(name); if (name === 'title') { refreshTitle(); if (typeof updCheck === 'function') updCheck(); if (typeof trophyScan === 'function') { trophyPay(); trophyScan(); } if (typeof cloudSync === 'function') cloudSync(); } }
 barsColor(curScreen);
 function setText(el, key, v) { if (hudCache[key] !== v) { hudCache[key] = v; el.textContent = v; } }
 function setHTML(el, key, v) { if (hudCache[key] !== v) { hudCache[key] = v; el.innerHTML = v; } }

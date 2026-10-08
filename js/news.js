@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  106: [
+    ['⬆️', 'Appli : les nouvelles versions sont repérées en revenant sur l’accueil, sans avoir à fermer le jeu.'],
+  ],
   105: [
     ['🎯', 'Paysage : les boutons Améliorer et Cible s’affichent en entier, et le choix de la cible s’ouvre sur le plateau.'],
   ],

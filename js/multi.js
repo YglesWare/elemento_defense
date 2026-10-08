@@ -333,6 +333,8 @@ document.addEventListener('keydown', ev => { if (curScreen === 'multi' && ev.key
 
 // ---------- Jeu installable hors ligne ----------
 // Application Android (Capacitor) : le jeu est déjà dans l'APK, pas besoin du service worker
+// Recherche d'une nouvelle version (appli seulement), appelée par show('title') (js/ui.js)
+let updCheck = () => {};
 if (NATIVE) {
   // Bouton retour d'Android : même effet que la touche Échap (pause, retour au menu…) ; sur l'écran titre, il quitte le jeu
   const App = window.Capacitor.Plugins.App;
@@ -343,9 +345,12 @@ if (NATIVE) {
   // Mises à jour : l'APK installé à la main regarde la dernière release GitHub ; si elle est plus récente,
   // un bouton sur l'écran titre télécharge le nouvel APK (à installer par-dessus, même signature)
   // Version Google Play : la mise à jour intégrée de Google (« In-App Updates »), au même bouton de l'écran titre
+  // On regarde au lancement, à chaque retour sur l'écran titre et à chaque retour dans l'appli, au plus toutes les
+  // 2 minutes (GitHub limite les questions à 60 par heure) : plus besoin de fermer l'appli pour voir une nouvelle version
   const check = window.STORE_BUILD ? checkPlayUpdate : checkUpdate;
+  updCheck = () => { if (Date.now() - (check.at || 0) > 120e3) check(); };
   check();
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - (check.at || 0) > 3600e3) check(); });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && curScreen === 'title') updCheck(); });
 }
 // Le Play Store dit s'il existe une version plus récente ; le bouton ouvre l'écran de mise à jour de Google, qui télécharge
 // puis relance le jeu. Le bouton n'est que sur l'accueil : jamais de mise à jour en pleine partie.

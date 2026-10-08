@@ -1887,6 +1887,7 @@ const EN = {
 "Maîtrise · ": "Mastery · ",
 "Longue-vue · ": "Spyglass · ",
 "Débloque la fusion d’abord": "Unlock the fusion first",
+"Appli : les nouvelles versions sont repérées en revenant sur l’accueil, sans avoir à fermer le jeu.": "App: new versions are detected when you come back to the home screen, no need to close the game.",
 "Paysage : les boutons Améliorer et Cible s’affichent en entier, et le choix de la cible s’ouvre sur le plateau.": "Landscape: the Upgrade and Target buttons show in full, and the target choice opens over the board.",
 "Coup de pouce de la première partie : seul ce qu’il montre peut être touché, le reste est grisé jusqu’à la première vague.": "First-game helping hand: only what it shows can be tapped, everything else is greyed out until the first wave.",
 "Paysage : l’étiquette des fenêtres (Nouveau monstre…) n’est plus coupée.": "Landscape: window labels (New monster…) are no longer cut off.",
