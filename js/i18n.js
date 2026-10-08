@@ -1887,6 +1887,7 @@ const EN = {
 "Maîtrise · ": "Mastery · ",
 "Longue-vue · ": "Spyglass · ",
 "Débloque la fusion d’abord": "Unlock the fusion first",
+"Moins d’or au départ (170 en Facile, 140 en Moyen, 125 en Difficile) et premiers achats à 10 or : on ne peut plus tout améliorer avant la première vague.": "Less starting gold (170 in Easy, 140 in Medium, 125 in Hard) and first upgrades at 10 gold: you can no longer max everything before the first wave.",
 "Facile : un nouveau monstre par carte de l’aventure (Flappy sur la carte 2, Tonk sur la 3…), présenté avant la première vague.": "Easy: one new monster per adventure map (Flappy on map 2, Tonk on map 3…), shown before the first wave.",
 "Yglou te prévient une vague avant l’arrivée d’un monstre que tu ne connais pas. En Moyen et plus, la liste des inconnus s’affiche au départ.": "Yglou warns you one wave before a monster you have never met. In Medium and up, the unknown ones are listed at the start.",
 "Le slime de base, lent et sans pouvoir.": "The basic slime, slow and powerless.",

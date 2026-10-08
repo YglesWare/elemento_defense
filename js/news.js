@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  110: [
+    ['💰', 'Moins d’or au départ (170 en Facile, 140 en Moyen, 125 en Difficile) et premiers achats à 10 or : on ne peut plus tout améliorer avant la première vague.'],
+  ],
   109: [
     ['👾', 'Facile : un nouveau monstre par carte de l’aventure (Flappy sur la carte 2, Tonk sur la 3…), présenté avant la première vague.'],
     ['📣', 'Yglou te prévient une vague avant l’arrivée d’un monstre que tu ne connais pas. En Moyen et plus, la liste des inconnus s’affiche au départ.'],

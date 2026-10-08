@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 109;
+const BUILD = 110;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -63,7 +63,9 @@ const bankShares = () => IS_EN ? pct(ECO.bankWin) + ' of the remaining gold if y
 // Si on change hp, bankWin ou bankKo, mettre à jour les textes des difficultés (DIFFS) et de l'aide (index.html).
 // mapHp / mapShards : PV des ennemis ×mapHp et éclats +mapShards à chaque carte suivante (cartes 1 à 10) ;
 // mapHpDiff : part de cette hausse de PV gardée selon la difficulté (en Difficile, les PV de base sont déjà très hauts)
-const ECO = Object.assign({ shards: 0.4, bankWin: 0.85, bankKo: 0.4, mapPrice: 1.43, atelier: 4.5, unlock: 2.5, mapHp: 1.1, mapShards: 0.15, mapHpDiff: { facile: 1, moyen: 0.75, difficile: 0.5 }, range: 0.8, hp: { facile: 0.8, moyen: 1.3, difficile: 2.3 }, diffShards: { facile: 0.35 } },
+const ECO = Object.assign({ shards: 0.4, bankWin: 0.85, bankKo: 0.4, mapPrice: 1.43, atelier: 4.5, unlock: 2.5, mapHp: 1.1, mapShards: 0.15, mapHpDiff: { facile: 1, moyen: 0.75, difficile: 0.5 }, range: 0.8, hp: { facile: 0.8, moyen: 1.3, difficile: 2.3 }, diffShards: { facile: 0.35 },
+  // Or de départ par difficulté (DIFFS[…].gold si absent) ; prix d'un achat Dégâts/Portée/Cadence : coût de la tour × (upBase + 0,04 × niveau), au moins upMin
+  gold: {}, upBase: 0.06, upMin: 10 },
   // Outil d'équilibrage seulement : la page tools/balance.html essaie d'autres réglages dans une iframe
   (() => { try { return window.parent !== window && window.parent.BALANCE ? JSON.parse(new URLSearchParams(location.search).get('eco') || '{}') : {}; } catch (e) { return {}; } })());
 
@@ -153,11 +155,11 @@ const MAPS = [
 ];
 const DORDER = ['facile', 'moyen', 'difficile', 'infini'];
 const DIFFS = {
-  facile: { name: T('Facile'), waves: 20, hp: 0.8, speed: 1, lives: 30, gold: 260, shards: 0.75, bonus: 1.25, malus: 0.5,
+  facile: { name: T('Facile'), waves: 20, hp: 0.8, speed: 1, lives: 30, gold: 170, shards: 0.75, bonus: 1.25, malus: 0.5,
     desc: T('20 vagues · ennemis −20 % de PV · 30 vies · moins d’obstacles et plus de collines · bonus de terrain renforcés, malus adoucis') },
-  moyen: { name: T('Moyen'), waves: 30, hp: 1, speed: 1, lives: 20, gold: 200, shards: 1, bonus: 1, malus: 1, timer: 30,
+  moyen: { name: T('Moyen'), waves: 30, hp: 1, speed: 1, lives: 20, gold: 140, shards: 1, bonus: 1, malus: 1, timer: 30,
     desc: T('30 vagues · ennemis +30 % de PV · 20 vies · la carte telle quelle · vague suivante automatique 30 s après la sortie du dernier ennemi') },
-  difficile: { name: T('Difficile'), waves: 30, hp: 1.35, speed: 1.1, lives: 12, gold: 170, shards: 1.5, bonus: 0.75, malus: 1.5, timer: 15,
+  difficile: { name: T('Difficile'), waves: 30, hp: 1.35, speed: 1.1, lives: 12, gold: 125, shards: 1.5, bonus: 0.75, malus: 1.5, timer: 15,
     desc: T('30 vagues · ennemis +130 % de PV et plus rapides · 12 vies · plus d’obstacles, aucune colline · malus de terrain renforcés · vague suivante automatique après 15 s · une tour à 0 PV est détruite et laisse des ruines ; pas de soin gratuit entre les vagues, mais un soin payant et une petite régénération pendant les vagues · un ennemi n’attaque chaque tour qu’une fois') + T(' · un boss qui atteint la maison refait le tour jusqu’à être abattu') },
   infini: { name: T('Infini'), waves: Infinity, hp: 1, speed: 1, lives: 20, gold: 200, shards: 1.25, bonus: 1, malus: 1, timer: w => w < 10 ? null : Math.max(15, 30 - Math.floor((w - 10) / 5)),
     desc: T('Vagues sans fin, de plus en plus dures · 20 vies · vagues 1 à 10 sans chrono, puis vague suivante automatique après 30 s, un délai qui raccourcit jusqu’à 15 s · bats ton record') + T(' · un ennemi qui atteint la maison refait le tour jusqu’à être abattu') },
@@ -591,7 +593,7 @@ const SPEC_MIN = 100;
 function trackPrice(type, up, k) {
   const n = ((up && up[k]) || 0) + 1, spec = k === 'sol' || k === 'air' || k === 'boss', cheap = 1 - 0.04 * M('cheap');
   if (spec) return Math.round((isMutation(type, k) ? MUT_MIN : SPEC_MIN) * (1 + 0.3 * (n - 1)) * cheap / 5) * 5;
-  return Math.max(5, Math.round(TOWERS[type].cost * (0.06 + 0.04 * n) * cheap / 5) * 5);
+  return Math.max(ECO.upMin, Math.round(TOWERS[type].cost * (ECO.upBase + 0.04 * n) * cheap / 5) * 5);
 }
 const sellValue = t => Math.floor(t.inv * (0.7 + 0.05 * M('resell')));
 
