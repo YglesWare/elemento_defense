@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 110;
+const BUILD = 111;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -155,7 +155,7 @@ const MAPS = [
 ];
 const DORDER = ['facile', 'moyen', 'difficile', 'infini'];
 const DIFFS = {
-  facile: { name: T('Facile'), waves: 20, hp: 0.8, speed: 1, lives: 30, gold: 170, shards: 0.75, bonus: 1.25, malus: 0.5,
+  facile: { name: T('Facile'), waves: 20, hp: 0.8, speed: 1, lives: 30, gold: 100, shards: 0.75, bonus: 1.25, malus: 0.5,
     desc: T('20 vagues · ennemis −20 % de PV · 30 vies · moins d’obstacles et plus de collines · bonus de terrain renforcés, malus adoucis') },
   moyen: { name: T('Moyen'), waves: 30, hp: 1, speed: 1, lives: 20, gold: 140, shards: 1, bonus: 1, malus: 1, timer: 30,
     desc: T('30 vagues · ennemis +30 % de PV · 20 vies · la carte telle quelle · vague suivante automatique 30 s après la sortie du dernier ennemi') },

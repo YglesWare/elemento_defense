@@ -6,6 +6,10 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  111: [
+    ['💰', 'Facile : 100 pièces au départ.'],
+    ['👆', 'Coup de pouce : Braise peut se poser sur n’importe quelle case près du chemin, et la case conseillée est celle qui surveille le plus de chemin.'],
+  ],
   110: [
     ['💰', 'Moins d’or au départ (170 en Facile, 140 en Moyen, 125 en Difficile) et premiers achats à 10 or : on ne peut plus tout améliorer avant la première vague.'],
   ],

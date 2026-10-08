@@ -113,6 +113,25 @@ const coachRing = document.createElement('div'), coachHand = document.createElem
 coachRing.id = 'coachRing'; coachHand.id = 'coachHand'; coachBox.id = 'coachBox';
 for (const e of [coachRing, coachHand, coachBox]) { e.hidden = true; document.body.appendChild(e); }
 const coachTower = () => G.towers[0] || null;
+// Cases de chemin que Braise atteindrait depuis la case (q, r) (portée de centre à centre, en unités du monde)
+function coachCover(q, r, pos) {
+  const rg = statsOf('feu', {}).range; let n = 0, at = 0;
+  for (const k of P.cells) { const [a, b] = k.split(',').map(Number); if (Math.hypot(a - q, b - r) * L.cw <= rg) { n++; if (pos) at += pos.get(k) || 0; } }
+  return pos ? { n, at: n ? at / n : 0 } : n;
+}
+// La case conseillée : celle d'où Braise couvre le plus de chemin (souvent l'intérieur d'un virage) ; à égalité, celle qui
+// surveille le milieu du parcours plutôt que la sortie du portail
+function coachBest() {
+  const order = P.paths[0].order, pos = new Map(order.map(([q, r], i) => [q + ',' + r, i / Math.max(1, order.length - 1)]));
+  let best = null;
+  for (let r = 0; r < ROWS; r++) for (let q = 0; q < COLS; q++) {
+    if (!canBuild(q, r)) continue;
+    const c = coachCover(q, r, pos); if (!c.n) continue;
+    const mid = Math.abs(c.at - 0.5);
+    if (!best || c.n > best.n || (c.n === best.n && mid < best.mid)) best = { q, r, n: c.n, mid };
+  }
+  return best || guideCells()[0];
+}
 const coachRows = () => {
   const rows = [...document.querySelectorAll('#trBrs .uprow')].slice(0, 3).map(e => e.getBoundingClientRect()).filter(r => r.width);
   if (!rows.length) return null;
@@ -124,7 +143,7 @@ const coachRows = () => {
 const CSTEPS = [
   { text: T('Touche <b>Braise</b> pour choisir ta première tour.<small>Elle crache du feu sur les slimes.</small>'), hand: 'above', allow: () => [palBtns.feu],
     target: () => palBtns.feu, done: () => G.selType === 'feu' || G.towers.length > 0 },
-  { text: T('Touche <b>deux fois</b> la case qui brille : juste à côté du chemin, Braise touchera les slimes.'), hand: 'below', round: true,
+  { text: T('Touche <b>deux fois</b> une case près du chemin. Celle qui brille est un très bon choix : Braise y surveille beaucoup de chemin.'), hand: 'below', round: true, anyCell: true,
     target: () => COACH.cell && { cell: COACH.cell }, done: () => G.towers.length > 0, back: () => G.selType !== 'feu' && !G.towers.length ? 0 : null },
   { text: T('Bien joué ! Touche maintenant <b>ta Braise</b> pour la rendre plus forte.'), hand: 'below', round: true,
     target: () => coachTower() && { cell: { q: coachTower().c, r: coachTower().r } }, done: () => !!G.selTower },
@@ -138,7 +157,7 @@ const CSTEPS = [
 ];
 function coachStart() {
   if (store.get(COACH_KEY) || stats.towers || store.get('elemento.guideDone') || !G || G.demo || G.duel || G.coop || G.story || G.guide) return;
-  Object.assign(COACH, { on: true, i: 0, cell: guideCells()[0] });
+  Object.assign(COACH, { on: true, i: 0, cell: coachBest() });
   document.documentElement.classList.add('coaching');
   clearInterval(COACH.timer); COACH.timer = setInterval(coachTick, 150);
   coachRender();
@@ -209,6 +228,8 @@ function coachAllows(ev) {
   if (st.allow && st.allow().some(x => x && x.contains(el))) return true;
   if (st.round && el.closest('#stage')) {
     const p = ev.changedTouches ? ev.changedTouches[0] : ev, tg = st.target(), r = tg && targetRect(tg);
+    // Poser Braise : toute case libre d'où elle touche le chemin convient (la case qui brille n'est qu'un conseil)
+    if (st.anyCell) { const sr = stage.getBoundingClientRect(), [q, rr] = toGrid(p.clientX - sr.left, p.clientY - sr.top); if (canBuild(q, rr) && coachCover(q, rr) > 0) return true; }
     if (r && p.clientX >= r.left - 4 && p.clientX <= r.left + r.width + 4 && p.clientY >= r.top - 4 && p.clientY <= r.top + r.height + 4) return true;
   }
   return false;
