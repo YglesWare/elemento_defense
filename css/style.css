@@ -887,7 +887,8 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
 /* Mode histoire (js/story.js) */
 .btn.storybtn{background:linear-gradient(90deg,#ffb36b,#ff7a3d);color:var(--ink)}
 #sStory{background:var(--sky) radial-gradient(rgba(42,27,61,.12) 1.2px,transparent 1.7px) 0 0/9px 9px}
-.storyhead{font-size:clamp(34px,9vw,58px)!important}
+.storyhead{font-size:clamp(34px,9vw,58px)!important;order:-2}
+#stWorld{order:-1}
 .stworld{position:relative;width:100%;aspect-ratio:9/13;max-height:74vh;margin-inline:auto;border:4px solid #5a3a1e;border-radius:10px;box-shadow:0 5px 0 var(--ink),inset 0 0 0 3px #f8ebc8;overflow:hidden;background:#f2dfb0}
 .stmap{position:absolute;inset:0;width:100%;height:100%}
 .stnode{position:absolute;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;border:3px solid #5a3a1e;background:#fff3d6;box-shadow:0 2px 0 #5a3a1e;font:800 14px/1 "Baloo 2",system-ui,sans-serif;color:#4a2f17;padding:0;z-index:2}
@@ -1300,10 +1301,16 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
   .pa-ans{font-size:28px;min-height:46px}
   .pa-math{font-size:16px}
   .pa #paForgot{order:0}
-  /* Histoire : la carte (taille de portrait, réduite par js/story.js) à gauche, l'équipe et les boutons à droite */
-  #sStory .inner{display:grid;grid-template-columns:auto minmax(0,1fr);align-content:center;align-items:start;gap:10px 16px}
-  #sStory .stworld{grid-row:1/span 4;width:340px;height:491px;max-height:none;aspect-ratio:auto}
-  #sStory .stteam,#sStory #stPlay,#sStory #storyBack{grid-column:2}
+  /* Histoire : titre, équipe et boutons dans la colonne, la carte en largeur sur tout le reste (js/story.js stWide) */
+  #sStory{--railw:230px}
+  .srail .storyhead{font-size:30px!important;margin:2px 0 0}
+  .srail .stteam{width:100%;padding:5px 8px}
+  .srail .stmates{gap:4px 6px;justify-content:center}
+  .srail #stPlay{width:100%;font-size:16px;padding:7px 10px}
+  .srail #storyBack{width:100%;font-size:17px;padding:6px 10px}
+  #sStory .stworld{width:100%;height:calc(100dvh - 20px - var(--sat) - var(--sab));aspect-ratio:auto;max-height:none}
+  .stworld.wide .stlbl{white-space:normal;width:78px;text-align:center;font-size:10.5px;line-height:1.15;padding:1px 4px}
+  .stworld.wide .stlbl.stup{transform:translate(-50%,-100%)}
   /* Cartes, Atelier */
   #tMaps{grid-template-columns:repeat(2,minmax(0,1fr))}
   .srail .ybub canvas{width:56px;height:56px}

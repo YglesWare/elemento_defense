@@ -368,6 +368,9 @@ function drawKingGloop(c, x, y, s) {
 // ---------- Carte du monde (parchemin de jeu de rôle, dessiné avec le canvas) ----------
 screens.story = $('#sStory');
 // Étapes en zigzag, du haut (Prairie) vers le bas (Toundra) ; coordonnées en fraction de la carte
+// Carte en largeur (menus en paysage) : la même carte couchée (x ↔ y), le chemin va de gauche à droite
+let stWide = false;
+const stAt = p => stWide ? [p[1], p[0]] : p;
 const NODE_POS = [[0.22, 0.09], [0.74, 0.13], [0.36, 0.23], [0.75, 0.31], [0.24, 0.39], [0.73, 0.48], [0.28, 0.57], [0.74, 0.65], [0.27, 0.74], [0.73, 0.82], [0.5, 0.885]];
 // Décor de chaque région (centre décalé vers l'extérieur de l'étape)
 const REGIONS = [
@@ -434,19 +437,19 @@ function drawWorldMap(c, W, H, upTo) {
   const g = c.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.3, W / 2, H / 2, Math.hypot(W, H) * 0.6); g.addColorStop(0, 'rgba(255,248,225,0)'); g.addColorStop(1, 'rgba(150,100,45,.45)');
   c.fillStyle = g; c.fillRect(0, 0, W, H);
   const r = storyRnd(7); c.fillStyle = 'rgba(140,95,45,.12)'; for (let i = 0; i < 90; i++) { c.beginPath(); c.arc(r() * W, r() * H, 1 + r() * 2.5, 0, TAU); c.fill(); }
-  const u = W * 0.085;
-  REGIONS.forEach((R, i) => blob(c, R.at[0] * W, R.at[1] * H, u * (R.k === 'toundra' ? 2.4 : 1.7), u * 1.25, R.c, 11 + i * 7));
-  REGIONS.forEach(R => landmark(c, R.k, R.at[0] * W, R.at[1] * H, u));
+  const u = Math.min(W, H) * 0.085;
+  REGIONS.forEach((R, i) => { const [x, y] = stAt(R.at); blob(c, x * W, y * H, u * (R.k === 'toundra' ? 2.4 : 1.7), u * 1.25, R.c, 11 + i * 7); });
+  REGIONS.forEach(R => { const [x, y] = stAt(R.at); landmark(c, R.k, x * W, y * H, u); });
   // Le chemin : des pointillés rouges, façon carte au trésor (plein jusqu'à l'étape en cours)
-  const pts = NODE_POS.map(([x, y]) => [x * W, y * H]);
+  const pts = NODE_POS.map(p => { const [x, y] = stAt(p); return [x * W, y * H]; });
   const trace = (from, to) => { c.beginPath(); c.moveTo(...pts[from]); for (let i = from + 1; i <= to; i++) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i]; c.quadraticCurveTo((x0 + x1) / 2, Math.min(y0, y1) + (y1 - y0) * 0.1 + 6, x1, y1); } c.stroke(); };
   c.lineCap = 'round'; c.setLineDash([2, 9]); c.lineWidth = 5; c.strokeStyle = '#b0302a'; trace(0, Math.max(0, upTo));
   c.strokeStyle = 'rgba(120,80,40,.5)'; c.lineWidth = 4; if (upTo < pts.length - 1) trace(upTo, pts.length - 1); c.setLineDash([]);
   // Rose des vents
-  const cx = W * 0.1, cy = H * 0.965, R2 = W * 0.06; c.save(); c.translate(cx, cy); c.fillStyle = '#5a3a1e';
+  const R2 = Math.min(W, H) * 0.06, cx = stWide ? R2 * 1.6 : W * 0.1, cy = stWide ? H - R2 * 1.3 : H * 0.965; c.save(); c.translate(cx, cy); c.fillStyle = '#5a3a1e';
   for (let i = 0; i < 4; i++) { c.rotate(Math.PI / 2); c.beginPath(); c.moveTo(0, -R2); c.lineTo(R2 * 0.22, 0); c.lineTo(-R2 * 0.22, 0); c.closePath(); c.fill(); }
   c.fillStyle = '#f2dfb0'; c.beginPath(); c.arc(0, 0, R2 * 0.15, 0, TAU); c.fill(); c.restore();
-  c.font = 'bold ' + Math.round(W * 0.035) + 'px "Baloo 2", system-ui, sans-serif'; c.fillStyle = '#5a3a1e'; c.textAlign = 'center'; c.fillText('N', cx, cy - R2 - 3);
+  c.font = 'bold ' + Math.round(Math.min(W, H) * 0.035) + 'px "Baloo 2", system-ui, sans-serif'; c.fillStyle = '#5a3a1e'; c.textAlign = 'center'; c.fillText('N', cx, cy - R2 - 3);
 }
 // ---------- La troupe sur la carte ----------
 // Braise (le joueur) en tête sur le chemin, puis Yglou et les copains déjà rencontrés, qui la suivent en sautillant.
@@ -457,7 +460,7 @@ const storyTeam = i => ['yglou'].concat((i > 0 ? CHAPTERS[Math.min(i, CHAPTERS.l
 const storyName = k => k === 'yglou' ? 'Yglou' : TOWERS[k].name;
 // Le chemin de la carte, découpé finement (même courbe que drawWorldMap), du départ jusqu'à l'étape i
 function storyTrail(W, H, i) {
-  const pts = NODE_POS.map(([x, y]) => [x * W, y * H]), out = [[...pts[0], 0]];
+  const pts = NODE_POS.map(p => { const [x, y] = stAt(p); return [x * W, y * H]; }), out = [[...pts[0], 0]];
   for (let s = 1; s <= i; s++) {
     const [x0, y0] = pts[s - 1], [x1, y1] = pts[s], cx = (x0 + x1) / 2, cy = Math.min(y0, y1) + (y1 - y0) * 0.1 + 6;
     for (let k = 1; k <= 24; k++) {
@@ -530,7 +533,7 @@ function storyTeamStrip(team, fresh) {
     if (k === 'yglou') drawYglou(c, 20, 26, 30, 'happy', 0, { noShadow: true, noConfetti: true }); else drawTower(c, k, 20, 28, 34, 1, 0.4, 0, 0.3, 0, false);
   });
 }
-// Menus en paysage (css/style.css) : la carte à gauche, l'équipe et les boutons à droite ; redessinée quand on tourne
+// Menus en paysage (css/style.css) : l'équipe et les boutons dans la colonne de gauche, la carte en largeur ; redessinée quand on tourne
 const STORY_LAND = matchMedia('(orientation:landscape) and (min-aspect-ratio:23/20) and (max-height:560px)');
 STORY_LAND.addEventListener('change', () => { if (curScreen === 'story') openStory(); });
 function openStory() {
@@ -538,15 +541,15 @@ function openStory() {
   const done = storyDone(), next = CHAPTERS.findIndex((c, i) => !done[i]), cur = next < 0 ? CHAPTERS.length - 1 : next;
   const all = CHAPTERS.map(c => c.title).concat(STORY_SOON);
   const box = $('#stWorld');
+  stWide = STORY_LAND.matches; box.classList.toggle('wide', stWide);
   box.innerHTML = '<canvas class="stmap" id="stMap" aria-hidden="true"></canvas>'
     + all.map((t, i) => {
-      const [x, y] = NODE_POS[i] || [0.5, 0.5], ready = i < CHAPTERS.length, st = !ready ? 'soon' : done[i] ? 'done' : i === cur ? 'cur' : i < cur ? 'done' : 'lock';
+      const [x, y] = stAt(NODE_POS[i] || [0.5, 0.5]), up = stWide && y < 0.5, ready = i < CHAPTERS.length, st = !ready ? 'soon' : done[i] ? 'done' : i === cur ? 'cur' : i < cur ? 'done' : 'lock';
       return '<button class="stnode ' + st + '" type="button" data-i="' + i + '" style="left:' + x * 100 + '%;top:' + y * 100 + '%" aria-label="' + esc(T(t)) + '">' + (i === all.length - 1 ? '👑' : done[i] ? '✓' : i) + '</button>'
-        + '<span class="stlbl" style="left:' + x * 100 + '%;top:calc(' + y * 100 + '% + 25px)">' + esc(T(t)) + '</span>';
+        + '<span class="stlbl' + (up ? ' stup' : '') + '" style="left:' + x * 100 + '%;top:calc(' + y * 100 + (up ? '% - 25px' : '% + 25px') + ')">' + esc(T(t)) + '</span>';
     }).join('')
     + '<canvas class="stparty" id="stParty" aria-hidden="true"></canvas>';
-  // La carte se dessine à la taille de son cadre ; en paysage elle garde sa taille de portrait, réduite pour tenir en hauteur
-  box.style.zoom = STORY_LAND.matches ? Math.min(1, (innerHeight - 24) / 499).toFixed(3) : '';
+  // La carte se dessine à la taille de son cadre (en largeur dans les menus en paysage)
   const W = box.clientWidth || 340, H = box.clientHeight || 490;
   drawWorldMap(prepMini($('#stMap'), W, H), W, H, cur);
   storyParty(cur, W, H);

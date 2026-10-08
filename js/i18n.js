@@ -1887,6 +1887,7 @@ const EN = {
 "Maîtrise · ": "Mastery · ",
 "Longue-vue · ": "Spyglass · ",
 "Débloque la fusion d’abord": "Unlock the fusion first",
+"Histoire en paysage : la carte se couche et prend toute la place, le chemin va de gauche à droite, et l’équipe passe à côté.": "Story in landscape: the map lies flat and fills the space, the path runs left to right, and the team moves to the side.",
 "Paysage : la carte de l’histoire garde sa forme, le code parent tient dans l’écran, et les interrupteurs des Réglages sont bien centrés.": "Landscape: the story map keeps its shape, the parent code fits on the screen, and the Settings switches are properly centered.",
 "Paysage : le jeu est centré sur l’écran, même sur les téléphones avec un appareil photo dans l’écran.": "Landscape: the game is centered on the screen, even on phones with a camera in the screen.",
 "Appli : le jeu se joue aussi en paysage. Tourne ton téléphone : le plateau, les menus et les fenêtres s’adaptent. Dans Réglages, choisis Auto, Portrait ou Paysage.": "App: the game now plays in landscape too. Turn your phone: the board, menus and windows adapt. In Settings, pick Auto, Portrait or Landscape.",

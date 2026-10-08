@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  101: [
+    ['🗺️', 'Histoire en paysage : la carte se couche et prend toute la place, le chemin va de gauche à droite, et l’équipe passe à côté.'],
+  ],
   100: [
     ['🧭', 'Paysage : la carte de l’histoire garde sa forme, le code parent tient dans l’écran, et les interrupteurs des Réglages sont bien centrés.'],
   ],
