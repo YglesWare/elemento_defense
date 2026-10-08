@@ -6,6 +6,10 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  103: [
+    ['🤝', 'Multijoueur en paysage : les boutons à gauche, la liste des parties à droite, et le salon sur deux colonnes.'],
+    ['🔎', 'Paysage : menus et fenêtres un peu plus petits, et les titres ne sont plus coupés.'],
+  ],
   102: [
     ['👆', 'Première partie : un coup de pouce montre comment poser sa première tour, l’améliorer et lancer la vague.'],
     ['📅', 'La carte du jour s’ouvre une fois Prairie Mochi réussie.'],

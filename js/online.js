@@ -210,8 +210,8 @@ function onlineHomeHTML() {
   return '<p class="trnote">' + T('Joue avec tes amis, <b>où qu’ils soient</b> : rejoins la partie d’un ami, ou ouvre ton salon et invite-les.') + '</p>'
     + '<div class="mpchips"><span class="mpchip">🙂 ' + esc(cleanPseudo()) + '</span>' + friendsChipHTML() + '</div>'
     + (!live ? '<p class="mp-err">' + T('Il faut internet pour jouer en ligne.') + '</p>' : '')
-    + (!fr.length ? emptyBoxHTML('👋', T('Pas encore d’amis'), T('Ajoute-en depuis la page Amis de l’accueil, avec leur code ami.'))
-      : live ? '<span class="mp-label">' + T('Parties de tes amis') + '</span><div class="onlrooms" id="onlRooms">' + friendRoomsHTML() + '</div>' : '')
+    + '<div class="mplist">' + (!fr.length ? emptyBoxHTML('👋', T('Pas encore d’amis'), T('Ajoute-en depuis la page Amis de l’accueil, avec leur code ami.'))
+      : live ? '<span class="mp-label">' + T('Parties de tes amis') + '</span><div class="onlrooms" id="onlRooms">' + friendRoomsHTML() + '</div>' : '') + '</div>'
     + '<button class="btn" type="button" data-a="ocreate"' + (live && fr.length ? '' : ' disabled') + '>' + T('Créer un salon en ligne') + '</button>'
     + (live && fr.length ? '<p class="fine">' + T('Seulement tes amis · la liste se met à jour toute seule') + '</p>' : '');
 }

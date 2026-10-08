@@ -1887,6 +1887,8 @@ const EN = {
 "Maîtrise · ": "Mastery · ",
 "Longue-vue · ": "Spyglass · ",
 "Débloque la fusion d’abord": "Unlock the fusion first",
+"Multijoueur en paysage : les boutons à gauche, la liste des parties à droite, et le salon sur deux colonnes.": "Multiplayer in landscape: buttons on the left, the list of games on the right, and the lobby in two columns.",
+"Paysage : menus et fenêtres un peu plus petits, et les titres ne sont plus coupés.": "Landscape: menus and windows are a bit smaller, and titles are no longer cut off.",
 "Première partie : un coup de pouce montre comment poser sa première tour, l’améliorer et lancer la vague.": "First game: a helping hand shows how to place your first tower, upgrade it and start the wave.",
 "La carte du jour s’ouvre une fois Prairie Mochi réussie.": "The daily map opens once Mochi Meadow is cleared.",
 "Paysage : la fiche des tours, les défis du jour, les piments, le code ami et la fin de partie tiennent dans l’écran.": "Landscape: the tower card, daily quests, chilis, friend code and end of game now fit on the screen.",

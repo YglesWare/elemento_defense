@@ -1247,7 +1247,7 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
 
 /* Profil : la carte du compte, puis six tuiles (Réglages, Parents, Trophées, Stats, Nouveautés, Aide) ; Réglages à part.
    .srail (titre des menus) et .tbtns (boutons de l'accueil) ne servent qu'en paysage */
-.srail,.tbtns{display:contents}
+.srail,.tbtns,.mplist{display:contents}
 .prbig{display:none}
 .prwho{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
 .prwho .ptitle{margin:0}
@@ -1268,14 +1268,16 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
 /* Menus en paysage (téléphone couché) : le titre et le bouton Retour dans une colonne à gauche, le contenu défile à
    droite. Les écrans sans titre (stats, trophées, difficulté…) gardent une seule colonne, plus large */
 @media (orientation:landscape) and (min-aspect-ratio:23/20) and (max-height:560px){
-  :root{--railw:220px}
+  /* Tout un peu plus petit en paysage (textes, boutons, marges), sauf le jeu ; --mz corrige les hauteurs d'écran (dvh) */
+  :root{--railw:220px;--mz:.85}
+  .screen,.intro{zoom:var(--mz)}
   #sProfile{--railw:250px}
   .screen{padding:calc(10px + var(--sat)) calc(16px + var(--sx)) calc(10px + var(--sab)) calc(16px + var(--sx))}
   .screen>.inner{gap:10px}
   .screen:has(.srail)>.inner{max-width:none;margin:auto 0;padding-left:calc(var(--railw) + 16px)}
   .screen:not(:has(.srail))>.inner{max-width:720px}
-  .srail{display:flex;position:fixed;z-index:5;left:calc(16px + var(--sx));top:calc(10px + var(--sat));bottom:calc(66px + var(--sab));width:var(--railw);
-    flex-direction:column;align-items:center;gap:8px;overflow-y:auto;scrollbar-width:none}
+  .srail{display:flex;position:fixed;z-index:5;left:calc(16px + var(--sx));top:calc(4px + var(--sat));bottom:calc(66px + var(--sab));width:var(--railw);
+    flex-direction:column;align-items:center;gap:8px;overflow-y:auto;scrollbar-width:none;padding:8px 4px 4px}
   .srail::-webkit-scrollbar{display:none}
   .screen:not(:has(.stickyb)) .srail{bottom:calc(10px + var(--sab))}
   .srail .bigword,.screen .srail .bigword.head{font-size:clamp(30px,5vw,44px);margin:6px 0 2px;text-wrap:balance;flex:none}
@@ -1304,7 +1306,7 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
   /* Mon code ami : le QR code à gauche, le code et l'explication à droite */
   #frQr .intro-card{width:min(600px,100%);display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto 1fr auto;
     column-gap:18px;align-items:center;text-align:left}
-  #frQr .fqcv{grid-column:1;grid-row:1/-1;width:auto;height:min(240px,calc(100dvh - 60px))}
+  #frQr .fqcv{grid-column:1;grid-row:1/-1;width:auto;height:min(240px,calc(100dvh / var(--mz) - 60px))}
   #frQr h2,#frQr .fqcode,#frQr .fine,#frQr #fqClose{grid-column:2}
   #frQr #fqClose{position:static;box-shadow:0 4px 0 var(--ink)}
   .intro-card>.btn:last-child{align-self:stretch}
@@ -1342,9 +1344,24 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
   .prof .ptitle,.prhint{display:none}
   .srail .prof{width:100%;padding:10px;gap:8px}
   .srail .profhead canvas{width:54px;height:54px}
-  .prtiles{grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);height:calc(100dvh - 20px - var(--sat) - var(--sab))}
+  .prtiles{grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);height:calc(100dvh / var(--mz) - 20px - var(--sat) - var(--sab))}
   .prtile{align-items:center;justify-content:center;text-align:center;padding:8px}
   .prtile .te{font-size:28px}
+  /* Multijoueur : onglets, explication, pastilles et boutons à gauche ; la liste des parties à droite, qui défile */
+  #mpBody:has(.mplist){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);grid-template-rows:repeat(10,auto) 1fr;column-gap:16px;row-gap:8px;align-content:start}
+  #mpBody:has(.mplist)>*{grid-column:1;margin:0}
+  #mpBody .mplist{display:flex;flex-direction:column;gap:8px;grid-column:2;grid-row:1/-1;min-height:0;max-height:calc(100dvh / var(--mz) - 52px - var(--sat) - var(--sab));overflow-y:auto;scrollbar-width:none}
+  #mpBody .trnote{font-size:12.5px;line-height:1.3}
+  #mpBody{gap:6px;padding:10px 12px}
+  #mpBody:has(.mplist){row-gap:6px}
+  #mpBody .btn{padding:7px 12px;font-size:18px}
+  #mpBody .fine{font-size:11px}
+  /* Salon : les joueurs, Inviter et Quitter à gauche ; le mode, les piments, la carte et Lancer à droite */
+  #mpBody:has(.mp-mode){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-auto-flow:row dense;column-gap:16px;row-gap:6px;align-content:start;align-items:start}
+  #mpBody:has(.mp-mode)>*{grid-column:1;margin:0}
+  #mpBody:has(.mp-mode)>:is(.mp-mode,.mp-chal,.mp-map,.mp-manual,[data-a=launch]){grid-column:2}
+  #mpBody .mp-h{font-size:20px}
+  #mpBody .mpempty{padding:12px 10px}
   /* Amélioration d'une tour : les six achats sur deux colonnes, la note en petit */
   #sTree>.inner{max-width:none}
   #trBrs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
@@ -1374,7 +1391,7 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
   .srail .stmates{gap:4px 6px;justify-content:center}
   .srail #stPlay{width:100%;font-size:16px;padding:7px 10px}
   .srail #storyBack{width:100%;font-size:17px;padding:6px 10px}
-  #sStory .stworld{width:100%;height:calc(100dvh - 20px - var(--sat) - var(--sab));aspect-ratio:auto;max-height:none}
+  #sStory .stworld{width:100%;height:calc(100dvh / var(--mz) - 20px - var(--sat) - var(--sab));aspect-ratio:auto;max-height:none}
   .stworld.wide .stlbl{white-space:normal;width:78px;text-align:center;font-size:10.5px;line-height:1.15;padding:1px 4px}
   .stworld.wide .stlbl.stup{transform:translate(-50%,-100%)}
   /* Cartes, Atelier */

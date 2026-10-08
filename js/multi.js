@@ -162,7 +162,8 @@ function renderMP() {
     else h += '<p class="trnote">' + T('De 2 à 4 joueurs sur le même Wi-Fi (ou le partage de connexion d’un téléphone), <b>sans internet</b>.') + '</p>'
       // Même présentation que l'onglet « En ligne » (le pseudo se change dans le Profil)
       + '<div class="mpchips"><span class="mpchip">🙂 ' + esc(cleanPseudo()) + '</span>' + (typeof friendsChipHTML === 'function' ? friendsChipHTML() : '') + '</div>'
-      + (NATIVE ? '<span class="mp-label">' + T('Parties sur ce Wi-Fi') + '</span><div class="onlrooms" id="mpFound">' + foundHTML() + '</div>' : '')
+      // .mplist : la liste des parties (en paysage, la colonne de droite, css/style.css)
+      + (NATIVE ? '<div class="mplist"><span class="mp-label">' + T('Parties sur ce Wi-Fi') + '</span><div class="onlrooms" id="mpFound">' + foundHTML() + '</div></div>' : '')
       + T('<button class="btn" type="button" data-a="create">Créer une partie</button>')
       + (NATIVE ? '<p class="fine">' + T('Même Wi-Fi · la liste se met à jour toute seule') + '</p>' : '')
       + '<button class="btn alt mp-qrbtn" type="button" data-a="join"><svg viewBox="0 0 20 20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="6" height="6" rx="1"/><rect x="12" y="2" width="6" height="6" rx="1"/><rect x="2" y="12" width="6" height="6" rx="1"/><path d="M12 12h2v2h-2zM16 16h2v2h-2zM16 12v2M12 16v2"/></svg>'
