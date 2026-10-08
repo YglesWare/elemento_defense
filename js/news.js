@@ -6,6 +6,10 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  109: [
+    ['👾', 'Facile : un nouveau monstre par carte de l’aventure (Flappy sur la carte 2, Tonk sur la 3…), présenté avant la première vague.'],
+    ['📣', 'Yglou te prévient une vague avant l’arrivée d’un monstre que tu ne connais pas. En Moyen et plus, la liste des inconnus s’affiche au départ.'],
+  ],
   108: [
     ['🦉', 'Accueil en paysage : Yglou ne cache plus le titre du jeu.'],
   ],

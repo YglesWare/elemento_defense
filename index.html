@@ -638,6 +638,16 @@
   </div>
 </div>
 <div class="trophytoast" id="trophyToast" role="status" aria-live="polite" hidden></div>
+<!-- Monstres nouveaux de la partie, au départ (js/bestiary.js) -->
+<div class="intro" id="mobPop" role="dialog" aria-modal="true" aria-labelledby="mobTitle" hidden>
+  <div class="intro-card">
+    <span class="intro-tag" id="mobTag">Nouveau sur cette carte</span>
+    <h2 id="mobTitle">Plage Ramune</h2>
+    <div class="moblist" id="mobList"></div>
+    <p class="fine" id="mobFine"></p>
+    <button class="btn" id="mobGo" type="button">C’est parti !</button>
+  </div>
+</div>
 <!-- Fenêtre d'explication : nouveau monstre, première tour attaquée (js/intro.js) -->
 <div class="intro" id="intro" role="dialog" aria-modal="true" aria-labelledby="introTitle" hidden>
   <div class="intro-card">
@@ -651,4 +661,4 @@
 </div>
 <!-- Les données du joueur (IndexedDB) sont chargées d'abord, puis les scripts du jeu, dans cet ordre -->
 <script src="js/storage.js"></script>
-<script>store.boot(['js/errors.js', 'js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bonus.js', 'js/trophies.js', 'js/actions.js', 'js/vendor/supabase.js', 'js/cloud.js', 'js/parents.js', 'js/friends.js', 'js/online.js', 'js/emotes.js', 'js/news.js', 'js/quests.js', 'js/ranking.js', 'js/challenge.js', 'js/ads.js', 'js/wardrobe.js', 'js/comfort.js', 'js/story.js']);</script>
+<script>store.boot(['js/errors.js', 'js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bestiary.js', 'js/bonus.js', 'js/trophies.js', 'js/actions.js', 'js/vendor/supabase.js', 'js/cloud.js', 'js/parents.js', 'js/friends.js', 'js/online.js', 'js/emotes.js', 'js/news.js', 'js/quests.js', 'js/ranking.js', 'js/challenge.js', 'js/ads.js', 'js/wardrobe.js', 'js/comfort.js', 'js/story.js']);</script>

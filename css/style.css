@@ -480,6 +480,26 @@ html.coaching :is(#hud .ibtn,#bWave,.tbtn,#iActions .sbtn,#iClose,#iWhat,#bBonus
 html.coaching #trBrs .uprow:has(.coachT){opacity:1;filter:none}
 #coachRing.nudge{animation:cnudge .35s ease-out}
 @keyframes cnudge{0%,100%{transform:scale(1)}40%{transform:scale(1.18)}}
+/* Monstres nouveaux de la partie (js/bestiary.js) : la fenêtre du départ, la bulle une vague avant */
+.moblist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;width:100%;text-align:left}
+.moblist.one{grid-template-columns:1fr}
+.mobrow{display:flex;align-items:center;gap:6px;background:var(--mist);border:2.5px solid var(--ink);border-radius:14px;padding:4px 8px 4px 2px;min-width:0}
+.mobrow canvas{flex:none;width:40px;height:40px}
+.moblist.one .mobrow canvas{width:58px;height:58px}
+.mobrow>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.mobrow b{font-family:var(--display);font-weight:400;font-size:16px;letter-spacing:.5px;line-height:1}
+.moblist.one .mobrow b{font-size:20px}
+.mobrow small{font-size:11px;font-weight:700;line-height:1.25}
+.moblist.one .mobrow small{font-size:12.5px}
+.mobrow em{font-style:normal;font-size:10.5px;font-weight:800;color:var(--muted)}
+.mobwv{flex:none;background:var(--ink);color:var(--paper);border-radius:10px;font:400 17px/1 var(--display);padding:5px 8px;text-align:center}
+.mobwv span{display:block;font:800 9px/1 var(--body);letter-spacing:.4px;color:var(--sun)}
+#mobWarn{position:fixed;left:14px;right:14px;z-index:34;max-width:420px;margin:0 auto;display:flex;align-items:center;gap:8px;background:var(--paper);border:3px solid var(--ink);border-radius:16px;box-shadow:0 4px 0 var(--ink);padding:6px 12px 6px 4px;cursor:pointer;animation:introPop .25s ease-out}
+#mobWarn canvas{flex:none;width:52px;height:52px}
+#mobWarn p{margin:0;font-weight:800;font-size:14px;line-height:1.28}
+#mobWarn p small{display:block;font-size:11.5px;color:var(--muted);font-weight:700}
+#mobRing{position:fixed;z-index:33;pointer-events:none;border:4px solid var(--sun);border-radius:99px;box-shadow:0 0 0 3px var(--ink),0 0 0 9px rgba(255,210,63,.35);animation:cring 1s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){#mobWarn,#mobRing{animation:none}}
 @keyframes cring{50%{box-shadow:0 0 0 3px var(--ink),0 0 0 14px rgba(255,210,63,.15)}}
 @keyframes chand{to{transform:translateY(-6px)}}
 @media (prefers-reduced-motion:reduce){#coachRing,#coachHand{animation:none}}
@@ -1309,6 +1329,10 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
   .intro-card h2{font-size:26px}
   /* Étiquette (Nouveau monstre, Pub d'essai) : dans la fenêtre, qui peut défiler et rognerait ce qui dépasse */
   .intro-tag{position:static;transform:none;align-self:center;margin:0 0 2px}
+  #mobPop .intro-card{width:min(720px,100%)}
+  .moblist:not(.one){grid-template-columns:repeat(4,minmax(0,1fr))}
+  .moblist:not(.one) .mobrow{flex-direction:column;align-items:center;text-align:center;padding:4px}
+  .moblist:not(.one) .mobrow>div{align-items:center}
   /* Fenêtre trop haute : elle défile, mais son dernier bouton (Fermer, Valider…) reste visible en bas */
   .intro-card>.btn:last-child{position:sticky;bottom:-10px;z-index:2;flex:none;box-shadow:0 4px 0 var(--ink),0 10px 0 var(--paper),0 -8px 0 var(--paper)}
   /* Défis du jour : les trois défis côte à côte */

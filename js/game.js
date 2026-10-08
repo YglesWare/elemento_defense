@@ -197,6 +197,7 @@ function newGame(mi, save, diff) {
   $('#bSpeed').textContent = 'x1';
   show('game'); keepAwake();
   prepNextWave();
+  if (!save && typeof mobStart === 'function') setTimeout(mobStart, 300); // les monstres nouveaux de la partie (js/bestiary.js)
   if (save) banner('REPRISE', T('Vague ') + (G.wave + 1) + T(' prête'));
   else {
     banner(T('PRÊT ?'), MAPS[mi].name + ' · ' + DIFFS[G.diff].name + (G.endless ? T(' · vagues infinies') : ' · ' + G.maxw + T(' vagues')) + (G.chal ? ' · 🌶 ' + chalX(G.chal.mult) : ''));
@@ -364,6 +365,8 @@ function makeWave(w) {
   else if (w >= 7 && w % 7 === 0) { theme = 'zip'; label = T('Ruée de Zippy !'); }
   else if (w >= 6 && w % 6 === 0) { theme = 'tonk'; label = T('Parade de Tonk !'); }
   else if (w >= 8 && w % 8 === 3) { theme = 'magma'; label = T('Pluie de Magmo !'); }
+  // Vague spéciale d'un monstre pas encore introduit (Facile, js/bestiary.js) : vague normale
+  if (theme && typeof mobOk === 'function' && !mobOk(theme, w)) { theme = null; label = ''; }
   let n = Math.round((6 + w * 1.5) * (G && G.coop ? 1 + 0.3 * (G.coopN - 1) : 1));
   if (theme === 'tonk') n = Math.round(n * 0.55); if (theme === 'zip') n = Math.round(n * 1.4);
   if (G && G.chal) n = Math.round(n * (1 + 0.05 * chalLv('horde')));
@@ -374,6 +377,7 @@ function makeWave(w) {
   }
   if (w >= 12) { const k = 1 + Math.floor((w - 12) / 8); for (let i = 0; i < k; i++) list.splice(Math.floor(rand(list.length)), 0, { type: 'malefik', gap: 1.2 }); }
   if (w % 10 === 0) { list[list.length - 1].gap = 2.5; for (let i = 0; i < Math.floor(w / 10); i++) list.push({ type: 'boss', gap: 3 }); }
+  if (typeof mobFilter === 'function') mobFilter(list, pool, w); // monstres pas encore introduits remplacés (js/bestiary.js)
   // Portails actifs pour cette vague : un seul au début, de plus en plus ensuite, tous pour les boss.
   // En Facile, le tirage est fixe pour chaque carte (on peut l'apprendre) ; dès le Moyen, il change à chaque partie.
   const m0 = MAPS[G.map], prng = G.diff === 'facile' && !G.duel && !G.coop ? mulberry(hashStr((m0.rnd ? m0.rnd.seed : m0.id) + ':' + w)) : Math.random;
@@ -520,7 +524,7 @@ function startWave(forced) {
   const { list, label } = takeWave(G.wave);
   if (G.story && typeof storyWaveStart === 'function') storyWaveStart(G.wave);
   for (const t of G.towers) if (!(t.ko > 0)) t.shield = Math.max(t.shield || 0, Math.round(t.maxHp * 0.15 * M('bouclier')));
-  G.spawnQ.push(...list); G.spawnT = 0.5; G.waveActive = true; G.autoT = 0;
+  G.spawnQ.push(...list); G.spawnT = 0.5; G.waveActive = true; G.autoT = 0; if (typeof mobWarnHide === 'function') mobWarnHide();
   G.chronoT = null; G.chronoArmed = true;
   const last = G.wave === G.maxw && !G.endless;
   banner(T('VAGUE ') + G.wave, early ? T('Bonus d’audace +') + early : (last ? T('Dernière vague !') : label), false);
@@ -541,6 +545,7 @@ function waveDone() {
   if (typeof trophy === 'function') { if (G.diff === 'infini' && G.wave >= 30) trophy('inf_30'); if (G.diff === 'infini' && G.wave >= 50) trophy('inf_50'); trophyScan(); }
   if (G.wave >= G.maxw && !G.endless) { setTimeout(() => victory(), 700); return; }
   if (opts.auto) G.autoT = 3;
+  if (typeof mobWarn === 'function') setTimeout(mobWarn, 1200); // un monstre inconnu dans la prochaine vague : Yglou prévient
 }
 function awardShards() {
   const mult = MAPS[G.map].shards * DIFFS[G.diff || 'moyen'].shards;
