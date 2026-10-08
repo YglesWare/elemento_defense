@@ -6,6 +6,11 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  98: [
+    ['📱', 'Appli : le jeu se joue aussi en paysage. Tourne ton téléphone : le plateau, les menus et les fenêtres s’adaptent. Dans Réglages, choisis Auto, Portrait ou Paysage.'],
+    ['⚙️', 'Profil plus court : la langue, le son, l’écran et le confort sont regroupés dans une nouvelle page Réglages.'],
+    ['🗺️', 'Plateau plus grand, sans ombre dessous, et un panneau des tours plus compact.'],
+  ],
   97: [
     ['🎬', 'Appli : les vidéos à récompense passent par Google AdMob, réglé pour les enfants (pubs tous publics, sans ciblage). Elles restent facultatives, et l’espace parents peut les couper.'],
     ['⏳', 'Nouveau dans l’Atelier : le Sablier. La Cadence a maintenant un plafond, comme les Dégâts et la Portée, et chaque Sablier le relève.'],

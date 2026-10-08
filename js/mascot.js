@@ -51,6 +51,7 @@ function refreshProfileChip() { const n = (store.get('elemento.pseudo') || '').t
 function openProfile() {
   Snd.init(); show('profile'); screens.profile.scrollTop = 0; if (typeof refreshTrophyBtn === 'function') refreshTrophyBtn(); if (typeof cloudPaint === 'function') cloudPaint();
   $('#prName').value = store.get('elemento.pseudo') || ''; nameWarn();
+  $('#prNewsSub').textContent = T('Version ') + '1.0.' + BUILD;
 }
 // Page des stats (depuis le Profil) : une tuile par chiffre
 screens.stats = $('#sStats');
@@ -78,7 +79,7 @@ $('#prName').addEventListener('input', ev => { store.set('elemento.pseudo', ev.t
 $('#prName').addEventListener('keydown', ev => ev.stopPropagation());
 // Champ laissé vide : on redonne un pseudo au hasard
 $('#prName').addEventListener('change', ev => { if (!ev.target.value.trim()) { ev.target.value = randomPseudo(); store.set('elemento.pseudo', ev.target.value); refreshProfileChip(); } });
-$('#prBack').addEventListener('click', () => { $('#prResetBox').hidden = true; show('title'); });
+$('#prBack').addEventListener('click', () => show('title'));
 
 // Réinitialiser la progression : confirmation dans la page, puis effacement (le pseudo, la langue et le son restent)
 const RESET_KEEP = ['elemento.pseudo', 'elemento.lang', 'elemento.opts', 'elemento.mpFacing'];

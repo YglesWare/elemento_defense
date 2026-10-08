@@ -22,7 +22,10 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(LanServerPlugin.class);
         // Couleur derrière les barres du téléphone, assortie à l'écran affiché (js/ui.js barsColor)
         registerPlugin(BarsColorPlugin.class);
+        // Orientation choisie dans Réglages (auto par défaut)
+        registerPlugin(OrientPlugin.class);
         super.onCreate(savedInstanceState);
+        OrientPlugin.apply(this);
         // Le jeu va jusque sous l'encoche de l'appareil photo (le contenu s'en écarte, css/style.css --sat). Le réglage
         // ne s'applique qu'en renvoyant les attributs à la fenêtre (setAttributes)
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
@@ -48,8 +51,8 @@ public class MainActivity extends BridgeActivity {
             v.setPadding(0, 0, 0, kb ? insets.getInsets(WindowInsetsCompat.Type.ime()).bottom : 0);
             float d = getResources().getDisplayMetrics().density;
             String js = String.format(Locale.US,
-                "(function(){var d=document.documentElement;if(!d)return;d.style.setProperty('--safe-area-inset-top','%dpx');d.style.setProperty('--safe-area-inset-bottom','%dpx');})();",
-                (int) (cut.top / d), kb ? 0 : (int) (cut.bottom / d));
+                "(function(){var d=document.documentElement;if(!d)return;d.style.setProperty('--safe-area-inset-top','%dpx');d.style.setProperty('--safe-area-inset-bottom','%dpx');d.style.setProperty('--safe-area-inset-left','%dpx');d.style.setProperty('--safe-area-inset-right','%dpx');})();",
+                (int) (cut.top / d), kb ? 0 : (int) (cut.bottom / d), (int) (cut.left / d), (int) (cut.right / d));
             WebView wv = getBridge() != null ? getBridge().getWebView() : null;
             if (wv != null) wv.post(() -> wv.evaluateJavascript(js, null));
             return insets;

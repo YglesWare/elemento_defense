@@ -4,12 +4,12 @@
 const COIN = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#ffd23f" stroke="#2a1b3d" stroke-width="3"/></svg>';
 const GEM = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l7 7-7 13L5 9z" fill="#c59bff" stroke="#2a1b3d" stroke-width="2.2" stroke-linejoin="round"/><path d="M5 9h14M12 2L9 9l3 13 3-13z" fill="none" stroke="#2a1b3d" stroke-width="1.3" stroke-linejoin="round"/></svg>';
 const LOCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="11" rx="3" fill="#ffd23f" stroke="#2a1b3d" stroke-width="2.2"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke="#2a1b3d" stroke-width="2.4"/><circle cx="12" cy="16" r="1.6" fill="#2a1b3d"/></svg>';
-const screens = { profile: $('#sProfile'), title: $('#sTitle'), help: $('#sHelp'), pause: $('#sPause'), over: $('#sOver'), shop: $('#sShop'), tuto: $('#sTuto'), tree: $('#sTree'), maps: $('#sMaps'), diff: $('#sDiff') };
+const screens = { profile: $('#sProfile'), settings: $('#sSettings'), title: $('#sTitle'), help: $('#sHelp'), pause: $('#sPause'), over: $('#sOver'), shop: $('#sShop'), tuto: $('#sTuto'), tree: $('#sTree'), maps: $('#sMaps'), diff: $('#sDiff') };
 let curScreen = 'title', helpFrom = 'title', shopFrom = 'title', hudCache = {};
 // Appli Android dont les barres du téléphone restent à part (WebView ancienne) : elles prennent la couleur du fond
 // de l'écran affiché (jaune pour l'accueil et le profil, violet pour l'Atelier…, bleu ciel ailleurs)
 // [haut, bas] ; en partie, le bas est le panneau blanc des tours
-const BAR_BG = { title: ['--sun'], profile: ['--sun'], shop: ['--grape'], parents: ['--grape'], wardrobe: ['--grape'], game: ['--sky', '--paper'] };
+const BAR_BG = { title: ['--sun'], profile: ['--sun'], settings: ['--sun'], shop: ['--grape'], parents: ['--grape'], wardrobe: ['--grape'], game: ['--sky', '--paper'] };
 function barsColor(name) {
   const C = window.Capacitor; if (!C || !C.isPluginAvailable || !C.isPluginAvailable('BarsColor')) return;
   const css = getComputedStyle(document.documentElement), [a, b] = BAR_BG[name] || ['--sky'];
@@ -281,6 +281,7 @@ document.addEventListener('keydown', ev => {
   if (ev.key === 'Escape') {
     if (curScreen === 'help') { $('#hBack').click(); return; }
     if (curScreen === 'profile') { $('#prBack').click(); return; }
+    if (curScreen === 'settings') { $('#setBack').click(); return; }
     if (curScreen === 'shop') { $('#sBack').click(); return; }
     if (curScreen === 'maps') { $('#mBack').click(); return; }
     if (curScreen === 'diff') { $('#dfBack').click(); return; }
@@ -342,7 +343,7 @@ function resume() { if (!G || G.koAsk) return; G.paused = false; show('game'); k
 const soundLabel = () => T('Son : ') + (opts.sound && opts.music !== false ? T('tout') : opts.sound ? T('effets') : T('coupé'));
 function refreshOptBtns() {
   $('#pSound').textContent = soundLabel();
-  $('#tSound').textContent = soundLabel();
+  if (typeof settingsRender === 'function' && curScreen === 'settings') settingsRender();
   $('#pAuto').textContent = T('Vagues auto : ') + (opts.auto ? T('oui') : T('non'));
 }
 // Trois réglages : tout (effets + musique) → effets seuls → coupé → tout
@@ -354,7 +355,6 @@ function toggleSound() {
 }
 $('#pResume').addEventListener('click', resume);
 $('#pSound').addEventListener('click', toggleSound);
-$('#tSound').addEventListener('click', toggleSound);
 $('#pAuto').addEventListener('click', () => { opts.auto = !opts.auto; store.set(OPTS, opts); refreshOptBtns(); if (G && opts.auto && !G.waveActive && !G.autoT) G.autoT = 3; if (G && !opts.auto) G.autoT = 0; });
 $('#pHelp').addEventListener('click', () => { helpFrom = 'pause'; show('help'); screens.help.scrollTop = 0; });
 $('#tHelp').addEventListener('click', () => { helpFrom = curScreen === 'profile' ? 'profile' : 'title'; show('help'); screens.help.scrollTop = 0; store.set('elemento.seen', true); });

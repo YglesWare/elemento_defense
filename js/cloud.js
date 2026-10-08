@@ -416,9 +416,7 @@ function cloudPaint() {
   }
   // Connexion expirée : « Se déconnecter » permet aussi de continuer en invité (le compte retenu est oublié)
   $('#prLogout').hidden = anon && CLOUD.state !== 'relogin';
-  // Invité : l'encart sous le pseudo (pour se connecter) ; connecté : tout en bas, avant « Réinitialiser la progression »
-  const anchor = anon ? $('#prNameWarn') : $('#prReset');
-  if (anchor) { if (anon && box.previousElementSibling !== anchor) anchor.after(box); else if (!anon && box.nextElementSibling !== anchor) anchor.before(box); }
+  // L'encart du compte reste sous le pseudo, dans la carte du profil
 }
 // Supprimer son compte (après la confirmation d'un parent) : tout est effacé en ligne ; la progression reste sur l'appareil,
 // sur un nouveau compte invité

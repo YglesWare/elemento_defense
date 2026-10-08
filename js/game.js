@@ -72,13 +72,21 @@ function resize() {
   L.w = Math.max(1, b.width); L.h = Math.max(1, b.height); L.dpr = Math.min(2, window.devicePixelRatio || 1);
   cv.width = Math.round(L.w * L.dpr); cv.height = Math.round(L.h * L.dpr);
   L.portrait = L.h > L.w * 1.08;
+  // Écran de jeu en paysage (css/style.css) : infos à gauche, tours à droite, aperçu de la vague dans la colonne de gauche
+  L.land = LAND.matches; landPlace();
   const vc = L.portrait ? ROWS : COLS, vr = L.portrait ? COLS : ROWS;
-  const NW = 36; // place réservée sous la carte pour l'aperçu de la prochaine vague
+  const NW = L.land ? 0 : 36; // place réservée sous la carte pour l'aperçu de la prochaine vague
   const TB = G && (G.duel || G.coop) ? 34 : 0; // et au-dessus pour le bandeau des joueurs (duel, coop)
   // Marges serrées (6 px de chaque côté) : le plateau prend presque toute la largeur ou la hauteur, cases plus grandes
   L.cs = Math.max(8, Math.min((L.w - 12) / vc, (L.h - 12 - NW - TB) / vr));
   L.ox = (L.w - vc * L.cs) / 2; L.oy = TB + Math.max(6, (L.h - NW - TB - vr * L.cs) / 2);
   if (G) { buildBg(); for (const e of G.enemies) setPos(e); }
+}
+const LAND = matchMedia('(orientation:landscape) and (min-aspect-ratio:23/20)');
+function landPlace() {
+  const nw = $('#nextWave'), inHud = nw.parentNode === $('#hud');
+  if (L.land && !inHud) $('#hud').insertBefore(nw, $('#bWave'));
+  else if (!L.land && inHud) stage.insertBefore(nw, $('#bBonus'));
 }
 function dotPattern(c, col, step) {
   const p = document.createElement('canvas'); p.width = p.height = step; const pc = p.getContext('2d');
@@ -92,7 +100,8 @@ function buildBg(target = (G && G.bg) || bgCv) {
   c.fillStyle = m.frame; c.fillRect(0, 0, L.w, L.h);
   c.fillStyle = dotPattern(c, m.dot, 10); c.fillRect(0, 0, L.w, L.h);
   const vw = (L.portrait ? ROWS : COLS) * cs, vh = (L.portrait ? COLS : ROWS) * cs, rad = cs * 0.35;
-  rr(c, L.ox + 5, L.oy + 6, vw, vh, rad); c.fillStyle = INK; c.fill();
+  // En paysage, le fond de la carte se prolonge sous les colonnes (#app, css/style.css)
+  if (L.land) { const d = document.documentElement.style; d.setProperty('--frame', m.frame); d.setProperty('--fdot', m.dot); }
   c.save(); rr(c, L.ox, L.oy, vw, vh, rad); c.clip();
   for (let r = 0; r < ROWS; r++) for (let q = 0; q < COLS; q++) {
     const [x, y] = cellXY(q, r); c.fillStyle = (q + r) % 2 ? m.ground : m.ground2; c.fillRect(x, y, cs + 0.6, cs + 0.6);

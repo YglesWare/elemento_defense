@@ -2,7 +2,7 @@
 @font-face{font-family:'DispNum';src:url('../fonts/Baloo2-latin-800.woff2') format('woff2');font-weight:800;unicode-range:U+0030-0039;size-adjust:108%;font-display:swap}
 /* Layout : console de poche plein écran. HUD en haut, terrain au centre (paysage ou portrait selon l'écran),
    palette de tours en bas. Esthétique planche de manga : encre épaisse, ombres pleines, trames, fond en rayons. */
-:root{--sat:max(env(safe-area-inset-top,0px),var(--safe-area-inset-top,0px));--sab:max(env(safe-area-inset-bottom,0px),var(--safe-area-inset-bottom,0px))}
+:root{--sat:max(env(safe-area-inset-top,0px),var(--safe-area-inset-top,0px));--sab:max(env(safe-area-inset-bottom,0px),var(--safe-area-inset-bottom,0px));--sal:max(env(safe-area-inset-left,0px),var(--safe-area-inset-left,0px));--sar:max(env(safe-area-inset-right,0px),var(--safe-area-inset-right,0px))}
 :root{
   --ink:#2a1b3d;
   --paper:#ffffff;
@@ -134,7 +134,7 @@ button:disabled{cursor:default}
 /* Screens */
 .screen{position:fixed;inset:0;z-index:30;overflow-y:auto;padding:16px;display:flex;flex-direction:column}
 .screen>.inner{margin:auto;width:100%;max-width:580px;display:flex;flex-direction:column;gap:14px}
-#sTitle,#sProfile{background:repeating-conic-gradient(from 0deg at 50% 20%,var(--sun) 0deg 7deg,var(--sun2) 7deg 14deg)}
+#sTitle,#sProfile,#sSettings{background:repeating-conic-gradient(from 0deg at 50% 20%,var(--sun) 0deg 7deg,var(--sun2) 7deg 14deg)}
 #sHelp{background:var(--sky) radial-gradient(rgba(42,27,61,.12) 1.2px,transparent 1.7px) 0 0/9px 9px}
 .veil{background:var(--veil)}
 .logo{font-family:var(--display);text-align:center;line-height:.9;transform:rotate(-4deg);margin:10px 0 2px}
@@ -1168,3 +1168,128 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
 .iclose{width:30px;height:30px}
 #iActions .sbtn{height:40px}
 #panel{height:calc(134px + var(--sab));padding:6px 14px calc(10px + var(--sab))}
+
+/* Écran de jeu en paysage (option A) : infos de la partie dans une colonne à gauche, plateau sur toute la hauteur au centre,
+   tours (ou fiche de la tour choisie) dans une colonne à droite. L'encoche est alors sur un côté : --sal / --sar */
+@media (orientation:landscape) and (min-aspect-ratio:23/20){
+  /* Jeu en paysage (game.js L.land) : le fond de la carte (--frame, --fdot, posés par buildBg) court sous les deux
+     colonnes, sans cadre ; à gauche les infos et les commandes, à droite les tours sur une seule colonne */
+  #app{display:grid;grid-template-columns:calc(100px + var(--sal)) minmax(0,1fr) calc(120px + var(--sar));grid-template-rows:minmax(0,1fr);
+    background:var(--frame,#5fb84a) radial-gradient(circle at 5px 5px,var(--fdot,rgba(42,27,61,.16)) 1.6px,transparent 1.9px) var(--sal) 0/10px 10px}
+  #hud{grid-column:1;grid-row:1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:auto auto auto minmax(0,1fr) auto auto auto;gap:6px 5px;
+    padding:calc(6px + var(--sat)) 0 calc(6px + var(--sab)) calc(6px + var(--sal))}
+  #hud>.chip:first-child{grid-row:1}
+  #hud .chip{grid-column:1/-1;height:32px;font-size:17px;justify-content:flex-start}
+  #hud .chip svg{width:20px;height:20px}
+  #hGoldChip{grid-row:2;margin-bottom:8px}
+  #nextWave{grid-row:3;grid-column:1/-1;position:static;transform:none;max-width:none;height:auto;flex-wrap:wrap;justify-content:center;gap:2px 5px;
+    padding:5px 4px;border-radius:14px;white-space:normal}
+  #nextWave canvas{width:20px;height:20px}
+  #nextWave .nwt{flex-basis:100%;text-align:center}
+  #hud #bWave{grid-row:5;grid-column:1/-1;margin-left:0;justify-content:center;height:44px}
+  #bSpeed{grid-row:6;grid-column:1}
+  #bPause{grid-row:6;grid-column:2}
+  #bShop{grid-row:7;grid-column:1/-1}
+  #hud .ibtn{width:auto;height:34px}
+  #bShop{display:flex;align-items:center;justify-content:center;gap:4px}
+  #bShop svg{width:18px;height:18px}
+  #bShop .cnt{position:static;background:none;color:var(--ink);font-size:14px;padding:0}
+  #stage{grid-column:2;grid-row:1}
+  #panel{grid-column:3;grid-row:1;height:auto;background:none;border-top:0;justify-content:flex-start;
+    padding:calc(6px + var(--sat)) calc(6px + var(--sar)) calc(6px + var(--sab)) 0}
+  #palette{flex:1;grid-template-columns:1fr;grid-auto-rows:minmax(0,1fr);max-width:none;gap:6px}
+  .tbtn{flex-direction:row;justify-content:center;gap:2px;padding:0 4px;background:var(--paper)}
+  .tbtn canvas{width:38px;height:38px}
+  .tbtn .nm{display:none}
+  .tbtn .cost{font-size:15px}
+  .tbtn .lock{top:50%;left:30%;transform:translate(-50%,-50%) rotate(-8deg);width:26px;height:26px}
+  #info{max-width:none;gap:6px;background:var(--paper);border:3px solid var(--ink);border-radius:14px;box-shadow:0 3px 0 var(--ink);padding:6px}
+  .ichips{flex-wrap:wrap;overflow:visible;gap:4px}
+  .ichip{font-size:11px;padding:3px 6px;max-width:100%;white-space:normal;line-height:1.15}
+  .ichips.more{-webkit-mask-image:none;mask-image:none}
+  #iActions{flex-direction:column}
+  #iActions .sbtn{height:38px;flex:none}
+  #duelTabs{flex-wrap:wrap}
+  .ihead{gap:4px}
+  #iCv{display:none}
+  #iName{font-size:17px}
+  #iStars{white-space:normal;line-height:1.15;font-size:11px}
+  #iWhat{width:20px;height:20px;font-size:11px}
+  .ihead{padding-right:16px}
+  .iclose{position:absolute;top:-9px;right:-9px;z-index:2;width:26px;height:26px;font-size:13px}
+}
+
+/* Profil : la carte du compte, puis six tuiles (Réglages, Parents, Trophées, Stats, Nouveautés, Aide) ; Réglages à part.
+   .srail (titre des menus) et .tbtns (boutons de l'accueil) ne servent qu'en paysage */
+.srail,.tbtns{display:contents}
+.prbig{display:none}
+.prwho{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.prwho .ptitle{margin:0}
+.prwho .mp-input{padding:6px 12px;font-size:17px}
+.prhint{text-align:left;margin:-4px 0 0}
+.prtiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.prtile{display:flex;flex-direction:column;align-items:flex-start;gap:1px;min-width:0;text-align:left;background:var(--paper);border:3px solid var(--ink);border-radius:16px;box-shadow:0 4px 0 var(--ink);padding:10px 12px;color:var(--ink);font:inherit;cursor:pointer}
+.prtile:active{transform:translateY(2px);box-shadow:0 2px 0 var(--ink)}
+.prtile .te{font-size:24px;line-height:1.15}
+.prtile b{font-family:var(--display);font-weight:400;font-size:21px;letter-spacing:.6px;line-height:1.05}
+.prtile small{font-size:12px;font-weight:700;color:var(--muted);line-height:1.2}
+.setbox{gap:8px}
+.setbox .ptitle{margin:0}
+.setorient{display:flex;flex-direction:column;gap:8px}
+.setorient .fine{text-align:left;margin:0}
+.btn.dangerb{background:var(--paper);border-style:dashed;border-color:var(--pop);color:var(--pop);box-shadow:none;font-size:17px}
+
+/* Menus en paysage (téléphone couché) : le titre et le bouton Retour dans une colonne à gauche, le contenu défile à
+   droite. Les écrans sans titre (stats, trophées, difficulté…) gardent une seule colonne, plus large */
+@media (orientation:landscape) and (min-aspect-ratio:23/20) and (max-height:560px){
+  :root{--railw:220px}
+  #sProfile{--railw:250px}
+  .screen{padding:calc(10px + var(--sat)) calc(16px + var(--sar)) calc(10px + var(--sab)) calc(16px + var(--sal))}
+  .screen>.inner{gap:10px}
+  .screen:has(.srail)>.inner{max-width:none;margin:auto 0;padding-left:calc(var(--railw) + 16px)}
+  .screen:not(:has(.srail))>.inner{max-width:720px}
+  .srail{display:flex;position:fixed;z-index:5;left:calc(16px + var(--sal));top:calc(10px + var(--sat));bottom:calc(66px + var(--sab));width:var(--railw);
+    flex-direction:column;align-items:center;gap:8px;overflow-y:auto;scrollbar-width:none}
+  .srail::-webkit-scrollbar{display:none}
+  .screen:not(:has(.stickyb)) .srail{bottom:calc(10px + var(--sab))}
+  .srail .bigword,.screen .srail .bigword.head{font-size:clamp(30px,5vw,44px);margin:6px 0 2px;text-wrap:balance;flex:none}
+  .srail>*{flex:none;max-width:100%}
+  .srail .purse,.srail .mtop{margin:0}
+  .srail .mtop{flex-wrap:wrap;gap:6px}
+  .srail .purse{padding:3px 12px 3px 8px}
+  .srail .purse b{font-size:24px}
+  .srail .purse svg{width:22px;height:22px}
+  .srail .bigword[style]{font-size:clamp(30px,5vw,44px)!important}
+  .srail .cloudrow{flex-wrap:wrap}
+  .srail .cloudtxt{flex-basis:calc(100% - 34px)}
+  .srail .loginbtn{flex:1 1 auto;justify-content:center}
+  .screen:has(.srail) .stickyb{position:fixed;z-index:5;left:calc(16px + var(--sal));bottom:calc(10px + var(--sab));width:var(--railw);margin:0}
+  .screen .btn{font-size:19px;padding:8px 14px}
+  .stats div b{font-size:28px}
+  /* Fenêtres : plus larges, jamais plus hautes que l'écran */
+  .intro{padding:calc(8px + var(--sat)) calc(16px + var(--sar)) calc(8px + var(--sab)) calc(16px + var(--sal))}
+  .intro-card{width:min(560px,100%);max-height:100%;overflow-y:auto;padding:12px 16px 10px}
+  .intro-card h2{font-size:26px}
+  /* Accueil : le logo et les gardiens à gauche, les boutons à droite */
+  #sTitle .tinner{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto auto;align-content:center;column-gap:28px;
+    max-width:none;margin:0;min-height:100%;padding:34px 0 8px}
+  #sTitle #tYglou{grid-column:1;grid-row:1}
+  #sTitle .logo{grid-column:1;grid-row:2}
+  #tShow{grid-column:1;grid-row:3;margin-top:6px}
+  #sTitle .bubble{display:none}
+  .tbtns{display:flex;grid-column:2;grid-row:1/4;flex-direction:column;justify-content:center;gap:9px;max-width:380px}
+  .tbtns .btn{padding:9px 12px}
+  .tbtns #tPlay{font-size:28px}
+  /* Profil : la carte du compte dans la colonne, les tuiles sur toute la hauteur */
+  .prbig{display:block}
+  .prof .ptitle,.prhint{display:none}
+  .srail .prof{width:100%;padding:10px;gap:8px}
+  .srail .profhead canvas{width:54px;height:54px}
+  .prtiles{grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);height:calc(100dvh - 20px - var(--sat) - var(--sab))}
+  .prtile{align-items:center;justify-content:center;text-align:center;padding:8px}
+  .prtile .te{font-size:28px}
+  /* Cartes, Atelier */
+  #tMaps{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .srail .ybub canvas{width:56px;height:56px}
+  .srail .ybub p{font-size:12.5px!important}
+}

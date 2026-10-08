@@ -71,29 +71,25 @@
     <div class="logo"><span class="l1">ÉLÉMENTO</span><span class="l2">DEFENSE</span></div>
     <div id="tShow"></div>
     <div class="bubble">Six gardiens élémentaires contre une armée de slimes. Protège la petite maison !</div>
-    <button class="btn alt questbtn" id="tQuests" type="button" hidden>🎯 Défis du jour · <span id="tqN">0/3</span><b class="frbadge" id="tqBadge" hidden></b></button>
+    <div class="tbtns"><button class="btn alt questbtn" id="tQuests" type="button" hidden>🎯 Défis du jour · <span id="tqN">0/3</span><b class="frbadge" id="tqBadge" hidden></b></button>
     <button class="btn storybtn" id="tStory" type="button">📖 Histoire <small>La flamme de Braise</small></button>
     <button class="btn" id="tPlay" type="button">Jouer !</button>
     <button class="btn mpbtn" id="tMulti" type="button">Multijoueur · 2 à 4 joueurs</button>
     <button class="btn green" id="tContinue" type="button" hidden>Continuer</button>
-    <button class="btn pink" id="tShop" type="button">L’Atelier</button>
+    <button class="btn pink" id="tShop" type="button">L’Atelier</button></div>
   </div>
 </section>
 
 <section class="screen" id="sProfile" hidden>
   <div class="inner">
-    <div class="panelbox col prof">
-      <div class="profhead"><span class="profav"><canvas id="prCv" aria-hidden="true"></canvas><button class="avedit" id="prWardrobe" type="button" aria-label="Garde-robe d’Yglou" title="Garde-robe d’Yglou"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M13.6 2.9l3.5 3.5L7 16.5l-4.3.8.8-4.3z" fill="#ffd23f" stroke="#2a1b3d" stroke-width="1.8" stroke-linejoin="round"/><path d="M11.5 5l3.5 3.5" stroke="#2a1b3d" stroke-width="1.8"/></svg></button></span><div><h2 class="ptitle" style="margin:0">Profil</h2></div></div>
-      <label class="mp-label" for="prName">Ton pseudo (utilisé en multijoueur)</label>
-      <input id="prName" class="mp-input" maxlength="12" autocomplete="nickname" placeholder="Ton pseudo">
-      <p class="fine prnameres" id="prNameRes" hidden>🧑‍🎨 Bravo, tu as trouvé le nom du créateur ! Mais ce pseudo lui est réservé : tu gardes le tien.</p>
-      <p class="fine pa-err" id="prNameWarn" hidden>Ce pseudo n’est pas autorisé : tes amis verront « Joueur ».</p>
-      <span class="mp-label">Langue · Language</span>
-      <div class="mp-seg" id="prLang"><button class="sbtn" type="button" data-lang="auto">Auto</button><button class="sbtn" type="button" data-lang="fr">Français</button><button class="sbtn" type="button" data-lang="en">English</button></div>
-      <button class="btn alt" id="tSound" type="button">Son : oui</button>
-      <button class="btn alt" id="tTuto" type="button" hidden>Tutoriel animé</button>
-      <button class="btn alt" id="tHelp" type="button">Aide et règles</button>
-      <div class="cloudbox" id="prCloud">
+    <div class="srail">
+      <div class="bigword calm head prbig">PROFIL</div>
+      <div class="panelbox col prof">
+        <div class="profhead"><span class="profav"><canvas id="prCv" aria-hidden="true"></canvas><button class="avedit" id="prWardrobe" type="button" aria-label="Garde-robe d’Yglou" title="Garde-robe d’Yglou"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M13.6 2.9l3.5 3.5L7 16.5l-4.3.8.8-4.3z" fill="#ffd23f" stroke="#2a1b3d" stroke-width="1.8" stroke-linejoin="round"/><path d="M11.5 5l3.5 3.5" stroke="#2a1b3d" stroke-width="1.8"/></svg></button></span><div class="prwho"><h2 class="ptitle">Profil</h2><input id="prName" class="mp-input" maxlength="12" autocomplete="nickname" placeholder="Ton pseudo" aria-label="Ton pseudo (utilisé en multijoueur)"></div></div>
+        <p class="fine prhint">Ton pseudo est utilisé en multijoueur.</p>
+        <p class="fine prnameres" id="prNameRes" hidden>🧑‍🎨 Bravo, tu as trouvé le nom du créateur ! Mais ce pseudo lui est réservé : tu gardes le tien.</p>
+        <p class="fine pa-err" id="prNameWarn" hidden>Ce pseudo n’est pas autorisé : tes amis verront « Joueur ».</p>
+        <div class="cloudbox" id="prCloud">
         <div class="cloudrow">
           <span class="cloudic" aria-hidden="true">☁️</span>
           <div class="cloudtxt"><b class="cloudwho" id="prCloudWho">Invité</b><small id="prCloudState"></small></div>
@@ -118,24 +114,51 @@
           </div>
         </details>
       </div>
-      <button class="btn alt" id="prComfort" type="button">👓 Confort et accessibilité</button>
-      <button class="btn alt" id="prParents" type="button">👪 Espace parents</button>
-      <button class="btn alt" id="prNews" type="button">🆕 Nouveautés</button>
-      <div class="mp-seg prbtns"><button class="sbtn" id="prStatsBtn" type="button">📊 Stats</button><button class="sbtn" id="prTrophies" type="button">🏆 Trophées</button></div>
-      <button class="btn pink" id="prReset" type="button">Réinitialiser la progression</button>
-      <div class="resetbox" id="prResetBox" hidden>
-        <p><b>Tout effacer et repartir de zéro ?</b> Éclats, Atelier, cartes achetées, records, cagnotte, bonus, trophées, stats et partie en cours seront perdus. Ton pseudo, la langue et le son sont gardés. Impossible de revenir en arrière.</p>
-        <div class="mp-seg"><button class="sbtn" id="prResetNo" type="button">Annuler</button><button class="sbtn danger" id="prResetYes" type="button">Oui, tout effacer</button></div>
       </div>
-      <p class="fine">Tu commences avec deux gardiens. Chaque vague gagnée rapporte des éclats pour en débloquer d’autres dans l’Atelier.</p>
+    </div>
+    <div class="prtiles">
+      <button class="prtile" id="prSettings" type="button"><span class="te" aria-hidden="true">⚙️</span><b>Réglages</b><small>Langue, son, écran, confort</small></button>
+      <button class="prtile" id="prParents" type="button"><span class="te" aria-hidden="true">👪</span><b>Parents</b><small>Temps, jeu en ligne, vidéos</small></button>
+      <button class="prtile" id="prTrophies" type="button"><span class="te" aria-hidden="true">🏆</span><b>Trophées</b><small id="prTrSub"></small></button>
+      <button class="prtile" id="prStatsBtn" type="button"><span class="te" aria-hidden="true">📊</span><b>Stats</b><small>Parties, vagues, records</small></button>
+      <button class="prtile" id="prNews" type="button"><span class="te" aria-hidden="true">🆕</span><b>Nouveautés</b><small id="prNewsSub"></small></button>
+      <button class="prtile" id="tHelp" type="button"><span class="te" aria-hidden="true">❓</span><b>Aide</b><small>Règles et astuces</small></button>
     </div>
     <button class="btn stickyb" id="prBack" type="button">Retour</button>
   </div>
 </section>
 
+<section class="screen" id="sSettings" hidden>
+  <div class="inner">
+    <div class="srail"><div class="bigword calm head">RÉGLAGES</div></div>
+    <div class="panelbox col setbox">
+      <span class="mp-label">Langue · Language</span>
+      <div class="mp-seg" id="prLang"><button class="sbtn" type="button" data-lang="auto">Auto</button><button class="sbtn" type="button" data-lang="fr">Français</button><button class="sbtn" type="button" data-lang="en">English</button></div>
+      <div class="setorient" id="setOrientBox" hidden>
+        <span class="mp-label">Écran</span>
+        <div class="mp-seg" id="setOrient"><button class="sbtn" type="button" data-o="auto">🔄 Auto</button><button class="sbtn" type="button" data-o="portrait">▯ Portrait</button><button class="sbtn" type="button" data-o="landscape">▭ Paysage</button></div>
+        <p class="fine">Auto : le jeu suit le téléphone quand tu le tournes.</p>
+      </div>
+    </div>
+    <div class="panelbox col setbox"><div class="cflist" id="setSound"></div></div>
+    <div class="panelbox col setbox">
+      <h2 class="ptitle">Confort et accessibilité</h2>
+      <div class="cflist" id="cfList"></div>
+      <p class="fine">Ces réglages restent sur ce téléphone.</p>
+    </div>
+    <button class="btn alt" id="tTuto" type="button" hidden>Tutoriel animé</button>
+    <button class="btn alt dangerb" id="prReset" type="button">Réinitialiser la progression…</button>
+    <div class="resetbox" id="prResetBox" hidden>
+        <p><b>Tout effacer et repartir de zéro ?</b> Éclats, Atelier, cartes achetées, records, cagnotte, bonus, trophées, stats et partie en cours seront perdus. Ton pseudo, la langue et le son sont gardés. Impossible de revenir en arrière.</p>
+        <div class="mp-seg"><button class="sbtn" id="prResetNo" type="button">Annuler</button><button class="sbtn danger" id="prResetYes" type="button">Oui, tout effacer</button></div>
+      </div>
+    <button class="btn stickyb" id="setBack" type="button">Retour</button>
+  </div>
+</section>
+
 <section class="screen" id="sHelp" hidden>
   <div class="inner">
-    <div class="bigword calm head">AIDE</div>
+    <div class="srail"><div class="bigword calm head">AIDE</div></div>
     <div class="tabbar" role="tablist" id="hTabs">
       <button type="button" role="tab" data-tab="tow">Gardiens</button>
       <button type="button" role="tab" data-tab="combo">Combos</button>
@@ -197,7 +220,7 @@
 
 <section class="screen veil" id="sPause" hidden>
   <div class="inner">
-    <div class="bigword calm">PAUSE</div>
+    <div class="srail"><div class="bigword calm">PAUSE</div></div>
     <div class="panelbox col">
       <button class="btn" id="pResume" type="button">Reprendre<span class="kbd">Échap</span></button>
       <div class="row">
@@ -218,8 +241,8 @@
 
 <section class="screen veil" id="sOver" hidden>
   <div class="inner">
-    <canvas id="oYglou" aria-hidden="true"></canvas>
-    <div class="bigword" id="oWord">K.O. !</div>
+    <div class="srail"><canvas id="oYglou" aria-hidden="true"></canvas>
+    <div class="bigword" id="oWord">K.O. !</div></div>
     <div class="panelbox col">
       <p class="fine" id="oText" style="font-size:15px;opacity:1"></p>
       <div class="stats">
@@ -245,11 +268,11 @@
 
 <section class="screen" id="sShop" hidden>
   <div class="inner">
-    <div>
+    <div class="srail"><div>
       <div class="bigword win" style="font-size:clamp(50px,14vw,84px)">L’ATELIER</div>
       <div class="purse"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l7 7-7 13L5 9z" fill="#c59bff" stroke="#2a1b3d" stroke-width="2.2" stroke-linejoin="round"/><path d="M5 9h14M12 2L9 9l3 13 3-13z" fill="none" stroke="#2a1b3d" stroke-width="1.3" stroke-linejoin="round"/></svg><b id="sShards">0</b><span>éclats</span></div>
     </div>
-    <div class="ybub"><canvas id="sYglou" aria-hidden="true"></canvas><p class="fine" id="sBubble" style="font-size:14px;opacity:1"></p></div>
+    <div class="ybub"><canvas id="sYglou" aria-hidden="true"></canvas><p class="fine" id="sBubble" style="font-size:14px;opacity:1"></p></div></div>
     <div class="tabbar" role="tablist" id="sTabs">
       <button type="button" role="tab" data-tab="tow">Gardiens<span class="dot"></span></button>
       <button type="button" role="tab" data-tab="fus">Fusions<span class="dot"></span></button>
@@ -296,13 +319,13 @@
 
 <section class="screen" id="sMaps" hidden>
   <div class="inner">
-    <div class="bigword calm head">LES CARTES</div>
+    <div class="srail"><div class="bigword calm head">LES CARTES</div>
     <div class="mtop"><div class="purse"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#ffd23f" stroke="#2a1b3d" stroke-width="2.2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#e0a800" stroke-width="2"/></svg><b id="mBank">0</b><span>or en cagnotte</span></div><button class="qbtn" id="mInfo" type="button" aria-label="À quoi sert la cagnotte ?" aria-expanded="false" aria-controls="mInfoTxt">?</button></div>
     <button class="btn adbtn" id="mAd" type="button" hidden></button>
     <p class="fine minfotxt" id="mInfoTxt" hidden>L’or qu’il te reste à la fin d’une partie rejoint la cagnotte : 85 % en cas de victoire, 40 % en cas de K.O., rien si tu abandonnes (tu perds aussi les éclats gagnés pendant la partie). Elle sert uniquement à acheter de nouvelles cartes. Pour en acheter une, réussis d’abord la carte précédente en Facile.</p>
     <p class="mp-err" id="mTest" hidden>🧪 Mode test : toutes les cartes et tous les événements sont débloqués.</p>
     <button class="btn green" id="mGuide" type="button" hidden>🎓 Tutoriel guidé · une partie pas à pas</button>
-    <!-- Les défis : carte du jour, piment de la semaine, carte aléatoire (bandeau qui défile sur le côté) -->
+</div>    <!-- Les défis : carte du jour, piment de la semaine, carte aléatoire (bandeau qui défile sur le côté) -->
     <h3 class="msect">Les défis</h3>
     <div class="mstrip" id="mStrip"></div>
     <div class="tabbar" role="tablist" id="mTabs">
@@ -349,7 +372,7 @@
 
 <section class="screen veil" id="sDuel" hidden>
   <div class="inner">
-    <div class="bigword" id="dWord">VICTOIRE !!</div>
+    <div class="srail"><div class="bigword" id="dWord">VICTOIRE !!</div></div>
     <div class="panelbox col">
       <p class="fine" id="dText" style="font-size:15px;opacity:1"></p>
       <ol class="mp-rank" id="dRank"></ol>
@@ -368,14 +391,14 @@
 
 <section class="screen" id="sMulti" hidden>
   <div class="inner">
-    <div class="bigword calm head">MULTIJOUEUR</div>
+    <div class="srail"><div class="bigword calm head">MULTIJOUEUR</div></div>
     <div class="panelbox col" id="mpBody"></div>
   </div>
 </section>
 
 <section class="screen" id="sFriends" hidden>
   <div class="inner">
-    <div class="bigword calm head">MES AMIS</div>
+    <div class="srail"><div class="bigword calm head">MES AMIS</div></div>
     <div class="panelbox col fr">
       <div class="frcode"><div><span class="mp-label">Mon code ami</span><b id="frMyCode">…</b></div><button class="sbtn" id="frQrBtn" type="button">QR</button></div>
       <p class="fine frtip">Donne-le seulement à des amis que tu connais en vrai.</p>
@@ -388,7 +411,7 @@
 </section>
 <section class="screen" id="sFrAdd" hidden>
   <div class="inner">
-    <div class="bigword calm head">AJOUTER</div>
+    <div class="srail"><div class="bigword calm head">AJOUTER</div></div>
     <div class="panelbox col fr">
       <span class="mp-label">Tape son code ami</span>
       <div class="fain" id="faIn"></div>
@@ -402,15 +425,15 @@
 </section>
 <section class="screen" id="sParents" hidden>
   <div class="inner">
-    <div class="bigword calm head">PARENTS</div>
+    <div class="srail"><div class="bigword calm head">PARENTS</div></div>
     <div class="panelbox col pa" id="paBody"></div>
     <button class="btn stickyb" id="paBack" type="button">Retour</button>
   </div>
 </section>
 <section class="screen" id="sWardrobe" hidden>
   <div class="inner">
-    <div class="bigword calm head">GARDE-ROBE</div>
-    <span class="wrbank">🐷 <b id="wrBank">0</b> <span>or en cagnotte</span></span>
+    <div class="srail"><div class="bigword calm head">GARDE-ROBE</div>
+    <span class="wrbank">🐷 <b id="wrBank">0</b> <span>or en cagnotte</span></span></div>
     <div class="panelbox col wr">
       <div class="wrprev"><canvas id="wrPrev" aria-label="Yglou avec sa tenue" role="img"></canvas></div>
       <div class="wrsel" id="wrSel" hidden>
@@ -428,7 +451,7 @@
 </section>
 <section class="screen" id="sStory" hidden>
   <div class="inner">
-    <div class="bigword calm head storyhead">LA FLAMME DE BRAISE</div>
+    <div class="srail"><div class="bigword calm head storyhead">LA FLAMME DE BRAISE</div></div>
     <div class="stworld" id="stWorld"></div>
     <div class="stteam" id="stTeam"></div>
     <button class="btn" id="stPlay" type="button">Jouer</button>
@@ -540,14 +563,6 @@
   </div>
 </div>
 <!-- Confort et accessibilité (js/comfort.js) -->
-<div class="intro" id="comfortPop" role="dialog" aria-modal="true" aria-labelledby="cfTitle" hidden>
-  <div class="intro-card">
-    <h2 id="cfTitle">Confort de jeu</h2>
-    <div class="cflist" id="cfList"></div>
-    <p class="fine">Ces réglages restent sur ce téléphone.</p>
-    <button class="btn" id="cfClose" type="button">Fermer</button>
-  </div>
-</div>
 <!-- Reconnexion en ligne (js/online.js) -->
 <div class="reconn" id="reconnBox" role="status" hidden><span class="reconn-spin" aria-hidden="true"></span><b>Reconnexion…</b><small>Le réseau a coupé : on rejoint la partie.</small></div>
 <!-- Reprendre une partie en ligne après avoir fermé l'appli (js/online.js) -->
