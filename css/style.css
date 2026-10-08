@@ -1159,3 +1159,12 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
 .avedit{position:absolute;right:-6px;bottom:-4px;width:34px;height:34px;border-radius:50%;border:2.5px solid var(--ink);background:var(--paper);box-shadow:0 2px 0 var(--ink);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
 .avedit svg{width:18px;height:18px}
 .avedit:active{transform:translateY(1px);box-shadow:none}
+/* Panneau du bas resserré (plateau plus grand) : fiche d'une tour plus compacte, une petite marge sous les boutons */
+#iWhat{width:24px;height:24px;font-size:13px;border-width:2px;box-shadow:0 2px 0 var(--ink)}
+#info{gap:5px}
+#iCv{width:32px;height:36px}
+#iName{font-size:20px}
+#iStars{font-size:12px}
+.iclose{width:30px;height:30px}
+#iActions .sbtn{height:40px}
+#panel{height:calc(134px + var(--sab));padding:6px 14px calc(10px + var(--sab))}

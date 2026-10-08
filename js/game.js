@@ -75,8 +75,9 @@ function resize() {
   const vc = L.portrait ? ROWS : COLS, vr = L.portrait ? COLS : ROWS;
   const NW = 36; // place réservée sous la carte pour l'aperçu de la prochaine vague
   const TB = G && (G.duel || G.coop) ? 34 : 0; // et au-dessus pour le bandeau des joueurs (duel, coop)
-  L.cs = Math.max(8, Math.min((L.w - 32) / vc, (L.h - 24 - NW - TB) / vr));
-  L.ox = (L.w - vc * L.cs) / 2; L.oy = TB + Math.max(8, (L.h - NW - TB - vr * L.cs) / 2);
+  // Marges serrées (6 px de chaque côté) : le plateau prend presque toute la largeur ou la hauteur, cases plus grandes
+  L.cs = Math.max(8, Math.min((L.w - 12) / vc, (L.h - 12 - NW - TB) / vr));
+  L.ox = (L.w - vc * L.cs) / 2; L.oy = TB + Math.max(6, (L.h - NW - TB - vr * L.cs) / 2);
   if (G) { buildBg(); for (const e of G.enemies) setPos(e); }
 }
 function dotPattern(c, col, step) {
