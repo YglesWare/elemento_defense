@@ -141,6 +141,7 @@
       </div>
     </div>
     <div class="panelbox col setbox"><div class="cflist" id="setSound"></div></div>
+    <div class="panelbox col setbox" id="setSRE" hidden><div class="cflist" id="setSREList"></div></div>
     <div class="panelbox col setbox">
       <h2 class="ptitle">Confort et accessibilité</h2>
       <div class="cflist" id="cfList"></div>
@@ -638,6 +639,15 @@
   </div>
 </div>
 <div class="trophytoast" id="trophyToast" role="status" aria-live="polite" hidden></div>
+<!-- Une blague pour un ami testeur (js/surprise.js) -->
+<div class="intro" id="surprisePop" role="dialog" aria-modal="true" aria-labelledby="spTitle" hidden>
+  <div class="intro-card">
+    <canvas id="spYg" class="spyg" aria-hidden="true"></canvas>
+    <h2 id="spTitle"></h2>
+    <p id="spText"></p>
+    <div class="intro-foot"><button class="btn alt" id="spWeak" type="button"></button><button class="btn" id="spProve" type="button">Tu me prends pour qui ?</button></div>
+  </div>
+</div>
 <!-- Monstres nouveaux de la partie, au départ (js/bestiary.js) -->
 <div class="intro" id="mobPop" role="dialog" aria-modal="true" aria-labelledby="mobTitle" hidden>
   <div class="intro-card">
@@ -661,4 +671,4 @@
 </div>
 <!-- Les données du joueur (IndexedDB) sont chargées d'abord, puis les scripts du jeu, dans cet ordre -->
 <script src="js/storage.js"></script>
-<script>store.boot(['js/errors.js', 'js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bestiary.js', 'js/bonus.js', 'js/trophies.js', 'js/actions.js', 'js/vendor/supabase.js', 'js/cloud.js', 'js/parents.js', 'js/friends.js', 'js/online.js', 'js/emotes.js', 'js/news.js', 'js/quests.js', 'js/ranking.js', 'js/challenge.js', 'js/ads.js', 'js/wardrobe.js', 'js/comfort.js', 'js/story.js']);</script>
+<script>store.boot(['js/errors.js', 'js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bestiary.js', 'js/surprise.js', 'js/bonus.js', 'js/trophies.js', 'js/actions.js', 'js/vendor/supabase.js', 'js/cloud.js', 'js/parents.js', 'js/friends.js', 'js/online.js', 'js/emotes.js', 'js/news.js', 'js/quests.js', 'js/ranking.js', 'js/challenge.js', 'js/ads.js', 'js/wardrobe.js', 'js/comfort.js', 'js/story.js']);</script>

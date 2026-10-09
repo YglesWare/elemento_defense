@@ -45,6 +45,7 @@ function settingsRender() {
   $('#setOrientBox').hidden = !ORIENT;
   $('#setOrient').querySelectorAll('[data-o]').forEach(b => b.classList.toggle('on', b.dataset.o === (opts.orient || 'auto')));
   comfortRender();
+  if (typeof sreRender === 'function') sreRender();
 }
 function openSettings() { Snd.init(); $('#prResetBox').hidden = true; settingsRender(); show('settings'); screens.settings.scrollTop = 0; }
 $('#prSettings').addEventListener('click', openSettings);

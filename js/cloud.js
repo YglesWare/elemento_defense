@@ -412,6 +412,7 @@ function cloudWho() {
   return (id ? PROVIDERS[id.provider] : T('Compte')) + (name ? ' · ' + name : '');
 }
 function cloudPaint() {
+  if (typeof surpriseCheck === 'function') setTimeout(surpriseCheck, 600); // première connexion d'un ami testeur (js/surprise.js)
   const box = $('#prCloud'); if (!box) return;
   if (cloudOff()) { box.hidden = true; return; }
   const who = cloudWho(), ago = CLOUD.lastSync ? Math.max(0, Math.round((Date.now() - CLOUD.lastSync) / 60000)) : null;

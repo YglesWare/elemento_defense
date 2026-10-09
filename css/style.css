@@ -480,6 +480,8 @@ html.coaching :is(#hud .ibtn,#bWave,.tbtn,#iActions .sbtn,#iClose,#iWhat,#bBonus
 html.coaching #trBrs .uprow:has(.coachT){opacity:1;filter:none}
 #coachRing.nudge{animation:cnudge .35s ease-out}
 @keyframes cnudge{0%,100%{transform:scale(1)}40%{transform:scale(1.18)}}
+.spyg{width:72px;height:72px}
+#surprisePop .intro-foot .btn{font-size:18px}
 /* Monstres nouveaux de la partie (js/bestiary.js) : la fenêtre du départ, la bulle une vague avant */
 .moblist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;width:100%;text-align:left}
 .moblist.one{grid-template-columns:1fr}

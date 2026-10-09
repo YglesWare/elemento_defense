@@ -10,7 +10,7 @@ const STORE_DB = 'elemento', STORE_VER = 1;
 const STORE_DOMAINS = {
   'elemento.pseudo': 'profile', 'elemento.playerId': 'profile', 'elemento.lang': 'profile', 'elemento.opts': 'profile',
   'elemento.meta': 'progress', 'elemento.best2': 'progress', 'elemento.best': 'progress',
-  'elemento.yglouEgg': 'progress', 'elemento.intro': 'progress', 'elemento.trophies': 'progress', 'elemento.daily': 'progress', 'elemento.tuto': 'progress', 'elemento.guideDone': 'progress', 'elemento.seen': 'progress',
+  'elemento.yglouEgg': 'progress', 'elemento.intro': 'progress', 'elemento.trophies': 'progress', 'elemento.daily': 'progress', 'elemento.tuto': 'progress', 'elemento.guideDone': 'progress', 'elemento.surprise': 'progress', 'elemento.easySRE': 'progress', 'elemento.seen': 'progress',
   'elemento.stats': 'stats',
   'elemento.save': 'save',
 };

@@ -18,7 +18,7 @@ function barsColor(name) {
 }
 // Grands chiffres des fins de partie : plus petits quand ils sont longs (16 440 ne tient pas en 28 px dans une case)
 function statFit(...sels) { for (const s of sels) { const e = $(s), n = e.textContent.length; e.style.fontSize = n >= 6 ? '17px' : n === 5 ? '21px' : n === 4 ? '24px' : ''; } }
-function show(name) { for (const k in screens) screens[k].hidden = k !== name; curScreen = name; barsColor(name); if (name === 'title') { refreshTitle(); if (typeof updCheck === 'function') updCheck(); if (typeof trophyScan === 'function') { trophyPay(); trophyScan(); } if (typeof cloudSync === 'function') cloudSync(); } }
+function show(name) { for (const k in screens) screens[k].hidden = k !== name; curScreen = name; barsColor(name); if (name === 'title') { refreshTitle(); if (typeof updCheck === 'function') updCheck(); if (typeof surpriseCheck === 'function') setTimeout(surpriseCheck, 600); if (typeof trophyScan === 'function') { trophyPay(); trophyScan(); } if (typeof cloudSync === 'function') cloudSync(); } }
 barsColor(curScreen);
 function setText(el, key, v) { if (hudCache[key] !== v) { hudCache[key] = v; el.textContent = v; } }
 function setHTML(el, key, v) { if (hudCache[key] !== v) { hudCache[key] = v; el.innerHTML = v; } }
