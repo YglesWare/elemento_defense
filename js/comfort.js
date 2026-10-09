@@ -32,6 +32,7 @@ function comfortRender() {
   $('#cfList').querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => {
     COMFORT[b.dataset.k] = !COMFORT[b.dataset.k]; store.set(COMFORT_KEY, COMFORT); comfortApply(); comfortRender();
   }));
+  if (typeof sreRender === 'function') sreRender(); // la version simplifiée d'un ami testeur (js/surprise.js)
 }
 // Page Réglages (depuis le Profil) : langue, écran, son, confort, réinitialisation
 function settingsRender() {
@@ -45,7 +46,6 @@ function settingsRender() {
   $('#setOrientBox').hidden = !ORIENT;
   $('#setOrient').querySelectorAll('[data-o]').forEach(b => b.classList.toggle('on', b.dataset.o === (opts.orient || 'auto')));
   comfortRender();
-  if (typeof sreRender === 'function') sreRender();
 }
 function openSettings() { Snd.init(); $('#prResetBox').hidden = true; settingsRender(); show('settings'); screens.settings.scrollTop = 0; }
 $('#prSettings').addEventListener('click', openSettings);

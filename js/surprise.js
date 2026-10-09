@@ -32,8 +32,8 @@ function surpriseWait() {
 function surpriseShow(mode) {
   const ask = mode === 'ask';
   $('#spTitle').textContent = ask ? 'Bienvenue, mon SRE préféré' : mode === 'liar' ? 'Menteur !!!' : 'Je le savais !';
-  $('#spText').textContent = ask ? 'Te sachant limité, je t’ai concocté une version simplifiée du jeu. Veux-tu revenir au mode normal et faire tes preuves, ou pas ?' : '';
-  $('#spText').hidden = !ask;
+  $('#spText').textContent = ask ? 'Te sachant limité, je t’ai concocté une version simplifiée du jeu. Veux-tu revenir au mode normal et faire tes preuves, ou pas ?'
+    : 'Le jour où tu seras bon, tu pourras repasser en mode normal : Profil → Réglages → Confort et accessibilité → Version simplifiée.';
   $('#spWeak').textContent = ask ? 'Non, je suis faible' : mode === 'liar' ? 'Ok je suis faible' : 'Ok';
   $('#spProve').hidden = !ask;
   drawYglou(prepMini($('#spYg'), 72, 72), 36, 42, 62, ask ? 'wink' : mode === 'liar' ? 'shock' : 'party', 0, { noShadow: true, noConfetti: true });
@@ -47,12 +47,10 @@ $('#spWeak').addEventListener('click', () => {
 });
 $('#spProve').addEventListener('click', () => { Snd.init(); Snd.play('no'); surpriseShow('liar'); });
 
-// Réglages : l'interrupteur de la version simplifiée, seulement pour lui
+// Réglages, dans « Confort et accessibilité » : l'interrupteur de la version simplifiée, seulement pour lui
 function sreRender() {
-  const box = $('#setSRE'); if (!box) return;
-  box.hidden = store.get(BLAGUE_KEY) !== 'SRE';
-  if (box.hidden) return;
+  const box = $('#cfList'); if (!box || store.get(BLAGUE_KEY) !== 'SRE') return;
   const on = sreEasy();
-  $('#setSREList').innerHTML = '<div class="paset"><div><b>Version simplifiée</b><small>Pour mon SRE préféré : ennemis 15 % moins solides en solo. Coupe-la pour faire tes preuves.</small></div><button class="patog' + (on ? ' on' : '') + '" type="button" role="switch" aria-checked="' + on + '" id="setSRETog"></button></div>';
-  $('#setSRETog').addEventListener('click', () => { store.set(EASY_SRE_KEY, !sreEasy()); sreRender(); });
+  box.insertAdjacentHTML('beforeend', '<div class="paset"><div><b>Version simplifiée</b><small>Pour mon SRE préféré : ennemis 15 % moins solides en solo. Coupe-la pour faire tes preuves.</small></div><button class="patog' + (on ? ' on' : '') + '" type="button" role="switch" aria-checked="' + on + '" id="setSRETog"></button></div>');
+  $('#setSRETog').addEventListener('click', () => { store.set(EASY_SRE_KEY, !sreEasy()); comfortRender(); });
 }
