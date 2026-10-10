@@ -1350,6 +1350,8 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
 .setbox{gap:8px}
 .setbox .ptitle{margin:0}
 .setorient{display:flex;flex-direction:column;gap:8px}
+#setOrient .sbtn{display:inline-flex;align-items:center;justify-content:center;gap:5px}
+.oric{width:20px;height:20px;flex:none}
 .setorient .fine{text-align:left;margin:0}
 .btn.dangerb{background:var(--paper);border-style:dashed;border-color:var(--pop);color:var(--pop);box-shadow:none;font-size:17px}
 

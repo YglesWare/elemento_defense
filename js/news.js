@@ -6,6 +6,10 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  124: [
+    ['🪙', 'Chaque monstre vaincu rapporte un peu plus d’or (+2,5 %).'],
+    ['📱', 'Réglages : nouvelles icônes pour l’orientation de l’écran (Auto, Portrait, Paysage).'],
+  ],
   123: [
     ['🔒', 'Les tours ne se vendent plus : une tour posée peut seulement être annulée (remboursée en entier) tant qu’elle n’a ni tiré ni fini sa première vague. Les fusions ne se vendent jamais.'],
     ['💎', 'L’amélioration « Revente » de l’Atelier disparaît : ses éclats te sont rendus. Le piment « Pas de remboursement » est retiré.'],

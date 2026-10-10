@@ -833,10 +833,12 @@ function kill(e) {
   e.dead = true;
   const D = ETYPES[e.type]; if (!G.demo && !G.story) { stats.kills++; stats.killsBy = stats.killsBy || {}; stats.killsBy[e.type] = (stats.killsBy[e.type] || 0) + 1; if (typeof questEvent === 'function') questEvent('kill'); if (D.boss) { stats.bosses++; if (typeof trophyBoss === 'function') trophyBoss(); if (typeof questEvent === 'function') questEvent('boss'); } }
   const up = (e.flying ? FLY : 0) + 0.25;
-  const lf = G.chal ? chalLoot() : 1, rw = G.coop ? coopLoot(D.reward * (1 + G.wave * 0.01) * lf) : Math.round(D.reward * (1 + G.wave * 0.01) * (1 + 0.06 * M('loot')));
-  if (!G.coop) G.gold += Math.round(rw * lf); G.score += rw * 10;
+  const lf = G.chal ? chalLoot() : 1, base = D.reward * (1 + G.wave * 0.01), rw = G.coop ? coopLoot(base * ECO.loot * lf) : Math.round(base * (1 + 0.06 * M('loot')));
+  let got = rw;
+  if (!G.coop) { G.goldBit = (G.goldBit || 0) + base * (1 + 0.06 * M('loot')) * ECO.loot * lf; got = Math.floor(G.goldBit + 1e-6); G.goldBit -= got; G.gold += got; }
+  G.score += rw * 10;
   burst(e.x, e.y, up, D.boss ? 40 : 10, [D.color, D.light, '#ffffff'], D.boss ? 4 : 2.4, D.boss ? 0.14 : 0.09, 4, 0.6);
-  G.texts.push({ txt: '+' + rw, gx: e.x, gy: e.y, oy: -up - 0.3, t: 0, dur: 0.8, color: '#ffd23f', size: 0.32, rot: 0 });
+  if (got) G.texts.push({ txt: '+' + got, gx: e.x, gy: e.y, oy: -up - 0.3, t: 0, dur: 0.8, color: '#ffd23f', size: 0.32, rot: 0 });
   if (e.type === 'malefik') for (const t of G.towers) if (t.evil > 0 && t.evilBy === e.id) { t.evil = 0; ono(T('LIBÉRÉE !'), t.x, t.y, '#5cd86a', 0.42, 0, 0.9); }
   if (D.boss) {
     G.bossKills++; ono('K.O. !!', e.x, e.y, '#ff4f81', 1.1, 0, 0.9); G.shake = 0.7; Snd.play('boom');
