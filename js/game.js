@@ -638,6 +638,7 @@ function spawn(type, pi) {
   if (type === 'lapin') e.jT = rand(1.5, 3);
   if (type === 'calinou' || type === 'soignou') e.abT = rand(1, 2.5);
   if (type === 'bulle') e.shield = e.shieldMax = e.maxHp * 0.6; // la bulle encaisse avant les PV
+  if (type === 'taupe') e.dig = rand(2, 3.5); // Taupi : prochain passage sous terre
   setPos(e); G.enemies.push(e);
   if (typeof introMob === 'function' && !G.coopGuest) introMob(type);
   if (D.boss) {
@@ -726,6 +727,11 @@ function updateEnemy(e, dt) {
     G.fx.push({ kind: 'ring', gx: e.x, gy: e.y, r0: 0.2, r1: 1.6, t: 0, dur: 0.45, color: sg ? '#5fd38a' : '#ff9ac6' });
     if (n) ono(sg ? T('+ SOIN !') : T('♥ CÂLIN !'), e.x, e.y, sg ? '#2fae5a' : '#ff6fa8', 0.42, 0.4, 0.8);
   }
+  // Taupi : toutes les 4 s, 1,5 s sous terre (intouchable, plus rapide), puis il ressort
+  if (e.type === 'taupe' && !G.demo) {
+    if (e.ghost > 0) { e.ghost -= dt; if (e.ghost <= 0) { e.under = false; burst(e.x, e.y, 0.2, 10, ['#9b7a5a', '#d8bf9f', '#6e5640'], 2.2, 0.09, 3, 0.5); } }
+    else if (!(e.frozen > 0 || e.stun > 0) && (e.dig -= dt) <= 0) { e.dig = 4; e.ghost = 1.5; e.under = true; e.burnT = 0; ono(T('CREUSE !'), e.x, e.y, '#d8bf9f', 0.4, 0.3, 0.7); }
+  }
   if ((e.type === 'spectre' || e.ghostAll) && !G.demo) {
     if (e.ghost > 0) e.ghost -= dt;
     else if ((e.gcy -= dt) <= 0) {
@@ -745,6 +751,7 @@ function updateEnemy(e, dt) {
     if (e.hp <= 0) { kill(e); return; }
   }
   let v = e.speed * (1 - e.slowA) * (G.weather === 'storm' && e.flying ? 1.25 : G.weather === 'blizzard' ? 0.9 : 1);
+  if (e.under) v *= 1.6;
   if (e.frozen > 0 || e.stun > 0) v = 0;
   e.d += v * dt; e.phase += v * dt * 6;
   if (e.d >= PP(e).goal) { reachBase(e); return; }
@@ -753,6 +760,17 @@ function updateEnemy(e, dt) {
 function reachBase(e) {
   if (G.demo || G.coopGuest) { e.dead = true; return; }
   const B = PP(e).base;
+  // Chipeur vole de l'or, Pillécla des éclats gagnés dans la partie ; ils repartent du portail tant qu'ils ne sont pas vaincus
+  // (ce qui est volé est perdu, même s'ils tombent ensuite)
+  if (e.type === 'voleur' || e.type === 'pilleur') {
+    if (e.type === 'voleur') { const n = Math.min(G.gold, Math.max(5, Math.round(G.gold * 0.1))); G.gold -= n; ono(n ? '−' + n + T(' OR !') : T('RIEN À VOLER'), B[0], B[1], '#ffd23f', 0.6, 0.2, 1.1); }
+    else { const n = Math.min(G.shardsPaid || 0, Math.max(1, Math.round((G.shardsPaid || 0) * 0.1))); if (n) { G.shardsPaid -= n; meta.shards = Math.max(0, meta.shards - n); meta.earned = Math.max(0, (meta.earned || 0) - n); saveMeta(); } ono(n ? '−' + n + T(' ÉCLATS !') : T('RIEN À VOLER'), B[0], B[1], '#c59bff', 0.6, 0.2, 1.1); }
+    Snd.play('no'); G.shake = Math.max(G.shake, 0.25);
+    // Au bout de 3 passages, il s'enfuit avec son butin (la vague peut se terminer)
+    e.laps = (e.laps || 0) + 1;
+    if (e.laps >= 3) { e.dead = true; ono(T('ENVOLÉ !'), B[0], B[1] - 0.4, '#ffffff', 0.5, 0.3, 1); return; }
+    e.d = PP(e).d0; setPos(e); return;
+  }
   if (!e.lifeCost) { e.dead = true; ono(T('FILÉE !'), B[0], B[1], '#ffd23f', 0.5, 0.2, 1.1); return; }
   e.dead = true; G.lives -= e.lifeCost; G.lostLife = true; if (G.firstLeak == null) G.firstLeak = G.wave; G.shake = Math.max(G.shake, 0.45); G.hurtT = 0.5; G.baseHit = 0.4; G.hitBase = B;
   ono(e.lifeCost > 1 ? '-' + e.lifeCost + ' ♥' : T('AÏE!'), B[0], B[1], '#ff4f6e', 0.6, 0.2, 1.1);
@@ -861,7 +879,7 @@ function updateTower(t, dt) {
   const s = t.s, [cx, cy] = windCenter(t), R2 = s.range * s.range, list = [];
   for (const e of G.enemies) { if (e.dead || e.ghost > 0 || !canHit(s, e)) continue; const dx = e.x - cx, dy = e.y - cy; if (dx * dx + dy * dy <= R2) list.push(e); }
   if (!list.length) { t.cd = 0.08; return; }
-  t.cd = 1 / s.rate; t.recoil = 1; t.fired = true;
+  t.cd = 1 / s.rate / givronSlow(t); t.recoil = 1; t.fired = true;
   if (t.type === 'glace' || t.type === 'blizzard') { pulse(t, s, list); return; }
   if (t.type === 'sable') { sandPulse(t, s, list); return; }
   if (t.type === 'orage') { storm(t, s, list); return; }
@@ -908,7 +926,12 @@ function geyserBlast(s, tg) {
   if (Math.random() < 0.3) ono('PSHHH!', x, y, '#dff6ff', 0.5, 0.4, 1.0);
 }
 // Ciblage : plus le score est haut, plus l'ennemi est visé (premier = le plus avancé vers la maison)
+// Givron : les tours à moins de 2 cases de lui tirent 30 % moins vite
+const GIVRON_R2 = (2 * CW) ** 2;
+const givronSlow = t => G.enemies.some(e => e.type === 'givre' && !e.dead && (e.x - t.x) ** 2 + (e.y - t.y) ** 2 <= GIVRON_R2) ? 0.7 : 1;
 function aimScore(t, e, cx, cy) {
+  // Aimanto attire les tirs à cible unique des tours qui l'ont à portée (sauf le mode Boss, qui vise toujours le boss)
+  if (e.type === 'aimant' && t.mode !== 'boss') return 1e9 + e.d;
   const ahead = e.d - PP(e).goal;
   switch (t.mode) {
     case 'dernier': return -ahead;
@@ -972,6 +995,7 @@ function pulse(t, s, list) {
   t.pulses++; const frz = t.pulses % s.every === 0, cx = t.x, cy = t.y;
   for (const e of list) {
     hurt(e, s.dmg * (e.flying && s.airBonus ? s.airBonus : 1), 'glace', s); if (e.dead) continue;
+    if (ETYPES[e.type].immune === 'glace') continue; // Givron : ni ralenti ni gelé
     slowE(e, s.slow, 1.6);
     if (frz) e.frozen = Math.max(e.frozen, s.freeze * (ETYPES[e.type].boss && !(s.bossLv >= 2) ? 0.35 : 1));
   }

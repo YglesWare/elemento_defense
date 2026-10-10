@@ -5,12 +5,12 @@
 'use strict';
 
 // Le monstre ajouté par chaque carte de l'aventure (dans l'ordre) ; Gloop, Zippy et le Kaiju sont là dès la carte 1
-const MOB_ORDER = ['', 'flappy', 'tonk', 'magma', 'gresil', 'crachou', 'malefik', 'soignou', 'bulle', 'scindo'];
-// Les élites n'existent que sur les cartes 8 à 10 de l'aventure (et en mode infini sur ces cartes), dès la vague 5
-const ELITES = { soignou: 7, bulle: 8, scindo: 9 };
+const MOB_ORDER = ['', 'flappy', 'tonk', 'magma', 'gresil', 'crachou', 'malefik', 'soignou', 'bulle', 'scindo', 'taupe', 'voleur', 'aimant', 'givre', 'pilleur'];
+// Les élites (cartes 8 à 10) et les monstres du chapitre 2 (cartes 11 à 15) n'existent qu'à partir de leur carte de l'aventure, dès la vague 5
+const ELITES = { soignou: 7, bulle: 8, scindo: 9, taupe: 10, voleur: 11, aimant: 12, givre: 13, pilleur: 14 };
 const MOB_FRESH_WAVE = 5;
 // Première vague où chaque monstre peut sortir (js/game.js makeWave)
-const MOB_FIRST = { zip: 3, flappy: 4, tonk: 6, gresil: 7, magma: 8, crachou: 9, boss: 10, malefik: 12, soignou: 5, bulle: 5, scindo: 5 };
+const MOB_FIRST = { zip: 3, flappy: 4, tonk: 6, gresil: 7, magma: 8, crachou: 9, boss: 10, malefik: 12, soignou: 5, bulle: 5, scindo: 5, taupe: 5, voleur: 5, aimant: 5, givre: 5, pilleur: 5 };
 const MOB_SHORT = {
   gloop: T('Le slime de base, lent et sans pouvoir.'),
   zip: T('Minuscule et très rapide : Ondine le ralentit.'),
@@ -24,6 +24,11 @@ const MOB_SHORT = {
   soignou: T('Il soigne les slimes autour de lui : abats-le en premier.'),
   bulle: T('Sa bulle encaisse les coups : Braise et Voltie l’éclatent plus vite.'),
   scindo: T('Il se divise en trois Gloops : une tour de zone juste derrière lui.'),
+  taupe: T('Il creuse sous terre : place des tours tout le long du chemin.'),
+  voleur: T('Il vole de l’or à la maison puis repart : ralentis-le et abats-le vite.'),
+  aimant: T('Il attire les tirs : les tours de zone touchent quand même les autres.'),
+  givre: T('Le froid ne lui fait rien, et il ralentit les tours proches : mise sur Braise.'),
+  pilleur: T('Il vole des éclats de la partie : une chaîne de tours près de la maison.'),
 };
 // Élites possibles sur la carte en cours (pour le tirage des vagues, js/game.js makeWave)
 function mobElites(w) {
@@ -142,6 +147,7 @@ screens.best = $('#sBest');
 const BEST_GROUPS = [
   [T('L’aventure'), ['gloop', 'zip', 'flappy', 'tonk', 'magma', 'gresil', 'crachou', 'malefik', 'boss']],
   [T('Les élites'), ['soignou', 'bulle', 'scindo']],
+  [T('Le chapitre 2'), ['taupe', 'voleur', 'aimant', 'givre', 'pilleur']],
   [T('Les événements'), ['spectre', 'potiron', 'cadeau', 'lapin', 'calinou', 'hongbao']],
 ];
 const BEST_ALL = BEST_GROUPS.flatMap(g => g[1]);

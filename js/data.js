@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 119;
+const BUILD = 120;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -121,6 +121,32 @@ const MAPS = [
     deco: ['flocon', 'herbe'], obstacle: 'sapin',
     paths: [[[-1, 3], [8, 3], [8, 6], [21, 6]], [[12, -1], [12, 6], [21, 6]], [[4, 13], [4, 9], [16, 9], [16, 6], [21, 6]]],
     terrain: ['NNXXNNLLNNXXNN', 'N.RN..LL.KK.XN', 'XN.NLL..N.R.NN', '.......N.X.RNN', 'NRN.X.....N..X', 'N.LL.N.RXN.LLN', 'XN.NN.........', 'NNX.W.RLL.N.XN', 'XXNNXXNNNNXXNN'] },
+  // Chapitre 2 (cartes 11 à 15) : un nouveau monstre par carte (js/bestiary.js), dès la vague 5
+  { id: 'mine', name: T('Mine Onigiri'), price: 2600, hpMul: 1.7, shards: 2, blurb: T('Des galeries de roche et de cristaux : la terre et l’éclair y sont chez eux.'),
+    ground: '#a38b72', ground2: '#9a8269', path: '#e2c99a', pathEdge: '#8a6a48', frame: '#5a4636', dot: 'rgba(255,220,140,.18)',
+    deco: ['roche', 'cristal', 'roche'], obstacle: 'rocher',
+    paths: [[[-1, 6], [3, 6], [3, 1], [9, 1], [9, 11], [14, 11], [14, 4], [18, 4], [18, 9], [21, 9]]],
+    terrain: ['RR..KK..RRX.RR', 'R....R......KR', '..X.....RR.C..', 'KK..RR......RR', 'R...C...KK..R.', '..RR...X....KK', 'X.....RR..C...', '..KK.......RR.', 'RRXRR..KKRRXRR'] },
+  { id: 'port', name: T('Port Sushi'), price: 3000, hpMul: 1.8, shards: 2.1, blurb: T('Quais, sable et mer : le vent du large et l’eau aident, la terre glisse.'),
+    ground: '#cfe3a8', ground2: '#c5da9c', path: '#b98a5a', pathEdge: '#7f5a36', frame: '#2f86c4', dot: 'rgba(255,255,255,.3)',
+    deco: ['coquillage', 'etoile', 'herbe'], obstacle: 'palmier',
+    paths: [[[-1, 3], [8, 3], [8, 7], [14, 7], [14, 2], [21, 2]], [[-1, 11], [5, 11], [5, 7], [14, 7], [14, 2], [21, 2]]],
+    terrain: ['LLLL..SS..LLLL', 'L....S...W...L', '..SS....SS....', 'S...X.......SS', '..W...SS..C...', 'SS..S.....X..S', 'L....SS..S...L', 'LL.C.....SS.LL', 'LLLLLLLLLLLLLL'] },
+  { id: 'usine', name: T('Usine Pocky'), price: 3400, hpMul: 1.9, shards: 2.2, blurb: T('Machines et cristaux qui crépitent : un chemin en spirale jusqu’au cœur de l’usine.'),
+    ground: '#9aa0b4', ground2: '#9298ac', path: '#e8c07a', pathEdge: '#a07a3a', frame: '#4a4e66', dot: 'rgba(255,210,63,.22)',
+    deco: ['roche', 'cristal'], obstacle: 'basalte',
+    paths: [[[10, -1], [10, 3], [3, 3], [3, 9], [17, 9], [17, 3], [13, 3], [13, 6], [8, 6]]],
+    terrain: ['KKRR..XX..RRKK', 'K............K', '..RR..KK..RR..', 'R...........VR', '..K..C..VV...R', 'R.......V.....', '..RR..KK....K.', 'K..........C.K', 'XXRRKKXXRRKKXX'] },
+  { id: 'banquise', name: T('Banquise Mikan'), price: 3800, hpMul: 2, shards: 2.3, blurb: T('Glace et eau glacée : le froid règne… mais un monstre ici ne le craint pas.'),
+    ground: '#e8f4fb', ground2: '#deeef8', path: '#b9d6ea', pathEdge: '#7aa6c4', frame: '#5aa7d6', dot: 'rgba(42,27,61,.12)',
+    deco: ['flocon', 'sapinet', 'bonhomme'], obstacle: 'sapin',
+    paths: [[[-1, 2], [9, 2], [9, 6], [4, 6], [4, 10], [21, 10]], [[15, -1], [15, 6], [4, 6], [4, 10], [21, 10]]],
+    terrain: ['NNLLNN..NNXXNN', 'N.......N....N', 'LL..NN.....NNL', 'L..X....LL...L', '..NN..C..L..N.', 'N....NN.....XN', '..LL.......NN.', 'N..NN..C..LL.N', 'LLNNXXLLNNXXLL'] },
+  { id: 'temple', name: T('Temple Sakura'), price: 4200, hpMul: 2.1, shards: 2.4, blurb: T('Jardins de thé et lanternes : trois portails mènent au temple.'),
+    ground: '#cde8b0', ground2: '#c4dfa6', path: '#f3d7c4', pathEdge: '#c48a8a', frame: '#d46a8a', dot: 'rgba(255,255,255,.3)',
+    deco: ['lanternemini', 'bambou', 'fleur'], obstacle: 'pagode', best: { feu: 'D', foudre: 'D', terre: 'T', eau: 'T', vent: 'L', glace: 'L' },
+    paths: [[[-1, 2], [6, 2], [6, 6], [14, 6], [14, 10], [21, 10]], [[-1, 10], [6, 10], [6, 6], [14, 6], [14, 10], [21, 10]], [[10, -1], [10, 6], [14, 6], [14, 10], [21, 10]]],
+    terrain: ['TTDD..TT..DDTT', 'T.....LL.....T', '..TT..LL..TT..', 'D..........X.D', '..X...TT......', 'D.....TT....CD', '..TT.......TT.', 'T..C..DD..X..T', 'TTDDXXTTXXDDTT'] },
   // Cartes d'événement : gratuites, jouables seulement pendant leur saison (toujours en fin de liste)
   { id: 'halloween', name: T('Manoir Citrouille'), price: 0, hpMul: 1.25, shards: 1.5, season: 'halloween', blurb: T('Événement Halloween : citrouilles, brume hantée et potions. Fantômes, chats noirs, spectres et le Roi Citrouille rôdent, et tes tours se déguisent !'),
     ground: '#6f5d91', ground2: '#68568a', path: '#d4b089', pathEdge: '#8f6a4c', frame: '#2b1f40', dot: 'rgba(255,170,60,.2)',
@@ -233,6 +259,11 @@ const BIOMES = {
   volcan: { name: T('Volcanique'), mods: { feu: 0.15, terre: 0.1, eau: -0.1, glace: -0.2 } },
   pic: { name: T('Alpin'), mods: { glace: 0.15, vent: 0.1, feu: -0.15 } },
   toundra: { name: T('Polaire'), mods: { glace: 0.2, foudre: 0.1, feu: -0.2 } },
+  mine: { name: T('Souterrain'), mods: { terre: 0.15, foudre: 0.1, vent: -0.15 } },
+  port: { name: T('Portuaire'), mods: { eau: 0.15, vent: 0.1, terre: -0.1 } },
+  usine: { name: T('Industriel'), mods: { foudre: 0.2, feu: 0.1, eau: -0.15 } },
+  banquise: { name: T('Glacial'), mods: { glace: 0.2, eau: 0.1, feu: -0.2 } },
+  temple: { name: 'Zen', mods: { vent: 0.15, eau: 0.1, foudre: -0.1 } },
   halloween: { name: T('Hanté'), mods: { feu: 0.1, foudre: 0.1, eau: -0.1 } },
   noel: { name: T('Festif'), mods: { glace: 0.15, foudre: 0.1, feu: -0.1 } },
   paques: { name: T('Printanier'), mods: { vent: 0.1, eau: 0.1, glace: -0.1 } },
@@ -464,6 +495,12 @@ const ETYPES = {
   // Élites des cartes 8 à 10 (js/bestiary.js) : soigne ses voisins, protégé par une bulle, se divise en trois Gloops
   soignou: { name: 'Soignou', hp: 90, speed: 0.85, reward: 8, size: 0.26, color: '#5fd38a', light: '#c8f5d6', mood: 'happy', elite: true, desc: T('Soigne les slimes autour de lui.') },
   bulle: { name: T('Bulleux'), hp: 70, speed: 0.95, reward: 8, size: 0.25, color: '#5aa9ff', light: '#d2e9ff', mood: 'open', elite: true, desc: T('Protégé par une bulle qui encaisse les premiers coups.') },
+  // Chapitre 2 : un nouveau monstre par carte (11 à 15). Chipeur et Pillécla volent puis repartent au portail
+  taupe: { name: 'Taupi', hp: 75, speed: 0.95, reward: 7, size: 0.27, color: '#9b7a5a', light: '#d8bf9f', mood: 'grr', angry: true, elite: true, desc: T('Creuse sous terre : intouchable un moment.') },
+  voleur: { name: 'Chipeur', hp: 38, speed: 1.5, reward: 8, size: 0.24, color: '#4b4f6b', light: '#a8acc8', mood: 'open', elite: true, lifeCost: 0, desc: T('Vole de l’or à la maison, puis repart.') },
+  aimant: { name: 'Aimanto', hp: 120, speed: 0.75, reward: 9, size: 0.28, color: '#e8505b', light: '#ffb3b8', mood: 'grr', angry: true, armor: 1, elite: true, desc: T('Attire les tirs des tours proches.') },
+  givre: { name: 'Givron', hp: 95, speed: 0.9, reward: 8, size: 0.26, color: '#8fdcff', light: '#e6f8ff', mood: 'open', immune: 'glace', elite: true, desc: T('Immunisé au froid, il ralentit les tours proches.') },
+  pilleur: { name: 'Pillécla', hp: 48, speed: 1.45, reward: 10, size: 0.24, color: '#7a4fd1', light: '#d6c2ff', mood: 'grr', angry: true, elite: true, lifeCost: 0, desc: T('Vole des éclats de la partie, puis repart.') },
   scindo: { name: 'Scindo', hp: 130, speed: 0.7, reward: 9, size: 0.3, color: '#ffae3d', light: '#ffe0a8', mood: 'grr', angry: true, elite: true, desc: T('Se divise en trois Gloops quand il tombe.') },
   spectre: { name: 'Spectre', hp: 50, speed: 1.15, reward: 5, size: 0.24, color: '#e6e0ff', light: '#ffffff', mood: 'open', season: 'halloween', desc: T('Halloween : devient intangible par moments, aucune attaque ne le touche alors.') },
   potiron: { name: T('Potiron'), hp: 70, speed: 1.3, reward: 3, size: 0.2, color: '#ff8a2b', light: '#ffc27a', mood: 'grr', angry: true, season: 'halloween', desc: T('Halloween : trois Potirons s’échappent du Roi Citrouille quand il tombe.') },

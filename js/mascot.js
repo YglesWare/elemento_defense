@@ -62,7 +62,7 @@ function openStats() {
   const n = v => Math.round(v).toLocaleString(IS_EN ? 'en-US' : 'fr-FR'), h = Math.floor(stats.time / 3600), mn = Math.floor(stats.time / 60) % 60;
   const tiles = [
     ['💎', n(meta.shards || 0), T('éclats')], ['✨', n(meta.earned || 0), T('éclats gagnés en tout')], ['🐷', n(meta.bank || 0), T('or en cagnotte')],
-    ['🗺️', owned + ' / 10', T('cartes possédées')], ['🏁', n(maps), T('cartes réussies')], ['🥇', won('facile') + ' · ' + won('moyen') + ' · ' + won('difficile'), T('réussies en F · M · D')],
+    ['🗺️', owned + ' / ' + MAPS.filter(m => m.prog).length, T('cartes possédées')], ['🏁', n(maps), T('cartes réussies')], ['🥇', won('facile') + ' · ' + won('moyen') + ' · ' + won('difficile'), T('réussies en F · M · D')],
     ['🎮', n(stats.games), T('parties lancées')], ['🏆', n(stats.wins), T('victoires')], ['💥', n(stats.ko), 'K.O.'],
     ['🌊', n(stats.waves), T('vagues repoussées')], ['⚔️', n(stats.kills), T('ennemis vaincus')], ['🐲', n(stats.bosses), T('boss vaincus')],
     ['🏗️', n(stats.towers), T('tours posées')], ['⏳', h ? h + ' h ' + String(mn).padStart(2, '0') : mn + ' min', T('temps de jeu')],

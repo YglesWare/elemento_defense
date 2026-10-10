@@ -713,6 +713,14 @@ function drawEnemy(c, type, x, y, s, t, e) {
   const cy = y - r * 0.85 - up;
   c.translate(x, cy);
   c.save();
+  // Givron : le cercle de froid qui ralentit les tours (2 cases)
+  if (e && type === 'givre') { c.beginPath(); c.ellipse(0, r * 0.85, s * 2, s * 2, 0, 0, TAU); c.setLineDash([s * 0.18, s * 0.14]); c.lineWidth = Math.max(1.5, s * 0.05); c.strokeStyle = 'rgba(143,220,255,.75)'; c.stroke(); c.setLineDash([]); }
+  // Taupi sous terre : seulement un monticule de terre qui avance
+  if (e && e.under) {
+    c.beginPath(); c.ellipse(0, r * 0.7, r * 0.95, r * 0.42, 0, Math.PI, 0); c.closePath(); fs(c, '#8a6a52', lw);
+    for (const [a3, b3] of [[-0.4, 0.55], [0.3, 0.45], [0, 0.35]]) { c.beginPath(); c.arc(a3 * r, b3 * r, r * 0.09, 0, TAU); c.fillStyle = '#6e5640'; c.fill(); }
+    c.restore(); c.restore(); return;
+  }
   if (e && e.ghost > 0) c.globalAlpha *= 0.32;
   c.translate(0, r * 0.85); c.scale(1 + sq, 1 - sq); c.translate(0, -r * 0.85);
   // Éléments derrière le corps
@@ -756,6 +764,23 @@ function drawEnemy(c, type, x, y, s, t, e) {
     c.lineWidth = lw * 0.8; c.strokeStyle = INK; c.beginPath();
     c.moveTo(-r * 0.1, -r * 0.95); c.lineTo(r * 0.05, -r * 0.7); c.lineTo(-r * 0.08, -r * 0.5); c.lineTo(r * 0.06, -r * 0.3);
     c.moveTo(r * 0.55, -r * 0.6); c.lineTo(r * 0.4, -r * 0.42); c.lineTo(r * 0.55, -r * 0.25); c.stroke();
+  }
+  // Chapitre 2 : casque de mineur, masque et sac d'or, aimant, flocons, masque et éclat
+  if (type === 'taupe') {
+    c.beginPath(); c.moveTo(-r * 0.72, -r * 0.62); c.quadraticCurveTo(-r * 0.7, -r * 1.22, 0, -r * 1.24); c.quadraticCurveTo(r * 0.7, -r * 1.22, r * 0.72, -r * 0.62); c.closePath(); fs(c, '#ffd23f', lw);
+    c.beginPath(); c.arc(0, -r * 1.1, r * 0.17, 0, TAU); fs(c, '#fff6b0', lw * 0.8);
+    for (const sg of [-1, 1]) { c.beginPath(); c.ellipse(sg * r * 0.98, r * 0.5, r * 0.26, r * 0.17, sg * 0.5, 0, TAU); fs(c, '#f4c7a5', lw * 0.8); }
+  } else if (type === 'voleur' || type === 'pilleur') {
+    rr(c, -r * 0.82, -r * 0.48, r * 1.64, r * 0.32, r * 0.16); c.fillStyle = INK; c.fill();
+    c.fillStyle = '#ffffff'; for (const sg of [-1, 1]) { c.beginPath(); c.arc(sg * r * 0.32, -r * 0.32, r * 0.09, 0, TAU); c.fill(); }
+    if (type === 'voleur') { c.beginPath(); c.arc(r * 1.02, r * 0.35, r * 0.34, 0, TAU); fs(c, '#e8c47a', lw * 0.8); c.fillStyle = INK; c.font = 'bold ' + Math.round(r * 0.42) + 'px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('$', r * 1.02, r * 0.37); }
+    else { c.beginPath(); c.moveTo(0, -r * 1.5); c.lineTo(r * 0.24, -r * 1.16); c.lineTo(0, -r * 0.82); c.lineTo(-r * 0.24, -r * 1.16); c.closePath(); fs(c, '#c59bff', lw * 0.8); }
+  } else if (type === 'aimant') {
+    c.beginPath(); c.arc(0, -r * 0.98, r * 0.36, Math.PI, 0); c.lineWidth = r * 0.3; c.strokeStyle = INK; c.stroke(); c.lineWidth = r * 0.18; c.strokeStyle = '#e8505b'; c.stroke();
+    for (const sg of [-1, 1]) { rr(c, sg * r * 0.36 - r * 0.11, -r * 0.98, r * 0.22, r * 0.2, r * 0.03); fs(c, '#d9dde8', lw * 0.6); }
+  } else if (type === 'givre') {
+    c.lineWidth = lw * 0.7; c.strokeStyle = '#ffffff';
+    for (const [fx, fy, fr] of [[-r * 0.62, -r * 0.82, r * 0.16], [r * 0.6, -r * 0.7, r * 0.13], [0, -r * 1.12, r * 0.15]]) for (let i = 0; i < 3; i++) { const a2 = i * Math.PI / 3; c.beginPath(); c.moveTo(fx - Math.cos(a2) * fr, fy - Math.sin(a2) * fr); c.lineTo(fx + Math.cos(a2) * fr, fy + Math.sin(a2) * fr); c.stroke(); }
   }
   if (type === 'bulle' && (!e || e.shield > 0)) {
     const k = e && e.shieldMax ? 0.45 + 0.55 * e.shield / e.shieldMax : 1;

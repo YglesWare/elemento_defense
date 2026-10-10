@@ -6,6 +6,10 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  120: [
+    ['🗺️', 'Chapitre 2 : cinq nouvelles cartes après la Toundra (Mine Onigiri, Port Sushi, Usine Pocky, Banquise Mikan, Temple Sakura).'],
+    ['👾', 'Cinq nouveaux monstres : Taupi creuse sous terre, Chipeur vole ton or, Aimanto attire les tirs, Givron ralentit les tours, Pillécla vole tes éclats.'],
+  ],
   119: [
     ['⭐', 'Étoiles : jusqu’à 3 par carte et par difficulté selon les vies gardées, avec 5 éclats par nouvelle étoile.'],
     ['👾', 'Le bestiaire (dans le Profil) : tous les monstres rencontrés, leur fiche, et 2 éclats par nouveau monstre.'],
