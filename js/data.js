@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 121;
+const BUILD = 122;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -147,6 +147,33 @@ const MAPS = [
     deco: ['lanternemini', 'bambou', 'fleur'], obstacle: 'pagode', best: { feu: 'D', foudre: 'D', terre: 'T', eau: 'T', vent: 'L', glace: 'L' },
     paths: [[[-1, 2], [6, 2], [6, 6], [14, 6], [14, 10], [21, 10]], [[-1, 10], [6, 10], [6, 6], [14, 6], [14, 10], [21, 10]], [[10, -1], [10, 6], [14, 6], [14, 10], [21, 10]]],
     terrain: ['TTDD..TT..DDTT', 'T.....LL.....T', '..TT..LL..TT..', 'D..........X.D', '..X...TT......', 'D.....TT....CD', '..TT.......TT.', 'T..C..DD..X..T', 'TTDDXXTTXXDDTT'] },
+  // Chapitre 2, fin (cartes 16 à 20) : plus de nouveau monstre, mais un monstre qui atteint la maison repart du portail
+  // jusqu'à être vaincu (loop, js/game.js reachBase)
+  { id: 'jungle', name: T('Jungle Yokan'), price: 4600, hpMul: 2.2, shards: 2.5, loop: true, blurb: T('Une jungle épaisse et un long chemin : ici, les slimes qui passent repartent du portail.'),
+    ground: '#7cc46a', ground2: '#72bb60', path: '#d9b47a', pathEdge: '#9a7442', frame: '#2f6e3a', dot: 'rgba(42,27,61,.16)',
+    deco: ['buisson', 'fleur', 'champi'], obstacle: 'palmier',
+    paths: [[[-1, 1], [4, 1], [4, 11], [10, 11], [10, 1], [16, 1], [16, 11], [21, 11]]],
+    terrain: ['MMLL..MM..LLMM', 'M....C...M...M', '..MM.....MM...', 'L....X.LL....L', 'LL.M...LL..M..', '..M..C....X..M', 'M....MM.....LL', '..X.....MM...L', 'MMLLMMXXMMLLMM'] },
+  { id: 'nuages', name: T('Nuages Anpan'), price: 5000, hpMul: 2.3, shards: 2.6, loop: true, blurb: T('Au-dessus des nuages : le vent et l’éclair dominent, et rien ne s’arrête à la maison.'),
+    ground: '#eaf2ff', ground2: '#e0ebfc', path: '#ffd9a8', pathEdge: '#c99a62', frame: '#7fb2f0', dot: 'rgba(127,178,240,.25)',
+    deco: ['etoile', 'flocon', 'etoile'], obstacle: 'rocher',
+    paths: [[[-1, 4], [7, 4], [7, 9], [13, 9], [13, 4], [21, 4]], [[10, 13], [10, 9], [13, 9], [13, 4], [21, 4]]],
+    terrain: ['WWKK..WW..KKWW', 'W............W', '..KK..WW..C...', 'W.....X.....KW', '..WW......WW..', 'K....KK..X...W', '..C.......KK..', 'W...WW..C....W', 'WWKKXXWWKKXXWW'] },
+  { id: 'marche', name: T('Marché Ramen'), price: 5400, hpMul: 2.4, shards: 2.7, loop: true, blurb: T('Les ruelles d’un marché aux lanternes : trois entrées, une seule maison.'),
+    ground: '#f2dcb6', ground2: '#ebd3aa', path: '#c97a4a', pathEdge: '#8a4a2a', frame: '#c0392b', dot: 'rgba(255,210,63,.3)',
+    deco: ['lanternemini', 'petard', 'mandarine'], obstacle: 'pagode',
+    paths: [[[-1, 2], [5, 2], [5, 7], [15, 7], [15, 11], [21, 11]], [[-1, 11], [5, 11], [5, 7], [15, 7], [15, 11], [21, 11]], [[10, -1], [10, 7], [15, 7], [15, 11], [21, 11]]],
+    terrain: ['DDSS..DD..SSDD', 'D....T....T..D', '..DD.....DD...', 'S..X..TT....XS', '...TT....SS...', 'D.....C..T...D', '..SS.......DD.', 'T...X..DD..C.T', 'DDTTSSDDXXTTDD'] },
+  { id: 'chateau', name: T('Château Daifuku'), price: 5800, hpMul: 2.5, shards: 2.8, loop: true, blurb: T('Les remparts d’un château de glace : le chemin tourne jusqu’à la salle du trône.'),
+    ground: '#d9d0ea', ground2: '#cfc5e2', path: '#f2e6c8', pathEdge: '#a08a5a', frame: '#6a4f9a', dot: 'rgba(255,255,255,.3)',
+    deco: ['roche', 'cristal', 'flocon'], obstacle: 'rocher',
+    paths: [[[-1, 1], [19, 1], [19, 11], [1, 11], [1, 4], [16, 4], [16, 8], [5, 8], [5, 6], [10, 6]]],
+    terrain: ['RRNN..KK..NNRR', 'R............R', '..KK.RR..NN...', 'N....X..C....N', '..RR....KK..R.', 'K....NN....X.K', '..C.....RR....', 'R..KK....X..NR', 'RRXXRRNNRRXXKK'] },
+  { id: 'citadelle', name: T('Citadelle Gloop'), price: 6200, hpMul: 2.6, shards: 3, loop: true, blurb: T('Le repaire du Roi Gloop : quatre portails, de la lave, et tous les monstres du jeu.'),
+    ground: '#5a4870', ground2: '#52416a', path: '#c59bff', pathEdge: '#7a4fd1', frame: '#2a1b3d', dot: 'rgba(197,155,255,.25)',
+    deco: ['roche', 'cristal', 'roche'], obstacle: 'basalte',
+    paths: [[[-1, 2], [8, 2], [8, 6], [21, 6]], [[-1, 10], [8, 10], [8, 6], [21, 6]], [[14, -1], [14, 6], [21, 6]], [[14, 13], [14, 6], [21, 6]]],
+    terrain: ['VVKK..RR..KKVV', 'V....X......RV', '..RR..VV..C...', 'K.....VV.....K', '..C..KK..RR...', 'R....X....VV.R', '..VV......X...', 'K...RR..C...KV', 'VVKKXXVVRRXXVV'] },
   // Cartes d'événement : gratuites, jouables seulement pendant leur saison (toujours en fin de liste)
   { id: 'halloween', name: T('Manoir Citrouille'), price: 0, hpMul: 1.25, shards: 1.5, season: 'halloween', blurb: T('Événement Halloween : citrouilles, brume hantée et potions. Fantômes, chats noirs, spectres et le Roi Citrouille rôdent, et tes tours se déguisent !'),
     ground: '#6f5d91', ground2: '#68568a', path: '#d4b089', pathEdge: '#8f6a4c', frame: '#2b1f40', dot: 'rgba(255,170,60,.2)',
@@ -264,6 +291,11 @@ const BIOMES = {
   usine: { name: T('Industriel'), mods: { foudre: 0.2, feu: 0.1, eau: -0.15 } },
   banquise: { name: T('Glacial'), mods: { glace: 0.2, eau: 0.1, feu: -0.2 } },
   temple: { name: 'Zen', mods: { vent: 0.15, eau: 0.1, foudre: -0.1 } },
+  jungle: { name: 'Jungle', mods: { terre: 0.15, eau: 0.1, feu: -0.1 } },
+  nuages: { name: T('Céleste'), mods: { vent: 0.2, foudre: 0.15, terre: -0.2 } },
+  marche: { name: T('Animé'), mods: { feu: 0.15, foudre: 0.1, glace: -0.1 } },
+  chateau: { name: T('Royal'), mods: { glace: 0.15, terre: 0.1, feu: -0.1 } },
+  citadelle: { name: T('Maléfique'), mods: { feu: 0.1, foudre: 0.1, eau: -0.1, vent: -0.1 } },
   halloween: { name: T('Hanté'), mods: { feu: 0.1, foudre: 0.1, eau: -0.1 } },
   noel: { name: T('Festif'), mods: { glace: 0.15, foudre: 0.1, feu: -0.1 } },
   paques: { name: T('Printanier'), mods: { vent: 0.1, eau: 0.1, glace: -0.1 } },

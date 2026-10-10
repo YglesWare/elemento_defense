@@ -198,7 +198,8 @@ function newGame(mi, save, diff) {
   $('#bSpeed').textContent = 'x1';
   show('game'); keepAwake();
   prepNextWave();
-  if (!save && typeof mobStart === 'function') setTimeout(mobStart, 300); // les monstres nouveaux de la partie (js/bestiary.js)
+  if (!save && typeof mobStart === 'function') setTimeout(mobStart, 300);
+  if (!save && m.loop && !G.duel && !G.coop) setTimeout(() => hint(T('↺ Ici, un slime qui atteint la maison repart du portail jusqu’à être vaincu !'), 4500), 900); // les monstres nouveaux de la partie (js/bestiary.js)
   if (save) banner('REPRISE', T('Vague ') + (G.wave + 1) + T(' prête'));
   else {
     banner(T('PRÊT ?'), MAPS[mi].name + ' · ' + DIFFS[G.diff].name + (G.endless ? T(' · vagues infinies') : ' · ' + G.maxw + T(' vagues')) + (G.chal ? ' · 🌶 ' + chalX(G.chal.mult) : ''));
@@ -775,7 +776,7 @@ function reachBase(e) {
   Snd.play('hurt');
   // Un ennemi qui atteint la maison n'abandonne pas, il repart du début du chemin avec les PV qui lui restent, et coûte
   // des vies à chaque passage jusqu'à ce qu'il soit abattu : tous les ennemis en Infini, les boss en Difficile
-  if ((G.diff === 'infini' || (G.diff === 'difficile' && ETYPES[e.type].boss)) && G.lives > 0 && !G.story) {
+  if ((G.diff === 'infini' || (MAPS[G.map].loop && !G.duel && !G.coop) || (G.diff === 'difficile' && ETYPES[e.type].boss)) && G.lives > 0 && !G.story) {
     e.dead = false; e.d = 0; e.laps = (e.laps || 0) + 1; setPos(e);
     if (ETYPES[e.type].boss) ono(T('ENCORE UN TOUR !'), e.x, e.y, '#ff4f6e', 0.6, 0.2, 1.3); else ono('↺', e.x, e.y, '#ff4f6e', 0.4, 0.1, 0.8);
   }

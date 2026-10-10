@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  122: [
+    ['🏰', 'Fin du chapitre 2 : cinq dernières cartes, de la Jungle Yokan à la Citadelle Gloop. Tous les monstres y sont, et un slime qui atteint la maison repart du portail jusqu’à être vaincu !'],
+  ],
   121: [
     ['🦝', 'Chipeur et Pillécla ne s’enfuient plus : ils repartent du portail jusqu’à ce que tu les arrêtes.'],
   ],
