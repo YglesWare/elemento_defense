@@ -18,7 +18,15 @@ function barsColor(name) {
 }
 // Grands chiffres des fins de partie : plus petits quand ils sont longs (16 440 ne tient pas en 28 px dans une case)
 function statFit(...sels) { for (const s of sels) { const e = $(s), n = e.textContent.length; e.style.fontSize = n >= 6 ? '17px' : n === 5 ? '21px' : n === 4 ? '24px' : ''; } }
-function show(name) { for (const k in screens) screens[k].hidden = k !== name; curScreen = name; barsColor(name); if (name === 'title') { refreshTitle(); if (typeof updCheck === 'function') updCheck(); if (typeof surpriseCheck === 'function') setTimeout(surpriseCheck, 600); if (typeof trophyScan === 'function') { trophyPay(); trophyScan(); } if (typeof cloudSync === 'function') cloudSync(); } }
+// Retour des menus : la flèche en haut à gauche déclenche le bouton « Retour » de l'écran affiché (caché, il garde son
+// action, la touche Échap et le bouton retour d'Android). Le multijoueur n'a son « Retour » que sur sa page d'accueil.
+const BACKS = { profile: '#prBack', settings: '#setBack', shop: '#sBack', maps: '#mBack', rand: '#rBack', diff: '#dfBack', friends: '#frBack', fradd: '#faBack',
+  parents: '#paBack', wardrobe: '#wrBack', stats: '#stBack', trophies: '#trBack', story: '#storyBack', multi: '#mpBody [data-a=back]' };
+const backBtn = () => { const s = BACKS[curScreen]; return s ? document.querySelector(s) : null; };
+function backSync() { const on = !!backBtn(); $('#backArrow').hidden = !on; document.body.classList.toggle('hasback', on); }
+$('#backArrow').addEventListener('click', () => { const b = backBtn(); if (b && !b.disabled) { Snd.init(); b.click(); } backSync(); });
+setInterval(backSync, 400);
+function show(name) { for (const k in screens) screens[k].hidden = k !== name; curScreen = name; barsColor(name); if (typeof backSync === 'function') backSync(); if (name === 'title') { refreshTitle(); if (typeof updCheck === 'function') updCheck(); if (typeof surpriseCheck === 'function') setTimeout(surpriseCheck, 600); if (typeof trophyScan === 'function') { trophyPay(); trophyScan(); } if (typeof cloudSync === 'function') cloudSync(); } }
 barsColor(curScreen);
 function setText(el, key, v) { if (hudCache[key] !== v) { hudCache[key] = v; el.textContent = v; } }
 function setHTML(el, key, v) { if (hudCache[key] !== v) { hudCache[key] = v; el.innerHTML = v; } }

@@ -482,6 +482,15 @@ html.coaching #trBrs .uprow:has(.coachT){opacity:1;filter:none}
 @keyframes cnudge{0%,100%{transform:scale(1)}40%{transform:scale(1.18)}}
 .spyg{width:72px;height:72px}
 #surprisePop .intro-foot .btn{font-size:18px}
+/* Retour des menus : une flèche ronde en haut à gauche ; les gros boutons « Retour » du bas sont cachés (ils gardent leur action) */
+.backarrow{position:fixed;top:calc(12px + var(--sat));left:calc(12px + var(--sal));z-index:40;width:48px;height:48px;border-radius:50%;background:var(--paper);border:3px solid var(--ink);box-shadow:0 3px 0 var(--ink);display:grid;place-items:center;padding:0;cursor:pointer}
+.backarrow[hidden]{display:none}
+.backarrow svg{width:24px;height:24px}
+.backarrow:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+#prBack,#setBack,#sBack,#mBack,#rBack,#dfBack,#frBack,#faBack,#paBack,#wrBack,#stBack,#trBack,#storyBack,#mpBody [data-a=back]{display:none!important}
+/* Écrans sans grand titre (stats, trophées, difficulté…) : de la place sous la flèche */
+body.hasback .screen>.inner{padding-top:40px}
+body.hasback .screen:not(:has(.bigword))>.inner{padding-top:50px}
 /* Monstres nouveaux de la partie (js/bestiary.js) : la fenêtre du départ, la bulle une vague avant */
 .moblist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;width:100%;text-align:left}
 .moblist.one{grid-template-columns:1fr}
@@ -1318,7 +1327,13 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
   .srail{display:flex;position:fixed;z-index:5;left:calc(16px + var(--sx));top:calc(4px + var(--sat));bottom:calc(66px + var(--sab));width:var(--railw);
     flex-direction:column;align-items:center;gap:8px;overflow-y:auto;scrollbar-width:none;padding:8px 4px 4px}
   .srail::-webkit-scrollbar{display:none}
-  .screen:not(:has(.stickyb)) .srail{bottom:calc(10px + var(--sab))}
+  .srail{bottom:calc(10px + var(--sab))}
+  /* La flèche Retour en haut de la colonne : le titre commence dessous */
+  .backarrow{width:40px;height:40px;top:calc(8px + var(--sat));left:calc(16px + var(--sx))}
+  .backarrow svg{width:20px;height:20px}
+  body.hasback .srail{top:calc(54px + var(--sat))}
+  body.hasback .screen:not(:has(.srail))>.inner{padding-top:40px}
+  body.hasback .screen:has(.srail)>.inner{padding-top:0}
   .srail .bigword,.screen .srail .bigword.head{font-size:clamp(30px,5vw,44px);margin:6px 0 2px;text-wrap:balance;flex:none}
   .srail>*{flex:none;max-width:100%}
   .srail .purse,.srail .mtop{margin:0}

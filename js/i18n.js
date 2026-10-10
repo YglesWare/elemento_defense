@@ -1887,6 +1887,7 @@ const EN = {
 "Maîtrise · ": "Mastery · ",
 "Longue-vue · ": "Spyglass · ",
 "Débloque la fusion d’abord": "Unlock the fusion first",
+"Menus : une flèche ronde en haut à gauche remplace les gros boutons « Retour ».": "Menus: a round arrow at the top left replaces the big “Back” buttons.",
 "Paysage : l’aperçu de la vague et la fiche des tours sont plus compacts et tiennent toujours dans l’écran.": "Landscape: the wave preview and the tower card are more compact and always fit on the screen.",
 "Facile : 150 pièces au départ.": "Easy: 150 coins to start.",
 "Facile : l’aide des trois premières cartes reste valable toute la partie.": "Easy: the help on the first three maps lasts the whole game again.",

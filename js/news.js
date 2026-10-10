@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  118: [
+    ['⬅️', 'Menus : une flèche ronde en haut à gauche remplace les gros boutons « Retour ».'],
+  ],
   115: [
     ['📐', 'Paysage : l’aperçu de la vague et la fiche des tours sont plus compacts et tiennent toujours dans l’écran.'],
   ],
