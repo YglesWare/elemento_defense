@@ -18,10 +18,10 @@ const MOB_TIPS = {
   bulle: T('Un monstre d’élite protégé par une bulle : elle encaisse les coups avant ses PV. Le feu de Braise et l’éclair de Voltie l’éclatent deux fois plus vite.'),
   scindo: T('Un monstre d’élite costaud : quand il tombe, il se divise en trois Gloops. Garde une tour de zone (Ondine, Rocaille) juste derrière lui.'),
   taupe: T('Toutes les 4 secondes, il creuse sous terre : pendant 1,5 seconde, aucune tour ne peut le toucher et il avance plus vite. Place des tours tout le long du chemin.'),
-  voleur: T('Rapide et fragile. À la maison, il ne prend pas de vie : il vole 10 % de ton or, puis repart du portail, jusqu’à 3 fois. L’or volé ne revient pas !'),
+  voleur: T('Rapide et fragile. À la maison, il ne prend pas de vie : il vole 10 % de ton or, puis repart du portail et recommence tant qu’il n’est pas vaincu. L’or volé ne revient pas !'),
   aimant: T('Les tours à cible unique qui l’ont à portée tirent sur lui en priorité : il protège les slimes qui le suivent. Les tours de zone (Ondine, Rocaille, Givrette) touchent tout le monde.'),
   givre: T('Le froid ne lui fait rien (ni ralenti, ni gelé), et les tours à moins de 2 cases de lui tirent 30 % moins vite. Mise sur Braise et Voltie, un peu en retrait.'),
-  pilleur: T('Comme Chipeur, mais il vole des éclats gagnés pendant la partie, puis repart du portail, jusqu’à 3 fois. Les éclats volés ne reviennent pas !'),
+  pilleur: T('Comme Chipeur, mais il vole des éclats gagnés pendant la partie, puis repart du portail et recommence tant qu’il n’est pas vaincu. Les éclats volés ne reviennent pas !'),
 };
 const introSeen = () => store.get(INTRO_KEY) || {};
 // Pas en multijoueur (ça mettrait les autres en pause), ni dans le tutoriel guidé, l'animation de démo ou l'outil d'équilibrage

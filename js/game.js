@@ -766,10 +766,8 @@ function reachBase(e) {
     if (e.type === 'voleur') { const n = Math.min(G.gold, Math.max(5, Math.round(G.gold * 0.1))); G.gold -= n; ono(n ? '−' + n + T(' OR !') : T('RIEN À VOLER'), B[0], B[1], '#ffd23f', 0.6, 0.2, 1.1); }
     else { const n = Math.min(G.shardsPaid || 0, Math.max(1, Math.round((G.shardsPaid || 0) * 0.1))); if (n) { G.shardsPaid -= n; meta.shards = Math.max(0, meta.shards - n); meta.earned = Math.max(0, (meta.earned || 0) - n); saveMeta(); } ono(n ? '−' + n + T(' ÉCLATS !') : T('RIEN À VOLER'), B[0], B[1], '#c59bff', 0.6, 0.2, 1.1); }
     Snd.play('no'); G.shake = Math.max(G.shake, 0.25);
-    // Au bout de 3 passages, il s'enfuit avec son butin (la vague peut se terminer)
-    e.laps = (e.laps || 0) + 1;
-    if (e.laps >= 3) { e.dead = true; ono(T('ENVOLÉ !'), B[0], B[1] - 0.4, '#ffffff', 0.5, 0.3, 1); return; }
-    e.d = PP(e).d0; setPos(e); return;
+    // Il ne s'en va jamais : il ne se soigne pas, les tours finissent par l'avoir
+    e.laps = (e.laps || 0) + 1; e.d = PP(e).d0; setPos(e); return;
   }
   if (!e.lifeCost) { e.dead = true; ono(T('FILÉE !'), B[0], B[1], '#ffd23f', 0.5, 0.2, 1.1); return; }
   e.dead = true; G.lives -= e.lifeCost; G.lostLife = true; if (G.firstLeak == null) G.firstLeak = G.wave; G.shake = Math.max(G.shake, 0.45); G.hurtT = 0.5; G.baseHit = 0.4; G.hitBase = B;

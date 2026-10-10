@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  121: [
+    ['🦝', 'Chipeur et Pillécla ne s’enfuient plus : ils repartent du portail jusqu’à ce que tu les arrêtes.'],
+  ],
   120: [
     ['🗺️', 'Chapitre 2 : cinq nouvelles cartes après la Toundra (Mine Onigiri, Port Sushi, Usine Pocky, Banquise Mikan, Temple Sakura).'],
     ['👾', 'Cinq nouveaux monstres : Taupi creuse sous terre, Chipeur vole ton or, Aimanto attire les tirs, Givron ralentit les tours, Pillécla vole tes éclats.'],
