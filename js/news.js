@@ -6,6 +6,10 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  123: [
+    ['🔒', 'Les tours ne se vendent plus : une tour posée peut seulement être annulée (remboursée en entier) tant qu’elle n’a ni tiré ni fini sa première vague. Les fusions ne se vendent jamais.'],
+    ['💎', 'L’amélioration « Revente » de l’Atelier disparaît : ses éclats te sont rendus. Le piment « Pas de remboursement » est retiré.'],
+  ],
   122: [
     ['🏰', 'Fin du chapitre 2 : cinq dernières cartes, de la Jungle Yokan à la Citadelle Gloop. Tous les monstres y sont, et un slime qui atteint la maison repart du portail jusqu’à être vaincu !'],
   ],

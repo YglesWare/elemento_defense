@@ -133,7 +133,7 @@ function mapPickHTML(canPick) {
 function rulesHTML() {
   if (DUEL.lobbyMode === 'coop') return T('<details class="mp-manual"><summary>Règles de la coop</summary><ul class="tips">')
     + T('<li>Tout le monde défend la même carte et repart de zéro, comme en duel : Braise et Ondine, 0 éclat. Ta progression solo n’est pas touchée.</li>')
-    + T('<li>Les éclats gagnés à chaque vague servent dans l’Atelier (bouton violet), qui ne met pas le jeu en pause. Chaque tour porte un anneau de la couleur de son joueur : seul son propriétaire peut l’améliorer, la vendre ou la fusionner.</li>')
+    + T('<li>Les éclats gagnés à chaque vague servent dans l’Atelier (bouton violet), qui ne met pas le jeu en pause. Chaque tour porte un anneau de la couleur de son joueur : seul son propriétaire peut l’améliorer ou la fusionner.</li>')
     + T('<li>Les vies sont communes. Les ennemis ont plus de PV et sont plus nombreux selon le nombre de joueurs, et leur or est partagé à parts égales.</li>')
     + T('<li>Touche un coéquipier dans le bandeau du haut pour lui donner 50 or. Appui long sur la carte : un ping visible par tous.</li>')
     + T('<li>Seul l’hôte peut accélérer ou mettre en pause.</li></ul></details>');

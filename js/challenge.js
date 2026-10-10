@@ -22,7 +22,6 @@ const CHAL = [
   { k: 'chrono', ic: '⏱️', n: T('Chrono serré'), d: T('−20 % de temps entre les vagues'), p: 5, max: 3, timer: true },
   { k: 'puriste', ic: '🧘', n: T('Puriste'), d: T('sans les améliorations de l’Atelier'), p: 40, max: 1, g: 'rule' },
   { k: 'chantier', ic: '🏗️', n: T('Chantier limité'), d: T('12, puis 10, puis 8 tours au plus en même temps'), p: 8, max: 3, g: 'rule' },
-  { k: 'vente', ic: '🔒', n: T('Pas de remboursement'), d: T('impossible de vendre une tour'), p: 8, max: 1, g: 'rule' },
   { k: 'meteo', ic: '🌧️', n: T('Ciel capricieux'), d: T('la météo change toutes les 3 vagues'), p: 6, max: 1, g: 'rule' },
   { k: 'brume', ic: '🌫️', n: T('Brouillard permanent'), d: T('−15 % de portée pour toutes les tours'), p: 15, max: 1, g: 'rule' },
   { k: 'fantome', ic: '👻', n: T('Fantômes'), d: T('chaque ennemi devient intangible par moments'), p: 12, max: 1, g: 'rule' },
@@ -114,10 +113,9 @@ const chalGold = () => Math.max(0.3, (1 - 0.1 * chalLv('bourse')) * (1 + 0.1 * c
 const chalLoot = () => Math.max(0.3, 1 - 0.1 * chalLv('bourse'));
 const chalHp = () => (1 + 0.05 * chalLv('pv')) * (1 - 0.05 * chalLv('petits'));
 const chalSpd = () => (1 + 0.05 * chalLv('vite')) * (1 - 0.05 * chalLv('escargot'));
-// Chantier limité : nombre de tours permis en même temps (les siennes en coop) ; Pas de remboursement : pas de vente
+// Chantier limité : nombre de tours permis en même temps (les siennes en coop)
 const chalTowerCap = () => [Infinity, 12, 10, 8][chalLv('chantier')];
 const chalFull = () => !!(G && G.chal && chalLv('chantier')) && G.towers.filter(t => !G.coop || t.own === coopMe()).length >= chalTowerCap();
-const chalNoSell = () => !!(G && G.chal && chalLv('vente'));
 function chalBanned(type) {
   if (!G || !G.chal || !G.chal.sans.length) return false;
   if (G.chal.sans.includes(type)) return true;

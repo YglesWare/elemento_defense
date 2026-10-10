@@ -97,10 +97,7 @@ function hostAction(pid, a) {
       const cost = trackPrice(t.type, t.up, a.k); if (G.gold < cost) return;
       G.gold -= cost; upApply(t, a.k, cost); Snd.play('up');
     } else if (a.a === 'sell') {
-      const t = tw(a.id); if (!own(t)) return;
-      G.gold += sellValue(t); G.towers = G.towers.filter(x => x !== t);
-      if (G.selTower === t) deselect();
-      burst(t.x, t.y, 0.3, 12, ['#cdbfe0', '#ffffff', '#ffd23f'], 2, 0.09, 3, 0.5); Snd.play('sell');
+      return; // les tours ne se vendent pas en multijoueur (js/game.js undoable)
     } else if (a.a === 'heal') {
       const t = tw(a.id); if (!own(t)) return;
       const cost = healCost(t); if (!cost || G.gold < cost || !hardMode()) return;

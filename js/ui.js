@@ -124,7 +124,7 @@ function selectTower(t) {
 function refreshInfo() {
   const t = G && G.selTower; if (!t) return;
   const D = TOWERS[t.type];
-  const hc = healCost(t), key = [!!t.fired, t.type, UP_KEYS.map(k => t.up[k]).join(','), t.mode, G.gold, G.gold >= hc, Math.ceil(t.hp), Math.ceil(t.shield || 0), Math.ceil(t.ko || 0), t.stun > 0, Math.ceil(t.evil || 0)].join('|');
+  const hc = healCost(t), key = [!!t.fired, !!t.settled, t.type, UP_KEYS.map(k => t.up[k]).join(','), t.mode, G.gold, G.gold >= hc, Math.ceil(t.hp), Math.ceil(t.shield || 0), Math.ceil(t.ko || 0), t.stun > 0, Math.ceil(t.evil || 0)].join('|');
   if (hudCache.info === key) return;
   hudCache.info = key;
   $('#iName').textContent = D.name + (G.coop && t.own && t.own !== coopMe() ? ' · ' + coopName(t.own) : '');
@@ -137,8 +137,9 @@ function refreshInfo() {
   const cheap = Math.min(...UP_KEYS.filter(k => !trackLocked(k) && (t.up[k] || 0) < towerCap(t, k)).map(k => trackPrice(t.type, t.up, k)));
   two(up, T('Améliorer ▸'), isFinite(cheap) ? T('dès ') + COIN + cheap : null, false); up.disabled = false; up.classList.toggle('poor', !(G.gold >= cheap));
   // Pas encore tiré : « Annuler », remboursée en entier (js/game.js undoable)
-  const und = undoable(t); two($('#iSell'), und ? T('Annuler') : T('Vendre'), und ? t.inv : sellValue(t)); $('#iSell').classList.toggle('undo', und);
-  if (!mine) { up.disabled = true; $('#iSell').disabled = true; } else $('#iSell').disabled = typeof chalNoSell === 'function' && chalNoSell();
+  // Seul « Annuler » existe (js/game.js undoable) : une tour qui a tiré ou fini sa première vague, ou une fusion, ne se vend pas
+  const und = undoable(t); $('#iSell').hidden = !und; if (und) two($('#iSell'), T('Annuler'), t.inv); $('#iSell').classList.toggle('undo', und);
+  if (!mine) { up.disabled = true; $('#iSell').disabled = true; } else $('#iSell').disabled = false;
   // Difficile : soin payant (une tour détruite ne se soigne pas : elle n'existe plus)
   const hb = $('#iHeal'); hb.hidden = !hardMode();
   if (hardMode()) { if (hc) two(hb, T('Soigner'), hc); else two(hb, T('PV au max')); hb.disabled = !mine || !hc || G.gold < hc || t.ko > 0; }
@@ -637,7 +638,7 @@ function drawMapMini2(c, mi, w, h, diff) {
 }
 function renderMaps(boughtId) {
   $('#mBank').textContent = meta.bank || 0;
-  $('#mTest').hidden = !TEST_ALL;
+  $('#mTest').hidden = !testAll();
   if (typeof adMapsPaint === 'function') adMapsPaint();
   // Bandeau des défis, au-dessus des onglets : carte du jour, piment de la semaine, carte aléatoire
   const strip = $('#mStrip'); strip.innerHTML = '';
@@ -992,7 +993,7 @@ const TUTO = [
   { kind: 'intro', demo: 'intro', title: T('Bienvenue !'), tag: T('Les bases'), html: '<ul>'
     + T('<li>Les slimes sortent du portail violet et suivent le chemin jusqu’à la petite maison. Chaque slime qui entre te coûte une vie (2 pour Tonk, 10 pour un Kaiju).</li>')
     + T('<li>Pose des tours sur l’herbe avec ton or. Chaque ennemi vaincu en rapporte, chaque vague terminée aussi.</li>')
-    + T('<li>Une tour attaque tout ce qui passe dans son cercle de portée. Touche une tour posée pour voir ce cercle, l’améliorer ou la vendre.</li>')
+    + T('<li>Une tour attaque tout ce qui passe dans son cercle de portée. Touche une tour posée pour voir ce cercle ou l’améliorer.</li>')
     + T('<li>Tu commences avec Braise et Ondine. Les quatre autres gardiens se débloquent dans l’Atelier, avec les éclats gagnés à chaque vague. Les pages suivantes les présentent tous.</li></ul>') },
   ...TORDER.map(t => ({ kind: 'tower', tower: t, demo: t })),
   { kind: 'combo', demo: 'c_zap', title: 'ZAP x2!', tag: T('Eau puis Éclair'), towers: ['eau', 'foudre'],

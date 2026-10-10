@@ -33,6 +33,7 @@ function comfortRender() {
     COMFORT[b.dataset.k] = !COMFORT[b.dataset.k]; store.set(COMFORT_KEY, COMFORT); comfortApply(); comfortRender();
   }));
   if (typeof sreRender === 'function') sreRender(); // la version simplifiée d'un ami testeur (js/surprise.js)
+  admRender();
 }
 // Page Réglages (depuis le Profil) : langue, écran, son, confort, réinitialisation
 function settingsRender() {
@@ -46,6 +47,26 @@ function settingsRender() {
   $('#setOrientBox').hidden = !ORIENT;
   $('#setOrient').querySelectorAll('[data-o]').forEach(b => b.classList.toggle('on', b.dataset.o === (opts.orient || 'auto')));
   comfortRender();
+}
+// Options admin : tout débloquer, une catégorie à la fois (js/data.js admOn)
+const ADM_ROWS = [
+  ['maps', 'Toutes les cartes', 'Cartes, difficultés et événements ouverts'],
+  ['towers', 'Toutes les tours', 'Les six gardiens débloqués'],
+  ['fusions', 'Toutes les fusions', 'Toutes les recettes de fusion débloquées'],
+  ['mastery', 'Maîtrises au max', 'Dégâts de chaque élément et de chaque fusion'],
+  ['range', 'Longues-vues au max', 'Portée de chaque élément et de chaque fusion'],
+  ['rate', 'Sabliers au max', 'Cadence de chaque élément et de chaque fusion'],
+  ['camp', 'Camp au max', 'Trésor, vies, butin, remparts, bouclier, seconde chance…'],
+  ['best', 'Tout le bestiaire', 'Tous les monstres affichés comme rencontrés'],
+  ['wear', 'Toute la garde-robe', 'Tous les habits d’Yglou'],
+];
+function admRender() {
+  const box = $('#setAdm'), on = store.get('elemento.creator') === true; box.hidden = !on; if (!on) return;
+  $('#admList').innerHTML = ADM_ROWS.map(([k, t, sub]) => setRow(k, t, sub, !!ADMX[k])).join('');
+  $('#admList').querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => {
+    const k = b.dataset.k; ADMX[k] = !ADMX[k]; store.set(ADMX_KEY, ADMX); admRender();
+    if (typeof refreshCosts === 'function' && G) refreshCosts(); if (typeof refreshPalette === 'function' && G) refreshPalette();
+  }));
 }
 function openSettings() { Snd.init(); $('#prResetBox').hidden = true; settingsRender(); show('settings'); screens.settings.scrollTop = 0; }
 $('#prSettings').addEventListener('click', openSettings);

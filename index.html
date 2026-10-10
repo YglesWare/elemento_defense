@@ -151,6 +151,12 @@
       <div class="cflist" id="cfList"></div>
       <p class="fine">Ces réglages restent sur ce téléphone.</p>
     </div>
+    <!-- Options admin (js/comfort.js admRender) : visibles seulement pour un compte admin -->
+    <div class="panelbox col setbox" id="setAdm" hidden>
+      <h2 class="ptitle">🛠️ Admin</h2>
+      <p class="fine">Pour tester : tout est débloqué tant que l’option est active, sans toucher à ta vraie progression. Sur ce téléphone seulement.</p>
+      <div class="cflist" id="admList"></div>
+    </div>
     <button class="btn alt" id="tTuto" type="button" hidden>Tutoriel animé</button>
     <button class="btn alt" id="prNews" type="button">🆕 Nouveautés · <span id="prNewsSub"></span></button>
     <button class="btn alt dangerb" id="prReset" type="button">Réinitialiser la progression…</button>
@@ -209,7 +215,7 @@
       <ul class="tips">
         <li>Choisis une tour en bas, puis touche une case d'herbe. Sur téléphone, touche deux fois la même case pour confirmer.</li>
         <li>Certaines cartes ont plusieurs portails, des chemins qui se séparent ou plusieurs maisons (les vies sont communes). Une flèche jaune clignote au-dessus des portails d’où sortira la prochaine vague, et l’aperçu sous la carte indique combien seront actifs.</li>
-        <li>Touche une tour posée pour l'améliorer, la vendre ou changer sa cible. « Améliorer » propose six achats sans fin : Dégâts, Portée, Cadence, Sol, Vol et Boss. Chacun coûte un peu plus à chaque fois.</li>
+        <li>Touche une tour posée pour l'améliorer ou changer sa cible (tant qu'elle n'a pas tiré, tu peux aussi l'annuler, remboursée en entier). « Améliorer » propose six achats sans fin : Dégâts, Portée, Cadence, Sol, Vol et Boss. Chacun coûte un peu plus à chaque fois.</li>
         <li>Pour fusionner deux tours compatibles (toutes deux au niveau 5 en Dégâts, Portée et Cadence), touche la première, puis la seconde : choisis l’icône de fusion dans le petit menu. Tu peux aussi faire glisser l’une sur l’autre. La fusion prend la place de la seconde tour. Chaque fusion se débloque une par une dans l’Atelier.</li>
         <li>Lancer la vague suivante pendant qu'il reste des ennemis rapporte un bonus d'audace.</li>
         <li>Chaque vague gagnée rapporte des éclats, et la fin de partie aussi. Dépense-les dans l’Atelier : à tout moment avec le bouton violet en haut (la partie se met en pause), ou depuis le menu.</li>

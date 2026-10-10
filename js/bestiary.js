@@ -158,19 +158,20 @@ function bestHint(k) {
   const n = k === 'gloop' || k === 'zip' || k === 'boss' ? 0 : MOB_ORDER.indexOf(k);
   return n >= 0 ? T('Carte ') + (n + 1) : '';
 }
-const bestCount = () => BEST_ALL.filter(mobSeen).length;
+const bestSeen = k => mobSeen(k) || admOn('best'); // option admin « Tout le bestiaire »
+const bestCount = () => BEST_ALL.filter(bestSeen).length;
 // Sprite d'un monstre pour le bestiaire (les volants un peu plus bas : leurs ailes restent dans le cadre)
 function bestDraw(cv, k, n) { const c = prepMini(cv, n, n), fly = ETYPES[k].flying; drawEnemy(c, k, n / 2, n * (fly ? 1.02 : 0.9), n * (k === 'boss' ? 0.82 : fly ? 0.9 : 1.12), 0.6, null); }
 function openBest() {
   Snd.init();
   $('#bestCnt').textContent = '👾 ' + bestCount() + ' / ' + BEST_ALL.length + T(' rencontrés');
   $('#bestList').innerHTML = BEST_GROUPS.map(([t, L]) => '<h3 class="besth">' + t + '</h3><div class="bestg">'
-    + L.map(k => { const seen = mobSeen(k); return '<button class="bestc' + (seen ? '' : ' no') + '" type="button" data-k="' + k + '"><canvas></canvas><b>' + (seen ? esc(ETYPES[k].name) : '???') + '</b>' + (seen ? '' : '<small>' + esc(bestHint(k)) + '</small>') + '</button>'; }).join('') + '</div>').join('');
+    + L.map(k => { const seen = bestSeen(k); return '<button class="bestc' + (seen ? '' : ' no') + '" type="button" data-k="' + k + '"><canvas></canvas><b>' + (seen ? esc(ETYPES[k].name) : '???') + '</b>' + (seen ? '' : '<small>' + esc(bestHint(k)) + '</small>') + '</button>'; }).join('') + '</div>').join('');
   $('#bestList').querySelectorAll('.bestc').forEach(b => { bestDraw(b.querySelector('canvas'), b.dataset.k, 56); b.addEventListener('click', () => bestOpen(b.dataset.k)); });
   show('best'); screens.best.scrollTop = 0;
 }
 function bestOpen(k) {
-  const D = ETYPES[k], seen = mobSeen(k);
+  const D = ETYPES[k], seen = bestSeen(k);
   Snd.init(); Snd.play('build');
   const cv = $('#bpCv'); bestDraw(cv, k, 110); cv.style.filter = seen ? '' : 'brightness(0) opacity(.3)';
   $('#bpName').textContent = seen ? D.name : '???';

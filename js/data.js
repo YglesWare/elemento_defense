@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 122;
+const BUILD = 123;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -38,7 +38,18 @@ const UP_INF = {};
 const lvOf = (lv, id) => { const raw = ((lv && lv[id]) || 0) / upK(id), I = UP_INF[id]; return I && raw > I.max ? I.max + (raw - I.max) * I.f : raw; };
 // Progression d'avant le découpage : un niveau acheté vaut k paliers
 if ((meta.lvv || 1) < 2) { for (const id in meta.lv) meta.lv[id] *= upK(id); meta.lvv = 2; store.set('elemento.meta', meta); }
-const M = id => typeof G !== 'undefined' && G && G.chal && G.chal.m.puriste && !/^(u_|f_|map_)/.test(id) ? 0 : lvOf(meta.lv, id);
+// Options admin (Réglages → Admin, js/comfort.js) : font comme si tout était débloqué, sans toucher à la vraie progression.
+// Gardées sur cet appareil seulement (clé non synchronisée), et seulement pour un compte admin
+const ADMX_KEY = 'elemento.adminx';
+const ADMX = store.get(ADMX_KEY) || {};
+const admOn = k => !!ADMX[k] && store.get('elemento.creator') === true;
+const admCat = id => /^u_/.test(id) ? 'towers' : /^f_/.test(id) ? 'fusions' : /^map_/.test(id) ? 'maps' : /^m_/.test(id) ? 'mastery' : /^p_/.test(id) ? 'range' : /^c_/.test(id) ? 'rate' : 'camp';
+function admLv(id) {
+  const c = admCat(id); if (!admOn(c)) return null;
+  if (c === 'towers' || c === 'fusions' || c === 'maps') return 1;
+  const u = typeof UPGRADES !== 'undefined' && UPGRADES.find(x => x.id === id); return u ? u.max / u.k : null;
+}
+const M = id => { if (typeof G !== 'undefined' && G && G.chal && G.chal.m.puriste && !/^(u_|f_|map_)/.test(id)) return 0; const a = admLv(id); return a != null ? Math.max(a, lvOf(meta.lv, id)) : lvOf(meta.lv, id); };
 // Améliorations d'un autre profil le temps d'un calcul (coop : chaque tour suit l'Atelier de son propriétaire)
 function withLv(lv, fn) { const s = meta.lv; meta.lv = lv || {}; try { return fn(); } finally { meta.lv = s; } }
 const Mo = (t, id) => (G && G.coop && t && t.own && t.own !== coopMe() ? lvOf(coopLv(t.own), id) : M(id));
@@ -333,9 +344,10 @@ function nextSeasonStart(k, now = new Date()) { const y = now.getFullYear(); con
 const LUNAR = { 2025: '01-29', 2026: '02-17', 2027: '02-06', 2028: '01-26', 2029: '02-13', 2030: '02-03', 2031: '01-23', 2032: '02-11', 2033: '01-31', 2034: '02-19', 2035: '02-08', 2036: '01-28', 2037: '02-15', 2038: '02-04', 2039: '01-24', 2040: '02-12' };
 function lunarNY(y) { const [m, d] = (LUNAR[y] || '02-05').split('-').map(Number); return new Date(y, m - 1, d); }
 // TEMPORAIRE : mode test, toutes les cartes et tous les événements sont débloqués (repasser à false pour revenir à la normale)
-const TEST_ALL = false;
+// Toutes les cartes, difficultés et événements ouverts : option admin « Toutes les cartes »
+const testAll = () => admOn('maps');
 function inSeason(m) {
-  if (!m || !m.season || TEST_ALL) return true;
+  if (!m || !m.season || testAll()) return true;
   return SEASONS[m.season].on(new Date()) || new RegExp('[?&]' + m.season + '\\b').test(location.search);
 }
 // Événement de la partie en cours (null sur les cartes normales)
@@ -343,7 +355,7 @@ const evt = () => (G && !G.demo && MAPS[G.map] && MAPS[G.map].season) || null;
 const spooky = () => evt() === 'halloween';
 // Carte suivante achetable dès que la précédente est réussie en Facile (ou plus dur)
 const mapReqOk = i => {
-  if (i === 0 || TEST_ALL) return true;
+  if (i === 0 || testAll()) return true;
   if (MAPS[i].season) return inSeason(MAPS[i]);
   const rec = (store.get(BEST2) || {})[MAPS[i - 1].id] || {};
   return ['facile', 'moyen', 'difficile'].some(k => rec[k] && rec[k].won);
@@ -352,12 +364,12 @@ const mapReqOk = i => {
 // Infini (Difficile réussi). Ce qui a déjà été réussi ou joué en Infini reste ouvert ; cartes aléatoires : tout est ouvert.
 function diffOpen(i, k) {
   const m = MAPS[i], n = DORDER.indexOf(k);
-  if (TEST_ALL || !m || m.random || n <= 0) return true;
+  if (testAll() || !m || m.random || n <= 0) return true;
   const rec = (store.get(BEST2) || {})[recId(m)] || {}, won = d => !!(rec[d] && rec[d].won);
   if (k === 'infini' && rec.infini && rec.infini.wave) return true;
   return DORDER.slice(n - 1).some(won);
 }
-const mapOwned = i => TEST_ALL || !MAPS[i].price || M('map_' + MAPS[i].id) > 0;
+const mapOwned = i => testAll() || !MAPS[i].price || M('map_' + MAPS[i].id) > 0;
 function saveMapIndex(sv) {
   if (!sv || sv.grid !== GRIDV) return -1; // sauvegarde faite sur l'ancienne grille : plus utilisable
   if (sv.mapId === 'random') return sv.rnd && typeof loadRandom === 'function' ? loadRandom(sv.rnd) : -1;
@@ -669,7 +681,7 @@ function trackPrice(type, up, k) {
   if (spec) return Math.round((isMutation(type, k) ? MUT_MIN : SPEC_MIN) * (1 + 0.3 * (n - 1)) * cheap / 5) * 5;
   return Math.max(ECO.upMin, Math.round(TOWERS[type].cost * (ECO.upBase + 0.04 * n) * cheap / 5) * 5);
 }
-const sellValue = t => Math.floor(t.inv * (0.7 + 0.05 * M('resell')));
+const sellValue = t => Math.floor(t.inv * 0.7); // revente de l'ancien temps (plus de vente, js/game.js undoable)
 
 // Améliorations permanentes (Atelier)
 // Longue-vue : +2,5 % de portée de base par niveau (5 niveaux en 10 paliers), fusions comprises (moyenne des deux éléments)
@@ -686,7 +698,6 @@ const UPGRADES = [
   { id: 'loot', name: T('Butin'), max: 5, base: 12, fx: l => '+' + nf(l * 6) + T(' % d’or par ennemi') },
   { id: 'bonus', name: T('Prime de vague'), max: 5, base: 8, fx: l => '+' + nf(l * 20) + T(' % de prime de fin de vague') },
   { id: 'cheap', name: T('Rabais'), max: 5, base: 15, fx: l => T('Tours et améliorations ') + nf(l * 4) + T(' % moins chères') },
-  { id: 'resell', name: T('Revente'), max: 4, base: 8, fx: l => T('Tours revendues à ') + nf(70 + l * 5) + ' %' },
   { id: 'remparts', name: T('Remparts'), max: 5, base: 10, inf: 0.5, fx: l => T('Tours +') + nf(l * 20) + T(' % de PV') },
   { id: 'bouclier', name: T('Bouclier'), max: 3, base: 15, fx: l => T('Chaque tour commence la vague avec un bouclier de ') + nf(l * 15) + T(' % de ses PV') },
   { id: 'paratonnerre', name: T('Paratonnerre'), max: 3, base: 12, fx: l => T('Paralysie des Grésillons −') + nf(l * 25) + ' %' },
@@ -710,6 +721,12 @@ const UPGRADES = [
 // Paliers : u.k par niveau d'origine, u.max paliers en tout ; prix d'un palier ≈ prix d'origine du niveau / k (même total à ECO.atelier = 1)
 for (const u of UPGRADES) { u.k = upK(u.id); u.max *= u.k; if (u.inf) UP_INF[u.id] = { max: u.max / u.k, f: u.inf }; }
 const upLv = u => meta.lv[u.id] || 0;
+// « Revente » retirée (build 123) : les tours ne se vendent plus. Ses éclats sont rendus une fois, au prix payé palier par palier
+if (meta.lv.resell) {
+  const u = { id: 'resell', max: 4 * upK('resell'), base: 8, k: upK('resell') }; let back = 0;
+  for (let l = 0; l < meta.lv.resell; l++) back += upPriceAt(u, l);
+  meta.shards += back; meta.resellBack = back; delete meta.lv.resell; store.set(META, meta);
+}
 // Prix du palier l ; au-delà du maximum (améliorations infinies), +12 % à chaque palier
 function upPriceAt(u, l) {
   const p = u.base * ECO.atelier * (Math.min(l, u.max - 1) + 1) / (u.k * u.k);

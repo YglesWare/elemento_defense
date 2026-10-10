@@ -14,7 +14,7 @@ const WEAR_CRESTS = [
 ];
 const WEAR_AURA = 10000;
 const wear = () => { meta.wear = meta.wear || { own: [], hat: null, crest: null, aura: false }; return meta.wear; };
-const wearOwns = id => id === 'hat:none' || id === 'crest:or' || wear().own.includes(id);
+const wearOwns = id => id === 'hat:none' || id === 'crest:or' || wear().own.includes(id) || admOn('wear');
 const wearHat = () => { const h = wear().hat; return h && h !== 'none' ? h : null; };
 const wearCrest = () => { const c = WEAR_CRESTS.find(x => x[0] === wear().crest); return c && c[0] !== 'or' ? c[3] : null; };
 // Avatar vu par les amis : « yg » + lettre du chapeau + lettre de la crête (+ « z » avec l'aura)

@@ -333,13 +333,15 @@ function upApply(t, k, cost) {
   if (t.lvl > st0) { G.fx.push({ kind: 'beam', gx: t.x, gy: t.y, t: 0, dur: 0.9, color: col }); t.upT = G.time; }
 }
 function evolve(t) { if (typeof openUpSheet === 'function') openUpSheet(t); }
-// Une tour qui n'a pas encore tiré s'annule : remboursée en entier (un toucher raté ne coûte rien). Solo seulement.
-const undoable = t => !!t && !t.fired && !G.coop && !G.duel;
+// Les tours ne se vendent pas : une tour posée depuis la palette (build, builtAt) s'annule seulement, remboursée en entier,
+// tant qu'elle n'a ni tiré ni fini sa première vague (settled, waveDone). Jamais les fusions, les tours ressuscitées ou
+// celles d'une partie reprise. Solo seulement (le multijoueur ne vend ni n'annule).
+const undoable = t => !!t && t.builtAt != null && !t.fired && !t.settled && !G.coop && !G.duel;
 function sell(t) {
-  if (typeof chalNoSell === 'function' && chalNoSell()) { Snd.play('no'); hint(T('Pas de remboursement 🔒 : le piment interdit de vendre'), 2200); return; }
+  if (!undoable(t)) { Snd.play('no'); hint(T('Une tour qui a tiré ou fini sa première vague ne se vend plus'), 2400); return; }
   if (G.coopGuest) { coopAct({ a: 'sell', id: t.id }); deselect(); return; }
   if (t.builtAt != null && G.time - t.builtAt < 3 && typeof trophy === 'function') trophy('egg_regret');
-  const v = undoable(t) ? t.inv : sellValue(t); G.gold += v; G.nSold = (G.nSold || 0) + 1;
+  const v = t.inv; G.gold += v; G.nSold = (G.nSold || 0) + 1;
   G.towers = G.towers.filter(x => x !== t);
   burst(t.x, t.y, 0.3, 12, ['#cdbfe0', '#ffffff', '#ffd23f'], 2, 0.09, 3, 0.5);
   G.texts.push({ txt: '+' + v, gx: t.x, gy: t.y, oy: -0.5, t: 0, dur: 0.9, color: '#ffd23f', size: 0.36, rot: 0 });
@@ -575,7 +577,7 @@ function startWave(forced) {
 function waveDone() {
   if (G.duel) { G.waveActive = false; return; }
   G.waveActive = false;
-  for (const t of G.towers) { healTower(t, !hardMode()); t.ko = 0; t.stun = 0; t.evil = 0; t.hitBy = null; refillShield(t); }
+  for (const t of G.towers) { healTower(t, !hardMode()); t.ko = 0; t.stun = 0; t.evil = 0; t.hitBy = null; refillShield(t); t.settled = true; }
   const bonus = Math.round((10 + G.wave) * (1 + 0.2 * M('bonus'))); G.gold += bonus; G.score += G.wave * 50;
   if (G.coop) coopWaveDone();
   G.partyUntil = G.time + 2.4;
