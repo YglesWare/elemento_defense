@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 124;
+const BUILD = 125;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -74,7 +74,7 @@ const bankShares = () => IS_EN ? pct(ECO.bankWin) + ' of the remaining gold if y
 // Si on change hp, bankWin ou bankKo, mettre à jour les textes des difficultés (DIFFS) et de l'aide (index.html).
 // mapHp / mapShards : PV des ennemis ×mapHp et éclats +mapShards à chaque carte suivante (cartes 1 à 10) ;
 // mapHpDiff : part de cette hausse de PV gardée selon la difficulté (en Difficile, les PV de base sont déjà très hauts)
-const ECO = Object.assign({ shards: 0.4, bankWin: 0.85, bankKo: 0.4, mapPrice: 1.43, atelier: 4.5, unlock: 2.5, mapHp: 1.1, mapShards: 0.15, mapHpDiff: { facile: 1, moyen: 0.75, difficile: 0.5 }, range: 0.8, hp: { facile: 0.8, moyen: 1.3, difficile: 2.3 }, diffShards: { facile: 0.35 },
+const ECO = Object.assign({ shards: 0.4, bankWin: 1, bankKo: 0.4, mapPrice: 1.43, atelier: 4.5, unlock: 2.5, mapHp: 1.1, mapShards: 0.15, mapHpDiff: { facile: 1, moyen: 0.75, difficile: 0.5 }, range: 0.8, hp: { facile: 0.8, moyen: 1.3, difficile: 2.3 }, diffShards: { facile: 0.35 },
   // Or de départ par difficulté (DIFFS[…].gold si absent) ; prix d'un achat Dégâts/Portée/Cadence : coût de la tour × (upBase + 0,04 × niveau), au moins upMin
   gold: {}, upBase: 0.06, upMin: 10,
   // Or gagné par monstre vaincu (×), les centimes s'accumulent d'un monstre à l'autre

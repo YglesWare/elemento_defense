@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  125: [
+    ['🐷', 'Victoire : tout l’or qu’il te reste à la fin de la partie va dans la cagnotte (au lieu de 85 %).'],
+  ],
   124: [
     ['🪙', 'Chaque monstre vaincu rapporte un peu plus d’or (+2,5 %).'],
     ['📱', 'Réglages : nouvelles icônes pour l’orientation de l’écran (Auto, Portrait, Paysage).'],
