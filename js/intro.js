@@ -14,6 +14,9 @@ const MOB_TIPS = {
   crachou: T('Il crache sur les tours et leur fait perdre des PV. Une tour abîmée tire toujours, mais à 0 PV elle tombe.'),
   malefik: T('Il pervertit une tour : pendant un moment, elle attaque tes autres tours. Garde des tours loin les unes des autres.'),
   boss: T('Le boss des vagues 10, 20 et 30 : énormément de PV, et ses coups de patte abîment les tours proches. Concentre toutes tes tours sur lui.'),
+  soignou: T('Un élite : toutes les 3 secondes, il soigne les slimes autour de lui. Abats-le en premier, sinon la vague ne faiblit pas.'),
+  bulle: T('Un élite protégé par une bulle : elle encaisse les coups avant ses PV. Le feu de Braise et l’éclair de Voltie l’éclatent deux fois plus vite.'),
+  scindo: T('Un élite costaud : quand il tombe, il se divise en trois Gloops. Garde une tour de zone (Ondine, Rocaille) juste derrière lui.'),
 };
 const introSeen = () => store.get(INTRO_KEY) || {};
 // Pas en multijoueur (ça mettrait les autres en pause), ni dans le tutoriel guidé, l'animation de démo ou l'outil d'équilibrage
@@ -31,7 +34,10 @@ function introPush(key, item) {
 // Première apparition d'un monstre
 function introMob(type) {
   const D = ETYPES[type]; if (!D) return;
-  introPush('mob_' + type, { kind: 'mob', type, title: eName(type), text: MOB_TIPS[type] || D.desc });
+  // Nouveau dans le bestiaire (js/bestiary.js) : 2 éclats, une seule fois par monstre
+  const fresh = !introSeen()['mob_' + type] && introOk();
+  introPush('mob_' + type, { kind: 'mob', type, title: eName(type), text: MOB_TIPS[type] || D.desc, tip: fresh ? T('📖 Nouveau dans ton bestiaire : +2 éclats') : '' });
+  if (fresh) { meta.shards += 2; meta.earned = (meta.earned || 0) + 2; saveMeta(); }
 }
 // Première tour attaquée (Facile, Moyen, Infini) et, à part, la première en Difficile
 function introTower(t) {

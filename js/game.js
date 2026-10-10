@@ -189,7 +189,8 @@ function newGame(mi, save, diff) {
   if (typeof chalWeekGo !== 'undefined') chalWeekGo = null;
   P = buildPath(m); G.deco = genDeco(mi);
   if (!save && !G.story) { stats.games++; saveStats(); const h = new Date().getHours(); if (h < 5 && typeof trophy === 'function' && !G.duel) trophy('egg_night'); }
-  if (save) for (const t of save.towers) { const nt = addTower(t.type, t.c, t.r, t.up || upFromLvl(t.lvl, t.br), t.mode, t.inv); if (hardMode() && t.hp > 0) nt.hp = Math.min(nt.maxHp, t.hp); }
+  if (save) for (const t of save.towers) { const nt = addTower(t.type, t.c, t.r, t.up || upFromLvl(t.lvl, t.br), t.mode, t.inv); nt.fired = true; if (hardMode() && t.hp > 0) nt.hp = Math.min(nt.maxHp, t.hp); }
+  if (save && save.cleared) { G.clearN = save.clearN || 0; G.ruinN = save.ruinN || 0; for (const [q, r] of save.cleared) clearTerrain(q, r); }
   saveCheckpoint();
   hudCache = {}; const bp = $('#bonusPop'); if (bp) bp.hidden = true;
   resize(); refreshCosts(); showPanel('palette'); refreshPalette();
@@ -207,7 +208,7 @@ function saveCheckpoint() {
   if (G.duel || duelOn || G.coop || G.story) return;
   G.checkpoint = { grid: GRIDV, rnd: MAPS[G.map].rnd || null, map: G.map, mapId: MAPS[G.map].id, diff: G.diff, banked: G.banked, gold: G.gold, lives: G.lives, wave: G.wave, score: G.score, endless: G.endless,
     bossKills: G.bossKills, shardsPaid: G.shardsPaid, shardsWon: G.shardsWon, won: G.won, reviveUsed: G.reviveUsed, adRevived: G.adRevived,
-    weather: G.weather, ruins: G.ruins, bonusUsed: G.bonusUsed || 0, time: Math.round(G.time), chal: G.chal ? { m: G.chal.m, sans: G.chal.sans, sur: G.chal.sur, used: G.chal.used } : null, week: G.week || null, towers: G.towers.map(t => ({ type: t.type, c: t.c, r: t.r, up: t.up, mode: t.mode, inv: t.inv, hp: Math.round(t.hp) })) };
+    weather: G.weather, ruins: G.ruins, cleared: G.cleared || [], clearN: G.clearN || 0, ruinN: G.ruinN || 0, bonusUsed: G.bonusUsed || 0, time: Math.round(G.time), chal: G.chal ? { m: G.chal.m, sans: G.chal.sans, sur: G.chal.sur, used: G.chal.used } : null, week: G.week || null, towers: G.towers.map(t => ({ type: t.type, c: t.c, r: t.r, up: t.up, mode: t.mode, inv: t.inv, hp: Math.round(t.hp) })) };
   store.set(SAVE, G.checkpoint); store.flush(); // écrite tout de suite : un plantage juste après ne la perd pas
 }
 // Appli mise en arrière-plan entre deux vagues : on garde les tours posées pendant l'entracte
@@ -331,15 +332,53 @@ function upApply(t, k, cost) {
   if (t.lvl > st0) { G.fx.push({ kind: 'beam', gx: t.x, gy: t.y, t: 0, dur: 0.9, color: col }); t.upT = G.time; }
 }
 function evolve(t) { if (typeof openUpSheet === 'function') openUpSheet(t); }
+// Une tour qui n'a pas encore tiré s'annule : remboursée en entier (un toucher raté ne coûte rien). Solo seulement.
+const undoable = t => !!t && !t.fired && !G.coop && !G.duel;
 function sell(t) {
   if (typeof chalNoSell === 'function' && chalNoSell()) { Snd.play('no'); hint(T('Pas de remboursement 🔒 : le piment interdit de vendre'), 2200); return; }
   if (G.coopGuest) { coopAct({ a: 'sell', id: t.id }); deselect(); return; }
   if (t.builtAt != null && G.time - t.builtAt < 3 && typeof trophy === 'function') trophy('egg_regret');
-  const v = sellValue(t); G.gold += v; G.nSold = (G.nSold || 0) + 1;
+  const v = undoable(t) ? t.inv : sellValue(t); G.gold += v; G.nSold = (G.nSold || 0) + 1;
   G.towers = G.towers.filter(x => x !== t);
   burst(t.x, t.y, 0.3, 12, ['#cdbfe0', '#ffffff', '#ffd23f'], 2, 0.09, 3, 0.5);
   G.texts.push({ txt: '+' + v, gx: t.x, gy: t.y, oy: -0.5, t: 0, dur: 0.9, color: '#ffd23f', size: 0.36, rot: 0 });
   Snd.play('sell'); deselect();
+}
+
+// ---------- Dégager un obstacle ou une ruine (js/ui.js openClear) ----------
+// Prix de la partie : 50 or l'obstacle (+25 à chaque fois), 500 or la ruine (+250 à chaque fois)
+const clearPrice = kind => kind === 'ruin' ? 500 + 250 * (G.ruinN || 0) : 50 + 25 * (G.clearN || 0);
+function clearTerrain(q, r) {
+  const row = G.terrain && G.terrain[r]; if (!row) return;
+  G.terrain = G.terrain.slice(); G.terrain[r] = row.slice(0, q) + '.' + row.slice(q + 1); // la carte en cache n'est pas touchée
+  G.cleared = (G.cleared || []).filter(([a, b]) => a !== q || b !== r).concat([[q, r]]);
+}
+function clearCell(q, r) {
+  const ruin = ruinAt(q, r), kind = ruin ? 'ruin' : (terrainAt(q, r) || {}).block ? 'obst' : null; if (!kind) return false;
+  const price = clearPrice(kind);
+  if (G.gold < price) { Snd.play('no'); hint(T('Pas assez d’or : il faut ') + price + T(' or')); return false; }
+  G.gold -= price;
+  if (ruin) { G.ruins = G.ruins.filter(u => u.c !== q || u.r !== r); G.ruinN = (G.ruinN || 0) + 1; }
+  else { clearTerrain(q, r); G.clearN = (G.clearN || 0) + 1; }
+  const [x, y] = cellW(q, r);
+  burst(x, y, 0.2, 16, ['#ffd23f', '#c9a27a', '#ffffff'], 2.6, 0.1, 3, 0.6, 'star'); ono(T('DÉGAGÉ !'), x, y, '#ffd23f', 0.5, 0.2, 0.9); Snd.play('build');
+  if (L.w > 1) buildBg();
+  return true;
+}
+// Étoiles de la victoire : 3 sans perdre de vie, 2 en gardant au moins la moitié des vies, 1 sinon. Les nouvelles
+// étoiles rapportent 5 éclats chacune ; elles se gardent par carte et par difficulté (Facile, Moyen, Difficile)
+const STAR_KEY = 'elemento.stars';
+const starKey = mi => recId(MAPS[mi]);
+const starsOf = (mi, diff) => ((store.get(STAR_KEY) || {})[starKey(mi)] || {})[diff] || 0;
+const starsMap = mi => ['facile', 'moyen', 'difficile'].reduce((n, k) => n + starsOf(mi, k), 0);
+const starsOk = () => G && !G.duel && !G.coop && !G.story && !G.demo && !MAPS[G.map].rnd && ['facile', 'moyen', 'difficile'].includes(G.diff);
+function starsAward() {
+  if (!starsOk()) return null;
+  const n = !G.lostLife ? 3 : G.lives >= G.startLives / 2 ? 2 : 1, all = store.get(STAR_KEY) || {}, k = starKey(G.map), rec = (all[k] = all[k] || {}), before = rec[G.diff] || 0;
+  const gain = Math.max(0, n - before) * 5;
+  if (n > before) { rec[G.diff] = n; store.set(STAR_KEY, all); }
+  if (gain) { meta.shards += gain; meta.earned = (meta.earned || 0) + gain; saveMeta(); }
+  return { n, before, gain };
 }
 
 // ---------- Vagues ----------
@@ -353,6 +392,7 @@ const EVMOB = {
 function makeWave(w) {
   if (G && G.story && typeof storyWave === 'function') return storyWave(w);
   const pool = ['gloop', 'gloop'];
+  if (typeof mobElites === 'function') pool.push(...mobElites(w)); // élites des cartes 8 à 10 (js/bestiary.js)
   if (w >= 3) pool.push('zip'); if (w >= 4) pool.push('flappy'); if (w >= 6) pool.push('tonk'); if (w >= 8) pool.push('magma'); if (w >= 7) pool.push('gresil'); if (w >= 9) pool.push('crachou');
   // Monstre propre à chaque événement, et sa vague spéciale (15, 25, 35…)
   const ev = evt(), EV = ev && EVMOB[ev], fe = EV && G && G.chal ? chalLv('f_' + ev) : 0;
@@ -567,6 +607,7 @@ function victory() {
   if (G.story) { storyWin(); return; }
   G.paused = true; G.won = true; G.endless = true; Snd.play('win');
   const best = recordBest(), award = awardShards(), bank = bankGold(ECO.bankWin); G.shardsWon = G.shardsPaid; saveCheckpoint(); stats.wins++; saveStats();
+  G.starRes = starsAward(); // 1 à 3 étoiles selon les vies gardées (+5 éclats par nouvelle étoile)
   if (typeof logGame === 'function') logGame('won', award);
   if (typeof questEvent === 'function') { const d = { diff: G.diff, daily: !!MAPS[G.map].daily, types: [...new Set(G.towers.map(t => t.type))], lostLife: !!G.lostLife }; questEvent('win', d); questEvent('end', d); }
   if (typeof trophyWin === 'function') trophyWin();
@@ -595,7 +636,8 @@ function spawn(type, pi) {
   if (type === 'spectre') { e.gcy = rand(1, 2.5); e.ghost = 0; }
   else if (G.chal && chalLv('fantome')) { e.gcy = rand(2, 6); e.ghost = 0; e.ghostAll = true; } // Fantômes (piment)
   if (type === 'lapin') e.jT = rand(1.5, 3);
-  if (type === 'calinou') e.abT = rand(1, 2.5);
+  if (type === 'calinou' || type === 'soignou') e.abT = rand(1, 2.5);
+  if (type === 'bulle') e.shield = e.shieldMax = e.maxHp * 0.6; // la bulle encaisse avant les PV
   setPos(e); G.enemies.push(e);
   if (typeof introMob === 'function' && !G.coopGuest) introMob(type);
   if (D.boss) {
@@ -677,11 +719,12 @@ function updateEnemy(e, dt) {
     ono('BOING!', e.x, e.y, '#ffffff', 0.4, 0.4, 0.8);
   }
   if (e.hopT > 0) e.hopT -= dt;
-  if (e.type === 'calinou' && !G.demo && !(e.frozen > 0 || e.stun > 0) && (e.abT -= dt) <= 0) {
-    e.abT = 3; let n = 0;
-    for (const o of G.enemies) if (!o.dead && o !== e && (o.x - e.x) ** 2 + (o.y - e.y) ** 2 < 1.6 * 1.6 && o.hp < o.maxHp) { o.hp = Math.min(o.maxHp, o.hp + o.maxHp * 0.12); n++; }
-    G.fx.push({ kind: 'ring', gx: e.x, gy: e.y, r0: 0.2, r1: 1.6, t: 0, dur: 0.45, color: '#ff9ac6' });
-    if (n) ono(T('♥ CÂLIN !'), e.x, e.y, '#ff6fa8', 0.42, 0.4, 0.8);
+  // Câlinou (Saint-Valentin) et Soignou (élite) soignent les slimes autour d'eux
+  if ((e.type === 'calinou' || e.type === 'soignou') && !G.demo && !(e.frozen > 0 || e.stun > 0) && (e.abT -= dt) <= 0) {
+    const sg = e.type === 'soignou'; e.abT = 3; let n = 0;
+    for (const o of G.enemies) if (!o.dead && o !== e && (o.x - e.x) ** 2 + (o.y - e.y) ** 2 < 1.6 * 1.6 && o.hp < o.maxHp) { o.hp = Math.min(o.maxHp, o.hp + o.maxHp * (sg ? 0.1 : 0.12)); n++; }
+    G.fx.push({ kind: 'ring', gx: e.x, gy: e.y, r0: 0.2, r1: 1.6, t: 0, dur: 0.45, color: sg ? '#5fd38a' : '#ff9ac6' });
+    if (n) ono(sg ? T('+ SOIN !') : T('♥ CÂLIN !'), e.x, e.y, sg ? '#2fae5a' : '#ff6fa8', 0.42, 0.4, 0.8);
   }
   if ((e.type === 'spectre' || e.ghostAll) && !G.demo) {
     if (e.ghost > 0) e.ghost -= dt;
@@ -696,7 +739,7 @@ function updateEnemy(e, dt) {
   if (e.frozen > 0) e.frozen -= dt;
   if (e.stun > 0) e.stun -= dt;
   if (e.burnT > 0) {
-    e.burnT -= dt; if (!G.coopGuest) e.hp -= e.burn * dt;
+    e.burnT -= dt; if (!G.coopGuest) { if (e.shield > 0) e.shield -= e.burn * dt * 2; else e.hp -= e.burn * dt; }
     if (Math.random() < dt * 5) burst(e.x, e.y, (e.flying ? FLY : 0) + 0.45, 1, ['#ff9a3d', '#ffd23f'], 0.6, 0.06, -1.5, 0.5);
     if (e.burnT <= 0) e.burn = 0;
     if (e.hp <= 0) { kill(e); return; }
@@ -754,6 +797,13 @@ function hurt(e, dmg, elem, s) {
   m *= vsMul(s, e);
   const arm0 = Math.max(0, e.armor - (e.shred || 0)), arm = s && s.pierce ? Math.max(0, arm0 - s.pierce) : arm0;
   const d = Math.max(dmg * m - arm, dmg * m * 0.2);
+  // Bulleux : la bulle prend les coups d'abord (le feu et l'éclair l'éclatent deux fois plus vite)
+  if (e.shield > 0) {
+    const k = elem === 'feu' || elem === 'foudre' ? 2 : 1; e.shield -= d * k; e.flash = 0.12;
+    if (e.shield > 0) return d;
+    ono('PLOP !', e.x, e.y, '#7fc4ff', 0.5, 0.3, up); burst(e.x, e.y, up, 12, ['#d2e9ff', '#ffffff', '#5aa9ff'], 2.4, 0.08, 3, 0.5);
+    e.hp += e.shield / k; e.shield = 0; if (e.hp <= 0) kill(e); return d;
+  }
   e.hp -= d; e.flash = 0.12;
   if (s && s.solLv >= 4 && !e.flying && !D.boss && Math.random() < 0.15) e.stun = Math.max(e.stun, 0.5);
   if (e.hp <= 0) kill(e);
@@ -762,7 +812,7 @@ function hurt(e, dmg, elem, s) {
 function kill(e) {
   if (e.dead || G.coopGuest) return;
   e.dead = true;
-  const D = ETYPES[e.type]; if (!G.demo && !G.story) { stats.kills++; if (typeof questEvent === 'function') questEvent('kill'); if (D.boss) { stats.bosses++; if (typeof trophyBoss === 'function') trophyBoss(); if (typeof questEvent === 'function') questEvent('boss'); } }
+  const D = ETYPES[e.type]; if (!G.demo && !G.story) { stats.kills++; stats.killsBy = stats.killsBy || {}; stats.killsBy[e.type] = (stats.killsBy[e.type] || 0) + 1; if (typeof questEvent === 'function') questEvent('kill'); if (D.boss) { stats.bosses++; if (typeof trophyBoss === 'function') trophyBoss(); if (typeof questEvent === 'function') questEvent('boss'); } }
   const up = (e.flying ? FLY : 0) + 0.25;
   const lf = G.chal ? chalLoot() : 1, rw = G.coop ? coopLoot(D.reward * (1 + G.wave * 0.01) * lf) : Math.round(D.reward * (1 + G.wave * 0.01) * (1 + 0.06 * M('loot')));
   if (!G.coop) G.gold += Math.round(rw * lf); G.score += rw * 10;
@@ -775,6 +825,7 @@ function kill(e) {
     if (spooky()) spawnAt('potiron', 3, e.d, e.pi);
   }
   if (e.type === 'cadeau') { spawnAt('zip', 2, e.d, e.pi); ono('SURPRISE !', e.x, e.y, '#ffd23f', 0.5, 0.3, 0.9); }
+  else if (e.type === 'scindo') { spawnAt('gloop', 3, e.d, e.pi); ono('SPLIT !', e.x, e.y, '#ffae3d', 0.5, 0.3, 0.9); Snd.play('pop'); }
   else { if (Math.random() < 0.18) ono(pick(['POP!', 'PAF!', 'BLOP!', 'SPLOTCH!']), e.x, e.y, '#ffffff', 0.45, 0.35, up + 0.4); Snd.play('pop'); }
 }
 function slowE(e, a, t) { const f = ETYPES[e.type].boss ? 0.6 : 1; e.slowA = Math.max(e.slowA, a * f); e.slowT = Math.max(e.slowT, t); }
@@ -810,7 +861,7 @@ function updateTower(t, dt) {
   const s = t.s, [cx, cy] = windCenter(t), R2 = s.range * s.range, list = [];
   for (const e of G.enemies) { if (e.dead || e.ghost > 0 || !canHit(s, e)) continue; const dx = e.x - cx, dy = e.y - cy; if (dx * dx + dy * dy <= R2) list.push(e); }
   if (!list.length) { t.cd = 0.08; return; }
-  t.cd = 1 / s.rate; t.recoil = 1;
+  t.cd = 1 / s.rate; t.recoil = 1; t.fired = true;
   if (t.type === 'glace' || t.type === 'blizzard') { pulse(t, s, list); return; }
   if (t.type === 'sable') { sandPulse(t, s, list); return; }
   if (t.type === 'orage') { storm(t, s, list); return; }
@@ -881,6 +932,7 @@ function beamTower(t, dt) {
   t.beamT += dt; t.acc = (t.acc || 0) + dt;
   const ddx = e.x - cx, ddy = e.y - cy, [a, b] = L.portrait ? [ddy, ddx] : [ddx, ddy], l = Math.hypot(a, b) || 1; t.lx = a / l; t.ly = b / l;
   if (t.acc >= 0.2) {
+    t.fired = true;
     const ramp = Math.min(s.rampMax, t.beamT);
     hurt(e, s.dmg * (1 + ramp) * t.acc, 'plasma', s); t.acc = 0; t.recoil = 0.6;
     Snd.play('plasma');
@@ -1157,6 +1209,11 @@ function render(c = ctx, bg = (G && G.bg) || bgCv) {
       const txt = Tt.block ? T('Obstacle : impossible de construire') : Tt.name + T(' : ') + (a ? fmtAff(a) + T(' de puissance') : Tt.range ? T('+0,4 de portée') : T('aucun effet')) + (a && Tt.range ? T(', +0,4 de portée') : '');
       G.tpill = [txt, x, y - cs * 0.55, Tt.block || a < 0 ? COL().noBg : a > 0 || Tt.range ? COL().okBg : '#ffffff'];
     }
+  }
+  // Case qu'on propose de dégager : un cadre jaune qui pulse
+  if (G.clearAt) {
+    const [x, y] = cellXY(G.clearAt.q, G.clearAt.r), p = cs * (0.06 + 0.04 * Math.sin(G.time * 6));
+    rr(c, x - p, y - p, cs + p * 2, cs + p * 2, cs * 0.22); c.lineWidth = Math.max(3, cs * 0.12); c.strokeStyle = INK; c.stroke(); c.lineWidth = Math.max(2, cs * 0.07); c.strokeStyle = '#ffd23f'; c.stroke();
   }
   if (G.bad) {
     const [x, y] = cellXY(G.bad.c + 0.5, G.bad.r + 0.5), k = cs * 0.22;

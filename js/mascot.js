@@ -52,6 +52,7 @@ function openProfile() {
   Snd.init(); show('profile'); screens.profile.scrollTop = 0; if (typeof refreshTrophyBtn === 'function') refreshTrophyBtn(); if (typeof cloudPaint === 'function') cloudPaint();
   $('#prName').value = store.get('elemento.pseudo') || ''; nameWarn();
   $('#prNewsSub').textContent = T('Version ') + '1.0.' + BUILD;
+  if (typeof bestTile === 'function') bestTile();
 }
 // Page des stats (depuis le Profil) : une tuile par chiffre
 screens.stats = $('#sStats');

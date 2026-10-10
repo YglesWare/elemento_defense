@@ -20,7 +20,7 @@ function barsColor(name) {
 function statFit(...sels) { for (const s of sels) { const e = $(s), n = e.textContent.length; e.style.fontSize = n >= 6 ? '17px' : n === 5 ? '21px' : n === 4 ? '24px' : ''; } }
 // Retour des menus : la flèche en haut à gauche déclenche le bouton « Retour » de l'écran affiché (caché, il garde son
 // action, la touche Échap et le bouton retour d'Android). Le multijoueur n'a son « Retour » que sur sa page d'accueil.
-const BACKS = { profile: '#prBack', settings: '#setBack', shop: '#sBack', maps: '#mBack', rand: '#rBack', diff: '#dfBack', friends: '#frBack', fradd: '#faBack',
+const BACKS = { best: '#bestBack', profile: '#prBack', settings: '#setBack', shop: '#sBack', maps: '#mBack', rand: '#rBack', diff: '#dfBack', friends: '#frBack', fradd: '#faBack',
   parents: '#paBack', wardrobe: '#wrBack', stats: '#stBack', trophies: '#trBack', story: '#storyBack', multi: '#mpBody [data-a=back]' };
 const backBtn = () => { const s = BACKS[curScreen]; return s ? document.querySelector(s) : null; };
 function backSync() { const on = !!backBtn(); $('#backArrow').hidden = !on; document.body.classList.toggle('hasback', on); }
@@ -89,7 +89,8 @@ function refreshPalette() {
 let duelTab = 'tours';
 function showPanel(which) {
   const duel = !!(G && G.duel), send = duel && which === 'palette' && duelTab === 'send';
-  $('#palette').hidden = which !== 'palette' || send; $('#info').hidden = which !== 'info';
+  $('#palette').hidden = which !== 'palette' || send; $('#info').hidden = which !== 'info'; $('#clearInfo').hidden = which !== 'clear';
+  if (which !== 'clear' && G) G.clearAt = null;
   $('#sendPanel').hidden = !send; $('#duelTabs').hidden = !duel || which === 'info';
 }
 
@@ -123,7 +124,7 @@ function selectTower(t) {
 function refreshInfo() {
   const t = G && G.selTower; if (!t) return;
   const D = TOWERS[t.type];
-  const hc = healCost(t), key = [t.type, UP_KEYS.map(k => t.up[k]).join(','), t.mode, G.gold, G.gold >= hc, Math.ceil(t.hp), Math.ceil(t.shield || 0), Math.ceil(t.ko || 0), t.stun > 0, Math.ceil(t.evil || 0)].join('|');
+  const hc = healCost(t), key = [!!t.fired, t.type, UP_KEYS.map(k => t.up[k]).join(','), t.mode, G.gold, G.gold >= hc, Math.ceil(t.hp), Math.ceil(t.shield || 0), Math.ceil(t.ko || 0), t.stun > 0, Math.ceil(t.evil || 0)].join('|');
   if (hudCache.info === key) return;
   hudCache.info = key;
   $('#iName').textContent = D.name + (G.coop && t.own && t.own !== coopMe() ? ' · ' + coopName(t.own) : '');
@@ -135,7 +136,8 @@ function refreshInfo() {
   // Le moins cher des achats possibles, pour savoir d'un coup d'œil si on peut améliorer
   const cheap = Math.min(...UP_KEYS.filter(k => !trackLocked(k) && (t.up[k] || 0) < towerCap(t, k)).map(k => trackPrice(t.type, t.up, k)));
   two(up, T('Améliorer ▸'), isFinite(cheap) ? T('dès ') + COIN + cheap : null, false); up.disabled = false; up.classList.toggle('poor', !(G.gold >= cheap));
-  two($('#iSell'), T('Vendre'), sellValue(t));
+  // Pas encore tiré : « Annuler », remboursée en entier (js/game.js undoable)
+  const und = undoable(t); two($('#iSell'), und ? T('Annuler') : T('Vendre'), und ? t.inv : sellValue(t)); $('#iSell').classList.toggle('undo', und);
   if (!mine) { up.disabled = true; $('#iSell').disabled = true; } else $('#iSell').disabled = typeof chalNoSell === 'function' && chalNoSell();
   // Difficile : soin payant (une tour détruite ne se soigne pas : elle n'existe plus)
   const hb = $('#iHeal'); hb.hidden = !hardMode();
@@ -227,6 +229,8 @@ function tapCell(q, r, isMouse) {
     if (s && s !== tw && fusionKey(s.type, tw.type) && !TOWERS[s.type].fusion && !TOWERS[tw.type].fusion && !(G.coop && (s.own !== coopMe() || tw.own !== coopMe()))) { openRadial(s, tw); return; }
     selectTower(tw); return;
   }
+  // Obstacle ou ruine : on propose de les dégager contre de l'or (solo seulement)
+  if ((ruinAt(q, r) || (terrainAt(q, r) || {}).block) && !G.coop && !G.duel) { openClear(q, r); return; }
   if (G.selType) {
     const D = TOWERS[G.selType];
     if (!canBuild(q, r)) { G.bad = { c: q, r, t: 0.45 }; Snd.play('no'); hint(ruinAt(q, r) ? T('Des ruines bloquent cette case') : (terrainAt(q, r) || {}).block ? T('Impossible de construire sur un obstacle') : T('Impossible de construire sur le chemin')); return; }
@@ -293,6 +297,7 @@ document.addEventListener('keydown', ev => {
     if (curScreen === 'help') { $('#hBack').click(); return; }
     if (curScreen === 'profile') { $('#prBack').click(); return; }
     if (curScreen === 'settings') { $('#setBack').click(); return; }
+    if (curScreen === 'best') { if (!$('#bestPop').hidden) $('#bestPop').hidden = true; else $('#bestBack').click(); return; }
     if (curScreen === 'shop') { $('#sBack').click(); return; }
     if (curScreen === 'maps') { $('#mBack').click(); return; }
     if (curScreen === 'diff') { $('#dfBack').click(); return; }
@@ -391,6 +396,9 @@ function showOver(win, best, award, bank, quit, lostShards) {
   $('#oBest').textContent = best ? best.wave : G.wave;
   statFit('#oWave', '#oScore', '#oBest');
   $('#oEndless').hidden = !win;
+  const sr = win && G.starRes; $('#oStars').hidden = !sr;
+  if (sr) $('#oStars').innerHTML = starsHTML(sr.n, true) + '<p>' + (sr.n === 3 ? T('3 étoiles : sans perdre une seule vie !') : sr.n === 2 ? T('2 étoiles · gagne sans perdre de vie pour la 3e') : T('1 étoile · garde au moins la moitié de tes vies pour la 2e'))
+    + (sr.gain ? '<b> +' + sr.gain + T(' éclats</b>') : '') + '</p>';
   const a = award || { gain: 0, parts: { wave: 0, score: 0, boss: 0, win: 0 }, mult: 1, before: 0 }, p = a.parts;
   $('#oShards').textContent = quit ? (lostShards ? '−' + lostShards : '0') : '+' + G.shardsPaid;
   const bits = [T('Vagues +') + p.wave, 'Score +' + p.score];
@@ -658,9 +666,29 @@ function listRow(cls, name, info, open, side) {
   if (open) { d.classList.add('tap'); d.addEventListener('click', () => { Snd.init(); open(); }); }
   return d;
 }
+// Dégager un obstacle ou une ruine (js/game.js clearCell) : la fiche remplace la palette, avec Yglou en casque de chantier
+const OBST_NAMES = { arbre: ['Arbre'], sapin: ['Sapin'], sapinnoel: ['Sapin de Noël'], palmier: ['Palmier'], cactus: ['Cactus'], rocher: ['Rocher'], basalte: ['Rocher de basalte'],
+  tombe: ['Tombe'], pagode: ['Pagode'], coeurbuisson: ['Buisson-cœur'], oeufgeant: ['Œuf géant'] };
+function openClear(q, r) {
+  const u = G.ruins && G.ruins.find(x => x.c === q && x.r === r), kind = u ? 'ruin' : 'obst', price = clearPrice(kind);
+  G.selTower = null; G.selType = null; G.ghost = null; refreshPalette();
+  showPanel('clear'); G.clearAt = { q, r, kind };
+  $('#clrName').textContent = u ? T('Ruines de ') + TOWERS[u.type].name : T((OBST_NAMES[MAPS[G.map].obstacle] || ['Obstacle'])[0]);
+  $('#clrDesc').textContent = u ? T('Les ruines d’une tour détruite bloquent la case. Déblaie-les pour reconstruire.') : T('Il bloque la case. Dégage-le pour y construire une tour.');
+  const b = $('#clrGo'); b.innerHTML = '<span class="bl">' + (u ? T('Déblayer les ruines') : T('Dégager')) + '</span><span class="bp">' + COIN + price + '</span>';
+  b.classList.toggle('poor', G.gold < price);
+  drawYglou(prepMini($('#clrYg'), 48, 48), 24, 36, 34, 'happy', 0, { noShadow: true, noConfetti: true, costume: 'chantier' });
+  Snd.play('build');
+}
+$('#clrGo').addEventListener('click', () => { const a = G && G.clearAt; if (a && clearCell(a.q, a.r)) { deselect(); refreshCosts(); } });
+$('#clrClose').addEventListener('click', () => deselect());
+// Étoiles (js/game.js starsAward) : trois étoiles pleines ou vides, et le total d'une carte (« ★ 4 / 9 »)
+const STAR_SVG = on => '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9z" style="fill:' + (on ? '#ffd23f' : '#e6dcf3') + '" stroke="#2a1b3d" stroke-width="2" stroke-linejoin="round"/></svg>';
+const starsHTML = (n, big) => '<span class="stars' + (big ? ' big' : '') + '" role="img" aria-label="' + n + T(' étoiles sur 3') + '">' + [0, 1, 2].map(k => STAR_SVG(k < n)).join('') + '</span>';
+const starTotal = i => { const n = starsMap(i); return n ? '<span class="stot">★ ' + n + ' / 9</span>' : ''; };
 function mapRow(i, rec, bought) {
   const m = MAPS[i], own = mapOwned(i);
-  const d = own ? listRow(bought ? 'bought' : '', (i + 1) + '. ' + m.name, dotsHTML(rec) + (typeof mapBadge === 'function' ? mapBadge(i) : ''), () => openDiff(i))
+  const d = own ? listRow(bought ? 'bought' : '', (i + 1) + '. ' + m.name, dotsHTML(rec) + starTotal(i) + (typeof mapBadge === 'function' ? mapBadge(i) : ''), () => openDiff(i))
     : listRow('locked', (i + 1) + '. ' + m.name, mapReqOk(i) ? '<span class="mreq ok">✓ ' + MAPS[i - 1].name + T(' réussie</span>') : T('<span class="mreq">Réussis d’abord ') + MAPS[i - 1].name + T(' en Facile</span>'), null,
       '<button class="mbuy" type="button"' + ((meta.bank || 0) < m.price || !mapReqOk(i) ? ' disabled' : '') + '>' + LOCK + m.price + T(' or') + '</button>');
   drawMapMini(prepMini(d.querySelector('canvas'), 140, 90), i, 140, 90, 'moyen');
@@ -670,7 +698,7 @@ function mapRow(i, rec, bought) {
 function seasonRow(i, rec) {
   const m = MAPS[i], on = inSeason(m), S = SEASONS[m.season];
   const d = listRow('season ' + m.season + (on ? '' : ' locked'), S.icon + ' ' + m.name,
-    '<span class="mevt">' + (on ? T('Gratuite, ') + S.until() : S.back) + '</span>' + (on ? dotsHTML(rec) + (typeof mapBadge === 'function' ? mapBadge(i) : '') : ''), on ? () => openDiff(i) : null);
+    '<span class="mevt">' + (on ? T('Gratuite, ') + S.until() : S.back) + '</span>' + (on ? dotsHTML(rec) + starTotal(i) + (typeof mapBadge === 'function' ? mapBadge(i) : '') : ''), on ? () => openDiff(i) : null);
   drawMapMini(prepMini(d.querySelector('canvas'), 140, 90), i, 140, 90, 'moyen');
   return d;
 }
@@ -755,7 +783,7 @@ function openDiff(i, week) {
     if (!open) { d.innerHTML = '<div class="dftop"><b>' + Df.name + '</b><span class="dflock">' + LOCK + T('Réussis d’abord ') + prev.name + '</span></div>'; box.appendChild(d); continue; }
     const rt = week ? (wrec ? T('Ton record : ') + wrec.score.toLocaleString(IS_EN ? 'en-US' : 'fr-FR') + (wrec.won ? ' ✓' : '') : T('Jamais jouée'))
       : m.random && !m.daily ? T('Carte unique') : !r ? T('Jamais jouée') : k === 'infini' ? T('Record : vague ') + r.wave : r.won ? T('✓ Réussie · record vague ') + r.wave : T('Record : vague ') + r.wave;
-    d.innerHTML = '<div class="dftop"><b>' + Df.name + '</b><button class="dfinfo" type="button" aria-expanded="false" aria-label="' + T('Détails : ') + Df.name + '">i</button><button class="btn ' + k + '" type="button">' + T('Jouer') + '</button></div>'
+    d.innerHTML = '<div class="dftop"><b>' + Df.name + '</b>' + (k !== 'infini' && !m.rnd && !week ? starsHTML(starsOf(i, k)) : '') + '<button class="dfinfo" type="button" aria-expanded="false" aria-label="' + T('Détails : ') + Df.name + '">i</button><button class="btn ' + k + '" type="button">' + T('Jouer') + '</button></div>'
       + '<div class="dffacts">' + diffFacts(k).map(f => '<span>' + f + '</span>').join('') + '</div>'
       + '<p class="dfmore" hidden>' + Df.desc + T(' · éclats ×') + fr(+(m.shards * Df.shards * ECO.shards).toFixed(2)) + '</p>'
       + '<span class="dfrec">' + rt + '</span>';

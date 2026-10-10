@@ -6,6 +6,13 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  119: [
+    ['⭐', 'Étoiles : jusqu’à 3 par carte et par difficulté selon les vies gardées, avec 5 éclats par nouvelle étoile.'],
+    ['👾', 'Le bestiaire (dans le Profil) : tous les monstres rencontrés, leur fiche, et 2 éclats par nouveau monstre.'],
+    ['🚧', 'Touche un arbre ou un rocher pour le dégager (50 or, un peu plus à chaque fois), ou des ruines pour les déblayer.'],
+    ['↩️', 'Une tour qui n’a pas encore tiré s’annule : remboursée en entier.'],
+    ['💪', 'Trois élites sur les cartes 8 à 10 : le Soignou, le Bulleux et le Scindo.'],
+  ],
   118: [
     ['⬅️', 'Menus : une flèche ronde en haut à gauche remplace les gros boutons « Retour ».'],
   ],

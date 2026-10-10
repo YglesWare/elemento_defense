@@ -42,6 +42,11 @@
     <div id="duelTabs" hidden><button type="button" data-dt="tours" class="on">Tours</button><button type="button" data-dt="send">⚔ Envoyer</button></div>
     <div id="palette"></div>
     <div id="sendPanel" hidden></div>
+    <!-- Dégager un obstacle ou une ruine (js/ui.js openClear) -->
+    <div id="clearInfo" hidden>
+      <div class="clrhead"><canvas id="clrYg" aria-hidden="true"></canvas><div class="clrtxt"><b id="clrName">Arbre</b><small id="clrDesc"></small></div><button class="ibtn iclose" id="clrClose" type="button" aria-label="Fermer">✕</button></div>
+      <button class="sbtn two clrgo" id="clrGo" type="button"></button>
+    </div>
     <div id="info" hidden>
       <div class="ihead">
         <canvas id="iCv"></canvas>
@@ -121,7 +126,7 @@
       <button class="prtile" id="prParents" type="button"><span class="te" aria-hidden="true">👪</span><b>Parents</b><small>Temps, jeu en ligne, vidéos</small></button>
       <button class="prtile" id="prTrophies" type="button"><span class="te" aria-hidden="true">🏆</span><b>Trophées</b><small id="prTrSub"></small></button>
       <button class="prtile" id="prStatsBtn" type="button"><span class="te" aria-hidden="true">📊</span><b>Stats</b><small>Parties, vagues, records</small></button>
-      <button class="prtile" id="prNews" type="button"><span class="te" aria-hidden="true">🆕</span><b>Nouveautés</b><small id="prNewsSub"></small></button>
+      <button class="prtile" id="prBest" type="button"><span class="te" aria-hidden="true">👾</span><b>Bestiaire</b><small id="prBestSub"></small></button>
       <button class="prtile" id="tHelp" type="button"><span class="te" aria-hidden="true">❓</span><b>Aide</b><small>Règles et astuces</small></button>
     </div>
     <button class="btn stickyb" id="prBack" type="button">Retour</button>
@@ -147,6 +152,7 @@
       <p class="fine">Ces réglages restent sur ce téléphone.</p>
     </div>
     <button class="btn alt" id="tTuto" type="button" hidden>Tutoriel animé</button>
+    <button class="btn alt" id="prNews" type="button">🆕 Nouveautés · <span id="prNewsSub"></span></button>
     <button class="btn alt dangerb" id="prReset" type="button">Réinitialiser la progression…</button>
     <div class="resetbox" id="prResetBox" hidden>
         <p><b>Tout effacer et repartir de zéro ?</b> Éclats, Atelier, cartes achetées, records, cagnotte, bonus, trophées, stats et partie en cours seront perdus. Ton pseudo, la langue et le son sont gardés. Impossible de revenir en arrière.</p>
@@ -244,6 +250,7 @@
     <div class="srail"><canvas id="oYglou" aria-hidden="true"></canvas>
     <div class="bigword" id="oWord">K.O. !</div></div>
     <div class="panelbox col">
+      <div class="ostars" id="oStars" hidden></div>
       <p class="fine" id="oText" style="font-size:15px;opacity:1"></p>
       <div class="stats">
         <div><b id="oWave">0</b><span>Vague</span></div>
@@ -465,6 +472,25 @@
     <button class="btn" id="wkGo" type="button">🔥 Commencer la vraie aventure</button>
   </div>
 </section>
+<!-- Bestiaire (js/bestiary.js) : les monstres rencontrés, les autres en silhouette -->
+<section class="screen" id="sBest" hidden>
+  <div class="inner">
+    <div class="srail"><div class="bigword calm head">BESTIAIRE</div><span class="bestcnt" id="bestCnt"></span></div>
+    <div class="panelbox col" id="bestList"></div>
+    <p class="fine">Touche un monstre pour voir sa fiche.</p>
+    <button class="btn stickyb" id="bestBack" type="button">Retour</button>
+  </div>
+</section>
+<div class="intro" id="bestPop" role="dialog" aria-modal="true" aria-labelledby="bpName" hidden>
+  <div class="intro-card">
+    <canvas id="bpCv" class="bpcv" aria-hidden="true"></canvas>
+    <h2 id="bpName"></h2>
+    <p id="bpText"></p>
+    <div class="bpchips" id="bpChips"></div>
+    <p class="fine" id="bpMeta"></p>
+    <button class="btn" id="bpClose" type="button">Fermer</button>
+  </div>
+</div>
 <section class="screen" id="sStats" hidden>
   <div class="inner">
     <div class="panelbox col">

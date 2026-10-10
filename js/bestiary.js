@@ -5,10 +5,12 @@
 'use strict';
 
 // Le monstre ajouté par chaque carte de l'aventure (dans l'ordre) ; Gloop, Zippy et le Kaiju sont là dès la carte 1
-const MOB_ORDER = ['', 'flappy', 'tonk', 'magma', 'gresil', 'crachou', 'malefik'];
+const MOB_ORDER = ['', 'flappy', 'tonk', 'magma', 'gresil', 'crachou', 'malefik', 'soignou', 'bulle', 'scindo'];
+// Les élites n'existent que sur les cartes 8 à 10 de l'aventure (et en mode infini sur ces cartes), dès la vague 5
+const ELITES = { soignou: 7, bulle: 8, scindo: 9 };
 const MOB_FRESH_WAVE = 5;
 // Première vague où chaque monstre peut sortir (js/game.js makeWave)
-const MOB_FIRST = { zip: 3, flappy: 4, tonk: 6, gresil: 7, magma: 8, crachou: 9, boss: 10, malefik: 12 };
+const MOB_FIRST = { zip: 3, flappy: 4, tonk: 6, gresil: 7, magma: 8, crachou: 9, boss: 10, malefik: 12, soignou: 5, bulle: 5, scindo: 5 };
 const MOB_SHORT = {
   gloop: T('Le slime de base, lent et sans pouvoir.'),
   zip: T('Minuscule et très rapide : Ondine le ralentit.'),
@@ -19,7 +21,16 @@ const MOB_SHORT = {
   crachou: T('Il crache sur les tours et les abîme.'),
   malefik: T('Il retourne une tour contre les autres un moment.'),
   boss: T('Énorme ! Garde de l’or pour améliorer tes tours.'),
+  soignou: T('Il soigne les slimes autour de lui : abats-le en premier.'),
+  bulle: T('Sa bulle encaisse les coups : Braise et Voltie l’éclatent plus vite.'),
+  scindo: T('Il se divise en trois Gloops : une tour de zone juste derrière lui.'),
 };
+// Élites possibles sur la carte en cours (pour le tirage des vagues, js/game.js makeWave)
+function mobElites(w) {
+  if (!G || G.story || w < MOB_FRESH_WAVE) return [];
+  const a = ADV_MAPS.indexOf(G.map); if (a < 0) return [];
+  return Object.keys(ELITES).filter(k => a >= ELITES[k]);
+}
 const ADV_MAPS = MAPS.map((m, i) => m.prog ? i : -1).filter(i => i >= 0);
 const mobSeen = k => !!(typeof introSeen === 'function' && introSeen()['mob_' + k]);
 
@@ -75,7 +86,7 @@ function mobStartList() {
     return l.length ? { kind: 'new', list: l } : null;
   }
   if (G.diff === 'facile') return null;
-  const l = ['zip', 'flappy', 'tonk', 'gresil', 'magma', 'crachou', 'boss', 'malefik'].filter(t => !mobSeen(t));
+  const l = ['zip', 'flappy', 'tonk', 'gresil', 'magma', 'crachou', 'boss', 'malefik'].concat(mobElites(99)).filter(t => !mobSeen(t));
   return l.length ? { kind: 'unknown', list: l } : null;
 }
 const mobWave = t => { const lim = mobLimit(); return lim && lim.fresh === t ? MOB_FRESH_WAVE : MOB_FIRST[t] || 1; };
@@ -123,3 +134,53 @@ function mobWarn() {
   Snd.play('build');
   clearTimeout(mobWarnT); mobWarnT = setTimeout(mobWarnHide, 7000);
 }
+
+// ---------- Le bestiaire (Profil → Bestiaire) ----------
+// Un monstre est « rencontré » quand sa fenêtre de présentation s'est ouverte (js/intro.js) ; les autres sont en
+// silhouette, avec un indice pour les trouver. Chaque nouveau monstre rapporte 2 éclats (js/intro.js introMob).
+screens.best = $('#sBest');
+const BEST_GROUPS = [
+  [T('L’aventure'), ['gloop', 'zip', 'flappy', 'tonk', 'magma', 'gresil', 'crachou', 'malefik', 'boss']],
+  [T('Les élites'), ['soignou', 'bulle', 'scindo']],
+  [T('Les événements'), ['spectre', 'potiron', 'cadeau', 'lapin', 'calinou', 'hongbao']],
+];
+const BEST_ALL = BEST_GROUPS.flatMap(g => g[1]);
+// Où trouver un monstre pas encore rencontré
+function bestHint(k) {
+  const D = ETYPES[k];
+  if (D.season && SEASONS[D.season]) return SEASONS[D.season].icon + ' ' + (MAPS.find(m => m.season === D.season) || {}).name;
+  const n = k === 'gloop' || k === 'zip' || k === 'boss' ? 0 : MOB_ORDER.indexOf(k);
+  return n >= 0 ? T('Carte ') + (n + 1) : '';
+}
+const bestCount = () => BEST_ALL.filter(mobSeen).length;
+// Sprite d'un monstre pour le bestiaire (les volants un peu plus bas : leurs ailes restent dans le cadre)
+function bestDraw(cv, k, n) { const c = prepMini(cv, n, n), fly = ETYPES[k].flying; drawEnemy(c, k, n / 2, n * (fly ? 1.02 : 0.9), n * (k === 'boss' ? 0.82 : fly ? 0.9 : 1.12), 0.6, null); }
+function openBest() {
+  Snd.init();
+  $('#bestCnt').textContent = '👾 ' + bestCount() + ' / ' + BEST_ALL.length + T(' rencontrés');
+  $('#bestList').innerHTML = BEST_GROUPS.map(([t, L]) => '<h3 class="besth">' + t + '</h3><div class="bestg">'
+    + L.map(k => { const seen = mobSeen(k); return '<button class="bestc' + (seen ? '' : ' no') + '" type="button" data-k="' + k + '"><canvas></canvas><b>' + (seen ? esc(ETYPES[k].name) : '???') + '</b>' + (seen ? '' : '<small>' + esc(bestHint(k)) + '</small>') + '</button>'; }).join('') + '</div>').join('');
+  $('#bestList').querySelectorAll('.bestc').forEach(b => { bestDraw(b.querySelector('canvas'), b.dataset.k, 56); b.addEventListener('click', () => bestOpen(b.dataset.k)); });
+  show('best'); screens.best.scrollTop = 0;
+}
+function bestOpen(k) {
+  const D = ETYPES[k], seen = mobSeen(k);
+  Snd.init(); Snd.play('build');
+  const cv = $('#bpCv'); bestDraw(cv, k, 110); cv.style.filter = seen ? '' : 'brightness(0) opacity(.3)';
+  $('#bpName').textContent = seen ? D.name : '???';
+  $('#bpText').textContent = seen ? (typeof MOB_TIPS !== 'undefined' && MOB_TIPS[k]) || D.desc : T('Pas encore rencontré. Indice : ') + bestHint(k);
+  const sp = D.speed >= 1.6 ? T('Très rapide') : D.speed >= 1.15 ? T('Rapide') : D.speed >= 0.8 ? T('Normal') : T('Lent');
+  const chips = [['❤️', D.hp + T(' PV')], ['💨', sp]];
+  if (D.flying) chips.push(['🪽', T('Vole')]);
+  if (D.armor) chips.push(['🪖', T('Armure')]);
+  if (D.immune) chips.push(['🚫', T('Immunisé au feu')]);
+  if (D.lifeCost > 1) chips.push(['💔', '−' + D.lifeCost + T(' vies')]);
+  $('#bpChips').innerHTML = seen ? chips.map(([i, t]) => '<span>' + i + ' ' + t + '</span>').join('') : '';
+  const kills = (stats.killsBy || {})[k] || 0;
+  $('#bpMeta').textContent = seen ? kills + T(' vaincus') : '';
+  $('#bestPop').hidden = false;
+}
+$('#bpClose').addEventListener('click', () => { $('#bestPop').hidden = true; });
+$('#bestBack').addEventListener('click', () => { $('#bestPop').hidden = true; openProfile(); });
+$('#prBest').addEventListener('click', openBest);
+function bestTile() { const e = $('#prBestSub'); if (e) e.textContent = bestCount() + ' / ' + BEST_ALL.length + T(' monstres'); }

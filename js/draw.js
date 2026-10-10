@@ -269,6 +269,14 @@ function topHat(c, ty, hr, lw) {
   rr(c, -hr * 0.5, y0 - hr * 0.32, hr * 1.0, hr * 0.2, 0); fs(c, '#ff4f81', lw * 0.8);
   c.beginPath(); c.ellipse(-hr * 0.22, y0 - hr * 0.7, hr * 0.06, hr * 0.2, 0, 0, TAU); c.fillStyle = 'rgba(255,255,255,.25)'; c.fill();
 }
+// Casque de chantier jaune (Yglou dégage les obstacles, js/ui.js)
+function hardHat(c, ty, hr, lw) {
+  const y0 = ty + hr * 0.38;
+  c.beginPath(); c.ellipse(0, y0, hr * 1.02, hr * 0.2, 0, 0, TAU); fs(c, '#f2b80c', lw);
+  c.beginPath(); c.moveTo(-hr * 0.78, y0); c.quadraticCurveTo(-hr * 0.8, y0 - hr * 0.95, 0, y0 - hr * 0.98); c.quadraticCurveTo(hr * 0.8, y0 - hr * 0.95, hr * 0.78, y0); c.closePath(); fs(c, '#ffd23f', lw);
+  rr(c, -hr * 0.12, y0 - hr * 0.98, hr * 0.24, hr * 0.98, hr * 0.06); fs(c, '#f2b80c', lw * 0.7);
+  c.beginPath(); c.ellipse(-hr * 0.42, y0 - hr * 0.55, hr * 0.09, hr * 0.22, -0.4, 0, TAU); c.fillStyle = 'rgba(255,255,255,.45)'; c.fill();
+}
 function ninjaBand(c, hy, hr, lw) {
   const by = hy - hr * 0.5;
   c.save(); c.beginPath(); c.arc(0, hy, hr, 0, TAU); c.clip(); c.beginPath(); c.rect(-hr * 1.1, by - hr * 0.13, hr * 2.2, hr * 0.26); fs(c, '#e8344e', lw); c.restore();
@@ -690,7 +698,7 @@ function wingSprite(r, lw, fr, wc, col) {
 }
 function drawEnemy(c, type, x, y, s, t, e) {
   const D = ETYPES[type], r = s * D.size, lw = Math.max(1.4, s * 0.045), ev = evt(), SK = skinOf(type), HS = ev === 'halloween' ? SK : null, XS = SK && !HS ? ev : null;
-  const ZS = SK ? null : zoneSkin(type), ZA = ZS && ZS.acc;
+  const ZS = SK || D.elite ? null : zoneSkin(type), ZA = ZS && ZS.acc; // les élites gardent toujours leur allure
   const ghost = type === 'spectre' || (HS && type === 'gloop'), col = SK ? SK.color : ZS ? ZS.color : D.color, lig = SK ? SK.light : ZS ? ZS.light : D.light;
   const fly = !!D.flying, sdx = e ? e.sdx : 1, sdy = e ? e.sdy : 0, id = e ? e.id : 0;
   const still = e && (e.frozen > 0 || e.stun > 0);
@@ -738,6 +746,22 @@ function drawEnemy(c, type, x, y, s, t, e) {
   if (type === 'magma' && !XS) {
     const fl = Math.sin(t * 12 + id) * r * 0.1;
     c.beginPath(); c.moveTo(-r * 0.3, -r * 0.95); c.quadraticCurveTo(fl, -r * 1.6, r * 0.3, -r * 0.95); c.closePath(); fs(c, HS ? '#c8ff6a' : '#ffb03d', lw * 0.8);
+  }
+  // Élites : une croix de soin, des fissures (il va se diviser), une bulle tant qu'elle tient
+  if (type === 'soignou') {
+    const py = -r * 1.08 + Math.sin(t * 4 + id) * r * 0.06;
+    c.beginPath(); c.arc(0, py, r * 0.32, 0, TAU); fs(c, '#ffffff', lw * 0.8);
+    c.fillStyle = '#2fae5a'; c.fillRect(-r * 0.07, py - r * 0.2, r * 0.14, r * 0.4); c.fillRect(-r * 0.2, py - r * 0.07, r * 0.4, r * 0.14);
+  } else if (type === 'scindo') {
+    c.lineWidth = lw * 0.8; c.strokeStyle = INK; c.beginPath();
+    c.moveTo(-r * 0.1, -r * 0.95); c.lineTo(r * 0.05, -r * 0.7); c.lineTo(-r * 0.08, -r * 0.5); c.lineTo(r * 0.06, -r * 0.3);
+    c.moveTo(r * 0.55, -r * 0.6); c.lineTo(r * 0.4, -r * 0.42); c.lineTo(r * 0.55, -r * 0.25); c.stroke();
+  }
+  if (type === 'bulle' && (!e || e.shield > 0)) {
+    const k = e && e.shieldMax ? 0.45 + 0.55 * e.shield / e.shieldMax : 1;
+    c.beginPath(); c.arc(0, -r * 0.1, r * 1.32, 0, TAU); c.fillStyle = 'rgba(190,226,255,' + (0.3 * k) + ')'; c.fill();
+    c.lineWidth = lw; c.strokeStyle = 'rgba(70,150,240,' + (0.95 * k) + ')'; c.stroke();
+    c.beginPath(); c.arc(-r * 0.45, -r * 0.65, r * 0.28, Math.PI * 1.05, Math.PI * 1.6); c.lineWidth = lw * 0.9; c.strokeStyle = 'rgba(255,255,255,.85)'; c.stroke();
   }
   const body = e && (e.wet > 0 || e.flash > 0) ? bodyPath(type, r, ghost) : null;
   if (XS || D.season) evFront(c, XS, type, r, lw, t, sdx, e);
@@ -1273,6 +1297,7 @@ function drawYglou(c, x, y, s, mood = 'happy', t = 0, o = {}) {
   else if (o.costume === 'tophat') topHat(c, ty, hr, lw);
   else if (o.costume === 'ninja') ninjaBand(c, hy, hr, lw);
   else if (o.costume === 'nightcap') nightcapHat(c, ty, hr, lw);
+  else if (o.costume === 'chantier') hardHat(c, ty, hr, lw);
   else if (o.costume === 'nouvelan') {
     c.beginPath(); c.moveTo(-hr * 1.1, ty + hr * 0.4); c.lineTo(0, ty - hr * 0.45); c.lineTo(hr * 1.1, ty + hr * 0.4); c.quadraticCurveTo(0, ty + hr * 0.18, -hr * 1.1, ty + hr * 0.4); fs(c, '#e8c47a', lw);
     c.beginPath(); c.moveTo(-hr * 0.5, ty + hr * 0.1); c.lineTo(0, ty - hr * 0.45); c.lineTo(hr * 0.5, ty + hr * 0.1); c.lineWidth = lw * 0.6; c.strokeStyle = 'rgba(120,80,30,.5)'; c.stroke();

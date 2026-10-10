@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 118;
+const BUILD = 119;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -461,6 +461,10 @@ const ETYPES = {
   crachou: { name: T('Crachou'), hp: 70, speed: 0.8, reward: 6, size: 0.27, color: '#ff8a5c', light: '#ffc6a8', mood: 'grr', angry: true, armor: 1, desc: T('Crache sur les tours et leur fait perdre des PV.') },
   malefik: { name: T('Maléfik'), hp: 150, speed: 0.7, reward: 12, size: 0.28, color: '#7a4fb8', light: '#c9a8f0', mood: 'grr', angry: true, armor: 2, desc: T('Pervertit une tour : elle attaque les autres tours un moment.') },
   boss: { name: 'Kaiju', hp: 650, speed: 0.42, reward: 45, size: 0.42, color: '#ff4f6e', light: '#ffa3b3', mood: 'grr', angry: true, armor: 5, lifeCost: 10, boss: true, desc: T('Boss des vagues 10, 20, 30. Ses coups de patte abîment les tours.') + T(' En Difficile et en Infini, s’il atteint la maison, il refait le tour jusqu’à être abattu.') },
+  // Élites des cartes 8 à 10 (js/bestiary.js) : soigne ses voisins, protégé par une bulle, se divise en trois Gloops
+  soignou: { name: 'Soignou', hp: 90, speed: 0.85, reward: 8, size: 0.26, color: '#5fd38a', light: '#c8f5d6', mood: 'happy', elite: true, desc: T('Soigne les slimes autour de lui.') },
+  bulle: { name: T('Bulleux'), hp: 70, speed: 0.95, reward: 8, size: 0.25, color: '#5aa9ff', light: '#d2e9ff', mood: 'open', elite: true, desc: T('Protégé par une bulle qui encaisse les premiers coups.') },
+  scindo: { name: 'Scindo', hp: 130, speed: 0.7, reward: 9, size: 0.3, color: '#ffae3d', light: '#ffe0a8', mood: 'grr', angry: true, elite: true, desc: T('Se divise en trois Gloops quand il tombe.') },
   spectre: { name: 'Spectre', hp: 50, speed: 1.15, reward: 5, size: 0.24, color: '#e6e0ff', light: '#ffffff', mood: 'open', season: 'halloween', desc: T('Halloween : devient intangible par moments, aucune attaque ne le touche alors.') },
   potiron: { name: T('Potiron'), hp: 70, speed: 1.3, reward: 3, size: 0.2, color: '#ff8a2b', light: '#ffc27a', mood: 'grr', angry: true, season: 'halloween', desc: T('Halloween : trois Potirons s’échappent du Roi Citrouille quand il tombe.') },
   cadeau: { name: T('Cadeau surprise'), hp: 90, speed: 0.75, reward: 6, size: 0.26, color: '#e8344e', light: '#ff9aa8', mood: 'grr', angry: true, armor: 2, season: 'noel', desc: T('Noël : en s’ouvrant, il libère deux Lutins.') },
@@ -547,6 +551,7 @@ const zoneOf = () => (ZONE_SKINS && G && !G.demo && MAPS[G.map] && !MAPS[G.map].
 const ZCACHE = {};
 // Déguisement de carte d'un type de monstre (les monstres d'événement n'en ont pas)
 function zoneSkin(k) {
+  if (ETYPES[k] && ETYPES[k].elite) return null; // les élites gardent leur nom et leur allure partout
   const Z = zoneOf(), D = ETYPES[k]; if (!Z || !D || D.season) return null;
   const key = (MAPS[G.map].wid || MAPS[G.map].id) + k;
   if (!ZCACHE[key]) ZCACHE[key] = k === 'boss' ? { ...Z.boss, zone: Z }
