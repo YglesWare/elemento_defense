@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  126: [
+    ['💚', 'Les monstres ont un peu moins de PV (−5 %) : les parties sont un peu plus faciles.'],
+  ],
   125: [
     ['🐷', 'Victoire : tout l’or qu’il te reste à la fin de la partie va dans la cagnotte (au lieu de 85 %).'],
   ],

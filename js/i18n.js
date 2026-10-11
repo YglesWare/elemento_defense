@@ -1887,6 +1887,7 @@ const EN = {
 "Maîtrise · ": "Mastery · ",
 "Longue-vue · ": "Spyglass · ",
 "Débloque la fusion d’abord": "Unlock the fusion first",
+"Les monstres ont un peu moins de PV (−5 %) : les parties sont un peu plus faciles.": "Monsters have a little less HP (−5%): games are a bit easier.",
 "Victoire : tout l’or qu’il te reste à la fin de la partie va dans la cagnotte (au lieu de 85 %).": "Victory: all the gold you have left at the end of the game goes into the piggy bank (instead of 85%).",
 "Chaque monstre vaincu rapporte un peu plus d’or (+2,5 %).": "Every defeated monster gives a little more gold (+2.5%).",
 "Réglages : nouvelles icônes pour l’orientation de l’écran (Auto, Portrait, Paysage).": "Settings: new icons for screen orientation (Auto, Portrait, Landscape).",
