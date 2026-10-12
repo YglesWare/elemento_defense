@@ -1887,6 +1887,7 @@ const EN = {
 "Maîtrise · ": "Mastery · ",
 "Longue-vue · ": "Spyglass · ",
 "Débloque la fusion d’abord": "Unlock the fusion first",
+"Accueil : le monstre arrive tantôt par la gauche, tantôt par la droite, et ce sont les gardiens de ce côté qui tirent.": "Home screen: the monster now comes from the left or from the right, and the guardians on that side shoot.",
 "Plus de sécurité : une demande d’ami montre le code ami de la personne (vérifie-le avec ton copain), et sur le même Wi-Fi, l’hôte accepte qui entre dans sa partie.": "Safer play: a friend request shows the person’s friend code (check it with your friend), and on the same Wi-Fi, the host approves who joins their game.",
 "📶 Sur ce Wi-Fi": "📶 On this Wi-Fi",
 "L’hôte ne peut pas te prendre pour l’instant.": "The host can’t take you right now.",

@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  139: [
+    ['✨', 'Accueil : le monstre arrive tantôt par la gauche, tantôt par la droite, et ce sont les gardiens de ce côté qui tirent.'],
+  ],
   138: [
     ['🛡️', 'Plus de sécurité : une demande d’ami montre le code ami de la personne (vérifie-le avec ton copain), et sur le même Wi-Fi, l’hôte accepte qui entre dans sa partie.'],
   ],

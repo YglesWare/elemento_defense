@@ -631,25 +631,30 @@ const tsCtx = prepMini($('#tShow'), TSC.W, TSC.H);
 const TS_GX = TORDER.map((_, i) => 34 + i * ((TSC.W - 68) / 5));
 const TS_SHOTS = TS_GX.slice(0, 4).map((gx, i) => ({ i, at: TSC.START + (gx - 16) / TSC.SPEED }));
 const TS_DIE = TS_SHOTS[3].at + TSC.FLY, TS_MOBS = ['gloop', 'zip', 'gloop', 'flappy'];
-const tsX = u => -24 + (u - TSC.START) * TSC.SPEED, tsEase = x => x * x * (3 - 2 * x);
+const tsEase = x => x * x * (3 - 2 * x);
+// Chaque passage entre au hasard par la gauche ou par la droite (tiré d'après le numéro du passage : le même à chaque image) ;
+// par la droite, tout est vu dans un miroir : ce sont les quatre gardiens de droite qui tirent
+const tsRight = n => Math.abs(Math.sin(n * 12.9898 + 4.1) * 43758.5453) % 1 < 0.5;
 function drawShowcase(t) {
-  const c = tsCtx, { W, H, GY, LY, CYCLE } = TSC, n = Math.floor(t / CYCLE), u = t % CYCLE, mob = TS_MOBS[n % TS_MOBS.length];
+  const c = tsCtx, { W, H, GY, LY, CYCLE } = TSC, n = Math.floor(t / CYCLE), u = t % CYCLE, mob = TS_MOBS[n % TS_MOBS.length], right = tsRight(n);
+  const tsX = v => { const x = -24 + (v - TSC.START) * TSC.SPEED; return right ? W - x : x; }, tw = i => right ? TS_GX.length - 1 - i : i;
   const pass = !COMFORT.calm, alive = pass && u >= TSC.START && u < TS_DIE, sx = tsX(u), sy = LY - (ETYPES[mob].flying ? 10 : 0);
   c.clearRect(0, 0, W, H);
   TS_GX.forEach((gx, i) => {
-    const sh = TS_SHOTS.find(s => s.i === i), since = pass && sh ? u - sh.at : 9;
+    const sh = TS_SHOTS.find(s => tw(s.i) === i), since = pass && sh ? u - sh.at : 9;
     const rc = since >= 0 && since < 0.3 ? Math.pow(1 - since / 0.3, 2) : Math.pow(Math.max(0, Math.sin(t * 2.2 + i * 1.3)), 10) * (pass ? 0 : 1);
     const look = alive ? clamp((sx - gx) / 60, -1, 1) : Math.sin(t * 1.3 + i);
     drawTower(c, TORDER[i], gx, GY - 18, 44, 1, t + i * 0.7, look, alive ? 0.5 : 0.2, rc, ((t + i * 0.9) % 4) < 0.12);
   });
   if (!pass) return;
-  if (alive) drawEnemy(c, mob, sx, sy - 6 - Math.abs(Math.sin(u * 9)) * 3, 44, t, null);
+  // Par la droite, le monstre est dessiné en miroir (les traits de vitesse de Zippy restent derrière lui)
+  if (alive) { c.save(); if (right) { c.translate(2 * sx, 0); c.scale(-1, 1); } drawEnemy(c, mob, sx, sy - 6 - Math.abs(Math.sin(u * 9)) * 3, 44, t, null); c.restore(); }
   // Les tirs : une boule de la couleur du gardien, en cloche, jusqu'au slime
   for (const sh of TS_SHOTS) {
     const k = (u - sh.at) / TSC.FLY; if (k < 0 || k > 1) continue;
-    const gx = TS_GX[sh.i], gy = GY - 30, tx = tsX(sh.at + TSC.FLY), ty = sy - 8, e = tsEase(k);
+    const gx = TS_GX[tw(sh.i)], gy = GY - 30, tx = tsX(sh.at + TSC.FLY), ty = sy - 8, e = tsEase(k);
     const x = gx + (tx - gx) * e, y = gy + (ty - gy) * e - Math.sin(k * Math.PI) * 14;
-    c.fillStyle = TOWERS[TORDER[sh.i]].color; c.globalAlpha = 0.35; c.beginPath(); c.arc(x, y, 10, 0, TAU); c.fill(); c.globalAlpha = 1;
+    c.fillStyle = TOWERS[TORDER[tw(sh.i)]].color; c.globalAlpha = 0.35; c.beginPath(); c.arc(x, y, 10, 0, TAU); c.fill(); c.globalAlpha = 1;
     c.beginPath(); c.arc(x, y, 5.5, 0, TAU); c.fill(); c.strokeStyle = INK; c.lineWidth = 2; c.stroke();
   }
   // Le pop : des étincelles et « +3 » qui monte
