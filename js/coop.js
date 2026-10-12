@@ -153,6 +153,7 @@ function coopWaveStart(early, label) { Net.send('all', { k: 'cws', n: G.wave, ea
 function coopWaveDone() {
   for (const id of coopActive()) if (id !== coopMe()) addGold(id, Math.round((10 + G.wave) * (1 + 0.2 * lvOf(coopLv(id), 'bonus'))));
   Net.send('all', { k: 'cwd', n: G.wave, sc: G.score + G.wave * 50, bk: G.bossKills });
+  if (G.diff === 'infini' && G.wave >= 30 && typeof trophy === 'function') trophy('coop_inf');
 }
 
 // ---------- Réception côté invité ----------
@@ -237,6 +238,7 @@ $('#duelBar').addEventListener('click', ev => {
   if (!COOP.on) return;
   const b = ev.target.closest('.coopp'); if (!b || b.disabled || COOP.gone.has(b.dataset.id)) return;
   if (G.gold < 1) { hint(T('Tu n’as pas d’or à donner')); Snd.play('no'); return; }
+  if (typeof trophyMp === 'function') trophyMp('gift', Math.min(50, G.gold));
   coopAct({ a: 'give', to: b.dataset.id }); Snd.play('sell');
   hint(T('Tu donnes ') + Math.min(50, G.gold) + T(' or à ') + coopName(b.dataset.id), 1600);
 }, true);
@@ -273,7 +275,7 @@ function coopEnd(win) {
 function coopFinish(win, text, quit) {
   if (!G || !G.coop || G.coopDone) return;
   G.coopDone = true; G.over = true; G.won = !!win; G.paused = true;
-  if (win && typeof trophy === 'function') trophy('coop_win');
+  if (win && typeof trophy === 'function') { trophy('coop_win'); if (G.diff === 'difficile') trophy('coop_diff'); }
   Snd.play(win ? 'win' : quit ? 'clear' : 'ko');
   setTimeout(() => {
     if (!G || !G.coop) return;
@@ -353,7 +355,7 @@ Net.on('msg', ({ from, data }) => {
     case 'cs': if (G && G.coopGuest && !G.over) applySnapshot(data); break;
     case 'cnw': if (G && G.coopGuest) { G.nextWave = data.nw; hudCache.nw = null; } break;
     case 'cws': if (G && G.coopGuest) { G.curPortals = data.portals; banner(T('VAGUE ') + data.n, data.early ? T('Bonus d’audace +') + data.early : data.label || '', false); Snd.play('wave'); } break;
-    case 'cwd': if (G && G.coopGuest) { G.partyUntil = G.time + 2.4; G.wave = data.n; G.score = data.sc; G.bossKills = data.bk; const aw = awardShards(); hint(T('Vague ') + data.n + T(' terminée') + (aw.gain ? ' : +' + aw.gain + T(' éclats') : ''), 2600); Snd.play('clear'); } break;
+    case 'cwd': if (G && G.coopGuest) { G.partyUntil = G.time + 2.4; G.wave = data.n; G.score = data.sc; G.bossKills = data.bk; if (G.diff === 'infini' && G.wave >= 30 && typeof trophy === 'function') trophy('coop_inf'); const aw = awardShards(); hint(T('Vague ') + data.n + T(' terminée') + (aw.gain ? ' : +' + aw.gain + T(' éclats') : ''), 2600); Snd.play('clear'); } break;
     case 'cend': if (G && G.coopGuest) coopFinish(data.win, data.why === 'hostquit' ? coopName(data.p) + T(' (l’hôte) a arrêté la partie.') : null); break;
     case 'cmsg': if (G && G.coop && NOTICE[data.kind]) hint(NOTICE[data.kind](data.d || {}), 2400); break;
     case 'cping': if (G && G.coop) addPing(from, data.x, data.y); break;

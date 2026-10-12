@@ -28,7 +28,15 @@ const TROPHIES = [
   { id: 'random_win', icon: '🎲', name: T('Coup de dés'), desc: T('Gagner une carte aléatoire.'), r: 5 },
   { id: 'event_win', icon: '🎉', name: T('Jour de fête'), desc: T('Gagner une carte d’événement.'), r: 5 },
   { id: 'coop_win', icon: '🤝', name: T('Main dans la main'), desc: T('Gagner une partie en coop.'), r: 5 },
+  { id: 'duel_play', icon: '⚔️', name: T('Premier duel'), desc: T('Jouer un duel.'), r: 2 },
   { id: 'duel_win', icon: '⚡', name: T('Dernier debout'), desc: T('Gagner un duel.'), r: 5 },
+  { id: 'duel_5', icon: '🏅', name: T('Duelliste'), desc: T('Gagner 5 duels.'), r: 5 },
+  { id: 'duel_25', icon: '👑', name: T('Roi de l’arène'), desc: T('Gagner 25 duels.'), r: 15 },
+  { id: 'duel_big', icon: '🎯', name: T('Seul contre tous'), desc: T('Gagner un duel à 3 ou 4 joueurs.'), r: 8 },
+  { id: 'duel_send', icon: '📦', name: T('Livreur de slimes'), desc: T('Envoyer 100 monstres à tes adversaires.'), r: 5 },
+  { id: 'coop_diff', icon: '🛡️', name: T('Équipe de choc'), desc: T('Gagner une coop en Difficile.'), r: 10 },
+  { id: 'coop_inf', icon: '🔗', name: T('Jusqu’au bout ensemble'), desc: T('Atteindre la vague 30 en coop Infini.'), r: 10 },
+  { id: 'coop_gift', icon: '💝', name: T('Bon camarade'), desc: T('Donner 500 or à tes coéquipiers.'), r: 5 },
   { id: 'bonus_use', icon: '🎁', name: T('Coup de pouce'), desc: T('Utiliser un bonus pendant une partie.'), r: 2 },
   { id: 'time_5h', icon: '⏳', name: T('Passionné'), desc: T('Jouer 5 heures.'), r: 8 },
   { id: 'daily_7', icon: '📅', name: T('Fidèle au poste'), desc: T('Réussir la carte du jour 7 jours différents.'), r: 8 },
@@ -74,7 +82,7 @@ function trophy(id) {
 function trophyPay() {
   if (duelOn) return;
   const data = trophyData(); let gain = 0;
-  for (const id in data) if (!data[id].paid) { const T0 = TROPHIES.find(t => t.id === id); data[id].paid = true; gain += T0 ? T0.r : 0; }
+  for (const id in data) if (id[0] !== '_' && !data[id].paid) { const T0 = TROPHIES.find(t => t.id === id); data[id].paid = true; gain += T0 ? T0.r : 0; }
   if (!gain) return;
   store.set(TROPHY_KEY, data); meta.shards += gain; meta.earned = (meta.earned || 0) + gain; saveMeta();
 }
@@ -106,6 +114,14 @@ function trophyScan() {
   if (wonAll('facile')) trophy('all_easy');
   if (wonAll('moyen')) trophy('all_moyen');
   if (wonAll('difficile')) trophy('all_diff');
+}
+// Multijoueur : compteurs gardés avec les trophées (duels gagnés, monstres envoyés, or donné aux coéquipiers)
+function trophyMp(k, n = 1) {
+  if (trophyOff()) return;
+  const data = trophyData(), c = data._mp = data._mp || {}; c[k] = (c[k] || 0) + n; store.set(TROPHY_KEY, data);
+  if (k === 'wins') { if (c.wins >= 5) trophy('duel_5'); if (c.wins >= 25) trophy('duel_25'); }
+  if (k === 'sent' && c.sent >= 100) trophy('duel_send');
+  if (k === 'gift' && c.gift >= 500) trophy('coop_gift');
 }
 // Fin de partie solo gagnée
 function trophyWin() {

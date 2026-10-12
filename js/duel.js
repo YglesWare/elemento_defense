@@ -64,7 +64,7 @@ function beginDuel(msg) {
   stopScan && stopScan();
   enterDuelMeta(!!msg.prog);
   Object.assign(DUEL, { on: true, prog: !!msg.prog, map: msg.map, ids: msg.ids, names: msg.names, alive: new Set(msg.ids), elim: [], wave: 0, income: 0, sent: 0, dead: false,
-    stats: {}, last: {}, incoming: {}, forfeitArm: false, result: null, all: false });
+    stats: {}, last: {}, incoming: {}, forfeitArm: false, result: null, all: false, tPlay: false, tWin: false });
   DUEL.cfg.gap = msg.gap || DUEL.cfg.gap;
   const t0 = dnow(); for (const id of msg.ids) DUEL.last[id] = t0;
   DUEL.target = msg.ids.find(id => id !== meId()) || null;
@@ -177,6 +177,7 @@ function duelSend(S) {
   if (!targets.length || !targets.every(id => id && DUEL.alive.has(id))) { hint(T('Aucun adversaire à viser')); return; }
   if (G.gold < c.price) { Snd.play('no'); hint(T('Pas assez d’or : il faut ') + c.price + T(' or')); return; }
   G.gold -= c.price; DUEL.income += c.inc; DUEL.sent += targets.length;
+  if (typeof trophyMp === 'function') trophyMp('sent', targets.length);
   for (const id of targets) Net.send(id, { k: 'send', mob: S.type });
   Snd.play('pop');
   hint(eName(S.type) + T(' envoyé ') + (c.multi ? T('à tous (') + targets.length + ')' : T('à ') + dname(targets[0])) + ' · revenu +' + c.inc + ' (total ' + DUEL.income + T('/vague)'), 1800);
@@ -272,7 +273,10 @@ function duelAbort(text) {
 function showDuelScreen(final, why, abortText) {
   const me = meId(), rank = DUEL.result || [...DUEL.alive, ...[...DUEL.elim].reverse()];
   const won = final && !abortText && rank[0] === me, place = rank.indexOf(me) + 1;
-  if (won && typeof trophy === 'function') trophy('duel_win');
+  if (typeof trophy === 'function') {
+    if (!DUEL.tPlay) { DUEL.tPlay = true; trophy('duel_play'); }
+    if (won && !DUEL.tWin) { DUEL.tWin = true; trophy('duel_win'); trophyMp('wins'); if (DUEL.ids.length >= 3) trophy('duel_big'); }
+  }
   $('#dWord').textContent = abortText ? 'FIN' : won ? T('VICTOIRE !!') : T('ÉLIMINÉ');
   $('#dWord').classList.toggle('win', won);
   $('#dText').textContent = abortText || (won ? T('Tu es le dernier survivant. Bravo !')

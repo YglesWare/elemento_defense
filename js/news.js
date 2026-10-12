@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  130: [
+    ['🏅', 'Multijoueur : 8 nouveaux trophées de duel et de coop (5 et 25 duels gagnés, Seul contre tous, Livreur de slimes, Équipe de choc…).'],
+  ],
   129: [
     ['🌶', 'Piments : des choix rapides en échelle de piquant (de 🍼 Tout doux à 🌶🌶🌶 Volcan), et les piments rangés en sections qui se replient.'],
   ],
