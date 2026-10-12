@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  132: [
+    ['🎬', 'Accueil : les gardiens se tiennent au-dessus d’un ruban, et de temps en temps un slime passe… ils lui tirent dessus !'],
+  ],
   131: [
     ['🏆', 'Tournoi du mois entre amis, en mode 🏆 Tournoi : même carte pour tous chaque mois, chaque ami affronté une fois à l’aller (1er-15) et une fois au retour (16-fin du mois). Victoire 3 points, nul 1 : podium et éclats à la fin du mois !'],
     ['🔁', 'Une coupure réseau pendant un duel du tournoi ? Tu peux demander à rejouer le match.'],

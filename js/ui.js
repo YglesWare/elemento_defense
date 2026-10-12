@@ -598,14 +598,47 @@ $('#sBack').addEventListener('click', () => { if (shopFrom === 'game') resume();
 $('#bShop').addEventListener('click', () => { Snd.init(); if (G && !G.over && curScreen === 'game') openShop(); });
 
 // Titre
-const showCvs = [];
-TORDER.forEach(type => { const c = document.createElement('canvas'); $('#tShow').appendChild(c); showCvs.push({ type, c: prepMini(c, 48, 52) }); });
+// Les six gardiens au-dessus du ruban. Toutes les 6,5 s, un slime passe sur le chemin devant eux : ils le suivent du regard,
+// quatre d'entre eux lui tirent une boule de leur couleur, et il éclate (« +3 »). Avec « Moins de secousses », pas de passage.
+const TSC = { W: 352, H: 108, GY: 62, LY: 92, CYCLE: 6.5, START: 0.6, SPEED: 62, FLY: 0.22 };
+const tsCtx = prepMini($('#tShow'), TSC.W, TSC.H);
+const TS_GX = TORDER.map((_, i) => 34 + i * ((TSC.W - 68) / 5));
+const TS_SHOTS = TS_GX.slice(0, 4).map((gx, i) => ({ i, at: TSC.START + (gx - 16) / TSC.SPEED }));
+const TS_DIE = TS_SHOTS[3].at + TSC.FLY, TS_MOBS = ['gloop', 'zip', 'gloop', 'flappy'];
+const tsX = u => -24 + (u - TSC.START) * TSC.SPEED, tsEase = x => x * x * (3 - 2 * x);
 function drawShowcase(t) {
-  showCvs.forEach((o, i) => {
-    o.c.clearRect(0, 0, 48, 52);
-    const rc = Math.pow(Math.max(0, Math.sin(t * 2.2 + i * 1.3)), 10);
-    drawTower(o.c, o.type, 24, 31, 42, 1, t + i * 0.7, Math.sin(t * 1.3 + i), 0.2, rc, ((t + i * 0.9) % 4) < 0.12);
+  const c = tsCtx, { W, H, GY, LY, CYCLE } = TSC, n = Math.floor(t / CYCLE), u = t % CYCLE, mob = TS_MOBS[n % TS_MOBS.length];
+  const pass = !COMFORT.calm, alive = pass && u >= TSC.START && u < TS_DIE, sx = tsX(u), sy = LY - (ETYPES[mob].flying ? 10 : 0);
+  c.clearRect(0, 0, W, H);
+  TS_GX.forEach((gx, i) => {
+    const sh = TS_SHOTS.find(s => s.i === i), since = pass && sh ? u - sh.at : 9;
+    const rc = since >= 0 && since < 0.3 ? Math.pow(1 - since / 0.3, 2) : Math.pow(Math.max(0, Math.sin(t * 2.2 + i * 1.3)), 10) * (pass ? 0 : 1);
+    const look = alive ? clamp((sx - gx) / 60, -1, 1) : Math.sin(t * 1.3 + i);
+    drawTower(c, TORDER[i], gx, GY - 18, 44, 1, t + i * 0.7, look, alive ? 0.5 : 0.2, rc, ((t + i * 0.9) % 4) < 0.12);
   });
+  if (!pass) return;
+  if (alive) drawEnemy(c, mob, sx, sy - 6 - Math.abs(Math.sin(u * 9)) * 3, 44, t, null);
+  // Les tirs : une boule de la couleur du gardien, en cloche, jusqu'au slime
+  for (const sh of TS_SHOTS) {
+    const k = (u - sh.at) / TSC.FLY; if (k < 0 || k > 1) continue;
+    const gx = TS_GX[sh.i], gy = GY - 30, tx = tsX(sh.at + TSC.FLY), ty = sy - 8, e = tsEase(k);
+    const x = gx + (tx - gx) * e, y = gy + (ty - gy) * e - Math.sin(k * Math.PI) * 14;
+    c.fillStyle = TOWERS[TORDER[sh.i]].color; c.globalAlpha = 0.35; c.beginPath(); c.arc(x, y, 10, 0, TAU); c.fill(); c.globalAlpha = 1;
+    c.beginPath(); c.arc(x, y, 5.5, 0, TAU); c.fill(); c.strokeStyle = INK; c.lineWidth = 2; c.stroke();
+  }
+  // Le pop : des étincelles et « +3 » qui monte
+  const p = u - TS_DIE;
+  if (p >= 0 && p < 0.9) {
+    const x = tsX(TS_DIE), y = sy - 8, D = ETYPES[mob];
+    for (let k = 0; k < 9; k++) {
+      const a = k / 9 * TAU, d = 6 + p * 34;
+      c.globalAlpha = Math.max(0, 1 - p / 0.6); c.fillStyle = k % 2 ? D.color : D.light;
+      c.beginPath(); c.arc(x + Math.cos(a) * d, y + Math.sin(a) * d * 0.7, 3 * (1 - p), 0, TAU); c.fill();
+    }
+    c.globalAlpha = Math.max(0, 1 - p / 0.9); c.font = '400 18px Bangers, Impact, sans-serif'; c.textAlign = 'center';
+    c.lineWidth = 4; c.strokeStyle = INK; c.strokeText('+3', x, y - 14 - p * 22); c.fillStyle = '#ffd23f'; c.fillText('+3', x, y - 14 - p * 22);
+    c.globalAlpha = 1;
+  }
 }
 // Écran en hauteur : la partie échange lignes et colonnes (L.portrait, js/game.js) ; les aperçus font pareil pour ressembler
 // à la vraie carte, dans un cadre en hauteur (9/13)

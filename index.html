@@ -74,8 +74,8 @@
   <div class="inner tinner">
     <canvas id="tYglou" aria-label="Yglou, la mascotte : touche-le !" role="img"></canvas>
     <div class="logo"><span class="l1">ÉLÉMENTO</span><span class="l2">DEFENSE</span></div>
-    <div id="tShow"></div>
-    <div class="bubble">Six gardiens élémentaires contre une armée de slimes. Protège la petite maison !</div>
+    <!-- Les six gardiens au-dessus du ruban ; de temps en temps, un slime passe et ils lui tirent dessus (js/ui.js, drawShowcase) -->
+    <div class="tscene" id="tScene"><canvas id="tShow" aria-hidden="true"></canvas><p class="tribbon">Six gardiens contre une armée de slimes : <b>protège la petite maison !</b></p></div>
     <div class="tbtns"><button class="btn alt questbtn" id="tQuests" type="button" hidden>🎯 Défis du jour · <span id="tqN">0/3</span><b class="frbadge" id="tqBadge" hidden></b></button>
     <button class="btn storybtn" id="tStory" type="button">📖 Histoire <small>La flamme de Braise</small></button>
     <button class="btn" id="tPlay" type="button">Jouer !</button>
