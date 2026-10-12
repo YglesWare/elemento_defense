@@ -79,7 +79,7 @@
     <div class="tbtns"><button class="btn alt questbtn" id="tQuests" type="button" hidden>🎯 Défis du jour · <span id="tqN">0/3</span><b class="frbadge" id="tqBadge" hidden></b></button>
     <button class="btn storybtn" id="tStory" type="button">📖 Histoire <small>La flamme de Braise</small></button>
     <button class="btn" id="tPlay" type="button">Jouer !<small class="jsub" id="tPlaySub" hidden></small></button>
-    <button class="btn mpbtn" id="tMulti" type="button">Multijoueur · 2 à 4 joueurs</button>
+    <button class="btn mpbtn" id="tMulti" type="button" hidden>Multijoueur · 2 à 4 joueurs</button>
     <button class="btn green" id="tContinue" type="button" hidden>Continuer</button>
     <button class="btn pink" id="tShop" type="button">L’Atelier</button></div>
   </div>
@@ -332,7 +332,8 @@
 
 <section class="screen" id="sMaps" hidden>
   <div class="inner">
-    <div class="srail"><div class="bigword calm head">LES CARTES</div>
+    <div class="srail"><div class="bigword calm head">JOUER</div>
+    <div class="ptabs" id="ptMaps" role="tablist"><button type="button" role="tab" data-pt="solo">🗺️ Solo</button><button type="button" role="tab" data-pt="multi">👥 Multijoueur</button></div>
     <div class="mtop"><div class="purse"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#ffd23f" stroke="#2a1b3d" stroke-width="2.2"/><circle cx="12" cy="12" r="5.5" fill="none" stroke="#e0a800" stroke-width="2"/></svg><b id="mBank">0</b><span>or en cagnotte</span></div><button class="qbtn" id="mInfo" type="button" aria-label="À quoi sert la cagnotte ?" aria-expanded="false" aria-controls="mInfoTxt">?</button></div>
     <button class="btn adbtn" id="mAd" type="button" hidden></button>
     <p class="fine minfotxt" id="mInfoTxt" hidden>L’or qu’il te reste à la fin d’une partie rejoint la cagnotte : 100 % en cas de victoire, 40 % en cas de K.O., rien si tu abandonnes (tu perds aussi les éclats gagnés pendant la partie). Elle sert uniquement à acheter de nouvelles cartes. Pour en acheter une, réussis d’abord la carte précédente en Facile.</p>
@@ -407,7 +408,7 @@
 
 <section class="screen" id="sMulti" hidden>
   <div class="inner">
-    <div class="srail"><div class="bigword calm head">MULTIJOUEUR</div></div>
+    <div class="srail"><div class="bigword calm head">JOUER</div><div class="ptabs" id="ptMulti" role="tablist"><button type="button" role="tab" data-pt="solo">🗺️ Solo</button><button type="button" role="tab" data-pt="multi">👥 Multijoueur</button></div></div>
     <div class="panelbox col" id="mpBody"></div>
   </div>
 </section>

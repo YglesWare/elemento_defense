@@ -849,7 +849,16 @@ function openDiff(i, week) {
     d.querySelector('.btn').addEventListener('click', () => saveGuard(() => week ? weekPlay() : newGame(i, null, k)));
   }
 }
-$('#tPlay').addEventListener('click', () => { Snd.init(); renderMaps(); show('maps'); screens.maps.scrollTop = 0; });
+// « Jouer » : deux onglets, 🗺️ Solo (les cartes) et 👥 Multijoueur ; on rouvre le dernier utilisé
+const PT_KEY = 'elemento.playTab';
+function openPlay(tab = store.get(PT_KEY) || 'solo') {
+  store.set(PT_KEY, tab);
+  if (tab === 'multi' && typeof openMulti === 'function') openMulti();
+  else { renderMaps(); show('maps'); screens.maps.scrollTop = 0; }
+  document.querySelectorAll('.ptabs [data-pt]').forEach(b => { const on = b.dataset.pt === (tab === 'multi' ? 'multi' : 'solo'); b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+}
+$('#tPlay').addEventListener('click', () => { Snd.init(); openPlay(); });
+document.querySelectorAll('.ptabs').forEach(t => t.addEventListener('click', ev => { const b = ev.target.closest('[data-pt]'); if (!b || b.classList.contains('on')) return; Snd.init(); openPlay(b.dataset.pt); }));
 $('#mBack').addEventListener('click', () => show('title'));
 // La carte du jour est une carte aléatoire, mais son « Retour » ramène à l'écran des cartes, pas au générateur
 $('#dfBack').addEventListener('click', () => { const m = MAPS[diffMap]; if (m && m.random && !m.daily && !diffWeek) openRand(true); else { renderMaps(); show('maps'); } });

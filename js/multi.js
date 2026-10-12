@@ -261,6 +261,7 @@ function renderMP() {
       + T('<p class="mp-busy">En attente que ') + esc(hp ? hp.name : T('l’hôte')) + T(' lance la partie…</p>') + rulesHTML() + '</div></div>';
   }
   b.innerHTML = h;
+  $('#ptMulti').hidden = !(S === 'home' || S === 'unsupported');
   MP.rosterSig = rosterSig();
   // Les règles du salon restent ouvertes d'un affichage à l'autre
   if ((S === 'host' || S === 'lobby') && MP.rulesOpen) { const d = b.querySelector('.mp-col details'); if (d) d.open = true; }

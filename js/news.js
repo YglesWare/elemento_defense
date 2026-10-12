@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  134: [
+    ['🎮', 'Le multijoueur rejoint « Jouer » : deux onglets, 🗺️ Solo et 👥 Multijoueur. L’accueil n’a plus que 4 boutons.'],
+  ],
   133: [
     ['⏸', '« Continuer » est maintenant sur l’écran des cartes (après « Jouer ! »), et le jeu demande avant de remplacer une partie en cours.'],
   ],

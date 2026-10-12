@@ -737,6 +737,13 @@ body.hasback .screen:not(:has(.bigword))>.inner{padding-top:50px}
 #sTitle .logo{margin:0}
 #sTitle .logo .l1{font-size:clamp(40px,min(13vw,8vh),86px)}
 #sTitle .logo .l2{font-size:clamp(20px,min(6.5vw,4vh),38px);margin-top:4px}
+/* « Jouer » : onglets 🗺️ Solo / 👥 Multijoueur sous le titre (plus gros que les onglets internes) */
+.ptabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%;max-width:420px;align-self:center;background:var(--paper);border:3px solid var(--ink);border-radius:16px;box-shadow:0 4px 0 var(--ink);padding:5px;margin:2px 0 6px}
+.ptabs[hidden]{display:none}
+/* Les deux onglets de « Jouer » commencent en haut : le titre et les onglets ne sautent pas d'un onglet à l'autre */
+#sMaps>.inner,#sMulti>.inner{margin-top:0}
+.ptabs button{display:flex;align-items:center;justify-content:center;gap:6px;border:2.5px solid transparent;border-radius:11px;padding:7px 4px;background:none;font:400 19px/1 var(--display);letter-spacing:.6px;color:var(--muted);cursor:pointer}
+.ptabs button.on{background:var(--sun);color:var(--ink);border-color:var(--ink)}
 /* « Jouer ! » rappelle la partie en cours ; l'écran des cartes la propose en haut */
 #tPlay small.jsub{display:block;font:800 12.5px/1.1 "Baloo 2",system-ui,sans-serif;letter-spacing:0;opacity:.8;margin-top:2px}
 #tPlay small.jsub::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--leaf);border:2px solid var(--ink);margin-right:5px;vertical-align:-1px}
@@ -1556,6 +1563,8 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
   #sTitle #tYglou{grid-column:1;grid-row:1;height:clamp(80px,28vh,120px);margin:0 auto 4px}
   #sTitle .logo{grid-column:1;grid-row:2}
   #tScene{grid-column:1;grid-row:3;margin-top:4px}
+  .ptabs{grid-template-columns:1fr;max-width:none;margin:4px 0}
+  .ptabs button{font-size:17px;padding:6px 4px}
   #tShow{width:min(300px,100%)}
   .tribbon{display:none}
   .tbtns{display:flex;grid-column:2;grid-row:1/4;flex-direction:column;justify-content:center;gap:9px;max-width:380px}
