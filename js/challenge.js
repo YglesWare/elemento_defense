@@ -439,10 +439,12 @@ function chalOverExtra(box) {
 }
 
 // ---------- Salon multijoueur (l'hôte règle, les autres voient) ----------
-function chalLobbyHTML(canPick) {
-  const c = chalClean(DUEL.lobbyChal);
-  return '<div class="mp-chal"><small>' + T('Piments') + '</small><span>' + (chalOn(c) ? '🌶 <b>' + chalX(chalMult(c, DUEL.lobbyMode === 'coop' ? DUEL.lobbyDiff || 'moyen' : 'infini', lobbyMi())) + '</b> · ' + esc(chalNames(c).join(' · ')) : T('Aucun piment')) + '</span>'
-    + (canPick ? '<button class="sbtn" type="button" data-a="chal">' + T('⚙️ Régler') + '</button>' : '') + '</div>';
+// Ligne Piments de la fenêtre Paramètres du salon : toute la ligne est un bouton (la liste coupée après 2 lignes, en entier dans « Modifier »)
+function chalLobbyHTML() {
+  const c = chalClean(DUEL.lobbyChal), on = chalOn(c), nm = on ? chalNames(c) : [];
+  return '<div class="mp-chal"><small>' + T('Piments') + '</small><button class="mp-chrow" type="button" data-a="chal"><i aria-hidden="true">🌶</i><span><b>'
+    + (on ? chalX(chalMult(c, DUEL.lobbyMode === 'coop' ? DUEL.lobbyDiff || 'moyen' : 'infini', lobbyMi())) + ' · ' + nm.length + (nm.length > 1 ? T(' piments') : T(' piment')) : T('Aucun piment')) + '</b>'
+    + '<small>' + (on ? esc(nm.join(' · ')) : T('Des règles spéciales en plus')) + '</small></span><em>' + (on ? T('Modifier ›') : T('Choisir ›')) + '</em></button></div>';
 }
 // Carte du salon (la carte aléatoire n'a pas encore d'itinéraire : on ne filtre pas)
 const lobbyMi = () => MAPS[DUEL.lobbyMap] && !MAPS[DUEL.lobbyMap].random ? DUEL.lobbyMap : null;

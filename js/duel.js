@@ -324,7 +324,12 @@ Net.on('msg', ({ from, data }) => {
   if (!data || !data.k) return;
   DUEL.last[from] = dnow();
   switch (data.k) {
-    case 'lobby': DUEL.lobbyMap = data.map; if (data.rsize) DUEL.lobbySize = data.rsize; DUEL.lobbyMode = data.mode || 'duel'; if (data.diff) DUEL.lobbyDiff = data.diff; DUEL.lobbyChal = data.chal || null; DUEL.lobbyStart = data.start === 'prog' ? 'prog' : 'zero'; if (typeof MP !== 'undefined' && MP.state === 'lobby') renderMP(); break;
+    case 'lobby': {
+      // L'hôte renvoie les réglages toutes les 2 s : on ne redessine le salon que s'ils changent (sinon les règles ouvertes se referment)
+      const sig = JSON.stringify([DUEL.lobbyMap, DUEL.lobbySize, DUEL.lobbyMode, DUEL.lobbyDiff, DUEL.lobbyChal, DUEL.lobbyStart]);
+      DUEL.lobbyMap = data.map; if (data.rsize) DUEL.lobbySize = data.rsize; DUEL.lobbyMode = data.mode || 'duel'; if (data.diff) DUEL.lobbyDiff = data.diff; DUEL.lobbyChal = data.chal || null; DUEL.lobbyStart = data.start === 'prog' ? 'prog' : 'zero';
+      if (typeof MP !== 'undefined' && MP.state === 'lobby' && sig !== JSON.stringify([DUEL.lobbyMap, DUEL.lobbySize, DUEL.lobbyMode, DUEL.lobbyDiff, DUEL.lobbyChal, DUEL.lobbyStart])) renderMP();
+    } break;
     case 'start': if (Net.role !== 'host') beginDuel(data); break;
     case 'wave': if (Net.role !== 'host') onWave(data.n, data.gap, data.w); break;
     case 'st': DUEL.stats[from] = data; break;

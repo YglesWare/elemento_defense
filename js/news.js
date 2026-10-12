@@ -6,6 +6,10 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  128: [
+    ['⚙️', 'Multijoueur : réglages plus clairs. Le résumé de la partie n’a plus l’air de boutons, « Configurer la partie » est un vrai bouton, et la ligne Piments s’ouvre d’un toucher.'],
+    ['🔧', 'Multijoueur : les règles du salon ne se referment plus toutes seules (le bouton « Fermer la partie » pouvait passer sous le doigt et couper la partie).'],
+  ],
   127: [
     ['⭐', 'Multijoueur : nouveau départ « Avec nos progrès », où chacun garde son Atelier, ses tours et ses fusions. En coop, les monstres sont renforcés selon vos progrès.'],
     ['⚙️', 'Multijoueur : un salon plus simple (les joueurs et un récap), et la fenêtre ⚙️ Paramètres avec un aperçu de la carte.'],

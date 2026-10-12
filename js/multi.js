@@ -120,12 +120,15 @@ function recapHTML(canPick) {
   const mode = DUEL.lobbyMode || 'duel', prog = DUEL.lobbyStart === 'prog', m = MAPS[DUEL.lobbyMap] || MAPS[0];
   const c = typeof chalClean === 'function' ? chalClean(DUEL.lobbyChal) : null, n = c && chalOn(c) ? chalNames(c).length : 0;
   const pill = (ic, txt) => '<span><i>' + ic + '</i>' + txt + '</span>';
-  return '<div class="mp-recap"><div class="rh"><small>' + T('Partie') + '</small>' + (canPick ? '<button class="sbtn" type="button" data-a="settings">' + T('⚙️ Paramètres') + '</button>' : '') + '</div><div class="rg">'
+  // Les infos ne sont pas des boutons (pas de cadre) ; l'hôte a un vrai bouton en bas, l'invité voit qui choisit
+  const hp = Net.players.find(p => p.host);
+  return '<div class="mp-recap"><small>' + T('La partie') + '</small><div class="rg">'
     + pill(mode === 'coop' ? '🤝' : '⚔', mode === 'coop' ? T('Coop · ') + DIFFS[DUEL.lobbyDiff || 'moyen'].name : T('Duel · infini'))
     + pill(prog ? '⭐' : '🌱', prog ? T('Avec nos progrès') : T('À zéro'))
     + pill(m.random ? '🎲' : '🗺️', esc(m.random ? T('Carte aléatoire') : m.name))
     + pill('🌶', n ? chalX(chalMult(c, mode === 'coop' ? DUEL.lobbyDiff || 'moyen' : 'infini', lobbyMi())) + ' · ' + n + (n > 1 ? T(' piments') : T(' piment')) : T('Aucun piment'))
-    + '</div></div>';
+    + '</div>' + (canPick ? '<button class="btn alt mp-cfg" type="button" data-a="settings">' + T('⚙️ Configurer la partie') + '</button>'
+      : '<p class="mp-who">' + esc(hp ? hp.name : T('L’hôte')) + T(' choisit les réglages') + '</p>') + '</div>';
 }
 // Carte : aperçu du terrain et du chemin (un dé pour la carte aléatoire, générée au lancement)
 function mapPickHTML() {
@@ -133,10 +136,10 @@ function mapPickHTML() {
   let info = '';
   if (!m.random) try { const P = withGrid(m, () => buildPath(m)); info = P.portals.length + T(' portail') + (P.portals.length > 1 ? 's' : '') + ' · ' + P.bases.length + T(' maison') + (P.bases.length > 1 ? 's' : ''); } catch (e) { info = ''; }
   const name = m.random ? T('Carte aléatoire') : m.name, sub = m.random ? 'taille ' + RSIZES[rz].name.toLowerCase() + T(' · générée au lancement') : 'biome ' + m.biome.name.toLowerCase();
-  return '<div class="mp-map">' + T('<button class="ibtn" type="button" data-a="map-prev" aria-label="Carte précédente">◀</button>')
+  return '<div class="mp-map">' + T('<button class="ibtn" type="button" data-a="map-prev" aria-label="Carte précédente">◀︎</button>')
     + '<div class="mp-mapn">' + (m.random ? '<span class="mp-dice" aria-hidden="true">🎲</span>' : '<canvas class="mp-prev" aria-hidden="true"></canvas>')
     + '<div class="mp-mapt"><b>' + esc(name) + '</b><span>' + sub + '</span>' + (info ? '<span>' + info + '</span>' : '') + '</div></div>'
-    + T('<button class="ibtn" type="button" data-a="map-next" aria-label="Carte suivante">▶</button>') + '</div>'
+    + T('<button class="ibtn" type="button" data-a="map-next" aria-label="Carte suivante">▶︎</button>') + '</div>'
     + (m.random ? '<div class="rsz mp-rsz">' + Object.entries(RSIZES).map(([k, S]) => '<button class="sbtn' + (k === rz ? ' on' : '') + '" type="button" data-a="rsize-' + k + '"><b>' + S.name + '</b><small>' + S.short + '</small></button>').join('') + '</div>' : '');
 }
 // Fenêtre ⚙️ Paramètres (hôte) : en paysage, sur deux colonnes (css/style.css)
@@ -238,6 +241,9 @@ function renderMP() {
       + T('<p class="mp-busy">En attente que ') + esc(hp ? hp.name : T('l’hôte')) + T(' lance la partie…</p>') + rulesHTML() + '</div></div>';
   }
   b.innerHTML = h;
+  MP.rosterSig = rosterSig();
+  // Les règles du salon restent ouvertes d'un affichage à l'autre
+  if ((S === 'host' || S === 'lobby') && MP.rulesOpen) { const d = b.querySelector('.mp-col details'); if (d) d.open = true; }
   if (S !== 'host') $('#mpSet').hidden = true; else if (!$('#mpSet').hidden) mpSetRender();
   b.querySelectorAll('canvas.mp-yg').forEach(cv => drawYglou(prepMini(cv, 34, 34), 17, 19, 30, 'happy', 0, { crest: ['#ff4f81', '#3fa9ff', '#4fd36a', '#ffb03d'][+cv.dataset.i % 4], noShadow: true }));
   if (S === 'host' && Net.online && typeof paintOnlineFriends === 'function') paintOnlineFriends();
@@ -337,11 +343,17 @@ const mpClick = ev => {
 $('#mpBody').addEventListener('click', mpClick);
 $('#mpSetBody').addEventListener('click', mpClick);
 // Garde le panneau de saisie manuelle ouvert d'un affichage à l'autre
-$('#mpBody').addEventListener('toggle', ev => { if (ev.target.classList && ev.target.classList.contains('mp-manual')) MP.manual = ev.target.open; }, true);
+$('#mpBody').addEventListener('toggle', ev => { if (!ev.target.classList || !ev.target.classList.contains('mp-manual')) return; if (ev.target.closest('.mp-col')) MP.rulesOpen = ev.target.open; else MP.manual = ev.target.open; }, true);
 
+// Le roster revient toutes les 2 s (pings) : on ne redessine le salon que si les joueurs changent, sinon seulement les pings.
+// Tout redessiner refermait les règles ouvertes et faisait remonter « Fermer la partie » sous le doigt.
+function rosterSig() { return Net.players.map(p => p.id + ':' + p.name + ':' + !!p.host + ':' + !!p.away).join('|'); }
 Net.on('roster', () => {
   if ((MP.state === 'answer' || (MP.state === 'busy' && MP.lanJoin)) && Net.role === 'guest') { mpGo('lobby'); Snd.play('clear'); return; }
-  if (MP.state === 'host' || MP.state === 'lobby') renderMP();
+  if (MP.state !== 'host' && MP.state !== 'lobby') return;
+  const pings = $('#mpBody').querySelectorAll('.mp-list .mp-ping');
+  if (MP.rosterSig === rosterSig() && pings.length === Net.players.length) Net.players.forEach((p, i) => { pings[i].textContent = p.host && Net.role === 'host' ? '' : p.ping ? p.ping + ' ms' : ''; });
+  else renderMP();
 });
 Net.on('join', id => {
   const p = Net.players.find(x => x.id === id);

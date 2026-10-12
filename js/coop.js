@@ -180,7 +180,7 @@ function applyTowers(list) {
 function applySnapshot(s) {
   COOP.lastSnap = performance.now();
   if (s.wx && s.wx !== G.weather) setWeather(s.wx);
-  if (!!s.pz !== !!G.hostPause) hint(s.pz ? T('⏸ L’hôte a mis la partie en pause') : T('▶ La partie reprend'), 2000);
+  if (!!s.pz !== !!G.hostPause) hint(s.pz ? T('⏸ L’hôte a mis la partie en pause') : T('▶︎ La partie reprend'), 2000);
   Object.assign(G, { lives: s.lv, wave: s.w, waveActive: s.wa, score: s.sc, bossKills: s.bk, speed: s.sp || 1, hostPause: s.pz, chronoT: s.ch, autoT: s.at });
   G.gold = s.g[coopMe()] != null ? s.g[coopMe()] : G.gold;
   COOP.gold = s.g;

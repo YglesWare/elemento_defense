@@ -19,7 +19,7 @@ const CHAPTERS = [
       ['feu', 'Ah… La belle journée pour faire la sieste au soleil…'],
       ['yglou', 'Sauf que… des slimes foncent droit sur la maison de Mamie Mochi !'],
       ['feu', 'QUOI ?! Pas touche à Mamie ! Je vais les griller !'],
-      ['yglou', 'Touche une case près du chemin pour poser Braise, puis lance la vague avec ▶.'],
+      ['yglou', 'Touche une case près du chemin pour poser Braise, puis lance la vague avec ▶︎.'],
     ],
     events: { start2: [['yglou', 'Chaque slime battu donne de l’or. Avec l’or, pose un autre Braise… ou améliore le premier en le touchant !']] },
     outro: [

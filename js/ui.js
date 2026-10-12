@@ -181,7 +181,7 @@ function refreshHUD() {
   if (typeof refreshBonusBtn === 'function') refreshBonusBtn();
   const nwk = (G.over ? 'x' : G.nextWave ? G.nextWave.n : '-') + G.weather; if (hudCache.nw !== nwk) { hudCache.nw = nwk; renderNextWave(); }
   setText($('#hBank'), 'bk', '🐷 ' + fmtK(meta.bank || 0)); $('#hBank').hidden = !!(G.duel || G.coop);
-  let ic = '▶', sm = T('Vague'), big, cls, bonus = 0;
+  let ic = '▶︎', sm = T('Vague'), big, cls, bonus = 0;
   const cap = G.endless ? '' : '/' + G.maxw;
   const lastDone = !G.endless && G.wave >= G.maxw;
   if (G.over || G.spawnQ.length || lastDone) { ic = ''; big = G.wave + cap; cls = 'idle'; if (lastDone && !G.over) sm = T('Dernière'); }
@@ -658,8 +658,8 @@ $('#mInfo').addEventListener('click', () => { const p = $('#mInfoTxt'); p.hidden
 // Progression d'une carte : un rond par difficulté (Facile, Moyen, Difficile, Infini), rempli une fois réussie
 const dotsHTML = rec => '<span class="dds">' + DORDER.map(k => { const r = rec[k], on = k === 'infini' ? r && r.wave : r && r.won; return '<span class="dd' + (on ? ' on' : '') + '" title="' + DIFFS[k].name + (k === 'infini' && r && r.wave ? T(' · vague ') + r.wave : '') + '">' + (k === 'infini' ? '∞' : DIFFS[k].name[0]) + '</span>'; }).join('') + '</span>';
 const PLAY_IC = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3l7 5-7 5z"/></svg>';
-// Une ligne de la liste : petite vignette, nom, progression ; toute la ligne ouvre la carte (le ▶ aussi, au clavier).
-// side : le bouton de droite à la place du ▶ (achat d'une carte verrouillée)
+// Une ligne de la liste : petite vignette, nom, progression ; toute la ligne ouvre la carte (le ▶︎ aussi, au clavier).
+// side : le bouton de droite à la place du ▶︎ (achat d'une carte verrouillée)
 function listRow(cls, name, info, open, side) {
   const d = document.createElement('div'); d.className = 'mrow' + (cls ? ' ' + cls : '');
   d.innerHTML = '<canvas></canvas><div class="mmid"><span class="nm">' + name + '</span><span class="minfo">' + info + '</span></div>'
@@ -1120,7 +1120,7 @@ function gotoTuto(i) {
   $('#uTable').innerHTML = table; $('#uTable').hidden = !table;
   $('#uDemoBox').hidden = !pg.demo; $('#uLvls').hidden = pg.kind === 'intro';
   $('#uPrev').disabled = tIdx === 0;
-  $('#uNext').textContent = last ? (tutoFrom === 'title' ? T('Jouer !') : T('Terminer')) : T('Suivant ▶');
+  $('#uNext').textContent = last ? (tutoFrom === 'title' ? T('Jouer !') : T('Terminer')) : T('Suivant ▶︎');
   $('#uDots').querySelectorAll('button').forEach((b, i) => b.classList.toggle('on', i === tIdx));
   screens.tuto.scrollTop = 0;
   demo = pg.demo ? makeDemo(pg.demo, $('#uDemo')) : null;
