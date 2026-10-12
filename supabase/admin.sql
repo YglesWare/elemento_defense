@@ -22,7 +22,7 @@ create table if not exists public.admin_log (
 );
 alter table public.admin_log enable row level security;
 alter table public.admin_log drop constraint if exists admin_log_action_check;
-alter table public.admin_log add constraint admin_log_action_check check (action in ('export', 'delete', 'admin_add', 'admin_remove', 'self_delete', 'flag_set', 'setting_set'));
+alter table public.admin_log add constraint admin_log_action_check check (action in ('export', 'delete', 'admin_add', 'admin_remove', 'self_delete', 'flag_set', 'setting_set', 'ip_unblock'));
 
 create or replace function public._is_admin() returns boolean language sql stable security definer set search_path = public as $$
   select exists (select 1 from admins where user_id = auth.uid())

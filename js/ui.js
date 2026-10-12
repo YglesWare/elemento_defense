@@ -212,9 +212,9 @@ function renderNextWave() {
   const cnt = {}; for (const it of nw.list) cnt[it.type] = (cnt[it.type] || 0) + 1;
   const order = Object.keys(ETYPES).filter(k => cnt[k]);
   const Wc = WEATHERS[G.weather] || WEATHERS.clear, Wn = nw.weather && WEATHERS[nw.weather];
-  box.innerHTML = T('<span class="nww" title="Météo : ') + Wc.name + '">' + Wc.icon + T('</span><span class="nwl">Vague ') + nw.n + '</span>'
+  box.innerHTML = T('<span class="nww" title="Météo : ') + Wc.name + '">' + Wc.icon + T('</span><span class="nwl">Vague ') + clampInt(nw.n, 0, 99999) + '</span>'
     + (nw.portals && P && P.portals.length > 1 ? T('<span class="nwt" title="Portails actifs à la prochaine vague">🌀 ') + nw.portals.length + '/' + P.portals.length + '</span>' : '') + order.map(k => '<span class="nwi' + (ETYPES[k].boss ? ' boss' : '') + '" title="' + eName(k) + '"><canvas data-t="' + k + '"></canvas>×' + cnt[k] + '</span>').join('')
-    + (Wn ? '<span class="nwt">→ ' + Wn.icon + ' ' + Wn.name + '</span>' : '') + (nw.label ? '<span class="nwt">' + nw.label + '</span>' : '');
+    + (Wn ? '<span class="nwt">→ ' + Wn.icon + ' ' + Wn.name + '</span>' : '') + (nw.label ? '<span class="nwt">' + esc(nw.label) + '</span>' : '');
   box.querySelectorAll('canvas').forEach(cv2 => { const k = cv2.dataset.t, c = prepMini(cv2, 24, 24); drawEnemy(c, k, 12, 22, k === 'boss' ? 19 : 26, 0.6, null); });
   box.hidden = false;
 }

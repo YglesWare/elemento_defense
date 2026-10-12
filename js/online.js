@@ -1,103 +1,121 @@
 // Élémento Defense : multi en ligne entre amis (voir supabase/rooms.sql).
 // L'hôte ouvre un salon et invite ses amis en ligne ; l'invité reçoit une fenêtre « X t'invite ! » (60 s).
-// Les téléphones se trouvent par le canal Realtime privé du salon, puis se parlent directement (WebRTC, avec des
-// serveurs STUN publics pour traverser les box). Si la liaison directe n'aboutit pas en 10 s, les messages du jeu
-// passent par le canal Realtime (relais, un peu plus lent). Le reste du jeu (salon, duel, coop) ne voit pas la différence :
+// Chaque invité a son canal Realtime privé avec l'hôte (« room:<salon>:<invité> », supabase/security.sql) : seuls ces deux
+// comptes peuvent y parler, donc personne ne peut se faire passer pour l'hôte ou pour un autre invité. Les téléphones s'y
+// trouvent, puis se parlent directement (WebRTC, avec des serveurs STUN publics pour traverser les box). Si la liaison
+// directe n'aboutit pas en 10 s, les messages du jeu passent par ce canal (relais, un peu plus lent). Le reste du jeu (salon, duel, coop) ne voit pas la différence :
 // chaque liaison imite le couple (pc, dc) de WebRTC, comme le serveur local de l'APK (js/net.js).
 'use strict';
 
 const ICE_ONLINE = [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun.cloudflare.com:3478' }];
-const ONL = { room: null, ch: null, host: false, pcs: new Map(), relays: new Map(), hostRelay: null, last: new Map(), invites: new Map(), joined: new Set(), seen: new Set(), pop: null, popT: 0, busy: false, lastPoll: 0, lastInv: 0 };
+const ONL = { room: null, ch: null, chs: new Map(), host: false, pcs: new Map(), relays: new Map(), hostRelay: null, last: new Map(), invites: new Map(), joined: new Set(), seen: new Set(), pop: null, popT: 0, busy: false, lastPoll: 0, lastInv: 0 };
 const myUid = () => CLOUD.user && CLOUD.user.id;
 // Pseudo d'un ami, tel que le serveur le connaît (l'hôte ne croit pas le nom envoyé par l'invité)
 function onlineName(uid) { const f = FR.list.find(x => x.id === uid && x.kind === 'friend'); return f ? f.pseudo : null; }
 
-// ---------- Canal du salon ----------
-function sig(payload) { if (ONL.ch) ONL.ch.send({ type: 'broadcast', event: 's', payload: Object.assign({ from: myUid() }, payload) }); }
-// Deux essais : la toute première connexion au temps réel peut échouer pendant que la session se met en place
-async function onlineChannel(room) {
-  try { await onlineChannelOnce(room); }
-  catch (e) { if (ONL.ch) { CLOUD.sb.removeChannel(ONL.ch).catch(() => {}); ONL.ch = null; } await new Promise(r => setTimeout(r, 1200)); await onlineChannelOnce(room); }
+// ---------- Canaux du salon ----------
+// L'invité parle sur son canal ; l'hôte sur celui de l'invité à qui il s'adresse (uid)
+function sig(payload, uid) {
+  const ch = ONL.host ? ONL.chs.get(uid) : ONL.ch;
+  if (ch) ch.send({ type: 'broadcast', event: 's', payload });
 }
-function onlineChannelOnce(room) {
+const pairTopic = (room, uid) => 'room:' + room + ':' + uid;
+// Deux essais : la toute première connexion au temps réel peut échouer pendant que la session se met en place
+async function onlineChannel(topic, onMsg) {
+  try { return await onlineChannelOnce(topic, onMsg); }
+  catch (e) { await new Promise(r => setTimeout(r, 1200)); return onlineChannelOnce(topic, onMsg); }
+}
+function onlineChannelOnce(topic, onMsg) {
   return new Promise((ok, ko) => {
-    const ch = CLOUD.sb.channel('room:' + room, { config: { private: true, broadcast: { self: false } } });
-    ONL.ch = ch;
-    ch.on('broadcast', { event: 's' }, ({ payload }) => { if (ONL.ch === ch && payload) onSignal(payload).catch(() => {}); });
+    const ch = CLOUD.sb.channel(topic, { config: { private: true, broadcast: { self: false } } });
+    ch.on('broadcast', { event: 's' }, ({ payload }) => { if (payload && typeof payload === 'object') onMsg(ch, payload); });
     let done = false;
     ch.subscribe((st, err) => {
       ONL.lastSt = st + (err ? ' ' + err.message : '');
       if (done) return;
-      if (st === 'SUBSCRIBED') { done = true; ok(); }
-      else if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT' || st === 'CLOSED') { done = true; ko(new Error(T('Impossible de rejoindre le salon en ligne.'))); }
+      if (st === 'SUBSCRIBED') { done = true; ok(ch); }
+      else if (st === 'CHANNEL_ERROR' || st === 'TIMED_OUT' || st === 'CLOSED') { done = true; CLOUD.sb.removeChannel(ch).catch(() => {}); ko(new Error(T('Impossible de rejoindre le salon en ligne.'))); }
     });
   });
 }
+// Hôte : ouvre le canal d'un ami qui a accepté l'invitation (ou dont la demande a été acceptée). Ce qui y arrive vient de lui.
+async function hostListen(uid) {
+  if (!ONL.host || !ONL.room || ONL.chs.has(uid) || ONL.chs.size >= 8 || !/^[0-9a-f-]{36}$/i.test(uid)) return;
+  const room = ONL.room; ONL.chs.set(uid, null);
+  try {
+    const ch = await onlineChannel(pairTopic(room, uid), (c, m) => { if (ONL.chs.get(uid) === c) onSignal(m, uid).catch(() => {}); });
+    if (ONL.room !== room || !ONL.host) { CLOUD.sb.removeChannel(ch).catch(() => {}); return; }
+    ONL.chs.set(uid, ch);
+  } catch (e) { if (ONL.chs.get(uid) === null) ONL.chs.delete(uid); }
+}
 function onlineClose() {
-  const ch = ONL.ch, room = ONL.room, host = ONL.host;
-  ONL.ch = null; ONL.room = null; ONL.host = false; ONL.hostRelay = null; Net.fresh = false;
+  const ch = ONL.ch, chs = [...ONL.chs.values()], room = ONL.room, host = ONL.host;
+  ONL.ch = null; ONL.room = null; ONL.host = false; ONL.hostRelay = null; Net.fresh = false; clearInterval(ONL.hiT);
   try { localStorage.removeItem(SESS_KEY); } catch (e) {}
   for (const pc of ONL.pcs.values()) { try { pc.close(); } catch (e) {} }
-  ONL.pcs.clear(); ONL.relays.clear(); ONL.last.clear(); ONL.invites.clear(); ONL.joined.clear();
-  if (ch) CLOUD.sb.removeChannel(ch).catch(() => {});
+  ONL.pcs.clear(); ONL.relays.clear(); ONL.last.clear(); ONL.invites.clear(); ONL.joined.clear(); ONL.chs.clear();
+  for (const c of [ch, ...chs]) if (c) CLOUD.sb.removeChannel(c).catch(() => {});
   if (host && room && frLive()) frRpc('room_close', { p_room: room }).catch(() => {});
 }
 // Une liaison par le relais Realtime, qui se fait passer pour un canal WebRTC
 function relayLink(to) {
   const pc = { relay: to, close: () => { ONL.relays.delete(to); } };
-  const dc = { readyState: 'open', send: s => sig({ t: 'r', to, d: s }) };
+  const dc = { readyState: 'open', send: s => sig({ t: 'r', d: s }, to) };
   return { pc, dc };
 }
 
-async function onSignal(m) {
-  const me = myUid();
-  if (m.to && m.to !== me && m.to !== 'host') return;
-  if (m.from) ONL.last.set(m.from, Date.now());
+// Un message de signalisation. Hôte : uid est l'invité dont c'est le canal ; invité : il vient forcément de l'hôte.
+async function onSignal(m, uid) {
+  ONL.last.set(uid || 'host', Date.now());
   if (ONL.host) {
-    if (m.t === 'hi' && m.from) {
+    if (!uid) return;
+    if (m.t === 'hi') {
+      // L'invité se présente toutes les 2 s jusqu'à notre offre : une liaison en cours de mise en place (8 s) n'est pas refaite
+      const cur = ONL.pcs.get(uid);
+      if (cur && !Net.idOf(cur) && Date.now() - (cur.at || 0) < 8000) return;
       // Un ami qui revient (après une coupure) : on repart d'une liaison neuve
-      const oldPc = ONL.pcs.get(m.from), oldL = ONL.relays.get(m.from);
-      if (oldPc) { ONL.pcs.delete(m.from); if (Net.idOf(oldPc)) Net.dropPc(oldPc); else try { oldPc.close(); } catch (e) {} }
+      const oldPc = ONL.pcs.get(uid), oldL = ONL.relays.get(uid);
+      if (oldPc) { ONL.pcs.delete(uid); if (Net.idOf(oldPc)) Net.dropPc(oldPc); else try { oldPc.close(); } catch (e) {} }
       if (oldL) Net.dropPc(oldL.pc);
-      const returning = [...Net.peers.values()].some(p => p.away && p.uid === m.from);
+      const returning = [...Net.peers.values()].some(p => p.away && p.uid === uid);
       if (!returning && Net.peers.size + 1 >= NET_MAX) return;
       const pc = new RTCPeerConnection({ iceServers: ICE_ONLINE }), dc = pc.createDataChannel('game', { ordered: true });
-      pc.uid = m.from; ONL.pcs.set(m.from, pc); ONL.joined.add(m.from);
+      pc.uid = uid; pc.at = Date.now(); ONL.pcs.set(uid, pc); ONL.joined.add(uid);
       Net.wire(pc, dc, null);
       await pc.setLocalDescription(await pc.createOffer());
       await waitIce(pc, 3000);
-      sig({ t: 'offer', to: m.from, sdp: pc.localDescription.sdp });
-      // Pas de liaison directe au bout de 10 s : relais par le canal du salon
+      sig({ t: 'offer', sdp: pc.localDescription.sdp }, uid);
+      // Pas de liaison directe au bout de 10 s : relais par le canal
       setTimeout(() => {
-        if (ONL.pcs.get(m.from) !== pc || dc.readyState === 'open') return;
-        ONL.pcs.delete(m.from); try { pc.close(); } catch (e) {}
-        const L = relayLink(m.from); L.pc.uid = m.from; ONL.relays.set(m.from, L);
-        sig({ t: 'relay', to: m.from });
+        if (ONL.pcs.get(uid) !== pc || dc.readyState === 'open') return;
+        ONL.pcs.delete(uid); try { pc.close(); } catch (e) {}
+        const L = relayLink(uid); L.pc.uid = uid; ONL.relays.set(uid, L);
+        sig({ t: 'relay' }, uid);
       }, 10000);
-    } else if (m.t === 'answer' && ONL.pcs.has(m.from)) {
-      try { await ONL.pcs.get(m.from).setRemoteDescription({ type: 'answer', sdp: m.sdp }); } catch (e) {}
-    } else if (m.t === 'r' && m.to === 'host' && ONL.relays.has(m.from)) {
-      const L = ONL.relays.get(m.from); let msg; try { msg = JSON.parse(m.d); } catch (e) { return; }
+    } else if (m.t === 'answer' && typeof m.sdp === 'string' && ONL.pcs.has(uid)) {
+      try { await ONL.pcs.get(uid).setRemoteDescription({ type: 'answer', sdp: m.sdp }); } catch (e) {}
+    } else if (m.t === 'r' && typeof m.d === 'string' && m.d.length <= 65536 && ONL.relays.has(uid)) {
+      const L = ONL.relays.get(uid); let msg; try { msg = JSON.parse(m.d); } catch (e) { return; }
       Net.receive(L.pc, L.dc, msg);
     }
   } else {
-    if (m.t === 'offer' && m.to === me && !Net.hostPc) {
-      ONL.hostUid = m.from;
+    if (m.t === 'offer' && typeof m.sdp === 'string' && !Net.hostPc) {
+      clearInterval(ONL.hiT);
       const pc = new RTCPeerConnection({ iceServers: ICE_ONLINE });
       pc.ondatachannel = ev => Net.wire(pc, ev.channel, 'host');
       Net.hostPc = pc; ONL.pcs.set('host', pc);
       await pc.setRemoteDescription({ type: 'offer', sdp: m.sdp });
       await pc.setLocalDescription(await pc.createAnswer());
       await waitIce(pc, 3000);
-      sig({ t: 'answer', to: m.from, sdp: pc.localDescription.sdp });
-    } else if (m.t === 'relay' && m.to === me) {
-      ONL.hostUid = m.from;
+      sig({ t: 'answer', sdp: pc.localDescription.sdp });
+    } else if (m.t === 'relay') {
+      clearInterval(ONL.hiT);
       const old = ONL.pcs.get('host'); ONL.pcs.delete('host');
       if (old) { old.onconnectionstatechange = null; try { old.close(); } catch (e) {} }
-      const L = relayLink('host'); L.dc.send = s => sig({ t: 'r', to: 'host', d: s }); L.pc.relay = 'host';
+      const L = relayLink('host'); L.pc.relay = 'host';
       ONL.hostRelay = L; Net.hostPc = L.pc; Net.peers.set('host', L);
       Net.sendTo('host', { t: 'hello', id: Net.me.id, name: Net.me.name, v: NET_VER, fresh: !!Net.fresh });
-    } else if (m.t === 'r' && m.to === me && ONL.hostRelay) {
+    } else if (m.t === 'r' && typeof m.d === 'string' && m.d.length <= 262144 && ONL.hostRelay) {
       let msg; try { msg = JSON.parse(m.d); } catch (e) { return; }
       Net.receive(ONL.hostRelay.pc, ONL.hostRelay.dc, msg);
     }
@@ -105,10 +123,10 @@ async function onSignal(m) {
 }
 // Relais : sans nouvelles depuis 15 s, la liaison est perdue (WebRTC le détecte tout seul)
 setInterval(() => {
-  if (!ONL.ch) return;
+  if (!ONL.room) return;
   const now = Date.now();
   if (ONL.host) for (const [uid, L] of ONL.relays) { if (now - (ONL.last.get(uid) || now) > 15e3) Net.dropPc(L.pc); }
-  else if (ONL.hostRelay && now - (ONL.last.get(ONL.hostUid) || now) > 15e3) Net.dropPc(ONL.hostRelay.pc);
+  else if (ONL.hostRelay && now - (ONL.last.get('host') || now) > 15e3) Net.dropPc(ONL.hostRelay.pc);
 }, 3000);
 
 // ---------- Reconnexion (coupure de réseau en pleine partie) ----------
@@ -119,7 +137,7 @@ function onlineRejoin() {
   const old = ONL.pcs.get('host'); ONL.pcs.delete('host'); if (old) { try { old.close(); } catch (e) {} }
   ONL.hostRelay = null; Net.hostPc = null;
   clearInterval(ONL.rejoinT);
-  const ask = () => { if (!Net.reconnecting || !ONL.ch) { clearInterval(ONL.rejoinT); return; } if (!Net.hostPc) sig({ t: 'hi', pid: Net.me.id }); };
+  const ask = () => { if (!Net.reconnecting || !ONL.ch) { clearInterval(ONL.rejoinT); return; } if (!Net.hostPc) sig({ t: 'hi' }); };
   ask(); ONL.rejoinT = setInterval(ask, 3000);
 }
 // Coupure plus rapide à voir que par WebRTC : sans message depuis 8 s, la liaison est considérée comme perdue
@@ -145,7 +163,6 @@ async function onlineCreate() {
   try {
     const room = await frRpc('room_create');
     ONL.room = room; ONL.host = true;
-    await onlineChannel(room);
     roomBeat();
     return true;
   } catch (e) { Net.reset(); mpGo('home', { tab: 'online', err: T('Impossible d’ouvrir un salon en ligne. Réessaie.') }); return false; }
@@ -176,7 +193,7 @@ async function pollRoomInvites() {
   if (!ONL.host || !ONL.room || !frLive() || MP.state !== 'host') return;
   try {
     const rows = await frRpc('room_invites', { p_room: ONL.room });
-    for (const r of rows || []) ONL.invites.set(r.to_user, { status: r.status, secs: r.secs, at: Date.now() });
+    for (const r of rows || []) { ONL.invites.set(r.to_user, { status: r.status, secs: r.secs, at: Date.now() }); if (r.status === 'accepted') hostListen(r.to_user); }
     paintOnlineFriends();
   } catch (e) {}
 }
@@ -298,6 +315,15 @@ function showAsk(q) {
   showInvite({ id: q.id, ask: true, pseudo: q.pseudo, avatar: q.avatar, secs: q.secs, total: 30, info: { mode: DUEL.lobbyMode || 'duel', map: DUEL.lobbyMap || 0, diff: DUEL.lobbyDiff } });
   $('#ipName').textContent = q.pseudo + T(' veut te rejoindre !');
 }
+// « À côté » : quelqu'un a trouvé la partie dans « Parties sur ce Wi-Fi » et demande à entrer (js/net.js) ; 30 s pour répondre
+Net.on('ask', q => {
+  if (ONL.pop) { q.answer(false); return; }
+  showInvite({ id: 'lan-' + q.pc.lan + '-' + Date.now(), lan: q, pseudo: q.name, avatar: q.av, secs: 30, total: 30, info: { mode: DUEL.lobbyMode === 'coop' ? 'coop' : 'duel', map: DUEL.lobbyMap || 0, diff: DUEL.lobbyDiff } });
+  $('#ipName').textContent = q.name + T(' veut te rejoindre !');
+  $('#ipPills').insertAdjacentHTML('afterbegin', '<span class="pill">' + T('📶 Sur ce Wi-Fi') + '</span>');
+});
+// Il est parti avant la réponse
+Net.on('askgone', pc => { if (ONL.pop && ONL.pop.lan && ONL.pop.lan.pc === pc) closeInvite(); });
 setInterval(() => { roomBeat(); }, 8000);
 setInterval(() => { pollFriendRooms(); pollJoinRequests(); }, 4000);
 
@@ -322,17 +348,19 @@ function showInvite(r) {
   const tick = () => {
     const left = Math.max(0, Math.ceil((end - Date.now()) / 1000));
     $('#ipSecs').textContent = left; $('#ipRing').style.setProperty('--p', Math.round(left / (r.total || 60) * 100));
-    if (!left) closeInvite();
+    if (!left) { const p = ONL.pop; closeInvite(); if (p && p.lan) p.lan.answer(false); }
   };
   clearInterval(ONL.popT); ONL.popT = setInterval(tick, 250); tick();
   box.hidden = false; Snd.play('clear'); try { navigator.vibrate && navigator.vibrate([80, 60, 80]); } catch (e) {}
 }
 function closeInvite() { clearInterval(ONL.popT); $('#invPop').hidden = true; ONL.pop = null; }
-$('#ipNo').addEventListener('click', () => { const r = ONL.pop; closeInvite(); if (r) frRpc(r.ask ? 'room_request_respond' : 'invite_respond', { p_id: r.id, p_accept: false }).catch(() => {}); });
+$('#ipNo').addEventListener('click', () => { const r = ONL.pop; closeInvite(); if (r && r.lan) { r.lan.answer(false); return; } if (r) frRpc(r.ask ? 'room_request_respond' : 'invite_respond', { p_id: r.id, p_accept: false }).catch(() => {}); });
 $('#ipYes').addEventListener('click', async () => {
   const r = ONL.pop; closeInvite(); if (!r) return;
+  // « À côté » : quelqu'un qui a trouvé la partie sur le Wi-Fi
+  if (r.lan) { r.lan.answer(true); hint(r.pseudo + T(' arrive…'), 2000); return; }
   // Hôte qui accepte un ami : il arrive dans le salon par le canal, comme un invité
-  if (r.ask) { const res = await frRpc('room_request_respond', { p_id: r.id, p_accept: true }).catch(() => null); hint(res && res.ok ? r.pseudo + T(' arrive…') : T('Trop tard : la demande n’est plus valable.'), 2000); return; }
+  if (r.ask) { const res = await frRpc('room_request_respond', { p_id: r.id, p_accept: true }).catch(() => null); if (res && res.ok) pollRoomInvites(); hint(res && res.ok ? r.pseudo + T(' arrive…') : T('Trop tard : la demande n’est plus valable.'), 2000); return; }
   if (typeof timeUp === 'function' && timeUp()) { frRpc('invite_respond', { p_id: r.id, p_accept: false }).catch(() => {}); showTimeUp(); return; }
   Snd.init(); ONL.busy = true;
   show('multi'); screens.multi.scrollTop = 0;
@@ -348,8 +376,12 @@ $('#ipYes').addEventListener('click', async () => {
 async function onlineJoin(room, pid) {
   Net.reset(); Net.role = 'guest'; Net.online = true; Net.fresh = !!pid; Net.me = { id: pid || rid(), name: cleanPseudo(), host: false };
   ONL.room = room; ONL.host = false; keepAwake();
-  await onlineChannel(room);
-  sig({ t: 'hi', pid: Net.me.id });
+  const ch = await onlineChannel(pairTopic(room, myUid()), (c, m) => { if (ONL.ch === c) onSignal(m).catch(() => {}); });
+  if (ONL.room !== room) { CLOUD.sb.removeChannel(ch).catch(() => {}); return; }
+  ONL.ch = ch;
+  // L'hôte ouvre notre canal quand il voit l'invitation acceptée (toutes les 3 s) : on se présente jusqu'à sa réponse
+  const hi = () => { if (ONL.ch !== ch || Net.hostPc) { clearInterval(ONL.hiT); return; } sig({ t: 'hi' }); };
+  clearInterval(ONL.hiT); hi(); ONL.hiT = setInterval(hi, 2000);
   mpTimer = setTimeout(() => { if (MP.state === 'busy' && Net.online && Net.role === 'guest') { Net.reset(); mpGo('home', { tab: 'online', err: T('La connexion n’a pas abouti. Réessaie avec une nouvelle invitation.') }); } }, 30000);
 }
 setInterval(() => { pollInvites(); }, 4000);

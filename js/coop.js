@@ -10,7 +10,7 @@ const COOP_COLORS = ['#ff4f81', '#3fa9ff', '#4fd36a', '#ffb03d'];
 const coopMe = () => (Net.me && Net.me.id) || 'solo';
 const coopActor = () => COOP.actor || coopMe();
 const coopLv = id => (id === coopMe() ? meta.lv : COOP.lvs[id]) || {};
-const coopName = id => COOP.names[id] || T('Joueur');
+const coopName = id => (COOP.names && Object.hasOwn(COOP.names, id) && COOP.names[id]) || T('Joueur');
 const coopColor = id => COOP_COLORS[Math.max(0, COOP.ids.indexOf(id)) % 4];
 const coopActive = () => COOP.ids.filter(id => !COOP.gone.has(id));
 const isHostCoop = () => G && G.coop && !G.coopGuest;
@@ -93,13 +93,13 @@ function hostAction(pid, a) {
   asPlayer(pid, () => {
     if (a.a === 'build') {
       const type = a.type, q = a.q | 0, r = a.r | 0;
-      if (!TOWERS[type] || TOWERS[type].fusion || !unlocked(type) || !canBuild(q, r) || G.gold < costOf(type)) return;
+      if (!Object.hasOwn(TOWERS, type) || TOWERS[type].fusion || !unlocked(type) || !canBuild(q, r) || G.gold < costOf(type)) return;
       G.gold -= costOf(type);
       const t = addTower(type, q, r); t.recoil = 1;
       burst(t.x, t.y, 0.1, 12, ['#ffffff', '#f1eafa', TOWERS[type].color], 2.2, 0.09, 3, 0.5, 'star'); Snd.play('build');
     } else if (a.a === 'up') {
       const t = tw(a.id); if (!own(t)) return;
-      if (!TRACK[a.k] || (t.up[a.k] || 0) >= towerCap(t, a.k)) return;
+      if (!Object.hasOwn(TRACK, a.k) || (t.up[a.k] || 0) >= towerCap(t, a.k)) return;
       const cost = trackPrice(t.type, t.up, a.k); if (G.gold < cost) return;
       G.gold -= cost; upApply(t, a.k, cost); Snd.play('up');
     } else if (a.a === 'sell') {
@@ -337,31 +337,67 @@ function coopPauseUI() {
     + (MAPS[G.map].random ? ' · graine ' + seedCode(MAPS[G.map].rnd) : '') + '. ' + (G.coopGuest ? T('Le jeu continue pendant ce menu : seul l’hôte peut mettre tout le monde en pause.') : T('Ta pause met tout le monde en pause.'));
 }
 
+// ---------- Messages reçus : chaque valeur est vérifiée (un jeu modifié ne doit ni planter les autres, ni tricher) ----------
+const fnum = (v, lo, hi) => { v = +v; return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : lo; };
+// Atelier d'un coéquipier : améliorations connues seulement, sans dépasser leur maximum (sinon « Rabais » rendrait les tours gratuites)
+function cleanLv(lv) {
+  const out = {}; if (!lv || typeof lv !== 'object') return out;
+  for (const u of UPGRADES) if (Object.hasOwn(lv, u.id)) out[u.id] = clampInt(lv[u.id], 0, u.inf ? u.max * 4 : u.max);
+  for (const t in UNLOCK) if (Object.hasOwn(lv, 'u_' + t)) out['u_' + t] = clampInt(lv['u_' + t], 0, 1);
+  return out;
+}
+const cleanUp = up => { const o = {}; if (up && typeof up === 'object') for (const k of UP_KEYS) if (Object.hasOwn(up, k)) o[k] = clampInt(up[k], 0, 99); return o; };
+function cleanTowers(list) {
+  if (!Array.isArray(list)) return [];
+  return list.slice(0, 300).filter(d => d && Object.hasOwn(TOWERS, d.type)).map(d => ({ id: clampInt(d.id, 0, 1e9), type: d.type, c: clampInt(d.c, 0, 999), r: clampInt(d.r, 0, 999),
+    up: cleanUp(d.up), lvl: clampInt(d.lvl, 0, 99), br: Object.hasOwn(TRACK, d.br) ? d.br : null, mode: MODES.includes(d.mode) ? d.mode : MODES[0], inv: clampInt(d.inv, 0, 1e7),
+    own: isPid(d.own) ? d.own : null, rg: fnum(d.rg, 0, 99), rt: fnum(d.rt, 0, 99), air: !!d.air, gr: d.gr !== false }));
+}
+const cleanRuins = list => Array.isArray(list) ? list.slice(0, 300).filter(u => u && Object.hasOwn(TOWERS, u.type))
+  .map(u => ({ c: clampInt(u.c, 0, 999), r: clampInt(u.r, 0, 999), type: u.type, up: cleanUp(u.up), mode: MODES.includes(u.mode) ? u.mode : MODES[0], inv: clampInt(u.inv, 0, 1e7) })) : [];
+function cleanSnap(d) {
+  if (!Array.isArray(d.e) || !d.g || typeof d.g !== 'object') return null;
+  const g = {}; for (const id of COOP.ids) if (Object.hasOwn(d.g, id)) g[id] = clampInt(d.g[id], 0, 1e7);
+  return { wx: Object.hasOwn(WEATHERS, d.wx) ? d.wx : null, lv: clampInt(d.lv, 0, 9999), w: clampInt(d.w, 0, 99999), wa: !!d.wa, sq: clampInt(d.sq, 0, 500),
+    sc: clampInt(d.sc, 0, 1e9), bk: clampInt(d.bk, 0, 99999), sp: clampInt(d.sp, 1, 3), pz: !!d.pz, ch: d.ch == null ? null : fnum(d.ch, 0, 9999), at: fnum(d.at, 0, 9999), g,
+    e: d.e.slice(0, 400).filter(a => Array.isArray(a) && Object.hasOwn(ETYPES, a[1])).map(a => [clampInt(a[0], 0, 1e9), a[1], clampInt(a[2], 0, 16), ...a.slice(3, 9).map(v => fnum(v, -1e9, 1e9))]),
+    t: (Array.isArray(d.t) ? d.t : []).slice(0, 300).filter(Array.isArray).map(a => a.slice(0, 7).map(v => fnum(v, -1e9, 1e9))) };
+}
+const cleanPortals = p => Array.isArray(p) ? p.slice(0, 16).map(v => clampInt(v, 0, 16)) : p == null ? p : null;
+function cleanNextWave(nw) {
+  if (!nw || typeof nw !== 'object' || !Array.isArray(nw.list)) return null;
+  return { n: clampInt(nw.n, 1, 99999), list: nw.list.slice(0, 500).filter(it => it && Object.hasOwn(ETYPES, it.type)).map(it => ({ type: it.type })),
+    label: typeof nw.label === 'string' ? nw.label.slice(0, 60) : '', weather: Object.hasOwn(WEATHERS, nw.weather) ? nw.weather : null, portals: cleanPortals(nw.portals) };
+}
+// Pings sur la carte : un par seconde et par joueur au plus
+const pingAt = {};
+
 // ---------- Messages ----------
 Net.on('msg', ({ from, data }) => {
   if (!data || !data.k || data.k[0] !== 'c') return;
   switch (data.k) {
     case 'clv': if (Net.role === 'host') {
       // Dans le salon : l'Atelier solo de l'invité (ps : sa version connaît « Avec nos progrès »)
-      if (!COOP.on) COOP.lobbyLv[from] = data.ps ? data.lv || {} : {};
-      const old = coopLv(from); COOP.lvs[from] = data.lv || {};
+      const lv = cleanLv(data.lv);
+      if (!COOP.on) COOP.lobbyLv[from] = data.ps ? lv : {};
+      const old = coopLv(from); COOP.lvs[from] = lv;
       if (isHostCoop()) {
         for (const t of G.towers) if (t.own === from) { t.s = towerStats(t); healTower(t); }
         // Comme en solo, « Trésor de départ » acheté en cours de partie donne tout de suite son or
-        const dg = ((data.lv || {}).gold || 0) - (old.gold || 0); if (dg > 0) COOP.gold[from] = (COOP.gold[from] || 0) + dg * 25;
+        const dg = (lv.gold || 0) - (old.gold || 0); if (dg > 0) COOP.gold[from] = (COOP.gold[from] || 0) + dg * 25;
       }
     } break;
-    case 'cstart': if (Net.role !== 'host') beginCoop(data); break;
-    case 'cact': if (Net.role === 'host') hostAction(from, data); break;
+    case 'cstart': { const m = Net.role !== 'host' && cleanStart(data); if (m) beginCoop(m); } break;
+    case 'cact': if (Net.role === 'host' && COOP.ids && COOP.ids.includes(from)) hostAction(from, data); break;
     case 'cquit': if (Net.role === 'host') playerGone(from); break;
-    case 'ct': if (G && G.coopGuest) { applyTowers(data.t); G.ruins = data.ru || []; } break;
-    case 'cs': if (G && G.coopGuest && !G.over) applySnapshot(data); break;
-    case 'cnw': if (G && G.coopGuest) { G.nextWave = data.nw; hudCache.nw = null; } break;
-    case 'cws': if (G && G.coopGuest) { G.curPortals = data.portals; banner(T('VAGUE ') + data.n, data.early ? T('Bonus d’audace +') + data.early : data.label || '', false); Snd.play('wave'); } break;
-    case 'cwd': if (G && G.coopGuest) { G.partyUntil = G.time + 2.4; G.wave = data.n; G.score = data.sc; G.bossKills = data.bk; if (G.diff === 'infini' && G.wave >= 30 && typeof trophy === 'function') trophy('coop_inf'); const aw = awardShards(); hint(T('Vague ') + data.n + T(' terminée') + (aw.gain ? ' : +' + aw.gain + T(' éclats') : ''), 2600); Snd.play('clear'); } break;
-    case 'cend': if (G && G.coopGuest) coopFinish(data.win, data.why === 'hostquit' ? coopName(data.p) + T(' (l’hôte) a arrêté la partie.') : null); break;
-    case 'cmsg': if (G && G.coop && NOTICE[data.kind]) hint(NOTICE[data.kind](data.d || {}), 2400); break;
-    case 'cping': if (G && G.coop) addPing(from, data.x, data.y); break;
+    case 'ct': if (G && G.coopGuest) { applyTowers(cleanTowers(data.t)); G.ruins = cleanRuins(data.ru); } break;
+    case 'cs': if (G && G.coopGuest && !G.over) { const s = cleanSnap(data); if (s) applySnapshot(s); } break;
+    case 'cnw': if (G && G.coopGuest) { G.nextWave = cleanNextWave(data.nw); hudCache.nw = null; } break;
+    case 'cws': if (G && G.coopGuest) { G.curPortals = cleanPortals(data.portals); const early = clampInt(data.early, 0, 99999); banner(T('VAGUE ') + clampInt(data.n, 0, 99999), early ? T('Bonus d’audace +') + early : typeof data.label === 'string' ? data.label.slice(0, 60) : '', false); Snd.play('wave'); } break;
+    case 'cwd': if (G && G.coopGuest) { G.partyUntil = G.time + 2.4; G.wave = clampInt(data.n, 0, 99999); G.score = clampInt(data.sc, 0, 1e9); G.bossKills = clampInt(data.bk, 0, 99999); data.n = G.wave; if (G.diff === 'infini' && G.wave >= 30 && typeof trophy === 'function') trophy('coop_inf'); const aw = awardShards(); hint(T('Vague ') + data.n + T(' terminée') + (aw.gain ? ' : +' + aw.gain + T(' éclats') : ''), 2600); Snd.play('clear'); } break;
+    case 'cend': if (G && G.coopGuest) coopFinish(!!data.win, data.why === 'hostquit' ? coopName(data.p) + T(' (l’hôte) a arrêté la partie.') : null); break;
+    case 'cmsg': if (G && G.coop && Object.hasOwn(NOTICE, data.kind)) hint(NOTICE[data.kind](data.d || {}), 2400); break;
+    case 'cping': if (G && G.coop && COOP.ids.includes(from) && Number.isFinite(+data.x) && Number.isFinite(+data.y) && performance.now() - (pingAt[from] || 0) > 1000) { pingAt[from] = performance.now(); addPing(from, fnum(data.x, -99, 999), fnum(data.y, -99, 999)); } break;
   }
 });
 Net.on('leave', id => { if (COOP.on) playerGone(id); });

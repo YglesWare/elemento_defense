@@ -11,7 +11,10 @@ const FR = { list: store.get(FR_KEY) || [], code: store.get(FRC_KEY) || '', ok: 
 // ---------- Pseudo : filtre de gros mots (le pseudo n'est vu que par les amis, mais on reste prudents) ----------
 const BAD_ROOTS = ['merde', 'putain', 'pute', 'salope', 'salaud', 'connard', 'connasse', 'encul', 'batard', 'bite', 'couille', 'chier', 'nique', 'niquer', 'pede', 'tapette', 'gouine', 'negre', 'bougnoul', 'youpin', 'nazi', 'hitler', 'fuck', 'shit', 'bitch', 'dick', 'cock', 'pussy', 'cunt', 'asshole', 'nigg', 'faggot', 'slut', 'whore', 'porn', 'sexe', 'sexy', 'teub', 'chatte', 'zizi', 'penis', 'vagin', 'branle', 'suce', 'nichon', 'bordel', 'crotte', 'caca', 'pipi', 'prout'];
 const BAD_WORDS = ['pd', 'fdp', 'ntm', 'tg', 'con', 'cul', 'sex', 'zob', 'ass', 'fag', 'wtf', 'kkk', 'ss'];
+// Pas de moyen de contact dans un pseudo : adresse e-mail, lien, numéro de téléphone, réseau social
+const CONTACT_RE = /@|:\/\/|www|https?|\.(com|fr|net|org|io|be|ch|ca|ly|gg|tv|me|co|uk|de|es|it|eu|info|xyz|app|link|gl|to|sh)(\b|$)|\d{5,}|snap|insta|tiktok|discord|whatsapp|wats?ap|telegram|messenger|youtube|twitch|gmail|hotmail|outlook|yahoo/;
 function badPseudo(p) {
+  if (CONTACT_RE.test(String(p || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ''))) return true;
   const n = String(p || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/0/g, 'o').replace(/1/g, 'i').replace(/3/g, 'e').replace(/4|@/g, 'a').replace(/5|\$/g, 's').replace(/7/g, 't');
   const flat = n.replace(/[^a-z]/g, '');
   return BAD_ROOTS.some(w => flat.includes(w)) || n.split(/[^a-z]+/).some(w => BAD_WORDS.includes(w)) || BAD_WORDS.includes(flat);
@@ -76,7 +79,8 @@ function frStatus(f) {
   return seenAgo(f.seen);
 }
 const frDot = f => f.kind !== 'friend' ? '' : '<i class="frdot ' + (f.online ? (f.state === 'game' ? 'play' : 'on') : 'off') + '"></i>';
-const frRow = (f, acts, sub) => '<div class="frrow" data-id="' + f.id + '"><span class="frav"><canvas data-av="' + esc(f.av || 'feu') + '"></canvas>' + frDot(f) + '</span>'
+// Un joueur pas encore ami est montré par son code ami (supabase/security.sql) : une enveloppe à la place de son gardien
+const frRow = (f, acts, sub) => '<div class="frrow" data-id="' + esc(f.id) + '">' + (f.kind !== 'friend' && !f.av ? '<span class="frav env" aria-hidden="true">📨</span>' : '<span class="frav"><canvas data-av="' + esc(f.av || 'feu') + '"></canvas>' + frDot(f) + '</span>')
   + '<div class="frwho"><b>' + esc(f.pseudo) + '</b><small>' + (sub || frStatus(f)) + '</small></div>' + acts + '</div>';
 const frBtn = (act, label, cls = '') => '<button class="sbtn frb ' + cls + '" type="button" data-act="' + act + '">' + label + '</button>';
 const byOnline = (a, b) => (b.online - a.online) || a.pseudo.localeCompare(b.pseudo);
@@ -112,13 +116,14 @@ function frPaintPage() {
   $('#frAddBtn').hidden = !add;
   const note = frNote(); $('#frState').hidden = !note; $('#frState').textContent = note;
   let h = '';
-  if (ins.length) h += '<div class="frsec"><span class="mp-label">' + T('Demandes') + ' (' + ins.length + ')</span>' + ins.map(f => frRow(f, frBtn('accept', '✓', 'yes') + frBtn('refuse', '✕', 'no'))).join('') + '</div>';
+  if (ins.length) h += '<div class="frsec"><span class="mp-label">' + T('Demandes') + ' (' + ins.length + ')</span>' + ins.map(f => frRow(f, frBtn('accept', '✓', 'yes') + frBtn('refuse', '✕', 'no'))).join('') + FR_HELP + '</div>';
   h += '<div class="frsec"><span class="mp-label">' + T('Amis') + ' (' + fr.length + ')</span>'
     + (fr.length ? fr.map(f => frRow(f, (canInvite(f) ? frBtn('invite', T('Inviter'), 'inv') : '') + frBtn('menu', '⋯', 'more'))).join('') : '<p class="fine frempty">' + (add ? T('Pas encore d’amis. Donne ton code à un copain, ou tape le sien !') : T('Pas encore d’amis. Un parent peut en ajouter depuis l’espace parents.')) + '</p>')
     + outs.map(f => frRow(f, add ? frBtn('cancel', '✕', 'no') : '')).join('') + '</div>';
   const box = $('#frList'); box.innerHTML = h; frAvatars(box);
   box.querySelectorAll('[data-act]').forEach(b => b.addEventListener('click', () => frDo(b.dataset.act, b.closest('.frrow').dataset.id)));
 }
+const FR_HELP = '<p class="fine frhelp">' + T('🔎 C’est le <b>code ami</b> de la personne. Demande-le à ton copain : si ce n’est pas le sien, touche ✕.') + '</p>';
 // Inviter : l'ami est en ligne, pas en pleine partie, et on peut jouer en ligne (js/online.js)
 const canInvite = f => f.kind === 'friend' && f.online && f.state !== 'game' && frLive() && typeof inviteFriend === 'function' && (!Net.role || (Net.role === 'host' && Net.online));
 // Actions sur un ami (page enfant, menu ⋯ et espace parents)
@@ -184,7 +189,7 @@ function faPaint() {
     frAvatars(box);
   }
 }
-const FA_ERR = { not_found: 'Ce code n’existe pas. Vérifie-le avec ton ami.', self: 'C’est ton propre code !', too_many: 'Trop d’essais : attends une minute.', too_many_day: 'Trop de codes faux aujourd’hui : réessaie demain.', you_blocked: 'Ce joueur est bloqué. Un parent peut le débloquer dans l’espace parents.' };
+const FA_ERR = { not_found: 'Ce code n’existe pas. Vérifie-le avec ton ami.', self: 'C’est ton propre code !', too_many: 'Trop d’essais : attends une minute.', too_many_day: 'Trop de codes faux aujourd’hui : réessaie demain.', you_blocked: 'Ce joueur est bloqué. Un parent peut le débloquer dans l’espace parents.', blocked: 'Trop de codes faux depuis ce réseau : l’ajout d’amis est bloqué quelques jours.' };
 async function faSend(code) {
   if (!frLive()) { FR.res = { ok: false, msg: T('Il faut internet pour ajouter un ami.') }; return faPaint(); }
   FR.res = { ok: true, msg: T('Recherche…') }; faPaint();
@@ -229,7 +234,7 @@ function frParentHTML() {
     + '<p class="fine">' + T('Un nouveau code remplace l’ancien (qui ne marche plus) ; ses amis restent.') + '</p>'
     + (note ? '<p class="fine pa-err">' + note + '</p>' : '')
     + '<button class="btn" type="button" id="paFrAdd">' + T('➕ Ajouter un ami pour lui') + '</button>'
-    + sec(T('Demandes reçues'), ins, () => frBtn('accept', '✓', 'yes') + frBtn('refuse', '✕', 'no'))
+    + sec(T('Demandes reçues'), ins, () => frBtn('accept', '✓', 'yes') + frBtn('refuse', '✕', 'no')) + (ins.length ? '<p class="fine frhelp">' + T('Un joueur apparaît par son code ami tant qu’il n’est pas accepté : vérifiez-le avec la personne.') + '</p>' : '')
     + sec(T('Amis'), fr, () => frBtn('remove', T('Retirer')) + frBtn('block', '🚫', 'no'))
     + sec(T('Demandes envoyées'), outs, () => frBtn('cancel', T('Annuler')))
     + sec(T('Bloqués'), bl, () => frBtn('unblock', T('Débloquer')))

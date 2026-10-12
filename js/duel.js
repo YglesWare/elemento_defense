@@ -30,7 +30,7 @@ function sendCost(S) {
 screens.duel = $('#sDuel');
 const dnow = () => performance.now();
 const hostId = () => { const h = Net.players.find(p => p.host); return h ? h.id : null; };
-const dname = id => DUEL.names[id] || (Net.players.find(p => p.id === id) || {}).name || T('Joueur');
+const dname = id => (DUEL.names && Object.hasOwn(DUEL.names, id) && DUEL.names[id]) || (Net.players.find(p => p.id === id) || {}).name || T('Joueur');
 const meId = () => Net.me && Net.me.id;
 
 // ---------- Progression temporaire du multi : à zéro, ou « Avec nos progrès » (une copie de l'Atelier solo, sans ses éclats) ----------
@@ -198,8 +198,13 @@ function duelSend(S) {
   hint(eName(S.type) + T(' envoyé ') + (c.multi ? T('à tous (') + targets.length + ')' : T('à ') + dname(targets[0])) + ' · revenu +' + c.inc + ' (total ' + DUEL.income + T('/vague)'), 1800);
   refreshSendPanel();
 }
+// Un envoi reçu : seulement un monstre de la liste des envois, déjà débloqué à cette vague, et pas plus de 8 par seconde
+// et par joueur (un jeu modifié ne peut pas noyer les autres sous les monstres gratuits)
 function receiveSend(from, mob) {
-  if (!G || G.over || !ETYPES[mob]) return;
+  const S = SENDS.find(x => x.type === mob);
+  if (!G || G.over || !S || DUEL.wave < S.from || G.sendQ.length >= 300) return;
+  const now = dnow(), rl = DUEL.sendRate = DUEL.sendRate || {}, r = rl[from] = rl[from] && now - rl[from].t < 1000 ? rl[from] : { t: now, n: 0 };
+  if (++r.n > 8) return;
   G.sendQ.push(mob);
   const inc = DUEL.incoming[from] = DUEL.incoming[from] || {};
   inc[mob] = (inc[mob] || 0) + 1;
@@ -219,8 +224,8 @@ function renderDuelBar() {
   const others = DUEL.ids.filter(id => id !== meId());
   const html = others.map(id => {
     const st = DUEL.stats[id] || {}, dead = !DUEL.alive.has(id), tg = id === DUEL.target && !dead;
-    return '<button type="button" class="dp' + (tg ? ' tg' : '') + (dead ? ' dead' : '') + '" data-id="' + id + '">' + (tg && others.length > 1 ? '🎯 ' : '') + esc(dname(id))
-      + ' <span>❤ ' + (st.lives != null ? st.lives : '…') + '</span>' + (st.inc ? ' <span class="dinc">+' + st.inc + '</span>' : '') + '</button>';
+    return '<button type="button" class="dp' + (tg ? ' tg' : '') + (dead ? ' dead' : '') + '" data-id="' + esc(id) + '">' + (tg && others.length > 1 ? '🎯 ' : '') + esc(dname(id))
+      + ' <span>❤ ' + (st.lives != null ? clampInt(st.lives, 0, 999) : '…') + '</span>' + (st.inc ? ' <span class="dinc">+' + clampInt(st.inc, 0, 99999) + '</span>' : '') + '</button>';
   }).join('');
   if (bar._h !== html) { bar._h = html; bar.innerHTML = html; }
 }
@@ -368,13 +373,13 @@ Net.on('msg', ({ from, data }) => {
       DUEL.lobbyMap = data.map; if (data.rsize) DUEL.lobbySize = data.rsize; DUEL.lobbyMode = data.mode || 'duel'; if (data.diff) DUEL.lobbyDiff = data.diff; DUEL.lobbyChal = data.chal || null; DUEL.lobbyStart = data.start === 'prog' ? 'prog' : 'zero';
       if (typeof MP !== 'undefined' && MP.state === 'lobby' && sig !== JSON.stringify([DUEL.lobbyMap, DUEL.lobbySize, DUEL.lobbyMode, DUEL.lobbyDiff, DUEL.lobbyChal, DUEL.lobbyStart])) renderMP();
     } break;
-    case 'start': if (Net.role !== 'host') beginDuel(data); break;
-    case 'wave': if (Net.role !== 'host') onWave(data.n, data.gap, data.w); break;
-    case 'st': DUEL.stats[from] = data; break;
-    case 'send': if (DUEL.on) receiveSend(from, data.mob); break;
+    case 'start': { const m = Net.role !== 'host' && cleanStart(data); if (m) beginDuel(m); } break;
+    case 'wave': if (Net.role !== 'host') onWave(clampInt(data.n, 1, Math.max(1, DUEL.wave + 5)), clampInt(data.gap, 1000, 120000), Object.hasOwn(WEATHERS, data.w) ? data.w : null); break;
+    case 'st': if (DUEL.ids.includes(from)) DUEL.stats[from] = { lives: clampInt(data.lives, 0, 999), wave: clampInt(data.wave, 0, 9999), inc: clampInt(data.inc, 0, 99999) }; break;
+    case 'send': if (DUEL.on && DUEL.alive.has(from)) receiveSend(from, data.mob); break;
     case 'dead': if (Net.role === 'host') eliminate(from, data.why || 'ko'); break;
-    case 'elim': if (Net.role !== 'host') onElim(data.id, data.why); break;
-    case 'end': if (Net.role !== 'host') onEnd(data.rank); break;
+    case 'elim': if (Net.role !== 'host' && DUEL.ids.includes(data.id)) onElim(data.id, data.why); break;
+    case 'end': if (Net.role !== 'host' && Array.isArray(data.rank)) onEnd(data.rank.filter(id => DUEL.ids.includes(id))); break;
   }
 });
 Net.on('leave', id => { if (DUEL.on && Net.role === 'host') eliminate(id, 'parti'); });

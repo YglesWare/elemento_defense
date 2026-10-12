@@ -10,7 +10,7 @@ screens.multi = $('#sMulti');
 const randomPseudo = () => 'Yglou' + (1000 + Math.floor(Math.random() * 9000));
 if (!(store.get('elemento.pseudo') || '').trim()) store.set('elemento.pseudo', randomPseudo());
 const mpName = () => (store.get('elemento.pseudo') || '').slice(0, 12);
-const esc = t => String(t).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+const esc = t => String(t).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
 // ---------- Caméra et QR codes ----------
 let camStream = null, camRaf = 0, jsqrLoad = null, mpTimer = 0;
@@ -80,9 +80,9 @@ function foundHTML() {
   if (!list.length) return emptyBoxHTML('📡', T('Aucune partie sur ce Wi-Fi'), T('Demande à ton ami de toucher « Créer une partie », sur le même Wi-Fi.'));
   return list.map(f => {
     const game = f.st === 'game', full = f.n >= f.max;
-    const st = game ? ['busy', T('Partie en cours')] : full ? ['full', T('Complète · ') + f.n + '/' + f.max] : ['ok', T('Joignable · ') + f.n + '/' + f.max];
+    const n = clampInt(f.n, 1, NET_MAX), st = game ? ['busy', T('Partie en cours')] : full ? ['full', T('Complète · ') + n + '/' + NET_MAX] : ['ok', T('Joignable · ') + n + '/' + NET_MAX];
     return '<div class="onlroom"><span class="frav lanav" aria-hidden="true">📶</span><span class="orm"><b>' + esc(f.host) + '</b><span class="ost ' + st[0] + '"><i></i>' + st[1] + '</span></span>'
-      + '<button class="btn green" type="button" data-a="lan-join" data-url="' + esc(f.url) + '"' + (game || full ? ' disabled' : '') + '>' + (game ? T('En cours') : full ? T('Complète') : T('Rejoindre')) + '</button></div>';
+      + '<button class="btn green" type="button" data-a="lan-join" data-url="' + esc(f.url) + '" data-host="' + esc(f.host) + '"' + (game || full ? ' disabled' : '') + '>' + (game ? T('En cours') : full ? T('Complète') : T('Rejoindre')) + '</button></div>';
   }).join('');
 }
 function startFound() {
@@ -101,7 +101,7 @@ function mpGo(state, extra) {
 }
 function rosterHTML() {
   const ps = Net.players.length ? Net.players : [{ name: mpName() || T('Toi'), host: true, ping: 0, id: 'me' }];
-  return '<ul class="mp-list">' + ps.map((p, i) => '<li><canvas class="mp-yg" data-i="' + i + '" aria-hidden="true"></canvas><b>' + esc(p.name) + '</b>' + (p.host ? T('<span class="mp-tag">hôte</span>') : '') + (Net.me && p.id === Net.me.id ? '<span class="mp-tag you">' + T('toi') + '</span>' : '') + (p.away ? '<span class="mp-tag away">' + T('connexion perdue…') + '</span>' : '') + '<span class="mp-ping">' + (p.host && Net.role === 'host' ? '' : p.ping ? p.ping + ' ms' : '') + '</span></li>').join('') + '</ul>';
+  return '<ul class="mp-list">' + ps.map((p, i) => '<li><canvas class="mp-yg" data-i="' + i + '" aria-hidden="true"></canvas><b>' + esc(p.name) + '</b>' + (p.host ? T('<span class="mp-tag">hôte</span>') : '') + (Net.me && p.id === Net.me.id ? '<span class="mp-tag you">' + T('toi') + '</span>' : '') + (p.away ? '<span class="mp-tag away">' + T('connexion perdue…') + '</span>' : '') + '<span class="mp-ping">' + (p.host && Net.role === 'host' ? '' : p.ping ? clampInt(p.ping, 0, 99999) + ' ms' : '') + '</span></li>').join('') + '</ul>';
 }
 // Code à taper : par groupes de 4 (les tirets, espaces et minuscules sont acceptés à la saisie)
 const groupCode = c => (/^E[0-9A-Z]+$/.test(c) ? c.match(/.{1,4}/g).join('-') : c);
@@ -302,12 +302,14 @@ async function hostGotAnswer(txt, cam) {
   } catch (e) { mpGo('host', { err: e.message || String(e) }); }
 }
 // Rejoindre un hôte de l'app : dans l'app, connexion directe ; dans un navigateur, on ouvre le jeu servi par l'hôte
-function joinLanGame(url) {
+// host : le pseudo de l'hôte, pour une partie trouvée sur le Wi-Fi (sans jeton : il doit accepter, 30 s)
+function joinLanGame(url, host) {
   if (!NATIVE && location.origin + location.pathname + location.search !== url) { store.flush().then(() => { location.href = url; }); return; }
-  mpGo('busy', { busyText: T('Connexion à la partie…'), lanJoin: true });
+  const ask = lanInfo(url) && !lanInfo(url).token;
+  mpGo('busy', { busyText: ask ? T('On demande à ') + (host || T('l’hôte')) + T(' si tu peux entrer…') : T('Connexion à la partie…'), lanJoin: true });
   try { Net.joinLan(mpName() || randomPseudo(), url); }
   catch (e) { mpGo('home', { err: e.message || String(e) }); return; }
-  mpTimer = setTimeout(() => { if (MP.state === 'busy') { Net.reset(); mpGo('home', { err: T('Impossible de joindre la partie. Vérifiez que les téléphones sont sur le même Wi-Fi ou partage de connexion.') }); } }, 12000);
+  mpTimer = setTimeout(() => { if (MP.state === 'busy') { Net.reset(); mpGo('home', { err: ask ? T('Pas de réponse de ') + (host || T('l’hôte')) + '.' : T('Impossible de joindre la partie. Vérifiez que les téléphones sont sur le même Wi-Fi ou partage de connexion.') }); } }, ask ? 40000 : 12000);
 }
 async function guestGotOffer(txt, cam) {
   if (lanInfo(txt)) { closeCamera(cam); joinLanGame(lanInfo(txt).url); return; }
@@ -353,7 +355,7 @@ const mpClick = ev => {
   else if (a === 'create') { const n = needName(); if (!n) return; Net.host(n); keepAwake(); mpGo('host'); }
   else if (a === 'join') { const n = needName(); if (!n) return; keepAwake(); mpGo('scan', { scanFor: 'offer' }); }
   else if (a === 'invite') hostInvite();
-  else if (a === 'lan-join') joinLanGame(el.dataset.url);
+  else if (a === 'lan-join') joinLanGame(el.dataset.url, el.dataset.host);
   else if (a === 'scan-answer') mpGo('scan', { scanFor: 'answer', code: MP.code });
   else if (a === 'flip') { MP.facing = MP.facing === 'user' ? 'environment' : 'user'; store.set('elemento.mpFacing', MP.facing); stopScan(); MP.camFail = false; renderMP(); }
   else if (a === 'back-invite') mpGo('invite', { code: MP.code });
@@ -462,6 +464,8 @@ async function checkUpdate(current = BUILD) {
     if (!m || !apk || +m[3] <= current) return;
     const b = $('#tUpdate');
     b.textContent = T('⬆ Mise à jour ') + m[1] + '.' + m[2] + '.' + m[3];
+    // Seulement un fichier des releases de ce dépôt
+    if (!String(apk.browser_download_url).startsWith('https://github.com/YglesWare/elemento_defense/releases/download/')) return;
     b.onclick = () => { Snd.init(); location.href = apk.browser_download_url; };
     b.hidden = false;
   } catch (e) { /* hors ligne : on réessaiera au prochain retour dans l'app */ }

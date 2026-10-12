@@ -885,6 +885,9 @@ body.hasback .screen:not(:has(.bigword))>.inner{padding-top:50px}
 .frrow{display:flex;align-items:center;gap:8px;min-width:0}
 .frav{position:relative;flex:none;width:44px;height:44px;border:2.5px solid var(--ink);border-radius:50%;background:var(--mist);display:grid;place-items:center}
 .frav canvas{width:40px;height:40px}
+/* Demande d'un joueur pas encore ami : une enveloppe (son gardien et son pseudo n'apparaissent qu'une fois amis) */
+.frav.env{border-style:dashed;border-color:#b7a3d3;background:#f1eafa;font-size:22px}
+.frhelp{margin:2px 4px 6px;font-size:12.5px}
 .frdot{position:absolute;right:-3px;bottom:-3px;width:14px;height:14px;border-radius:50%;border:2.5px solid var(--ink)}
 .frdot.on{background:var(--leaf)}.frdot.play{background:var(--sun)}.frdot.off{background:#c9bfd6}
 .frwho{flex:1;min-width:0;line-height:1.15}

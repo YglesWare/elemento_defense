@@ -1,6 +1,9 @@
 <!doctype html>
 <html lang="fr">
+<head>
 <meta charset="utf-8">
+<!-- Sécurité : seulement les scripts du jeu (aucun script écrit dans la page) et le bouton « Se connecter avec Google », et les échanges avec Supabase, GitHub, Google et le Wi-Fi local -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com/gsi/style; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' https://iqxeeauemqedudbqnihb.supabase.co wss://iqxeeauemqedudbqnihb.supabase.co https://api.github.com https://accounts.google.com/gsi/ ws:; frame-src https://accounts.google.com/gsi/; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Élémento Defense</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,6 +16,7 @@
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Élémento">
+</head>
 
 <div id="app">
   <header id="hud">
@@ -730,4 +734,5 @@
 </div>
 <!-- Les données du joueur (IndexedDB) sont chargées d'abord, puis les scripts du jeu, dans cet ordre -->
 <script src="js/storage.js"></script>
-<script>store.boot(['js/errors.js', 'js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bestiary.js', 'js/surprise.js', 'js/bonus.js', 'js/trophies.js', 'js/actions.js', 'js/vendor/supabase.js', 'js/cloud.js', 'js/parents.js', 'js/friends.js', 'js/online.js', 'js/emotes.js', 'js/news.js', 'js/quests.js', 'js/ranking.js', 'js/tournament.js', 'js/challenge.js', 'js/ads.js', 'js/wardrobe.js', 'js/comfort.js', 'js/story.js']);</script>
+<script src="js/store-build.js"></script>
+<script src="js/boot.js"></script>

@@ -12,17 +12,14 @@ cpSync(join(app, 'fonts'), join(www, 'fonts'), { recursive: true });
 let html = readFileSync(join(www, 'index.html'), 'utf8');
 const before = html;
 html = html.replace(/<link rel="preconnect"[^>]*fonts\.g[^>]*>\s*/g, '').replace(/<link rel="stylesheet" href="https:\/\/fonts\.googleapis\.com[^"]*">/, '<link rel="stylesheet" href="fonts/fonts.css">');
-if (html === before || html.includes('fonts.googleapis')) throw new Error('Lien Google Fonts introuvable dans index.html');
+if (html === before || /<link[^>]*fonts\.googleapis/.test(html)) throw new Error('Lien Google Fonts introuvable dans index.html');
 // « viewport-fit=cover » gardé : avec une WebView récente (140+), Capacitor laisse la page passer sous les barres du
 // téléphone et donne leur hauteur (--safe-area-inset-*, css/style.css) ; avec une plus ancienne, les barres restent à part
-// Version Google Play (npm run aab) : pas de mise à jour par les releases GitHub (le Play Store s'en charge, et il interdit
-// qu'une appli se mette à jour toute seule)
+// Version Google Play : pas de mise à jour par les releases GitHub (le Play Store s'en charge, et il interdit qu'une appli
+// se mette à jour toute seule). Le réglage suit la variante compilée : la variante « store » remplace js/store-build.js
+// par le sien (app/android/app/src/store/assets/public/js/store-build.js), quelle que soit la commande utilisée.
 const store = process.argv.includes('--store');
-if (store) {
-  const tag = '<script>window.STORE_BUILD = true;</script>';
-  html = html.replace(/<script>store\.boot\(/, tag + '\n<script>store.boot(');
-  if (!html.includes(tag)) throw new Error('Impossible de marquer la version store');
-}
+if (!html.includes('<script src="js/store-build.js"></script>')) throw new Error('js/store-build.js manque dans index.html');
 writeFileSync(join(www, 'index.html'), html);
 
 const build = readFileSync(join(root, 'js/data.js'), 'utf8').match(/const BUILD = (\d+)/)[1];

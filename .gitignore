@@ -1,0 +1,13 @@
+# Jamais dans le dépôt (il est public)
+# Données personnelles (adresses e-mail des testeurs…)
+supabase/*.local.sql
+# Clés de signature et leurs mots de passe
+*.jks
+*.keystore
+*.p12
+keystore.properties
+elemento.properties
+# Fichiers de travail
+zz_*.html
+app/store/tablet/
+.DS_Store

@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  138: [
+    ['🛡️', 'Plus de sécurité : une demande d’ami montre le code ami de la personne (vérifie-le avec ton copain), et sur le même Wi-Fi, l’hôte accepte qui entre dans sa partie.'],
+  ],
   136: [
     ['🔧', 'Une partie gagnée ne reste plus en « Continuer » si tu n’as pas choisi le mode infini.'],
   ],

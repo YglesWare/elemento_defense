@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sauvegarde Android (Android 11 et avant) : la progression (IndexedDB) est gardée, mais pas la session du compte en ligne
+     (stockage local de la WebView) : une sauvegarde volée ne donne pas accès au compte. On se reconnecte après une restauration. -->
+<full-backup-content>
+    <exclude domain="root" path="app_webview/Default/Local Storage/" />
+    <exclude domain="root" path="app_webview/Default/Session Storage/" />
+    <exclude domain="root" path="app_webview/Default/Cookies" />
+    <exclude domain="root" path="app_webview/Default/Cookies-journal" />
+</full-backup-content>

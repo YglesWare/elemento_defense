@@ -19,8 +19,10 @@ import fi.iki.elonen.NanoWSD.WebSocket;
 import fi.iki.elonen.NanoWSD.WebSocketFrame;
 import fi.iki.elonen.NanoWSD.WebSocketFrame.CloseCode;
 
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.Inet4Address;
@@ -29,7 +31,10 @@ import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.nio.charset.StandardCharsets;
+import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -39,12 +44,17 @@ import java.util.concurrent.atomic.AtomicInteger;
  * - sert les fichiers du jeu sur le Wi-Fi, pour qu'un invité le rejoigne depuis son navigateur avec un seul scan ;
  * - relaie les messages des joueurs par WebSocket (/ws) vers le jeu de l'hôte (événements open, message, close) ;
  * - découverte sur le Wi-Fi : l'hôte annonce sa partie chaque seconde (diffusion UDP), les invités de l'app l'écoutent (événement found).
+ * Sécurité (n'importe quel appareil du Wi-Fi peut s'y connecter) : le serveur n'écoute que sur l'adresse Wi-Fi du téléphone,
+ * 16 connexions au plus, 45 s sans rien recevoir et la connexion est coupée, 64 Ko au plus par message ; l'annonce s'arrête
+ * quand l'appli passe en arrière-plan.
  */
 @CapacitorPlugin(name = "LanServer")
 public class LanServerPlugin extends Plugin {
     private static final int DISCO_PORT = 41234;
+    private static final int MAX_CONNS = 16, READ_TIMEOUT = 45000, MAX_MESSAGE = 65536;
     private Server server;
     private volatile String beaconText;
+    private volatile boolean paused;
     private Thread beacon, listener;
     private DatagramSocket listenSock;
     private WifiManager.MulticastLock mlock;
@@ -53,14 +63,21 @@ public class LanServerPlugin extends Plugin {
     public void start(PluginCall call) {
         stopServer();
         int first = call.getInt("port", 8080);
+        // Seulement sur le Wi-Fi (ou le partage de connexion) : pas sur les données mobiles ni sur un VPN
+        String ip = lanIp();
+        if (ip == null) {
+            call.reject("Pas de Wi-Fi");
+            return;
+        }
         IOException last = null;
         for (int port = first; port < first + 10; port++) {
             try {
-                Server s = new Server(port);
-                s.start(0, false);
+                Server s = new Server(ip, port);
+                s.setAsyncRunner(new CapRunner());
+                s.start(READ_TIMEOUT, false);
                 server = s;
                 JSObject ret = new JSObject();
-                ret.put("ip", lanIp());
+                ret.put("ip", ip);
                 ret.put("port", port);
                 call.resolve(ret);
                 return;
@@ -113,7 +130,7 @@ public class LanServerPlugin extends Plugin {
                     s.setBroadcast(true);
                     while (beacon == Thread.currentThread()) {
                         String txt = beaconText;
-                        if (txt != null && !txt.isEmpty()) {
+                        if (txt != null && !txt.isEmpty() && !paused) {
                             byte[] b = txt.getBytes(StandardCharsets.UTF_8);
                             for (InetAddress to : broadcastAddresses()) {
                                 try {
@@ -177,6 +194,17 @@ public class LanServerPlugin extends Plugin {
     public void stopDiscover(PluginCall call) {
         stopDiscovery();
         call.resolve();
+    }
+
+    // Appli en arrière-plan : la partie n'est plus annoncée sur le Wi-Fi (les joueurs déjà là restent connectés)
+    @Override
+    protected void handleOnPause() {
+        paused = true;
+    }
+
+    @Override
+    protected void handleOnResume() {
+        paused = false;
     }
 
     @Override
@@ -261,13 +289,15 @@ public class LanServerPlugin extends Plugin {
         final Map<String, Client> clients = new ConcurrentHashMap<>();
         final AtomicInteger next = new AtomicInteger(1);
 
-        Server(int port) {
-            super(port);
+        Server(String host, int port) {
+            super(host, port);
         }
 
         @Override
         protected WebSocket openWebSocket(IHTTPSession session) {
-            return new Client(session, "c" + next.getAndIncrement(), this);
+            Client c = new Client(session, "c" + next.getAndIncrement(), this);
+            limitFrames(c);
+            return c;
         }
 
         // Fichiers du jeu, tels qu'embarqués dans l'APK (assets/public)
@@ -302,6 +332,14 @@ public class LanServerPlugin extends Plugin {
 
         @Override
         protected void onOpen() {
+            if (srv.clients.size() >= 8) {
+                try {
+                    close(CloseCode.PolicyViolation, "full", false);
+                } catch (IOException e) {
+                    // déjà fermé
+                }
+                return;
+            }
             srv.clients.put(id, this);
             JSObject ev = new JSObject();
             ev.put("id", id);
@@ -332,6 +370,128 @@ public class LanServerPlugin extends Plugin {
         @Override
         protected void onException(IOException e) {
             onClose(CloseCode.AbnormalClosure, "", true);
+        }
+    }
+
+    /** Au plus MAX_CONNS connexions à la fois (fichiers du jeu et WebSocket) ; une erreur d'une connexion ne fait pas planter l'appli. */
+    private static class CapRunner implements NanoHTTPD.AsyncRunner {
+        private final List<NanoHTTPD.ClientHandler> running = Collections.synchronizedList(new ArrayList<>());
+        private final AtomicInteger n = new AtomicInteger();
+
+        @Override
+        public void closeAll() {
+            for (NanoHTTPD.ClientHandler c : new ArrayList<>(running)) c.close();
+        }
+
+        @Override
+        public void closed(NanoHTTPD.ClientHandler c) {
+            running.remove(c);
+        }
+
+        @Override
+        public void exec(NanoHTTPD.ClientHandler c) {
+            if (running.size() >= MAX_CONNS) {
+                c.close();
+                return;
+            }
+            running.add(c);
+            Thread t = new Thread(c, "elemento-lan-" + n.incrementAndGet());
+            t.setDaemon(true);
+            t.setUncaughtExceptionHandler((th, e) -> {
+                running.remove(c);
+                c.close();
+            });
+            t.start();
+        }
+    }
+
+    /**
+     * Les messages WebSocket de plus de MAX_MESSAGE octets coupent la connexion, avant que la bibliothèque ne réserve leur
+     * mémoire (elle croirait la taille annoncée, jusqu'à 2 Go). On lit les en-têtes de trame au passage dans le flux.
+     */
+    private static void limitFrames(WebSocket ws) {
+        try {
+            Field f = WebSocket.class.getDeclaredField("in");
+            f.setAccessible(true);
+            f.set(ws, new FrameLimit((InputStream) f.get(ws)));
+        } catch (Exception e) {
+            // bibliothèque différente : on garde le flux tel quel
+        }
+    }
+
+    private static class FrameLimit extends FilterInputStream {
+        // Étapes : 0 premier octet, 1 deuxième, 2 longueur étendue, 3 masque, 4 contenu
+        private int step, extLeft, maskLeft;
+        private long len, left, msgTotal;
+        private boolean fin, control, masked;
+
+        FrameLimit(InputStream in) {
+            super(in);
+        }
+
+        @Override
+        public int read() throws IOException {
+            int b = super.read();
+            if (b >= 0) feed(b);
+            return b;
+        }
+
+        @Override
+        public int read(byte[] buf, int off, int count) throws IOException {
+            if (step == 4 && left > 0) count = (int) Math.min(count, left);
+            int r = super.read(buf, off, count);
+            for (int i = 0; i < r; i++) {
+                if (step == 4) {
+                    long skip = Math.min(left, r - i);
+                    left -= skip;
+                    i += (int) skip - 1;
+                    if (left == 0) step = 0;
+                } else feed(buf[off + i] & 0xff);
+            }
+            return r;
+        }
+
+        private void feed(int b) throws IOException {
+            switch (step) {
+                case 0:
+                    fin = (b & 0x80) != 0;
+                    control = (b & 0x08) != 0;
+                    step = 1;
+                    break;
+                case 1:
+                    masked = (b & 0x80) != 0;
+                    len = b & 0x7f;
+                    if (len == 126) { extLeft = 2; len = 0; step = 2; }
+                    else if (len == 127) { extLeft = 8; len = 0; step = 2; }
+                    else startMask();
+                    break;
+                case 2:
+                    len = (len << 8) | b;
+                    if (--extLeft == 0) startMask();
+                    break;
+                case 3:
+                    if (--maskLeft == 0) startPayload();
+                    break;
+                default:
+                    if (--left <= 0) step = 0;
+            }
+        }
+
+        private void startMask() throws IOException {
+            if (len < 0 || len > MAX_MESSAGE) throw new IOException("message trop gros");
+            if (!control) {
+                msgTotal += len;
+                if (msgTotal > MAX_MESSAGE) throw new IOException("message trop gros");
+                if (fin) msgTotal = 0;
+            }
+            maskLeft = masked ? 4 : 0;
+            step = 3;
+            if (maskLeft == 0) startPayload();
+        }
+
+        private void startPayload() {
+            left = len;
+            step = left > 0 ? 4 : 0;
         }
     }
 }

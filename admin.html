@@ -86,6 +86,13 @@ input[type=checkbox]{min-width:0;flex:none;width:18px;height:18px;vertical-align
 <div id="setMsg"></div>
 </section>
 
+<section class="card" id="ipCard" hidden>
+<h2>Adresses IP bloquées</h2>
+<p class="muted">Une adresse qui tape 25 codes amis faux d'affilée (sans un seul bon code entre deux) ne peut plus ajouter d'amis pendant 7 jours. Le reste du jeu marche. Débloquer remet aussi sa série de codes faux à zéro. Les blocages finis restent affichés 30 jours.</p>
+<div id="ipBlocks"></div>
+<div id="ipMsg"></div>
+</section>
+
 <section class="card" id="adsCard" hidden>
 <h2>Pubs à récompense</h2>
 <div class="row"><label class="muted">Période <select id="adDays"><option value="7">7 jours</option><option value="30" selected>30 jours</option><option value="90">90 jours</option></select></label>
@@ -134,10 +141,10 @@ async function refresh() {
 }
 function paintGate(err, user) {
   const box = $('#notAdmin');
-  for (const id of ['#searchCard', '#procCard', '#flagsCard', '#setCard', '#adsCard', '#adminsCard']) $(id).hidden = !admin;
+  for (const id of ['#searchCard', '#procCard', '#flagsCard', '#setCard', '#ipCard', '#adsCard', '#adminsCard']) $(id).hidden = !admin;
   if (!admin) { $('#replyCard').hidden = true; $('#results').innerHTML = ''; }
   box.hidden = admin || !user; box.textContent = 'Accès réservé aux administrateurs.';
-  if (admin) { loadAdmins(); loadFlags(); loadSettings(); loadAdStats(); }
+  if (admin) { loadAdmins(); loadFlags(); loadSettings(); loadIpBlocks(); loadAdStats(); }
 }
 // Administrateurs : liste, ajout par adresse e-mail, retrait (pas soi-même, pas le dernier)
 async function loadAdmins() {
@@ -190,6 +197,25 @@ $('#settings').addEventListener('submit', async ev => {
   const { error } = await sb.rpc('admin_setting_set', { p_key: f.dataset.set, p_value: v });
   $('#setMsg').innerHTML = error ? '<div class="msg err">' + esc(error.message) + '</div>' : '<div class="msg ok">' + esc(f.dataset.set) + ' = ' + v + '.</div>';
   loadSettings();
+});
+
+// Adresses IP bloquées pour l'ajout d'amis (supabase/security.sql) : deuxième appui pour confirmer le déblocage
+const when = d => new Date(d).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+async function loadIpBlocks() {
+  const { data, error } = await sb.rpc('admin_ip_blocks');
+  if (error) { $('#ipBlocks').innerHTML = '<div class="msg err">' + esc(/admin_ip_blocks/.test(error.message) ? 'Lance d’abord supabase/security.sql.' : error.message) + '</div>'; return; }
+  $('#ipBlocks').innerHTML = (data || []).map(b => '<div class="row" style="justify-content:space-between;border-bottom:1px solid var(--mist);padding:6px 0"><span><b class="mono">' + esc(b.ip) + '</b><br><span class="muted">'
+    + b.attempts + ' codes faux · bloquée le ' + esc(when(b.at)) + ' · ' + (b.active ? 'jusqu’au ' + esc(when(b.until)) : 'blocage fini') + '</span></span>'
+    + (b.active ? '<button type="button" class="alt" data-ip="' + esc(b.ip) + '">Débloquer</button>' : '') + '</div>').join('')
+    || '<p class="muted">Aucune adresse bloquée.</p>';
+}
+$('#ipBlocks').addEventListener('click', async ev => {
+  const b = ev.target.closest('[data-ip]'); if (!b) return;
+  if (b.dataset.arm !== '1') { b.dataset.arm = '1'; b.textContent = 'Confirmer'; b.classList.add('danger'); return; }
+  b.disabled = true;
+  const { data, error } = await sb.rpc('admin_ip_unblock', { p_ip: b.dataset.ip });
+  $('#ipMsg').innerHTML = error ? '<div class="msg err">' + esc(error.message) + '</div>' : '<div class="msg ok">' + esc(b.dataset.ip) + (data === 'ok' ? ' est débloquée.' : ' n’était plus bloquée.') + '</div>';
+  loadIpBlocks();
 });
 
 // Pubs à récompense : par emplacement (supabase/ad_log.sql)

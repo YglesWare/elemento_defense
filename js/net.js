@@ -85,7 +85,16 @@ async function decodeSignal(text) {
 }
 
 // ---------- Connexion ----------
-const rid = () => Math.random().toString(36).slice(2, 8);
+// Identifiants et jetons tirés au hasard par le générateur cryptographique (6 caractères a-z0-9)
+const rid = () => { const a = new Uint8Array(6); crypto.getRandomValues(a); return [...a].map(b => (b % 36).toString(36)).join(''); };
+// Un identifiant de joueur valable : il finit dans le HTML (data-id), rien d'autre n'y passe
+const PID_RE = /^[a-z0-9]{1,12}$/;
+const isPid = id => typeof id === 'string' && PID_RE.test(id) && id !== 'all' && id !== 'host' && id !== 'me' && !(id in Object.prototype);
+// Un nom reçu par le réseau : sans caractères de contrôle ni invisibles, 12 caractères au plus
+const netName = n => String(n == null ? '' : n).replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]/g, '').trim().slice(0, 12);
+const clampInt = (v, lo, hi) => { v = Math.round(+v); return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : lo; };
+// Messages de jeu que seul l'hôte envoie : un invité ne peut pas les faire passer pour les siens (lancer, éliminer, finir…)
+const HOST_ONLY = new Set(['lobby', 'start', 'wave', 'elim', 'end', 'cstart', 'ct', 'cs', 'cnw', 'cws', 'cwd', 'cend', 'cmsg']);
 function waitIce(pc, ms = 4000) {
   return new Promise(res => {
     if (pc.iceGatheringState === 'complete') return res();
@@ -103,9 +112,11 @@ const newPC = () => new RTCPeerConnection({ iceServers: [] });
 // un seul scan. Les messages passent par WebSocket, avec les mêmes messages que WebRTC.
 // Une connexion LAN imite le couple (pc, dc) de WebRTC pour que le reste de Net ne voie pas la différence.
 const lanPlugin = () => (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.LanServer) || null;
+// Seulement une adresse du réseau local (10.x, 172.16-31.x, 192.168.x) : un QR code piégé n'envoie pas vers internet.
+// Le QR code porte le jeton d'accès (?j=…) : on entre directement. L'annonce sur le Wi-Fi n'en a pas : l'hôte doit accepter.
 function lanInfo(text) {
-  const m = /^http:\/\/(\d{1,3}(?:\.\d{1,3}){3}:\d{2,5})\/\?j=([a-z0-9]{4,16})$/i.exec(String(text || '').trim());
-  return m ? { url: m[0], ws: 'ws://' + m[1] + '/ws?t=' + m[2], token: m[2] } : null;
+  const m = /^http:\/\/((10\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])|192\.168)\.\d{1,3}\.\d{1,3}:\d{2,5})\/(?:\?j=([a-z0-9]{4,16}))?$/i.exec(String(text || '').trim());
+  return m ? { url: m[0], ws: 'ws://' + m[1] + '/ws' + (m[3] ? '?t=' + m[3] : ''), token: m[3] || null } : null;
 }
 
 const Net = {
@@ -130,25 +141,31 @@ const Net = {
       this.lanWired = true;
       const conn = id => { for (const p of this.peers.values()) if (p.pc.lan === id) return p; return this.lanConns.get(id); };
       L.addListener('open', ev => {
-        if (this.role !== 'host' || !this.lan || !new URLSearchParams(ev.query).get('t') || new URLSearchParams(ev.query).get('t') !== this.lan.token) { L.kick({ id: ev.id }); return; }
-        const pc = { lan: ev.id, close: () => L.kick({ id: ev.id }) }, dc = { readyState: 'open', send: s => L.send({ id: ev.id, data: s }) };
+        if (this.role !== 'host' || !this.lan || this.lanConns.size >= 8) { L.kick({ id: ev.id }); return; }
+        // Sans le jeton du QR code (partie trouvée sur le Wi-Fi) : l'hôte doit accepter. Une demande à la fois, et 10 s
+        // de pause après un refus (personne ne peut faire défiler les demandes sur l'écran de l'hôte)
+        const t = new URLSearchParams(ev.query).get('t'), ask = !(t && t === this.lan.token);
+        if (ask && ([...this.lanConns.values()].some(c => c.pc.ask) || Date.now() < (this.askPause || 0))) { L.kick({ id: ev.id }); return; }
+        const pc = { lan: ev.id, ask, close: () => L.kick({ id: ev.id }) }, dc = { readyState: 'open', send: s => L.send({ id: ev.id, data: s }) };
         this.lanConns.set(ev.id, { pc, dc });
+        if (ask) pc.askT = setTimeout(() => { if (pc.ask && !pc.asked) pc.close(); }, 5000);  // pas de présentation : on ferme
       });
-      L.addListener('message', ev => { const c = conn(ev.id); if (!c) return; let msg; try { msg = JSON.parse(ev.data); } catch (e) { return; } this.receive(c.pc, c.dc, msg); });
-      L.addListener('close', ev => { const c = conn(ev.id); this.lanConns.delete(ev.id); if (c) { c.dc.readyState = 'closed'; this.dropPc(c.pc); } });
+      L.addListener('message', ev => { const c = conn(ev.id); if (!c || typeof ev.data !== 'string' || ev.data.length > 65536) return; let msg; try { msg = JSON.parse(ev.data); } catch (e) { return; } this.receive(c.pc, c.dc, msg); });
+      L.addListener('close', ev => { const c = conn(ev.id); this.lanConns.delete(ev.id); if (c) { c.dc.readyState = 'closed'; if (c.pc.ask) this.emit('askgone', c.pc); this.dropPc(c.pc); } });
     }
     const token = rid() + rid();
     try {
       const r = await L.start({ port: 8080 });
       if (this.role !== 'host') { L.stop(); return; }
-      if (r.ip) { this.lan = { token, url: 'http://' + r.ip + ':' + r.port + '/?j=' + token }; this.lanAnnounce(); this.emit('lan', this.lan); }
+      if (r.ip) { const base = 'http://' + r.ip + ':' + r.port + '/'; this.lan = { token, base, url: base + '?j=' + token }; this.lanAnnounce(); this.emit('lan', this.lan); }
     } catch (e) { this.lan = null; }
   },
   // Annonce de la partie sur le Wi-Fi, pour les invités qui ont l'app (mise à jour à chaque changement de joueurs)
   lanAnnounce() {
     const L = lanPlugin(); if (!L || !this.lan || this.role !== 'host') return;
     // st : 'game' pendant une partie (elle reste visible, « Partie en cours ») ; les anciennes versions l'ignorent
-    L.announce({ text: JSON.stringify({ g: 'eld', v: NET_VER, url: this.lan.url, host: this.me.name, n: this.players.length, max: NET_MAX, st: this.inGame() ? 'game' : 'lobby' }) });
+    // Sans le jeton : celui qui touche « Rejoindre » attend que l'hôte accepte
+    L.announce({ text: JSON.stringify({ g: 'eld', v: NET_VER, url: this.lan.base, host: this.me.name, n: this.players.length, max: NET_MAX, st: this.inGame() ? 'game' : 'lobby' }) });
   },
   // Toutes les 3 s : l'annonce suit le début et la fin des parties
   lanTick() { if (this.role === 'host' && this.lan) this.lanAnnounce(); },
@@ -157,7 +174,12 @@ const Net = {
   discover(onFound) {
     const L = lanPlugin(); if (!L) return false;
     this.stopDiscover();
-    this.discoL = L.addListener('found', ev => { let m; try { m = JSON.parse(ev.text); } catch (e) { return; } if (m && m.g === 'eld' && lanInfo(m.url) && !(this.lan && this.lan.url === m.url)) onFound(m); });
+    // Annonce venue de n'importe quel appareil du Wi-Fi : chaque champ est vérifié avant d'être affiché
+    this.discoL = L.addListener('found', ev => {
+      let m; try { m = JSON.parse(String(ev.text).slice(0, 2048)); } catch (e) { return; }
+      if (!m || m.g !== 'eld' || !lanInfo(m.url) || (this.lan && (this.lan.url === m.url || this.lan.base === m.url))) return;
+      onFound({ g: 'eld', v: clampInt(m.v, 0, 999), url: lanInfo(m.url).url, host: netName(m.host) || T('Joueur'), n: clampInt(m.n, 1, NET_MAX), max: NET_MAX, st: m.st === 'game' ? 'game' : 'lobby' });
+    });
     L.discover().catch(() => {});
     return true;
   },
@@ -172,7 +194,7 @@ const Net = {
     const ws = new WebSocket(info.ws), pc = { close: () => { try { ws.close(); } catch (e) {} } };
     const dc = { get readyState() { return ws.readyState === 1 ? 'open' : 'closed'; }, send: s => ws.send(s) };
     this.hostPc = pc;
-    ws.onopen = () => { this.peers.set('host', { pc, dc }); this.sendTo('host', { t: 'hello', id: this.me.id, name: this.me.name, v: NET_VER }); };
+    ws.onopen = () => { this.peers.set('host', { pc, dc }); this.sendTo('host', { t: 'hello', id: this.me.id, name: this.me.name, v: NET_VER, av: typeof myAvatar === 'function' ? myAvatar() : null }); };
     ws.onmessage = ev => { let msg; try { msg = JSON.parse(ev.data); } catch (e) { return; } this.receive(pc, dc, msg); };
     ws.onclose = () => { if (this.hostPc === pc && !this.peers.has('host')) { this.emit('error', T('Impossible de joindre la partie. Vérifiez que les téléphones sont sur le même Wi-Fi ou partage de connexion.')); this.reset(); } else this.dropPc(pc); };
   },
@@ -224,17 +246,33 @@ const Net = {
   receive(pc, dc, msg) {
     if (this.role === 'host') {
       if (msg.t === 'hello') {
-        // En ligne : un joueur qui revient après une coupure retrouve sa place (même identifiant de joueur)
+        // Une seule présentation par liaison, avec un identifiant valable qui n'est pas déjà celui d'un autre joueur
+        if (this.idOf(pc) || !isPid(msg.id) || msg.id === this.me.id) { try { pc.close(); } catch (e) {} return; }
+        // En ligne : un joueur qui revient après une coupure retrouve sa place (même identifiant, et même compte)
         const back = this.online && this.peers.get(msg.id);
-        if (back && back.away) {
+        if (back && back.away && back.uid && back.uid === pc.uid) {
           clearTimeout(back.awayT); Object.assign(back, { pc, dc, away: 0, awayT: 0, last: performance.now() });
           this.syncRoster(); this.emit('back', msg.id); if (msg.fresh) this.emit('rejoin', msg.id); return;
         }
+        if (this.peers.has(msg.id)) { try { pc.close(); } catch (e) {} return; }
         if (this.peers.size + 1 >= NET_MAX) { try { dc.send(JSON.stringify({ t: 'full' })); } catch (e) {} setTimeout(() => pc.close(), 300); return; }
         if (pc.lan && this.inGame()) { try { dc.send(JSON.stringify({ t: 'ingame' })); } catch (e) {} setTimeout(() => pc.close(), 300); return; }
         if (msg.v && msg.v !== NET_VER) { try { dc.send(JSON.stringify({ t: 'ver' })); } catch (e) {} setTimeout(() => pc.close(), 300); return; }
         // En ligne : le pseudo vient du serveur (celui de l'ami invité), pas de ce que l'invité envoie
-        const nm = (pc.uid && typeof onlineName === 'function' && onlineName(pc.uid)) || String(msg.name || T('Joueur')).slice(0, 12);
+        const nm = (pc.uid && typeof onlineName === 'function' && onlineName(pc.uid)) || (typeof badPseudo === 'function' && badPseudo(netName(msg.name)) ? '' : netName(msg.name)) || T('Joueur');
+        // Partie trouvée sur le Wi-Fi (sans le jeton du QR code) : on attend que l'hôte accepte (js/online.js, fenêtre de demande)
+        if (pc.ask) {
+          if (pc.asked) return;
+          pc.asked = true; clearTimeout(pc.askT);
+          const answer = ok => {
+            if (!pc.ask || !this.lanConns.has(pc.lan)) return;
+            if (ok) { pc.ask = false; this.receive(pc, dc, msg); return; }
+            this.askPause = Date.now() + 10000;
+            try { dc.send(JSON.stringify({ t: 'refused' })); } catch (e) {} setTimeout(() => pc.close(), 300);
+          };
+          this.emit('ask', { pc, name: nm, av: typeof msg.av === 'string' && /^[a-z]{1,12}$/.test(msg.av) ? msg.av : 'feu', answer });
+          return;
+        }
         this.peers.set(msg.id, { pc, dc, name: nm, ping: 0, uid: pc.uid || null, last: performance.now() });
         this.syncRoster(); this.emit('join', msg.id); return;
       }
@@ -242,18 +280,25 @@ const Net = {
       const pe = this.peers.get(id); if (pe) pe.last = performance.now();
       if (msg.t === 'pong') { const p = this.peers.get(id); if (p) p.ping = Math.round(performance.now() - msg.ts); return; }
       if (msg.t === 'bye') { pc.final = true; this.dropPc(pc); return; }
-      if (msg.t === 'relay') { this.route(id, msg.to, msg.data); return; }
+      if (msg.t === 'relay') { if (msg.to === 'all' || isPid(msg.to)) this.route(id, msg.to, msg.data); return; }
       this.emit('msg', { from: id, data: msg });
     } else {
       this.hostLast = performance.now();
       if (this.reconnecting) { this.reconnecting = false; this.emit('back', 'host'); }
       if (msg.t === 'ping') { this.sendTo('host', { t: 'pong', ts: msg.ts }); return; }
-      if (msg.t === 'roster') { this.players = msg.players; this.emit('roster', this.players); return; }
+      if (msg.t === 'roster') { this.players = cleanRoster(msg.players); this.emit('roster', this.players); return; }
       if (msg.t === 'full') { this.emit('error', T('La partie est déjà complète.')); return; }
+      if (msg.t === 'refused') { this.emit('error', T('L’hôte ne peut pas te prendre pour l’instant.')); this.reset(); return; }
       if (msg.t === 'ingame') { this.emit('error', T('La partie a déjà commencé.')); this.reset(); return; }
       if (msg.t === 'ver') { this.emit('error', T('Versions du jeu différentes : mettez le jeu à jour sur les deux téléphones.')); this.reset(); return; }
       if (msg.t === 'bye') { this.emit('closed', T('L’hôte a fermé la partie.')); this.reset(); return; }
-      if (msg.t === 'relay') { this.emit('msg', { from: msg.from, data: msg.data }); return; }
+      if (msg.t === 'relay') {
+        if (!isPid(msg.from) || !msg.data || typeof msg.data !== 'object') return;
+        // Message « de l'hôte » relayé avec l'identifiant d'un autre joueur : ignoré
+        const h = this.players.find(p => p.host);
+        if (HOST_ONLY.has(msg.data.k) && (!h || msg.from !== h.id)) return;
+        this.emit('msg', { from: msg.from, data: msg.data }); return;
+      }
       this.emit('msg', { from: 'host', data: msg });
     }
   },
@@ -289,6 +334,7 @@ const Net = {
     else this.sendTo('host', { t: 'relay', to, data });
   },
   route(from, to, data) {
+    if (!data || typeof data !== 'object' || (from !== this.me.id && HOST_ONLY.has(data.k))) return;
     for (const p of this.players) {
       if (p.id === from || (to !== 'all' && to !== p.id)) continue;
       if (p.id === this.me.id) this.emit('msg', { from, data });
@@ -324,3 +370,18 @@ const Net = {
 };
 
 setInterval(() => { if (typeof Net !== 'undefined') Net.lanTick(); }, 3000);
+
+// Début de partie reçu de l'hôte : identifiants des joueurs et leurs noms, vérifiés
+function cleanStart(msg) {
+  if (!msg || !Array.isArray(msg.ids)) return null;
+  const ids = [...new Set(msg.ids.filter(isPid))].slice(0, NET_MAX); if (ids.length < 1) return null;
+  const names = {}; for (const id of ids) names[id] = netName(msg.names && Object.hasOwn(msg.names, id) ? msg.names[id] : '') || T('Joueur');
+  return Object.assign({}, msg, { ids, names });
+}
+// Liste des joueurs reçue de l'hôte : identifiants valables, noms nettoyés, nombres
+function cleanRoster(list) {
+  if (!Array.isArray(list)) return [];
+  const seen = new Set();
+  return list.slice(0, NET_MAX).filter(p => p && isPid(p.id) && !seen.has(p.id) && seen.add(p.id))
+    .map(p => ({ id: p.id, name: netName(p.name) || T('Joueur'), host: !!p.host, ping: clampInt(p.ping, 0, 99999), away: !!p.away }));
+}
