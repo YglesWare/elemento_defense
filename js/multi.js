@@ -397,7 +397,9 @@ function openMulti() {
 $('#tMulti').addEventListener('click', () => { Snd.init(); openMulti(); });
 // Page ouverte depuis le QR d'un hôte de l'app (jeu servi par son téléphone) : on rejoint sa partie tout de suite
 if (lanInfo(location.href)) { show('multi'); joinLanGame(lanInfo(location.href).url); }
-document.addEventListener('keydown', ev => { if (curScreen === 'multi' && ev.key === 'Escape') mpCancel(); });
+// Retour d'Android / Échap : dans un salon (hôte ou invité), on ne quitte jamais la partie par erreur ; seuls
+// « Fermer la partie » et « Quitter la partie » le font. Ailleurs (invitation, scan…), retour à l'étape d'avant.
+document.addEventListener('keydown', ev => { if (curScreen === 'multi' && ev.key === 'Escape' && MP.state !== 'host' && MP.state !== 'lobby') mpCancel(); });
 
 // ---------- Jeu installable hors ligne ----------
 // Application Android (Capacitor) : le jeu est déjà dans l'APK, pas besoin du service worker

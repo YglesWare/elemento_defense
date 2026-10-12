@@ -738,11 +738,11 @@ body.hasback .screen:not(:has(.bigword))>.inner{padding-top:50px}
 #sTitle .logo .l1{font-size:clamp(40px,min(13vw,8vh),86px)}
 #sTitle .logo .l2{font-size:clamp(20px,min(6.5vw,4vh),38px);margin-top:4px}
 /* « Jouer » : onglets 🗺️ Solo / 👥 Multijoueur sous le titre (plus gros que les onglets internes) */
-.ptabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%;max-width:420px;align-self:center;background:var(--paper);border:3px solid var(--ink);border-radius:16px;box-shadow:0 4px 0 var(--ink);padding:5px;margin:2px 0 6px}
+.ptabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;width:100%;max-width:420px;align-self:center;background:var(--paper);border:3px solid var(--ink);border-radius:16px;box-shadow:0 4px 0 var(--ink);padding:5px;margin:2px 0 6px}
 .ptabs[hidden]{display:none}
 /* Les deux onglets de « Jouer » commencent en haut : le titre et les onglets ne sautent pas d'un onglet à l'autre */
-#sMaps>.inner,#sMulti>.inner{margin-top:0}
-.ptabs button{display:flex;align-items:center;justify-content:center;gap:6px;border:2.5px solid transparent;border-radius:11px;padding:7px 4px;background:none;font:400 19px/1 var(--display);letter-spacing:.6px;color:var(--muted);cursor:pointer}
+#sMaps>.inner,#sMulti>.inner,#sStory>.inner{margin-top:0}
+.ptabs button{display:flex;align-items:center;justify-content:center;gap:5px;border:2.5px solid transparent;border-radius:11px;padding:7px 2px;background:none;font:400 17px/1 var(--display);white-space:nowrap;letter-spacing:.6px;color:var(--muted);cursor:pointer}
 .ptabs button.on{background:var(--sun);color:var(--ink);border-color:var(--ink)}
 /* « Jouer ! » rappelle la partie en cours ; l'écran des cartes la propose en haut */
 #tPlay small.jsub{display:block;font:800 12.5px/1.1 "Baloo 2",system-ui,sans-serif;letter-spacing:0;opacity:.8;margin-top:2px}
@@ -1075,7 +1075,10 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
 /* Mode histoire (js/story.js) */
 .btn.storybtn{background:linear-gradient(90deg,#ffb36b,#ff7a3d);color:var(--ink)}
 #sStory{background:var(--sky) radial-gradient(rgba(42,27,61,.12) 1.2px,transparent 1.7px) 0 0/9px 9px}
-.storyhead{font-size:clamp(34px,9vw,58px)!important;order:-2}
+.storyhead{order:-2}
+/* Histoire : le titre « JOUER », les onglets et le nom de l'histoire en haut, avant la carte du rêve */
+#sStory .ptabs,#sStory .stsub{order:-1}
+.stsub{font:400 20px/1 var(--display);letter-spacing:.6px;color:var(--ink);text-align:center;margin:0 0 4px}
 #stWorld{order:-1}
 .stworld{position:relative;width:100%;aspect-ratio:9/13;max-height:74vh;margin-inline:auto;border:4px solid #5a3a1e;border-radius:10px;box-shadow:0 5px 0 var(--ink),inset 0 0 0 3px #f8ebc8;overflow:hidden;background:#f2dfb0}
 .stmap{position:absolute;inset:0;width:100%;height:100%}
@@ -1633,7 +1636,7 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
   .pa #paForgot{order:0}
   /* Histoire : titre, équipe et boutons dans la colonne, la carte en largeur sur tout le reste (js/story.js stWide) */
   #sStory{--railw:230px}
-  .srail .storyhead{font-size:30px!important;margin:2px 0 0}
+
   .srail .stteam{width:100%;padding:5px 8px}
   .srail .stmates{gap:4px 6px;justify-content:center}
   .srail #stPlay{width:100%;font-size:16px;padding:7px 10px}

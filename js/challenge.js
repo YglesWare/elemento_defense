@@ -367,6 +367,8 @@ function chalPaint() {
 $('#chReset').addEventListener('click', () => { CP.cur = { m: {}, sans: [] }; chalPaint(); Snd.play('build'); });
 $('#chOk').addEventListener('click', () => { $('#chalPop').hidden = true; if (CP.o) { CP.o.set(CP.cur); if (CP.o.done) CP.o.done(); } Snd.play('clear'); });
 $('#chClose').addEventListener('click', () => { $('#chalPop').hidden = true; });
+// Retour d'Android / Échap : ferme seulement la fenêtre des piments (sans rien changer), jamais l'écran en dessous
+window.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !$('#chalPop').hidden) { $('#chalPop').hidden = true; ev.stopImmediatePropagation(); ev.preventDefault(); } }, true);
 // Pastilles d'une ligne de l'écran des cartes : la médaille, et le piment réglé s'il y en a un
 function mapBadge(mi) {
   if (!chalOpen(mi)) return '';

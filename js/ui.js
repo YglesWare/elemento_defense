@@ -849,13 +849,14 @@ function openDiff(i, week) {
     d.querySelector('.btn').addEventListener('click', () => saveGuard(() => week ? weekPlay() : newGame(i, null, k)));
   }
 }
-// « Jouer » : deux onglets, 🗺️ Solo (les cartes) et 👥 Multijoueur ; on rouvre le dernier utilisé
+// « Jouer » : trois onglets, 🗺️ Solo (les cartes), 📖 Histoire et 👥 Multi ; on rouvre le dernier utilisé
 const PT_KEY = 'elemento.playTab';
 function openPlay(tab = store.get(PT_KEY) || 'solo') {
   store.set(PT_KEY, tab);
   if (tab === 'multi' && typeof openMulti === 'function') openMulti();
-  else { renderMaps(); show('maps'); screens.maps.scrollTop = 0; }
-  document.querySelectorAll('.ptabs [data-pt]').forEach(b => { const on = b.dataset.pt === (tab === 'multi' ? 'multi' : 'solo'); b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
+  else if (tab === 'story' && typeof openStory === 'function') openStory();
+  else { tab = 'solo'; renderMaps(); show('maps'); screens.maps.scrollTop = 0; }
+  document.querySelectorAll('.ptabs [data-pt]').forEach(b => { const on = b.dataset.pt === tab; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
 }
 $('#tPlay').addEventListener('click', () => { Snd.init(); openPlay(); });
 document.querySelectorAll('.ptabs').forEach(t => t.addEventListener('click', ev => { const b = ev.target.closest('[data-pt]'); if (!b || b.classList.contains('on')) return; Snd.init(); openPlay(b.dataset.pt); }));

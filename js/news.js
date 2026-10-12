@@ -6,6 +6,10 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  135: [
+    ['🧹', 'Accueil épuré : Jouer, Défis du jour et l’Atelier. L’Histoire rejoint « Jouer », avec trois onglets : 🗺️ Solo, 📖 Histoire et 👥 Multi.'],
+    ['🔧', 'Multijoueur : le bouton retour du téléphone ne ferme plus le salon par erreur (il ferme seulement la fenêtre ouverte). Pour partir, utilise « Fermer la partie » ou « Quitter la partie ».'],
+  ],
   134: [
     ['🎮', 'Le multijoueur rejoint « Jouer » : deux onglets, 🗺️ Solo et 👥 Multijoueur. L’accueil n’a plus que 4 boutons.'],
   ],
