@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  136: [
+    ['🔧', 'Une partie gagnée ne reste plus en « Continuer » si tu n’as pas choisi le mode infini.'],
+  ],
   135: [
     ['🧹', 'Accueil épuré : Jouer, Défis du jour et l’Atelier. L’Histoire rejoint « Jouer », avec trois onglets : 🗺️ Solo, 📖 Histoire et 👥 Multi.'],
     ['🔧', 'Multijoueur : le bouton retour du téléphone ne ferme plus le salon par erreur (il ferme seulement la fenêtre ouverte). Pour partir, utilise « Fermer la partie » ou « Quitter la partie ».'],

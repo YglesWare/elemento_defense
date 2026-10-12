@@ -380,9 +380,14 @@ $('#pQuit').addEventListener('click', () => { if (G && G.story && typeof storyAb
 $('#oMenu').addEventListener('click', () => { G = null; show('title'); });
 // Rejouer une carte aléatoire en génère une nouvelle de même taille (l'ancienne a disparu avec la partie)
 $('#oRetry').addEventListener('click', () => { if (G && G.week && typeof weekPlay === 'function') weekPlay(); else if (G && MAPS[G.map].random) newGame(makeRandom(MAPS[G.map].rnd.size, newSeed()), null, G.diff); else if (G) newGame(G.map, null, G.diff); else newGame(0, null, 'facile'); });
-$('#oEndless').addEventListener('click', () => { G.endless = true; G.paused = false; saveCheckpoint(); show('game'); banner('MODE INFINI', T('Jusqu’où iras-tu ?')); if (opts.auto) G.autoT = 3; });
+$('#oEndless').addEventListener('click', () => { G.endless = true; G.paused = false; G.atWin = false; saveCheckpoint(); show('game'); banner('MODE INFINI', T('Jusqu’où iras-tu ?')); if (opts.auto) G.autoT = 3; });
 // La partie en cours : reprise depuis l'écran des cartes (encadré « ⏸ Partie en cours »)
-const savedRun = () => { const s = store.get(SAVE), i = saveMapIndex(s); return i >= 0 && s.wave > 0 ? { s, i } : null; };
+// Une partie gagnée n'est gardée que si le joueur a choisi le mode infini (inf) ; les anciennes sauvegardes d'écran de victoire sont oubliées
+const savedRun = () => {
+  const s = store.get(SAVE), i = saveMapIndex(s); if (i < 0 || !(s.wave > 0)) return null;
+  if (s.won && !s.inf && s.wave <= ((DIFFS[s.diff] || {}).waves || 0)) { store.del(SAVE); return null; }
+  return { s, i };
+};
 function resumeSave() { const r = savedRun(); if (r) newGame(r.i, r.s); }
 $('#tContinue').addEventListener('click', resumeSave);
 $('#mResumeGo').addEventListener('click', () => { Snd.init(); resumeSave(); });

@@ -206,10 +206,11 @@ function newGame(mi, save, diff) {
   }
 }
 function saveCheckpoint() {
-  if (G.duel || duelOn || G.coop || G.story) return;
+  // Écran de victoire : rien n'est gardé tant que le joueur n'a pas choisi le mode infini (sinon « Continuer » relancerait une partie finie)
+  if (G.duel || duelOn || G.coop || G.story || G.atWin) return;
   G.checkpoint = { grid: GRIDV, rnd: MAPS[G.map].rnd || null, map: G.map, mapId: MAPS[G.map].id, diff: G.diff, banked: G.banked, gold: G.gold, lives: G.lives, wave: G.wave, score: G.score, endless: G.endless,
     bossKills: G.bossKills, shardsPaid: G.shardsPaid, shardsWon: G.shardsWon, won: G.won, reviveUsed: G.reviveUsed, adRevived: G.adRevived,
-    weather: G.weather, ruins: G.ruins, cleared: G.cleared || [], clearN: G.clearN || 0, ruinN: G.ruinN || 0, bonusUsed: G.bonusUsed || 0, time: Math.round(G.time), chal: G.chal ? { m: G.chal.m, sans: G.chal.sans, sur: G.chal.sur, used: G.chal.used } : null, week: G.week || null, towers: G.towers.map(t => ({ type: t.type, c: t.c, r: t.r, up: t.up, mode: t.mode, inv: t.inv, hp: Math.round(t.hp) })) };
+    inf: !!(G.won && G.endless), weather: G.weather, ruins: G.ruins, cleared: G.cleared || [], clearN: G.clearN || 0, ruinN: G.ruinN || 0, bonusUsed: G.bonusUsed || 0, time: Math.round(G.time), chal: G.chal ? { m: G.chal.m, sans: G.chal.sans, sur: G.chal.sur, used: G.chal.used } : null, week: G.week || null, towers: G.towers.map(t => ({ type: t.type, c: t.c, r: t.r, up: t.up, mode: t.mode, inv: t.inv, hp: Math.round(t.hp) })) };
   store.set(SAVE, G.checkpoint); store.flush(); // écrite tout de suite : un plantage juste après ne la perd pas
 }
 // Appli mise en arrière-plan entre deux vagues : on garde les tours posées pendant l'entracte
@@ -609,7 +610,7 @@ function victory() {
   if (G.coop) { coopEnd(true); return; }
   if (G.story) { storyWin(); return; }
   G.paused = true; G.won = true; G.endless = true; Snd.play('win');
-  const best = recordBest(), award = awardShards(), bank = bankGold(ECO.bankWin); G.shardsWon = G.shardsPaid; saveCheckpoint(); stats.wins++; saveStats();
+  const best = recordBest(), award = awardShards(), bank = bankGold(ECO.bankWin); G.shardsWon = G.shardsPaid; G.atWin = true; store.del(SAVE); store.flush(); stats.wins++; saveStats();
   G.starRes = starsAward(); // 1 à 3 étoiles selon les vies gardées (+5 éclats par nouvelle étoile)
   if (typeof logGame === 'function') logGame('won', award);
   if (typeof questEvent === 'function') { const d = { diff: G.diff, daily: !!MAPS[G.map].daily, types: [...new Set(G.towers.map(t => t.type))], lostLife: !!G.lostLife }; questEvent('win', d); questEvent('end', d); }

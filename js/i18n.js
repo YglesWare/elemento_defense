@@ -1887,6 +1887,7 @@ const EN = {
 "Maîtrise · ": "Mastery · ",
 "Longue-vue · ": "Spyglass · ",
 "Débloque la fusion d’abord": "Unlock the fusion first",
+"Une partie gagnée ne reste plus en « Continuer » si tu n’as pas choisi le mode infini.": "A won game no longer stays under “Continue” unless you chose Endless mode.",
 "👥 Multi": "👥 Multi",
 "📖 La flamme de Braise": "📖 Ember’s Flame",
 "Accueil épuré : Jouer, Défis du jour et l’Atelier. L’Histoire rejoint « Jouer », avec trois onglets : 🗺️ Solo, 📖 Histoire et 👥 Multi.": "Cleaner home screen: Play, Daily challenges and the Workshop. The Story moves into “Play”, with three tabs: 🗺️ Solo, 📖 Story and 👥 Multi.",
