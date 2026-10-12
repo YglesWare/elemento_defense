@@ -381,7 +381,28 @@ $('#oMenu').addEventListener('click', () => { G = null; show('title'); });
 // Rejouer une carte aléatoire en génère une nouvelle de même taille (l'ancienne a disparu avec la partie)
 $('#oRetry').addEventListener('click', () => { if (G && G.week && typeof weekPlay === 'function') weekPlay(); else if (G && MAPS[G.map].random) newGame(makeRandom(MAPS[G.map].rnd.size, newSeed()), null, G.diff); else if (G) newGame(G.map, null, G.diff); else newGame(0, null, 'facile'); });
 $('#oEndless').addEventListener('click', () => { G.endless = true; G.paused = false; saveCheckpoint(); show('game'); banner('MODE INFINI', T('Jusqu’où iras-tu ?')); if (opts.auto) G.autoT = 3; });
-$('#tContinue').addEventListener('click', () => { const s = store.get(SAVE), i = saveMapIndex(s); if (i >= 0) newGame(i, s); });
+// La partie en cours : reprise depuis l'écran des cartes (encadré « ⏸ Partie en cours »)
+const savedRun = () => { const s = store.get(SAVE), i = saveMapIndex(s); return i >= 0 && s.wave > 0 ? { s, i } : null; };
+function resumeSave() { const r = savedRun(); if (r) newGame(r.i, r.s); }
+$('#tContinue').addEventListener('click', resumeSave);
+$('#mResumeGo').addEventListener('click', () => { Snd.init(); resumeSave(); });
+function resumePaint() {
+  const r = savedRun(), box = $('#mResume'); box.hidden = !r; if (!r) return;
+  $('#mrName').textContent = MAPS[r.i].name;
+  $('#mrInfo').textContent = DIFFS[r.s.diff || 'moyen'].name + T(' · vague ') + (r.s.wave + 1) + ' · ' + r.s.lives + (r.s.lives > 1 ? T(' vies') : T(' vie'));
+  const cv = box.querySelector('canvas'), pt = miniPortrait(), W = pt ? 44 : 84, H = Math.round(pt ? W * 13 / 9 : W * 9 / 14);
+  cv.style.width = W + 'px'; cv.style.height = H + 'px'; drawMapMini(prepMini(cv, W, H), r.i, W, H, r.s.diff || 'moyen');
+}
+// Lancer une nouvelle partie remplace celle en cours : on demande d'abord
+function saveGuard(go) {
+  const r = savedRun(); if (!r) { go(); return; }
+  $('#svText').textContent = T('Tu as une partie en cours : ') + MAPS[r.i].name + ' (' + DIFFS[r.s.diff || 'moyen'].name + T('), vague ') + (r.s.wave + 1) + T('. Si tu lances une nouvelle partie, elle sera perdue.');
+  $('#savePop').hidden = false;
+  $('#svNew').onclick = () => { $('#savePop').hidden = true; go(); };
+  $('#svCont').onclick = () => { $('#savePop').hidden = true; resumeSave(); };
+}
+$('#svCancel').addEventListener('click', () => { $('#savePop').hidden = true; });
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !$('#savePop').hidden) { $('#savePop').hidden = true; ev.stopImmediatePropagation(); } }, true);
 
 function showOver(win, best, award, bank, quit, lostShards) {
   if (typeof MASCOT !== 'undefined') MASCOT.overMood = win ? 'party' : quit ? 'shock' : 'sad';
@@ -671,6 +692,7 @@ function drawMapMini2(c, mi, w, h, diff) {
 }
 function renderMaps(boughtId) {
   $('#mBank').textContent = meta.bank || 0;
+  resumePaint();
   $('#mTest').hidden = !testAll();
   if (typeof adMapsPaint === 'function') adMapsPaint();
   // Bandeau des défis, au-dessus des onglets : carte du jour, piment de la semaine, carte aléatoire
@@ -824,7 +846,7 @@ function openDiff(i, week) {
     box.appendChild(d);
     const info = d.querySelector('.dfinfo');
     info.addEventListener('click', () => { const p = d.querySelector('.dfmore'); p.hidden = !p.hidden; info.setAttribute('aria-expanded', !p.hidden); info.classList.toggle('on', !p.hidden); });
-    d.querySelector('.btn').addEventListener('click', () => week ? weekPlay() : newGame(i, null, k));
+    d.querySelector('.btn').addEventListener('click', () => saveGuard(() => week ? weekPlay() : newGame(i, null, k)));
   }
 }
 $('#tPlay').addEventListener('click', () => { Snd.init(); renderMaps(); show('maps'); screens.maps.scrollTop = 0; });
@@ -835,9 +857,9 @@ function refreshTitle() {
   const seen = !!store.get('elemento.tuto'); $('#tTuto').classList.toggle('green', !seen); $('#tTuto').classList.toggle('alt', seen);
   $('#tShop').innerHTML = T('L\u2019Atelier<span class="gemc">') + GEM + meta.shards + '</span>';
   $('#tShop').classList.toggle('ping', canBuyAnything());
-  const s = store.get(SAVE), si = saveMapIndex(s), tc = $('#tContinue');
-  if (si >= 0 && s.wave > 0) { tc.hidden = false; tc.textContent = T('Continuer · ') + MAPS[si].name + ' (' + DIFFS[s.diff || 'moyen'].name + T('), vague ') + (s.wave + 1); }
-  else tc.hidden = true;
+  // La partie en cours se reprend depuis l'écran des cartes ; « Jouer ! » le rappelle en petit
+  const r = savedRun(), sub = $('#tPlaySub'); $('#tContinue').hidden = true; sub.hidden = !r;
+  if (r) sub.textContent = T('Partie en cours : ') + MAPS[r.i].name + T(', vague ') + (r.s.wave + 1);
   refreshOptBtns();
 }
 

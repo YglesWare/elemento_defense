@@ -47,7 +47,7 @@ function showTimeUp() {
 $('#tuOk').addEventListener('click', () => { $('#timeUp').hidden = true; if (G && curScreen === 'game') { G = null; show('title'); } });
 $('#tuParent').addEventListener('click', () => { $('#timeUp').hidden = true; openParents('extend'); });
 // Limite atteinte : pas de nouvelle partie depuis l'accueil
-for (const id of ['#tPlay', '#tMulti', '#tContinue']) $(id).addEventListener('click', ev => { if (timeUp()) { ev.stopImmediatePropagation(); showTimeUp(); } }, true);
+for (const id of ['#tPlay', '#tMulti', '#tContinue', '#mResumeGo']) $(id).addEventListener('click', ev => { if (timeUp()) { ev.stopImmediatePropagation(); showTimeUp(); } }, true);
 
 // ---------- Code parent ----------
 async function pinHash(pin, salt) {

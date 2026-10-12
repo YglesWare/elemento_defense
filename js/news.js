@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  133: [
+    ['⏸', '« Continuer » est maintenant sur l’écran des cartes (après « Jouer ! »), et le jeu demande avant de remplacer une partie en cours.'],
+  ],
   132: [
     ['🎬', 'Accueil : les gardiens se tiennent au-dessus d’un ruban, et de temps en temps un slime passe… ils lui tirent dessus !'],
   ],

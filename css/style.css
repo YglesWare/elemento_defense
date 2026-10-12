@@ -737,6 +737,17 @@ body.hasback .screen:not(:has(.bigword))>.inner{padding-top:50px}
 #sTitle .logo{margin:0}
 #sTitle .logo .l1{font-size:clamp(40px,min(13vw,8vh),86px)}
 #sTitle .logo .l2{font-size:clamp(20px,min(6.5vw,4vh),38px);margin-top:4px}
+/* « Jouer ! » rappelle la partie en cours ; l'écran des cartes la propose en haut */
+#tPlay small.jsub{display:block;font:800 12.5px/1.1 "Baloo 2",system-ui,sans-serif;letter-spacing:0;opacity:.8;margin-top:2px}
+#tPlay small.jsub::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--leaf);border:2px solid var(--ink);margin-right:5px;vertical-align:-1px}
+.mresume{display:flex;align-items:center;gap:10px;background:var(--okbg);border:3px solid var(--ink);border-radius:16px;box-shadow:0 4px 0 var(--ink);padding:8px 10px;margin:4px 0 6px;text-align:left}
+.mresume[hidden]{display:none}
+.mresume canvas{flex:none;border:2px solid var(--ink);border-radius:9px}
+.mresume .rt{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.mresume small{font-size:11.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.mresume b{font:400 20px/1.05 var(--display);letter-spacing:.5px}
+.mresume span{font-size:12.5px;font-weight:700;color:var(--ink)}
+.mresume .btn{flex:none;width:auto;margin:0;background:var(--leaf);font-size:18px;padding:8px 12px}
 /* Accueil : les gardiens (canevas animé) au-dessus d'un ruban foncé, dans le style du « DEFENSE » du logo */
 .tscene{align-self:center;width:min(372px,100%);display:flex;flex-direction:column;align-items:center;margin-top:2px}
 #tShow{display:block;width:min(352px,100%);height:auto;aspect-ratio:352/108}

@@ -78,7 +78,7 @@
     <div class="tscene" id="tScene"><canvas id="tShow" aria-hidden="true"></canvas><p class="tribbon">Six gardiens contre une armée de slimes : <b>protège la petite maison !</b></p></div>
     <div class="tbtns"><button class="btn alt questbtn" id="tQuests" type="button" hidden>🎯 Défis du jour · <span id="tqN">0/3</span><b class="frbadge" id="tqBadge" hidden></b></button>
     <button class="btn storybtn" id="tStory" type="button">📖 Histoire <small>La flamme de Braise</small></button>
-    <button class="btn" id="tPlay" type="button">Jouer !</button>
+    <button class="btn" id="tPlay" type="button">Jouer !<small class="jsub" id="tPlaySub" hidden></small></button>
     <button class="btn mpbtn" id="tMulti" type="button">Multijoueur · 2 à 4 joueurs</button>
     <button class="btn green" id="tContinue" type="button" hidden>Continuer</button>
     <button class="btn pink" id="tShop" type="button">L’Atelier</button></div>
@@ -339,6 +339,8 @@
     <p class="mp-err" id="mTest" hidden>🧪 Mode test : toutes les cartes et tous les événements sont débloqués.</p>
     <button class="btn green" id="mGuide" type="button" hidden>🎓 Tutoriel guidé · une partie pas à pas</button>
 </div>    <!-- Les défis : carte du jour, piment de la semaine, carte aléatoire (bandeau qui défile sur le côté) -->
+    <!-- La partie en cours (à la place de l'ancien bouton « Continuer » de l'accueil) -->
+    <div class="mresume" id="mResume" hidden><canvas aria-hidden="true"></canvas><div class="rt"><small>⏸ Partie en cours</small><b id="mrName"></b><span id="mrInfo"></span></div><button class="btn" id="mResumeGo" type="button">Continuer ›</button></div>
     <h3 class="msect">Les défis</h3>
     <div class="mstrip" id="mStrip"></div>
     <div class="tabbar" role="tablist" id="mTabs">
@@ -695,6 +697,16 @@
   </div>
 </div>
 <!-- Monstres nouveaux de la partie, au départ (js/bestiary.js) -->
+<!-- Lancer une partie alors qu'une autre est en cours (js/ui.js, saveGuard) -->
+<div class="intro" id="savePop" role="dialog" aria-modal="true" aria-labelledby="svTitle" hidden>
+  <div class="intro-card">
+    <span class="intro-tag">⏸ Partie en cours</span>
+    <h2 id="svTitle">Abandonner ta partie ?</h2>
+    <p id="svText"></p>
+    <div class="intro-foot"><button class="btn alt" id="svNew" type="button">Nouvelle partie</button><button class="btn green" id="svCont" type="button">Continuer</button></div>
+    <button class="btn alt" id="svCancel" type="button">Annuler</button>
+  </div>
+</div>
 <div class="intro" id="mobPop" role="dialog" aria-modal="true" aria-labelledby="mobTitle" hidden>
   <div class="intro-card">
     <span class="intro-tag" id="mobTag">Nouveau sur cette carte</span>
