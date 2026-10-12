@@ -104,6 +104,7 @@ function tourDuelPaint() {
 // ---------- Écran du tournoi ----------
 screens.tour = $('#sTour');
 function openTour() {
+  if (typeof logMpView === 'function') logMpView('tour');
   Snd.init(); show('tour'); screens.tour.scrollTop = 0; tourPaint();
   (async () => { await tourFlush(); await tourLoad(); await tourRewards(); })();
 }

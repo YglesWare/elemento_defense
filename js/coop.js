@@ -41,6 +41,7 @@ function asPlayer(id, fn) {
 function coopHostStart() {
   if (Net.role !== 'host') return;
   if (Net.players.length < 2) { MP.err = T('Il faut au moins 2 joueurs pour lancer la partie.'); renderMP(); return; }
+  if (MP.room) MP.room.games++;
   const rm = MAPS[DUEL.lobbyMap] && MAPS[DUEL.lobbyMap].random ? { size: DUEL.lobbySize || 'moyenne', seed: newSeed() } : null;
   const diff = DUEL.lobbyDiff || 'moyen', ids = Net.players.map(p => p.id), prog = DUEL.lobbyStart === 'prog';
   // Avec nos progrès : PV selon les éclats investis en moyenne (un invité d'une ancienne version joue à zéro et compte pour 0)
@@ -276,6 +277,8 @@ function coopFinish(win, text, quit) {
   if (!G || !G.coop || G.coopDone) return;
   G.coopDone = true; G.over = true; G.won = !!win; G.paused = true;
   if (win && typeof trophy === 'function') { trophy('coop_win'); if (G.diff === 'difficile') trophy('coop_diff'); }
+  if (typeof logMp === 'function') logMp(Object.assign(mpSettings('coop'), { kind: 'game', result: win ? 'won' : quit ? 'quit' : text ? 'abort' : 'lost', wave: G.wave, secs: Math.round(G.time),
+    extra: { lives: Math.max(0, G.lives | 0), towers: G.towers.filter(t => t.own === coopMe()).length, hpx: COOP.prog ? (COOP.startMsg && COOP.startMsg.hpx) || null : null } }));
   Snd.play(win ? 'win' : quit ? 'clear' : 'ko');
   setTimeout(() => {
     if (!G || !G.coop) return;

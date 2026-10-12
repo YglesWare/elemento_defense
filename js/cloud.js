@@ -84,6 +84,33 @@ function logGame(result, award) {
   while (log.length > LOG_MAX) log.shift();
   store.set(LOG_KEY, log);
 }
+// ---------- Journal du multijoueur (supabase/mp_log.sql) : quels modes, cartes, piments et départs intéressent ----------
+// kind : 'game' (fin d'une partie, une ligne par téléphone), 'room' (salon fermé par l'hôte), 'view' (écran ouvert, une fois par jour)
+const MPLOG_KEY = 'elemento.mplog', MPLOG_MAX = 300;
+const mpNet = () => (Net.online ? 'online' : Net.lan || (typeof lanInfo === 'function' && lanInfo(location.href)) ? 'lan' : 'qr');
+function logMp(e) {
+  if (DEV_HOST && !window.MPLOG_TEST) return;
+  const row = Object.assign({ id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(16) + Math.random().toString(16).slice(2),
+    player_id: store.get(PID_KEY), at: Date.now(), build: BUILD, app: NATIVE ? 'apk' : 'web' }, e);
+  const log = store.get(MPLOG_KEY) || []; log.push(row);
+  while (log.length > MPLOG_MAX) log.shift();
+  store.set(MPLOG_KEY, log);
+}
+// Réglages du salon au moment de la partie
+function mpSettings(mode) {
+  const m = MAPS[G && G.map != null ? G.map : DUEL.lobbyMap] || {}, c = typeof chalClean === 'function' ? chalClean(G && G.chal ? G.chal : DUEL.lobbyChal) : null, on = c && chalOn(c);
+  return { mode, net: mpNet(), host: Net.role === 'host', players: Net.players.length || 1,
+    map: mode === 'tour' ? 'mois-' + (typeof tourMo === 'function' ? tourMo() : '') : m.rnd ? 'aleatoire-' + m.rnd.size : m.id || null,
+    diff: G ? G.diff : DUEL.lobbyDiff, start: (mode === 'coop' ? COOP.prog : DUEL.prog) ? 'prog' : 'zero',
+    chal: on ? Object.keys(c.m).concat(c.sans.map(e => 'sans_' + e)) : null, chal_x: on ? chalMult(c, G ? G.diff : 'infini', null) : null };
+}
+// Une fois par jour et par écran : on voit qui ouvre le multi, le tournoi… même sans jouer
+function logMpView(screen) {
+  const d = new Date().toDateString(), seen = store.get('elemento.mpviews') || {};
+  if (seen[screen] === d) return;
+  seen[screen] = d; store.set('elemento.mpviews', seen);
+  logMp({ kind: 'view', mode: screen, net: typeof frOn === 'function' && frOn() ? 'online' : 'lan' });
+}
 // Expérience du joueur au moment de la partie : pour distinguer un débutant perdu d'un vrai mur de difficulté
 function logXp() {
   const best = store.get(BEST2) || {}, won = Object.values(best).filter(r => Object.values(r).some(x => x && x.won)).length;
@@ -193,6 +220,7 @@ function cloudSync(force) {
       if (typeof cloudPushDaily === 'function') await cloudPushDaily().catch(() => {});
       if (typeof cloudPushMaps === 'function') await cloudPushMaps().catch(() => {});
       if (typeof ADLOG_KEY !== 'undefined') await cloudPushQueue(ADLOG_KEY, 'ad_log').catch(() => {});
+      await cloudPushQueue(MPLOG_KEY, 'mp_log').catch(() => {});
       CLOUD.lastSync = Date.now(); CLOUD.state = 'ok'; CLOUD.err = '';
     } catch (e) { CLOUD.state = 'err'; CLOUD.err = (e && e.message) || String(e); }
     finally { CLOUD.syncing = null; cloudPaint(); }

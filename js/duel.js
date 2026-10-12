@@ -56,6 +56,7 @@ function duelHostStart() {
   const rm = MAPS[DUEL.lobbyMap] && MAPS[DUEL.lobbyMap].random ? { size: DUEL.lobbySize || 'moyenne', seed: newSeed() } : null;
   const msg = { k: 'start', map: DUEL.lobbyMap, rnd: rm, ids: Net.players.map(p => p.id), names: Object.fromEntries(Net.players.map(p => [p.id, p.name])), prep: DUEL.cfg.prep, gap: DUEL.cfg.gap, chal: DUEL.lobbyChal || null, prog: DUEL.lobbyStart === 'prog' };
   // Mode 🏆 Tournoi (js/tournament.js) : 1 contre 1, À zéro, sans piment, sur la carte du mois ; un identifiant pour les deux rapports
+  if (MP.room) MP.room.games++;
   if (DUEL.lobbyMode === 'tour') {
     if (Net.players.length !== 2) { MP.err = T('Le tournoi se joue à 2.'); renderMP(); return; }
     Object.assign(msg, { rnd: tourRnd(), chal: null, prog: false });
@@ -72,7 +73,7 @@ function beginDuel(msg) {
   stopScan && stopScan();
   enterDuelMeta(!!msg.prog);
   Object.assign(DUEL, { on: true, prog: !!msg.prog, map: msg.map, ids: msg.ids, names: msg.names, alive: new Set(msg.ids), elim: [], wave: 0, income: 0, sent: 0, dead: false,
-    stats: {}, last: {}, incoming: {}, forfeitArm: false, result: null, all: false, tPlay: false, tWin: false, why: {}, tour: null });
+    stats: {}, last: {}, incoming: {}, forfeitArm: false, result: null, all: false, tPlay: false, tWin: false, why: {}, tour: null, logged: false });
   // Chaque téléphone vérifie que c'est bien un duel du tournoi : son mois, la carte du mois, sans progrès ni piment
   if (msg.tour && msg.tour.u && typeof tourUid === 'function' && tourUid() && msg.tour.u[meId()] === tourUid() && msg.tour.mo === tourMo()
     && msg.rnd && msg.rnd.seed === tourSeed() && !msg.prog && !(msg.chal && chalOn(chalClean(msg.chal)))) {
@@ -294,6 +295,7 @@ function showDuelScreen(final, why, abortText) {
     tourDuelEnd(won, abortText || cut(why) || cut(DUEL.why[me]) || cut(DUEL.why[opp]) ? 'net' : 'ko');
   }
   if (typeof tourDuelPaint === 'function') tourDuelPaint();
+  if ((final || abortText) && typeof logDuel === 'function') logDuel(won ? 'won' : abortText ? 'abort' : 'lost', place, why);
   if (typeof trophy === 'function') {
     if (!DUEL.tPlay) { DUEL.tPlay = true; trophy('duel_play'); }
     if (won && !DUEL.tWin) { DUEL.tWin = true; trophy('duel_win'); trophyMp('wins'); if (DUEL.ids.length >= 3) trophy('duel_big'); }
@@ -313,7 +315,16 @@ function showDuelScreen(final, why, abortText) {
   $('#dWatch').hidden = final;
   show('duel');
 }
+// Journal : une ligne par téléphone et par duel (place, vague, envois, revenu) ; parti avant la fin : 'left'
+function logDuel(result, place, why) {
+  if (DUEL.logged || !G || typeof logMp !== 'function') return;
+  DUEL.logged = true;
+  const me = meId();
+  logMp(Object.assign(mpSettings(DUEL.tour ? 'tour' : 'duel'), { kind: 'game', result, place: place || null, wave: DUEL.wave, secs: Math.round(G.time),
+    why: why || (DUEL.why && DUEL.why[me]) || null, extra: { sent: DUEL.sent, income: DUEL.income, lives: Math.max(0, G.lives | 0), tour: DUEL.tour ? (DUEL.tour.res && DUEL.tour.res.ok) || 'sent' : null } }));
+}
 function leaveDuel() {
+  if (!DUEL.logged && G) logDuel('left', null, null);
   clearDuelTimers();
   DUEL.on = false; DUEL.dead = false; DUEL.result = null;
   exitDuelMeta();

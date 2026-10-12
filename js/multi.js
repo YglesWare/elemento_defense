@@ -260,6 +260,7 @@ function renderMP() {
       + T('<button class="btn pink" type="button" data-a="leave">Quitter la partie</button>') + '</div><div class="mp-col">' + recapHTML(false)
       + T('<p class="mp-busy">En attente que ') + esc(hp ? hp.name : T('l’hôte')) + T(' lance la partie…</p>') + rulesHTML() + '</div></div>';
   }
+  if (S === 'host' && Net.role === 'host') { if (!MP.room) MP.room = { at: Date.now(), max: 1, games: 0, net: typeof mpNet === 'function' ? mpNet() : null }; MP.room.max = Math.max(MP.room.max, Net.players.length); }
   b.innerHTML = h;
   $('#ptMulti').hidden = !(S === 'home' || S === 'unsupported');
   MP.rosterSig = rosterSig();
@@ -319,7 +320,13 @@ async function guestGotOffer(txt, cam) {
     mpTimer = setTimeout(() => { if (MP.state === 'answer') mpGo('home', { err: T('La connexion n’a pas abouti. Vérifiez que les téléphones sont sur le même Wi-Fi ou partage de connexion, puis recommencez.') }); Net.reset(); }, 90000);
   } catch (e) { mpGo('home', { err: e.message || String(e) }); }
 }
+// Salon fermé par l'hôte : combien de temps, combien de joueurs, combien de parties, et le dernier mode choisi
+function logRoom() {
+  const r = MP.room; MP.room = null; if (!r || typeof logMp !== 'function') return;
+  logMp({ kind: 'room', mode: DUEL.lobbyMode || 'duel', net: r.net, host: true, players: r.max, secs: Math.round((Date.now() - r.at) / 1000), extra: { games: r.games, start: DUEL.lobbyStart || 'zero', diff: DUEL.lobbyDiff || null } });
+}
 function mpCancel() {
+  if (Net.role === 'host' && MP.state === 'host') logRoom();
   if (MP.state === 'home' || MP.state === 'unsupported') { stopScan(); show('title'); return; }
   if (Net.role === 'host' && (MP.state === 'invite' || MP.state === 'busy' || MP.state === 'scan')) { mpGo('host'); return; }
   if (Net.role === 'host' || MP.state === 'lobby') { Net.leave(); }
@@ -389,6 +396,7 @@ Net.on('closed', msg => mpGo('home', { err: msg }));
 Net.on('error', msg => mpGo('home', { err: msg }));
 
 function openMulti() {
+  if (typeof logMpView === 'function') logMpView('multi');
   const ok = Net.supported() && navigator.mediaDevices && window.isSecureContext && !/claude/.test(location.hostname);
   show('multi'); screens.multi.scrollTop = 0;
   if (Net.role) mpGo(Net.role === 'host' ? 'host' : 'lobby');
