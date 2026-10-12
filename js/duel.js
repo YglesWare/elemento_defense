@@ -55,6 +55,14 @@ function duelHostStart() {
   if (Net.players.length < 2) { MP.err = T('Il faut au moins 2 joueurs pour lancer la partie.'); renderMP(); return; }
   const rm = MAPS[DUEL.lobbyMap] && MAPS[DUEL.lobbyMap].random ? { size: DUEL.lobbySize || 'moyenne', seed: newSeed() } : null;
   const msg = { k: 'start', map: DUEL.lobbyMap, rnd: rm, ids: Net.players.map(p => p.id), names: Object.fromEntries(Net.players.map(p => [p.id, p.name])), prep: DUEL.cfg.prep, gap: DUEL.cfg.gap, chal: DUEL.lobbyChal || null, prog: DUEL.lobbyStart === 'prog' };
+  // Mode 🏆 Tournoi (js/tournament.js) : 1 contre 1, À zéro, sans piment, sur la carte du mois ; un identifiant pour les deux rapports
+  if (DUEL.lobbyMode === 'tour') {
+    if (Net.players.length !== 2) { MP.err = T('Le tournoi se joue à 2.'); renderMP(); return; }
+    Object.assign(msg, { rnd: tourRnd(), chal: null, prog: false });
+    const other = Net.players.find(p => p.id !== meId()), ou = other && (DUEL.uids || {})[other.id];
+    if (typeof tourUid === 'function' && tourUid() && ou)
+      msg.tour = { mid: 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10), mo: tourMo(), u: { [meId()]: tourUid(), [other.id]: ou } };
+  }
   Net.send('all', msg);
   beginDuel(msg);
 }
@@ -64,7 +72,13 @@ function beginDuel(msg) {
   stopScan && stopScan();
   enterDuelMeta(!!msg.prog);
   Object.assign(DUEL, { on: true, prog: !!msg.prog, map: msg.map, ids: msg.ids, names: msg.names, alive: new Set(msg.ids), elim: [], wave: 0, income: 0, sent: 0, dead: false,
-    stats: {}, last: {}, incoming: {}, forfeitArm: false, result: null, all: false, tPlay: false, tWin: false });
+    stats: {}, last: {}, incoming: {}, forfeitArm: false, result: null, all: false, tPlay: false, tWin: false, why: {}, tour: null });
+  // Chaque téléphone vérifie que c'est bien un duel du tournoi : son mois, la carte du mois, sans progrès ni piment
+  if (msg.tour && msg.tour.u && typeof tourUid === 'function' && tourUid() && msg.tour.u[meId()] === tourUid() && msg.tour.mo === tourMo()
+    && msg.rnd && msg.rnd.seed === tourSeed() && !msg.prog && !(msg.chal && chalOn(chalClean(msg.chal)))) {
+    const o = Object.keys(msg.tour.u).find(k => k !== meId());
+    if (o && UUID_RE.test(msg.tour.u[o])) DUEL.tour = { mid: String(msg.tour.mid).slice(0, 40), opp: msg.tour.u[o], oppPeer: o, sent: false, res: null };
+  }
   DUEL.cfg.gap = msg.gap || DUEL.cfg.gap;
   const t0 = dnow(); for (const id of msg.ids) DUEL.last[id] = t0;
   DUEL.target = msg.ids.find(id => id !== meId()) || null;
@@ -245,6 +259,7 @@ function eliminate(id, why) {
 }
 const WHY = { ko: T('n’a plus de vies'), absent: T('a quitté l’appli trop longtemps'), parti: T('s’est déconnecté'), abandon: T('a abandonné') };
 function onElim(id, why) {
+  if (DUEL.why) DUEL.why[id] = why;
   DUEL.alive.delete(id); if (!DUEL.elim.includes(id)) DUEL.elim.push(id);
   if (id === meId()) {
     if (!DUEL.dead) { DUEL.dead = true; if (G) G.over = true; }
@@ -273,6 +288,12 @@ function duelAbort(text) {
 function showDuelScreen(final, why, abortText) {
   const me = meId(), rank = DUEL.result || [...DUEL.alive, ...[...DUEL.elim].reverse()];
   const won = final && !abortText && rank[0] === me, place = rank.indexOf(me) + 1;
+  // Tournoi : le résultat est connu (fin, interruption, ou mon élimination en 1 contre 1)
+  if (DUEL.tour && !DUEL.tour.sent && (final || abortText || (DUEL.ids.length === 2 && DUEL.dead))) {
+    const opp = DUEL.tour.oppPeer, cut = w => w === 'absent' || w === 'parti';
+    tourDuelEnd(won, abortText || cut(why) || cut(DUEL.why[me]) || cut(DUEL.why[opp]) ? 'net' : 'ko');
+  }
+  if (typeof tourDuelPaint === 'function') tourDuelPaint();
   if (typeof trophy === 'function') {
     if (!DUEL.tPlay) { DUEL.tPlay = true; trophy('duel_play'); }
     if (won && !DUEL.tWin) { DUEL.tWin = true; trophy('duel_win'); trophyMp('wins'); if (DUEL.ids.length >= 3) trophy('duel_big'); }
@@ -328,7 +349,9 @@ Net.on('msg', ({ from, data }) => {
   if (!data || !data.k) return;
   DUEL.last[from] = dnow();
   switch (data.k) {
+    case 'tuid': if (Net.role === 'host' && typeof data.uid === 'string' && /^[0-9a-f-]{36}$/i.test(data.uid)) { DUEL.uids = DUEL.uids || {}; DUEL.uids[from] = data.uid; } break;
     case 'lobby': {
+      if (typeof tourUid === 'function' && tourUid() && dnow() - (DUEL.uidAt || 0) > 10000) { DUEL.uidAt = dnow(); Net.send(from, { k: 'tuid', uid: tourUid() }); }
       // L'hôte renvoie les réglages toutes les 2 s : on ne redessine le salon que s'ils changent (sinon les règles ouvertes se referment)
       const sig = JSON.stringify([DUEL.lobbyMap, DUEL.lobbySize, DUEL.lobbyMode, DUEL.lobbyDiff, DUEL.lobbyChal, DUEL.lobbyStart]);
       DUEL.lobbyMap = data.map; if (data.rsize) DUEL.lobbySize = data.rsize; DUEL.lobbyMode = data.mode || 'duel'; if (data.diff) DUEL.lobbyDiff = data.diff; DUEL.lobbyChal = data.chal || null; DUEL.lobbyStart = data.start === 'prog' ? 'prog' : 'zero';

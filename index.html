@@ -388,6 +388,7 @@
     <div class="srail"><div class="bigword" id="dWord">VICTOIRE !!</div></div>
     <div class="panelbox col">
       <p class="fine" id="dText" style="font-size:15px;opacity:1"></p>
+      <div class="dtour" id="dTour" hidden></div>
       <ol class="mp-rank" id="dRank"></ol>
       <div class="stats">
         <div><b id="dWave">0</b><span>Vague</span></div>
@@ -508,6 +509,14 @@
       <div class="stgrid" id="stGrid"></div>
     </div>
     <button class="btn stickyb" id="stBack" type="button">Retour</button>
+  </div>
+</section>
+<!-- Tournoi du mois entre amis (js/tournament.js) -->
+<section class="screen" id="sTour" hidden>
+  <div class="inner">
+    <div class="srail"><div class="bigword calm head">TOURNOI</div><span class="tourmo" id="tourMo"></span></div>
+    <div class="panelbox col" id="tourBody"></div>
+    <button class="btn stickyb" id="tourBack" type="button">Retour</button>
   </div>
 </section>
 <section class="screen" id="sTrophies" hidden>
@@ -708,4 +717,4 @@
 </div>
 <!-- Les données du joueur (IndexedDB) sont chargées d'abord, puis les scripts du jeu, dans cet ordre -->
 <script src="js/storage.js"></script>
-<script>store.boot(['js/errors.js', 'js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bestiary.js', 'js/surprise.js', 'js/bonus.js', 'js/trophies.js', 'js/actions.js', 'js/vendor/supabase.js', 'js/cloud.js', 'js/parents.js', 'js/friends.js', 'js/online.js', 'js/emotes.js', 'js/news.js', 'js/quests.js', 'js/ranking.js', 'js/challenge.js', 'js/ads.js', 'js/wardrobe.js', 'js/comfort.js', 'js/story.js']);</script>
+<script>store.boot(['js/errors.js', 'js/i18n.js', 'js/data.js', 'js/draw.js', 'js/game.js', 'js/ui.js', 'js/vendor/qrcode.min.js', 'js/net.js', 'js/multi.js', 'js/duel.js', 'js/music.js', 'js/guide.js', 'js/random.js', 'js/coop.js', 'js/mascot.js', 'js/intro.js', 'js/bestiary.js', 'js/surprise.js', 'js/bonus.js', 'js/trophies.js', 'js/actions.js', 'js/vendor/supabase.js', 'js/cloud.js', 'js/parents.js', 'js/friends.js', 'js/online.js', 'js/emotes.js', 'js/news.js', 'js/quests.js', 'js/ranking.js', 'js/tournament.js', 'js/challenge.js', 'js/ads.js', 'js/wardrobe.js', 'js/comfort.js', 'js/story.js']);</script>

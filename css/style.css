@@ -381,7 +381,7 @@ button:disabled{cursor:default}
 .mapc .req.ok{background:var(--okbg)}
 
 /* Multijoueur */
-#sMulti,#sFriends,#sFrAdd,#sStats,#sTrophies,#sBest{background:var(--sky) radial-gradient(rgba(42,27,61,.12) 1.2px,transparent 1.7px) 0 0/9px 9px}
+#sMulti,#sFriends,#sFrAdd,#sStats,#sTrophies,#sBest,#sTour{background:var(--sky) radial-gradient(rgba(42,27,61,.12) 1.2px,transparent 1.7px) 0 0/9px 9px}
 #sParents{background:repeating-conic-gradient(from 0deg at 50% 10%,var(--grape) 0deg 7deg,var(--grape2) 7deg 14deg)}
 .btn.mpbtn{background:var(--grape)}
 .btn:disabled{opacity:.5;cursor:default;box-shadow:0 2px 0 var(--ink)}
@@ -464,6 +464,66 @@ button:disabled{cursor:default}
 #mpBody .mp-recap .mp-cfg{width:100%;margin:2px 0 0;font-size:19px;padding:8px 10px}
 .mp-recap .mp-who{margin:0;font-size:12px;font-weight:700;color:var(--muted);text-align:center}
 .mp-recap .rg i{font-style:normal;font-size:16px;flex:none}
+/* Tournoi du mois (js/tournament.js) */
+.tourmo{font-weight:800;font-size:13px;color:var(--ink);text-align:center}
+#tourBody{gap:8px;text-align:left}
+.tphase{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.tphase span{border:2.5px solid var(--ink);border-radius:10px;padding:4px 6px;text-align:center;font-weight:800;font-size:12px;line-height:1.2;background:var(--mist);color:var(--muted)}
+.tphase span.on{background:var(--sun);color:var(--ink)}
+.tphase b{display:block;font:400 15px/1 var(--display);letter-spacing:.5px;color:var(--ink)}
+.tlbl{margin:2px 0 -4px;font-size:12px;font-weight:800;color:var(--muted)}
+.tfine{text-align:left;margin:0}
+.treq{background:#fff3c4;border:2.5px solid var(--ink);border-radius:12px;padding:7px 9px;display:flex;flex-direction:column;gap:6px}
+.treq.sent{background:var(--mist)}
+.treq p{margin:0;font-size:12.5px;font-weight:700;line-height:1.3}
+.treq .tbb{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.treq .tbb .sbtn:first-child{background:var(--leaf)}
+.tst{width:100%;border-collapse:separate;border-spacing:0 3px;font-size:13px;font-weight:800;font-variant-numeric:tabular-nums}
+.tst th{font-size:10.5px;color:var(--muted);font-weight:800;text-align:center;padding:0 2px}
+.tst th:nth-child(2){text-align:left}
+.tst td{background:var(--mist);padding:4px 3px;text-align:center;border-top:2px solid #e4d9f2;border-bottom:2px solid #e4d9f2}
+.tst td:first-child{border-left:2px solid #e4d9f2;border-radius:9px 0 0 9px;width:22px}
+.tst td:last-child{border-right:2px solid #e4d9f2;border-radius:0 9px 9px 0;font:400 17px/1 var(--display);letter-spacing:.5px}
+.tst td.nm{text-align:left}
+.tst td.nm,.tvs .nm{display:flex;align-items:center;gap:6px;min-width:0}
+.tst td.nm span:not(.tg),.tvs .nm span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tst canvas,.tvs canvas{flex:none;border-radius:50%;background:#fff;border:1.5px solid var(--ink)}
+.tst tr.me td{background:#fff3c4;border-color:var(--sun)}
+.tg{background:var(--okbg);border:1.5px solid var(--ink);border-radius:99px;font-size:10px;padding:0 5px;flex:none}
+.tleg{margin:-4px 0 0;font-size:10.5px;font-weight:700;color:var(--muted);line-height:1.3}
+.tvs{display:flex;flex-direction:column;gap:4px}
+.tvs .r{display:flex;align-items:center;gap:6px;background:var(--mist);border:2px solid #e4d9f2;border-radius:10px;padding:5px 8px;font-size:13px;font-weight:800}
+.tvs .nm{flex:1}
+.tres{flex:none;font-size:11px;font-weight:800;border-radius:8px;padding:2px 6px;border:1.5px solid var(--ink);min-width:62px;text-align:center}
+.tres.w{background:var(--leaf)}.tres.l{background:#ff9db2}.tres.d{background:#e6dcf3}.tres.t{background:#fff;color:var(--muted);border-style:dashed}
+.tvs .tre{flex:none;padding:2px 6px;font-size:13px}
+.tmap{display:flex;align-items:center;gap:10px;background:#fff3c4;border:2.5px solid var(--ink);border-radius:14px;padding:8px 10px}
+.tmap canvas{flex:none;border:2px solid var(--ink);border-radius:8px}
+.tmap div{display:flex;flex-direction:column;gap:2px;text-align:left;min-width:0}
+.tmap b{font:400 19px/1.05 var(--display);letter-spacing:.5px}
+.tmap small{font-size:12px;font-weight:700;color:var(--muted);line-height:1.25}
+.tmap .how{color:var(--ink)}
+.tlock{display:flex;align-items:center;gap:8px;background:var(--mist);border:2px dashed #cfc2e3;border-radius:12px;padding:6px 10px;font-size:18px}
+.tlock span{display:flex;flex-direction:column;text-align:left}
+.tlock b{font-size:13.5px;font-weight:800}
+.tlock small{font-size:12px;font-weight:700;color:var(--muted)}
+#mpBody [data-a=launch]:disabled{opacity:.6}
+.mp-tour{width:100%;display:flex;align-items:center;gap:10px;text-align:left;background:#fff3c4;border:2.5px solid var(--ink);border-radius:14px;box-shadow:0 3px 0 var(--ink);padding:8px 10px;font:inherit;color:var(--ink);cursor:pointer}
+.mp-tour:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.mp-tour .ti{font-size:28px;flex:none}
+.mp-tour .tt{flex:1;min-width:0;display:flex;flex-direction:column}
+.mp-tour .tt b{font:400 19px/1.05 var(--display);letter-spacing:.5px}
+.mp-tour .tt small{font-size:12px;font-weight:700;color:var(--muted)}
+.mp-tour .tv{flex:none;background:var(--sun);border:2.5px solid var(--ink);border-radius:10px;padding:5px 8px;font:400 15px/1 var(--display);letter-spacing:.5px}
+.dtour{display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--mist);border:2.5px solid var(--ink);border-radius:14px;padding:8px 10px;text-align:center}
+.dtour p{margin:0;font-size:13px;font-weight:700;line-height:1.3}
+.dtour .tchip{display:inline-flex;background:var(--ink);color:#fff;border-radius:99px;padding:3px 12px;font-weight:800;font-size:12.5px}
+.dtour .tpts{display:flex;gap:8px;width:100%}
+.dtour .tpts div{flex:1;background:var(--paper);border:2.5px solid var(--ink);border-radius:12px;padding:5px;display:flex;flex-direction:column;align-items:center}
+.dtour .tpts div.y{background:var(--sun)}
+.dtour .tpts b{font:400 22px/1 var(--display);letter-spacing:.5px}
+.dtour .tpts small{font-size:11px;font-weight:800;color:var(--muted)}
+.dtour .btn{width:100%}
 /* Fenêtre ⚙️ Paramètres du salon */
 #mpSet .intro-card{align-items:stretch;text-align:left;gap:8px;max-height:100%;overflow-y:auto;scrollbar-width:none}
 #mpSet h2{text-align:center;font-size:26px}
@@ -506,7 +566,7 @@ html.coaching #trBrs .uprow:has(.coachT){opacity:1;filter:none}
 .backarrow[hidden]{display:none}
 .backarrow svg{width:24px;height:24px}
 .backarrow:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
-#bestBack,#prBack,#setBack,#sBack,#mBack,#rBack,#dfBack,#frBack,#faBack,#paBack,#wrBack,#stBack,#trBack,#storyBack,#mpBody [data-a=back]{display:none!important}
+#bestBack,#tourBack,#prBack,#setBack,#sBack,#mBack,#rBack,#dfBack,#frBack,#faBack,#paBack,#wrBack,#stBack,#trBack,#storyBack,#mpBody [data-a=back]{display:none!important}
 /* Écrans sans grand titre (stats, trophées, difficulté…) : de la place sous la flèche */
 body.hasback .screen>.inner{padding-top:40px}
 body.hasback .screen:not(:has(.bigword))>.inner{padding-top:50px}

@@ -122,14 +122,17 @@ function recapHTML(canPick) {
   const pill = (ic, txt) => '<span><i>' + ic + '</i>' + txt + '</span>';
   // Les infos ne sont pas des boutons (pas de cadre) ; l'hôte a un vrai bouton en bas, l'invité voit qui choisit
   const hp = Net.players.find(p => p.host);
+  // Tournoi : tout est imposé
+  if (mode === 'tour') return '<div class="mp-recap"><small>' + T('La partie') + '</small><div class="rg">' + pill('🏆', T('Tournoi · 1 contre 1')) + pill('🌱', T('À zéro')) + pill('🗺️', esc(tourMapName())) + pill('🌶', T('Aucun piment')) + '</div>' + recapFoot(canPick, hp) + '</div>';
   return '<div class="mp-recap"><small>' + T('La partie') + '</small><div class="rg">'
     + pill(mode === 'coop' ? '🤝' : '⚔', mode === 'coop' ? T('Coop · ') + DIFFS[DUEL.lobbyDiff || 'moyen'].name : T('Duel · infini'))
     + pill(prog ? '⭐' : '🌱', prog ? T('Avec nos progrès') : T('À zéro'))
     + pill(m.random ? '🎲' : '🗺️', esc(m.random ? T('Carte aléatoire') : m.name))
     + pill('🌶', n ? chalX(chalMult(c, mode === 'coop' ? DUEL.lobbyDiff || 'moyen' : 'infini', lobbyMi())) + ' · ' + n + (n > 1 ? T(' piments') : T(' piment')) : T('Aucun piment'))
-    + '</div>' + (canPick ? '<button class="btn alt mp-cfg" type="button" data-a="settings">' + T('⚙️ Configurer la partie') + '</button>'
-      : '<p class="mp-who">' + esc(hp ? hp.name : T('L’hôte')) + T(' choisit les réglages') + '</p>') + '</div>';
+    + '</div>' + recapFoot(canPick, hp) + '</div>';
 }
+const recapFoot = (canPick, hp) => canPick ? '<button class="btn alt mp-cfg" type="button" data-a="settings">' + T('⚙️ Configurer la partie') + '</button>'
+  : '<p class="mp-who">' + esc(hp ? hp.name : T('L’hôte')) + T(' choisit les réglages') + '</p>';
 // Carte : aperçu du terrain et du chemin (un dé pour la carte aléatoire, générée au lancement)
 function mapPickHTML() {
   const m = MAPS[DUEL.lobbyMap] || MAPS[0], rz = DUEL.lobbySize || 'moyenne';
@@ -145,10 +148,25 @@ function mapPickHTML() {
 // Fenêtre ⚙️ Paramètres (hôte) : en paysage, sur deux colonnes (css/style.css)
 function mpSetRender() {
   const b = $('#mpSetBody'), mode = DUEL.lobbyMode || 'duel', diff = DUEL.lobbyDiff || 'moyen', prog = DUEL.lobbyStart === 'prog';
+  const modes = [['duel', '⚔ Duel'], ['coop', '🤝 Coop']].concat(typeof tourAvail === 'function' && tourAvail() ? [['tour', T('🏆 Tournoi')]] : []);
+  if (mode === 'tour') {
+    // Tournoi : tout est imposé et identique pour tous (1 contre 1, À zéro, sans piment, carte du mois)
+    const n = Net.players.length;
+    b.innerHTML = '<div class="mp-mode"><small>' + T('Mode') + '</small>' + mpSeg(modes, mode, 'mode-')
+      + '<p class="fine mp-tip">' + T('Duel 1 contre 1 entre amis connectés. Il compte pour le ') + tourName().replace(/^Tournoi/, 'tournoi') + '.</p>'
+      + '<div class="tlock">🔒<span><b>' + T('Pareil pour tout le monde') + '</b><small>' + T('🌱 À zéro · 🌶 sans piment · 🗺️ la carte du mois') + '</small></span></div>'
+      + (n > 2 ? '<p class="fine mp-tip warn">' + T('Le tournoi se joue à 2 : vous êtes ') + n + T(' dans le salon. Choisis Duel ou Coop, ou jouez à deux.') + '</p>' : '') + '</div>'
+      + '<div class="mp-setr"><div class="mp-chal"><small>' + T('Carte') + '</small></div><div class="mp-map"><div class="mp-mapn"><canvas class="mp-prev" aria-hidden="true"></canvas><div class="mp-mapt"><b>🏆 ' + esc(tourMapName()) + '</b><span>'
+      + T('la même pour tous jusqu’à la fin du mois') + '</span><span class="tinfo"></span></div></div></div>'
+      + '<button class="btn" type="button" data-a="set-ok">' + T('OK') + '</button></div>';
+    const mi = tourMapDraw(b.querySelector('.mp-prev'), miniPortrait() ? 84 : 128);
+    try { const P = withGrid(MAPS[mi], () => buildPath(MAPS[mi])); b.querySelector('.tinfo').textContent = P.portals.length + T(' portail') + (P.portals.length > 1 ? 's' : '') + ' · ' + P.bases.length + T(' maison') + (P.bases.length > 1 ? 's' : ''); } catch (e) {}
+    return;
+  }
   const tip = !prog ? T('Tout le monde part avec Braise et Ondine, sans Atelier.')
     : mode === 'coop' ? T('Chacun arrive avec son Atelier, ses tours et ses fusions. Les monstres sont renforcés selon vos progrès (pas en Infini).')
     : T('Chacun arrive avec son Atelier, ses tours et ses fusions. Attention : le joueur le plus avancé aura l’avantage.');
-  b.innerHTML = '<div class="mp-mode"><small>' + T('Mode') + '</small>' + mpSeg([['duel', '⚔ Duel'], ['coop', '🤝 Coop']], mode, 'mode-')
+  b.innerHTML = '<div class="mp-mode"><small>' + T('Mode') + '</small>' + mpSeg(modes, mode, 'mode-')
     + (mode === 'coop' ? '<small>' + T('Difficulté') + '</small>' + mpSeg(DORDER.map(k => [k, DIFFS[k].name]), diff, 'diff-') : '')
     + '<small>' + T('Départ') + '</small>' + mpSeg([['zero', T('🌱 À zéro')], ['prog', T('⭐ Avec nos progrès')]], prog ? 'prog' : 'zero', 'start-')
     + '<p class="fine mp-tip' + (prog && mode !== 'coop' ? ' warn' : '') + '">' + tip + '</p></div>'
@@ -189,6 +207,7 @@ function renderMP() {
     // Deux onglets quand le jeu en ligne est permis : « À côté » (sans internet) et « En ligne » (avec ses amis, js/online.js)
     const onl = typeof frOn === 'function' && frOn();
     if (onl) h += '<div class="mp-seg mp-tabs"><button class="sbtn' + (MP.tab !== 'online' ? ' on' : '') + '" type="button" data-a="tab-near">' + T('📶 À côté') + '</button><button class="sbtn' + (MP.tab === 'online' ? ' on' : '') + '" type="button" data-a="tab-online">' + T('🌍 En ligne') + '</button></div>';
+    if (typeof tourCardHTML === 'function') h += tourCardHTML();
     if (onl && MP.tab === 'online') h += onlineHomeHTML();
     // Dans l'app, les parties du Wi-Fi s'affichent toutes seules ; le QR code sert au navigateur et en secours
     else h += '<p class="trnote">' + T('De 2 à 4 joueurs sur le même Wi-Fi (ou le partage de connexion d’un téléphone), <b>sans internet</b>.') + '</p>'
@@ -209,7 +228,8 @@ function renderMP() {
     h += '<div class="mp-cols"><div class="mp-col">' + (Net.online ? T('<h3 class="mp-h">Salon en ligne · ') : T('<h3 class="mp-h">Salon · ')) + Net.players.length + '/' + NET_MAX + T(' joueurs</h3>') + rosterHTML()
       + (full ? T('<p class="fine">La partie est complète.</p>') : Net.online ? '<div class="mp-online"><span class="mp-label">' + T('Inviter un ami en ligne') + '</span><div id="onlFriends"></div></div>' : T('<button class="btn green" type="button" data-a="invite">Inviter un joueur</button>'))
       + T('<button class="btn pink" type="button" data-a="leave">Fermer la partie</button>') + '</div><div class="mp-col">' + recapHTML(true)
-      + '<button class="btn" type="button" data-a="launch"' + (Net.players.length < 2 ? ' disabled' : '') + '>' + (Net.players.length < 2 ? T('Invite au moins 1 joueur') : T('Lancer la partie !')) + '</button>'
+      + (() => { const n = Net.players.length, t = DUEL.lobbyMode === 'tour' && n > 2;
+        return '<button class="btn" type="button" data-a="launch"' + (n < 2 || t ? ' disabled' : '') + '>' + (n < 2 ? T('Invite au moins 1 joueur') : t ? T('Le tournoi se joue à 2') : T('Lancer la partie !')) + '</button>'; })()
       + rulesHTML() + '</div></div>';
   } else if (S === 'invite' && MP.lan) {
     // Hôte dans l'app : un seul QR, valable pour tous les invités (navigateur ou app)
@@ -336,6 +356,7 @@ const mpClick = ev => {
   else if (a.startsWith('diff-')) { DUEL.lobbyDiff = a.slice(5); sendLobby(); renderMP(); }
   else if (a === 'chal') { if (typeof chalLobbyOpen === 'function') chalLobbyOpen(); }
   else if (a.startsWith('start-')) { DUEL.lobbyStart = a.slice(6); sendLobby(); renderMP(); }
+  else if (a === 'tour') { if (typeof openTour === 'function') { stopFound(); openTour(); } }
   else if (a === 'settings') mpSetOpen();
   else if (a === 'set-ok') $('#mpSet').hidden = true;
   else if (a === 'launch') { $('#mpSet').hidden = true; if (DUEL.lobbyMode === 'coop') coopHostStart(); else duelHostStart(); }

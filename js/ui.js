@@ -21,7 +21,7 @@ function statFit(...sels) { for (const s of sels) { const e = $(s), n = e.textCo
 // Retour des menus : la flèche en haut à gauche déclenche le bouton « Retour » de l'écran affiché (caché, il garde son
 // action, la touche Échap et le bouton retour d'Android). Le multijoueur n'a son « Retour » que sur sa page d'accueil.
 const BACKS = { best: '#bestBack', profile: '#prBack', settings: '#setBack', shop: '#sBack', maps: '#mBack', rand: '#rBack', diff: '#dfBack', friends: '#frBack', fradd: '#faBack',
-  parents: '#paBack', wardrobe: '#wrBack', stats: '#stBack', trophies: '#trBack', story: '#storyBack', multi: '#mpBody [data-a=back]' };
+  parents: '#paBack', wardrobe: '#wrBack', stats: '#stBack', trophies: '#trBack', tour: '#tourBack', story: '#storyBack', multi: '#mpBody [data-a=back]' };
 const backBtn = () => { const s = BACKS[curScreen]; return s ? document.querySelector(s) : null; };
 function backSync() { const on = !!backBtn(); $('#backArrow').hidden = !on; document.body.classList.toggle('hasback', on); }
 $('#backArrow').addEventListener('click', () => { const b = backBtn(); if (b && !b.disabled) { Snd.init(); b.click(); } backSync(); });

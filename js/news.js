@@ -6,6 +6,10 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  131: [
+    ['🏆', 'Tournoi du mois entre amis, en mode 🏆 Tournoi : même carte pour tous chaque mois, chaque ami affronté une fois à l’aller (1er-15) et une fois au retour (16-fin du mois). Victoire 3 points, nul 1 : podium et éclats à la fin du mois !'],
+    ['🔁', 'Une coupure réseau pendant un duel du tournoi ? Tu peux demander à rejouer le match.'],
+  ],
   130: [
     ['🏅', 'Multijoueur : 8 nouveaux trophées de duel et de coop (5 et 25 duels gagnés, Seul contre tous, Livreur de slimes, Équipe de choc…).'],
   ],
