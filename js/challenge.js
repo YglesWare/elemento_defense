@@ -43,10 +43,12 @@ const CHAL = [
 ];
 const CHAL_BY = Object.fromEntries(CHAL.map(c => [c.k, c])), SANS_P = 10;
 const CHAL_ELEM = { feu: '🔥', eau: '💧', terre: '🪨', vent: '🌪️', foudre: '⚡', glace: '❄️' };
+// Choix rapides : une échelle de piquant (la 🎲 Surprise s'ajoute après)
 const CHAL_PRESETS = {
-  tranquille: ['🍼', T('Tranquille'), { petits: 2, escargot: 2, maison: 1 }],
-  epice: ['🌶', T('Épicé'), { horde: 2, pv: 2, vite: 1 }],
-  infernal: ['🔥', T('Infernal'), { horde: 4, pv: 4, vite: 3, armure: 2, fragile: 2 }],
+  doux: ['🍼', T('Tout doux'), { petits: 2, escargot: 2, maison: 1 }],
+  releve: ['🌶', T('Relevé'), { horde: 1, pv: 1 }],
+  piquant: ['🌶🌶', T('Piquant'), { horde: 2, pv: 2, vite: 1 }],
+  volcan: ['🌶🌶🌶', T('Volcan'), { horde: 4, pv: 4, vite: 3, armure: 2, fragile: 2 }],
 };
 
 // ---------- Réglage : { m: { horde: 2… }, sans: ['feu'…], sur: 1 (tiré par 🎲) } ----------
@@ -297,21 +299,26 @@ function mapRankPaint(by, err) {
 $('#mrClose').addEventListener('click', () => { $('#mapRankPop').hidden = true; });
 
 // ---------- Le panneau des défis ----------
-const CP = { cur: null, done: null };
+const CP = { cur: null, done: null, open: null };
 // o : { title, sub, get: () => réglage, set: réglage => …, done: () => … }
 // o.mi : la carte (pour ne proposer que les piments qui ont un sens sur elle, et sa médaille)
 function openChal(o) {
-  Snd.init(); CP.cur = chalClean(o.get(), o.mi); CP.o = o;
+  Snd.init(); CP.cur = chalClean(o.get(), o.mi); CP.o = o; CP.open = null;
   $('#chTitle').textContent = o.title || T('🌶 Piments'); $('#chSub').textContent = o.sub || '';
-  $('#chPre').innerHTML = Object.entries(CHAL_PRESETS).map(([k, [ic, n]]) => '<button type="button" data-pre="' + k + '"><span>' + ic + '</span>' + n + '</button>').join('')
-    + '<button type="button" data-pre="sur"><span>🎲</span>' + T('Surprise') + '</button>';
-  $('#chPre').querySelectorAll('[data-pre]').forEach(b => b.addEventListener('click', () => {
-    const k = b.dataset.pre;
-    CP.cur = k === 'sur' ? Object.assign(chalRoll(Math.random, o.mi, { n: 2 + Math.floor(Math.random() * 2), lv: 2, sans: 0.3, bonus: 0.35, max: 2.4 }), { sur: 1 }) : chalClean({ m: CHAL_PRESETS[k][2] }, o.mi);
-    chalPaint(); Snd.play('build');
-  }));
-  $('#chalPop').hidden = false; chalPaint();
+  $('#chalPop').hidden = false; chalPaint(); $('#chMods').scrollTop = 0;
 }
+$('#chPre').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-pre]'); if (!b) return;
+  const k = b.dataset.pre, mi = CP.o && CP.o.mi;
+  CP.cur = k === 'sur' ? Object.assign(chalRoll(Math.random, mi, { n: 2 + Math.floor(Math.random() * 2), lv: 2, sans: 0.3, bonus: 0.35, max: 2.4 }), { sur: 1 }) : chalClean({ m: CHAL_PRESETS[k][2] }, mi);
+  chalPaint(); Snd.play('build');
+});
+// Sections repliables : une seule ouverte à la fois, gardée d'un affichage à l'autre (chaque +/− redessine la liste)
+$('#chMods').addEventListener('toggle', ev => {
+  const d = ev.target; if (!d.classList || !d.classList.contains('chgrp')) return;
+  if (d.open) { CP.open = d.dataset.g; $('#chMods').querySelectorAll('details.chgrp[open]').forEach(x => { if (x !== d) x.open = false; }); }
+  else if (CP.open === d.dataset.g) CP.open = null;
+}, true);
 function chalRow(D) {
   const v = CP.cur.m[D.k] || 0, kind = D.p > 0 ? 'malus' : 'bonus';
   return '<div class="chmod ' + kind + (v ? ' on' : '') + '"><span class="chic">' + D.ic + '</span><span class="chn"><b>' + D.n + '</b><small>' + D.d + ' · ' + (D.p > 0 ? '+' : '−') + Math.abs(D.p) + T(' % de points') + (D.max > 1 ? T(' par cran') : '')
@@ -323,14 +330,23 @@ function chalPaint() {
   $('#chMx').textContent = chalX(mult); $('#chMxs').textContent = names.length ? names.join(' · ') : T('Partie normale');
   const med = $('#chMedal'); if (med) { med.hidden = mi == null || !chalMapOk(mi); if (!med.hidden) med.textContent = medalLine(mi, mult); }
   const evs = CHAL.filter(D => D.season && fit(D));
-  $('#chMods').innerHTML = '<p class="chsect m">' + T('▲ Malus · plus de points') + '</p>' + CHAL.filter(D => D.p > 0 && !D.g && !D.season).map(chalRow).join('')
-    + '<p class="chsect r">' + T('✨ Règles spéciales · plus de points') + '</p>' + CHAL.filter(D => D.g === 'rule' && fit(D)).map(chalRow).join('')
-    + '<div class="chmod malus' + (c.sans.length && !mono ? ' on' : '') + '"><span class="chic">🚫</span><span class="chn"><b>' + T('Sans un élément') + '</b><small>' + T('touche les éléments interdits · +') + SANS_P + T(' % de points chacun') + '</small>'
-    + '<span class="chels">' + elBtns('data-e', e => c.sans.includes(e)) + '</span></span></div>'
-    + '<div class="chmod malus' + (mono ? ' on' : '') + '"><span class="chic">🎨</span><span class="chn"><b>' + T('Monochrome') + '</b><small>' + T('un seul élément pour toute la partie · +') + 5 * SANS_P + T(' % de points') + '</small>'
-    + '<span class="chels">' + elBtns('data-mono', e => e === mono) + '</span></span></div>'
-    + (evs.length ? '<p class="chsect e">' + SEASONS[evs[0].season].icon + T(' Piment de l’événement') + '</p>' + evs.map(chalRow).join('') : '')
-    + '<p class="chsect b">' + T('▼ Bonus · moins de points') + '</p>' + CHAL.filter(D => D.p < 0 && !D.season).map(chalRow).join('');
+  // Choix rapides : le multiplicateur de chacun, en jaune celui qui correspond aux réglages
+  const same = mm => !c.sur && !c.sans.length && JSON.stringify(Object.entries(c.m).sort()) === JSON.stringify(Object.entries(chalClean({ m: mm }, mi).m).sort());
+  $('#chPre').innerHTML = Object.entries(CHAL_PRESETS).map(([k, [ic, n, mm]]) => '<button type="button" data-pre="' + k + '" class="' + (same(mm) ? 'on' : '') + '"><span class="ic">' + ic + '</span><b>' + n + '</b><small>' + chalX(chalMult(chalClean({ m: mm }, mi), null, mi)) + '</small></button>').join('')
+    + '<button type="button" data-pre="sur" class="' + (c.sur ? 'on' : '') + '"><span class="ic">🎲</span><b>' + T('Surprise') + '</b><small>×?</small></button>';
+  // À la carte : des sections repliables, avec le nombre de piments actifs
+  const on = D => !!c.m[D.k], hard = CHAL.filter(D => D.p > 0 && !D.g && !D.season), rules = CHAL.filter(D => D.g === 'rule' && fit(D)), easy = CHAL.filter(D => D.p < 0 && !D.season);
+  const grp = (g, ic, t, sub, n, body) => '<details class="chgrp" data-g="' + g + '"' + (CP.open === g ? ' open' : '') + '><summary><span class="gi">' + ic + '</span><span class="gt"><b>' + t + '</b><small>' + sub + '</small></span>'
+    + '<span class="gn' + (n ? '' : ' z') + '">' + (n ? n + (n > 1 ? T(' actifs') : T(' actif')) : T('aucun')) + '</span><span class="gc" aria-hidden="true">▶︎</span></summary><div class="gbody">' + body + '</div></details>';
+  $('#chMods').innerHTML = '<p class="chlbl">' + T('Ou à la carte') + '</p>'
+    + grp('hard', '🔥', T('Plus dur'), T('Plus d’ennemis, plus solides… plus de points'), hard.filter(on).length, hard.map(chalRow).join(''))
+    + grp('rules', '✨', T('Règles spéciales'), T('Des parties qui changent'), rules.filter(on).length + (c.sans.length ? 1 : 0), rules.map(chalRow).join('')
+      + '<div class="chmod malus' + (c.sans.length && !mono ? ' on' : '') + '"><span class="chic">🚫</span><span class="chn"><b>' + T('Sans un élément') + '</b><small>' + T('touche les éléments interdits · +') + SANS_P + T(' % de points chacun') + '</small>'
+      + '<span class="chels">' + elBtns('data-e', e => c.sans.includes(e)) + '</span></span></div>'
+      + '<div class="chmod malus' + (mono ? ' on' : '') + '"><span class="chic">🎨</span><span class="chn"><b>' + T('Monochrome') + '</b><small>' + T('un seul élément pour toute la partie · +') + 5 * SANS_P + T(' % de points') + '</small>'
+      + '<span class="chels">' + elBtns('data-mono', e => e === mono) + '</span></span></div>')
+    + (evs.length ? grp('event', SEASONS[evs[0].season].icon, T('Piment de l’événement'), SEASONS[evs[0].season].name || '', evs.filter(on).length, evs.map(chalRow).join('')) : '')
+    + grp('easy', '🍼', T('Plus facile'), T('Un coup de main… moins de points'), easy.filter(on).length, easy.map(chalRow).join(''));
   // Toucher un réglage à la main : ce n'est plus une surprise
   const touched = () => { delete CP.cur.sur; chalPaint(); Snd.play('build'); };
   $('#chMods').querySelectorAll('[data-k]').forEach(b => b.addEventListener('click', () => {

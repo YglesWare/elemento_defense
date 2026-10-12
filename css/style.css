@@ -1045,10 +1045,30 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
 .chmult{text-align:center;background:var(--sun);border:3px solid var(--ink);border-radius:14px;padding:4px 8px;box-shadow:0 3px 0 var(--ink);margin:4px 0 8px}
 .chmult b{display:block;font:400 34px/1 var(--display);letter-spacing:1px;font-variant-numeric:tabular-nums}
 .chmult small{display:block;font-weight:700;font-size:12px;line-height:1.25}
-.chpre{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:6px}
-.chpre button{border:2.5px solid var(--ink);border-radius:12px;background:var(--mist);font:800 12px/1.15 var(--body);min-width:0;padding:4px 2px;color:var(--ink);cursor:pointer}
-.chpre button span{display:block;font-size:18px}
-.chmods{flex:1;min-height:120px;overflow:auto;display:flex;flex-direction:column;gap:4px;padding-right:2px;margin-bottom:8px}
+/* Choix rapides : une échelle de piquant ; « Ou à la carte » : des sections repliables (une ouverte à la fois) */
+.chprew{display:flex;flex-direction:column;gap:4px;margin-bottom:6px}
+.chlbl{margin:0;font-size:12px;font-weight:800;color:var(--muted);text-align:left}
+.chpre{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.chpre button{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0;border:2.5px solid var(--ink);border-radius:12px;background:var(--mist);box-shadow:0 3px 0 var(--ink);padding:6px 2px;font:inherit;color:var(--ink);cursor:pointer}
+.chpre button:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.chpre button.on{background:var(--sun)}
+.chpre .ic{font-size:13px;line-height:1.2;letter-spacing:-3px;min-height:18px;display:flex;align-items:center}
+.chpre b{font-size:12.5px;font-weight:800;line-height:1.1}
+.chpre small{font-size:11px;font-weight:800;color:var(--muted)}
+.chmods{flex:1;min-height:120px;overflow:auto;display:flex;flex-direction:column;gap:6px;padding-right:2px;margin-bottom:8px}
+.chgrp{flex:none;border:2.5px solid var(--ink);border-radius:14px;background:var(--paper);overflow:hidden}
+.chgrp>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:9px 10px;cursor:pointer;text-align:left}
+.chgrp>summary::-webkit-details-marker{display:none}
+.chgrp .gi{font-size:20px;flex:none}
+.chgrp .gt{flex:1;min-width:0;display:flex;flex-direction:column}
+.chgrp .gt b{font-size:15px;font-weight:800;line-height:1.15}
+.chgrp .gt small{font-size:11.5px;font-weight:700;color:var(--muted);line-height:1.2}
+.chgrp .gn{flex:none;background:var(--sun);border:2px solid var(--ink);border-radius:99px;font:800 12px/1 var(--body);padding:3px 8px}
+.chgrp .gn.z{background:var(--mist);color:var(--muted);border-color:#cfc2e3}
+.chgrp .gc{flex:none;font-size:14px;transition:transform .2s}
+.chgrp[open] .gc{transform:rotate(90deg)}
+.chgrp[open]>summary{border-bottom:2px dashed #e4d9f2}
+.chgrp .gbody{display:flex;flex-direction:column;gap:6px;padding:8px}
 .chsect{font:400 18px/1 var(--display);letter-spacing:.6px;margin:8px 2px 2px}
 .chsect.m{color:#d8344f}.chsect.b{color:#2f9a3c}
 .chsect.r{color:#7a3fc2}.chsect.e{color:#e0662a}
@@ -1444,9 +1464,13 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
   #chSub{grid-row:2}
   #chalPop .chmult{grid-row:3}
   #chMedal{grid-row:4}
-  #chalPop .chpre{grid-row:5;grid-template-columns:repeat(4,1fr);gap:4px}
-  #chalPop .chpre button{font-size:10px;padding:3px 1px}
-  #chalPop .chpre button span{font-size:16px}
+  #chalPop .chprew{grid-row:5;margin:0}
+  #chalPop .chpre{gap:4px}
+  #chalPop .chpre button{padding:4px 1px;box-shadow:0 2px 0 var(--ink)}
+  #chalPop .chpre b{font-size:10px}
+  #chalPop .chpre small{font-size:9.5px}
+  #chalPop .chpre .ic{font-size:11px;min-height:14px}
+  #chalPop .chgrp>summary{padding:6px 10px}
   #chSub,#chMedal{font-size:11.5px;line-height:1.25}
   #chalPop .chmult{padding:2px 6px;box-shadow:0 2px 0 var(--ink)}
   #chalPop .chmult b{font-size:26px}
