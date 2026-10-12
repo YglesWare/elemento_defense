@@ -33,12 +33,13 @@ const hostId = () => { const h = Net.players.find(p => p.host); return h ? h.id 
 const dname = id => DUEL.names[id] || (Net.players.find(p => p.id === id) || {}).name || T('Joueur');
 const meId = () => Net.me && Net.me.id;
 
-// ---------- Progression temporaire du duel (tout le monde repart de zéro) ----------
+// ---------- Progression temporaire du multi : à zéro, ou « Avec nos progrès » (une copie de l'Atelier solo, sans ses éclats) ----------
 let soloMeta = null;
-function enterDuelMeta() {
+function enterDuelMeta(prog) {
   if (!soloMeta) soloMeta = JSON.parse(JSON.stringify(meta));
+  const lv = prog ? JSON.parse(JSON.stringify(soloMeta.lv || {})) : {};
   for (const k of Object.keys(meta)) delete meta[k];
-  Object.assign(meta, { shards: 0, earned: 0, lv: {}, bank: 0 });
+  Object.assign(meta, { shards: 0, earned: 0, lv, bank: 0 });
   duelOn = true;
 }
 function exitDuelMeta() {
@@ -53,7 +54,7 @@ function duelHostStart() {
   if (Net.role !== 'host') return;
   if (Net.players.length < 2) { MP.err = T('Il faut au moins 2 joueurs pour lancer la partie.'); renderMP(); return; }
   const rm = MAPS[DUEL.lobbyMap] && MAPS[DUEL.lobbyMap].random ? { size: DUEL.lobbySize || 'moyenne', seed: newSeed() } : null;
-  const msg = { k: 'start', map: DUEL.lobbyMap, rnd: rm, ids: Net.players.map(p => p.id), names: Object.fromEntries(Net.players.map(p => [p.id, p.name])), prep: DUEL.cfg.prep, gap: DUEL.cfg.gap, chal: DUEL.lobbyChal || null };
+  const msg = { k: 'start', map: DUEL.lobbyMap, rnd: rm, ids: Net.players.map(p => p.id), names: Object.fromEntries(Net.players.map(p => [p.id, p.name])), prep: DUEL.cfg.prep, gap: DUEL.cfg.gap, chal: DUEL.lobbyChal || null, prog: DUEL.lobbyStart === 'prog' };
   Net.send('all', msg);
   beginDuel(msg);
 }
@@ -61,8 +62,8 @@ function clearDuelTimers() { for (const t of DUEL.timers) clearInterval(t); DUEL
 function beginDuel(msg) {
   clearDuelTimers();
   stopScan && stopScan();
-  enterDuelMeta();
-  Object.assign(DUEL, { on: true, map: msg.map, ids: msg.ids, names: msg.names, alive: new Set(msg.ids), elim: [], wave: 0, income: 0, sent: 0, dead: false,
+  enterDuelMeta(!!msg.prog);
+  Object.assign(DUEL, { on: true, prog: !!msg.prog, map: msg.map, ids: msg.ids, names: msg.names, alive: new Set(msg.ids), elim: [], wave: 0, income: 0, sent: 0, dead: false,
     stats: {}, last: {}, incoming: {}, forfeitArm: false, result: null, all: false });
   DUEL.cfg.gap = msg.gap || DUEL.cfg.gap;
   const t0 = dnow(); for (const id of msg.ids) DUEL.last[id] = t0;
@@ -323,7 +324,7 @@ Net.on('msg', ({ from, data }) => {
   if (!data || !data.k) return;
   DUEL.last[from] = dnow();
   switch (data.k) {
-    case 'lobby': DUEL.lobbyMap = data.map; if (data.rsize) DUEL.lobbySize = data.rsize; DUEL.lobbyMode = data.mode || 'duel'; if (data.diff) DUEL.lobbyDiff = data.diff; DUEL.lobbyChal = data.chal || null; if (typeof MP !== 'undefined' && MP.state === 'lobby') renderMP(); break;
+    case 'lobby': DUEL.lobbyMap = data.map; if (data.rsize) DUEL.lobbySize = data.rsize; DUEL.lobbyMode = data.mode || 'duel'; if (data.diff) DUEL.lobbyDiff = data.diff; DUEL.lobbyChal = data.chal || null; DUEL.lobbyStart = data.start === 'prog' ? 'prog' : 'zero'; if (typeof MP !== 'undefined' && MP.state === 'lobby') renderMP(); break;
     case 'start': if (Net.role !== 'host') beginDuel(data); break;
     case 'wave': if (Net.role !== 'host') onWave(data.n, data.gap, data.w); break;
     case 'st': DUEL.stats[from] = data; break;

@@ -101,7 +101,7 @@ function mpGo(state, extra) {
 }
 function rosterHTML() {
   const ps = Net.players.length ? Net.players : [{ name: mpName() || T('Toi'), host: true, ping: 0, id: 'me' }];
-  return '<ul class="mp-list">' + ps.map((p, i) => '<li><canvas class="mp-yg" data-i="' + i + '" aria-hidden="true"></canvas><b>' + esc(p.name) + '</b>' + (p.host ? T('<span class="mp-tag">hôte</span>') : '') + (Net.me && p.id === Net.me.id ? '<span class="mp-tag you">toi</span>' : '') + (p.away ? '<span class="mp-tag away">' + T('connexion perdue…') + '</span>' : '') + '<span class="mp-ping">' + (p.host && Net.role === 'host' ? '' : p.ping ? p.ping + ' ms' : '') + '</span></li>').join('') + '</ul>';
+  return '<ul class="mp-list">' + ps.map((p, i) => '<li><canvas class="mp-yg" data-i="' + i + '" aria-hidden="true"></canvas><b>' + esc(p.name) + '</b>' + (p.host ? T('<span class="mp-tag">hôte</span>') : '') + (Net.me && p.id === Net.me.id ? '<span class="mp-tag you">' + T('toi') + '</span>' : '') + (p.away ? '<span class="mp-tag away">' + T('connexion perdue…') + '</span>' : '') + '<span class="mp-ping">' + (p.host && Net.role === 'host' ? '' : p.ping ? p.ping + ' ms' : '') + '</span></li>').join('') + '</ul>';
 }
 // Code à taper : par groupes de 4 (les tirets, espaces et minuscules sont acceptés à la saisie)
 const groupCode = c => (/^E[0-9A-Z]+$/.test(c) ? c.match(/.{1,4}/g).join('-') : c);
@@ -112,33 +112,62 @@ function manualHTML(copyCode) {
     + (copyCode ? T('<p class="fine">Ton code, à transmettre :</p><textarea readonly id="mpCodeOut" rows="3">') + esc(groupCode(copyCode)) + T('</textarea><button class="sbtn" type="button" id="mpCopy">Copier le code</button>') : '')
     + T('<p class="fine">Code reçu :</p><textarea id="mpCodeIn" rows="3" placeholder="Colle le code ici"></textarea><button class="sbtn" type="button" id="mpPaste">Valider le code</button></details>');
 }
-// Mode de jeu du salon : duel (chacun sa carte) ou coop (tous sur la même carte, avec une difficulté)
-function sendLobby() { Net.send('all', { k: 'lobby', map: DUEL.lobbyMap, rsize: DUEL.lobbySize, mode: DUEL.lobbyMode || 'duel', diff: DUEL.lobbyDiff || 'moyen', chal: DUEL.lobbyChal || null }); }
-function modePickHTML(canPick) {
-  const mode = DUEL.lobbyMode || 'duel', diff = DUEL.lobbyDiff || 'moyen';
-  const seg = (items, cur, pre) => '<div class="mp-seg">' + items.map(([k, label]) => '<button class="sbtn' + (k === cur ? ' on' : '') + '" type="button"' + (canPick ? ' data-a="' + pre + k + '"' : ' disabled') + '>' + label + '</button>').join('') + '</div>';
-  return '<div class="mp-mode"><small>Mode</small>' + seg([['duel', '⚔ Duel'], ['coop', '🤝 Coop']], mode, 'mode-')
-    + (mode === 'coop' ? T('<small>Difficulté</small>') + seg(DORDER.map(k => [k, DIFFS[k].name]), diff, 'diff-') : '') + '</div>'
-    + (typeof chalLobbyHTML === 'function' ? chalLobbyHTML(canPick) : '');
+// Réglages du salon (choisis par l'hôte dans la fenêtre ⚙️ Paramètres, envoyés à tous) : mode, difficulté (coop), départ, piments, carte
+function sendLobby() { Net.send('all', { k: 'lobby', map: DUEL.lobbyMap, rsize: DUEL.lobbySize, mode: DUEL.lobbyMode || 'duel', diff: DUEL.lobbyDiff || 'moyen', chal: DUEL.lobbyChal || null, start: DUEL.lobbyStart || 'zero' }); }
+const mpSeg = (items, cur, pre) => '<div class="mp-seg">' + items.map(([k, label]) => '<button class="sbtn' + (k === cur ? ' on' : '') + '" type="button" data-a="' + pre + k + '">' + label + '</button>').join('') + '</div>';
+// Récapitulatif sur la carte du salon : 4 pastilles, et le bouton Paramètres pour l'hôte
+function recapHTML(canPick) {
+  const mode = DUEL.lobbyMode || 'duel', prog = DUEL.lobbyStart === 'prog', m = MAPS[DUEL.lobbyMap] || MAPS[0];
+  const c = typeof chalClean === 'function' ? chalClean(DUEL.lobbyChal) : null, n = c && chalOn(c) ? chalNames(c).length : 0;
+  const pill = (ic, txt) => '<span><i>' + ic + '</i>' + txt + '</span>';
+  return '<div class="mp-recap"><div class="rh"><small>' + T('Partie') + '</small>' + (canPick ? '<button class="sbtn" type="button" data-a="settings">' + T('⚙️ Paramètres') + '</button>' : '') + '</div><div class="rg">'
+    + pill(mode === 'coop' ? '🤝' : '⚔', mode === 'coop' ? T('Coop · ') + DIFFS[DUEL.lobbyDiff || 'moyen'].name : T('Duel · infini'))
+    + pill(prog ? '⭐' : '🌱', prog ? T('Avec nos progrès') : T('À zéro'))
+    + pill(m.random ? '🎲' : '🗺️', esc(m.random ? T('Carte aléatoire') : m.name))
+    + pill('🌶', n ? chalX(chalMult(c, mode === 'coop' ? DUEL.lobbyDiff || 'moyen' : 'infini', lobbyMi())) + ' · ' + n + (n > 1 ? T(' piments') : T(' piment')) : T('Aucun piment'))
+    + '</div></div>';
 }
-function mapPickHTML(canPick) {
+// Carte : aperçu du terrain et du chemin (un dé pour la carte aléatoire, générée au lancement)
+function mapPickHTML() {
   const m = MAPS[DUEL.lobbyMap] || MAPS[0], rz = DUEL.lobbySize || 'moyenne';
-  // Carte aléatoire : l'hôte choisit la taille, la graine est tirée au lancement et envoyée à tous
-  const name = m.random ? T('🎲 Carte aléatoire') : m.name, sub = m.random ? 'taille ' + RSIZES[rz].name.toLowerCase() + T(' · générée au lancement') : 'biome ' + m.biome.name.toLowerCase();
-  return '<div class="mp-map">' + (canPick ? T('<button class="ibtn" type="button" data-a="map-prev" aria-label="Carte précédente">◀</button>') : '')
-    + T('<div class="mp-mapn"><small>Carte</small><b>') + esc(name) + '</b><span>' + sub + '</span></div>'
-    + (canPick ? T('<button class="ibtn" type="button" data-a="map-next" aria-label="Carte suivante">▶</button>') : '') + '</div>'
-    + (m.random && canPick ? '<div class="rsz mp-rsz">' + Object.entries(RSIZES).map(([k, S]) => '<button class="sbtn' + (k === rz ? ' on' : '') + '" type="button" data-a="rsize-' + k + '"><b>' + S.name + '</b><small>' + S.short + '</small></button>').join('') + '</div>' : '');
+  let info = '';
+  if (!m.random) try { const P = withGrid(m, () => buildPath(m)); info = P.portals.length + T(' portail') + (P.portals.length > 1 ? 's' : '') + ' · ' + P.bases.length + T(' maison') + (P.bases.length > 1 ? 's' : ''); } catch (e) { info = ''; }
+  const name = m.random ? T('Carte aléatoire') : m.name, sub = m.random ? 'taille ' + RSIZES[rz].name.toLowerCase() + T(' · générée au lancement') : 'biome ' + m.biome.name.toLowerCase();
+  return '<div class="mp-map">' + T('<button class="ibtn" type="button" data-a="map-prev" aria-label="Carte précédente">◀</button>')
+    + '<div class="mp-mapn">' + (m.random ? '<span class="mp-dice" aria-hidden="true">🎲</span>' : '<canvas class="mp-prev" aria-hidden="true"></canvas>')
+    + '<div class="mp-mapt"><b>' + esc(name) + '</b><span>' + sub + '</span>' + (info ? '<span>' + info + '</span>' : '') + '</div></div>'
+    + T('<button class="ibtn" type="button" data-a="map-next" aria-label="Carte suivante">▶</button>') + '</div>'
+    + (m.random ? '<div class="rsz mp-rsz">' + Object.entries(RSIZES).map(([k, S]) => '<button class="sbtn' + (k === rz ? ' on' : '') + '" type="button" data-a="rsize-' + k + '"><b>' + S.name + '</b><small>' + S.short + '</small></button>').join('') + '</div>' : '');
 }
+// Fenêtre ⚙️ Paramètres (hôte) : en paysage, sur deux colonnes (css/style.css)
+function mpSetRender() {
+  const b = $('#mpSetBody'), mode = DUEL.lobbyMode || 'duel', diff = DUEL.lobbyDiff || 'moyen', prog = DUEL.lobbyStart === 'prog';
+  const tip = !prog ? T('Tout le monde part avec Braise et Ondine, sans Atelier.')
+    : mode === 'coop' ? T('Chacun arrive avec son Atelier, ses tours et ses fusions. Les monstres sont renforcés selon vos progrès (pas en Infini).')
+    : T('Chacun arrive avec son Atelier, ses tours et ses fusions. Attention : le joueur le plus avancé aura l’avantage.');
+  b.innerHTML = '<div class="mp-mode"><small>' + T('Mode') + '</small>' + mpSeg([['duel', '⚔ Duel'], ['coop', '🤝 Coop']], mode, 'mode-')
+    + (mode === 'coop' ? '<small>' + T('Difficulté') + '</small>' + mpSeg(DORDER.map(k => [k, DIFFS[k].name]), diff, 'diff-') : '')
+    + '<small>' + T('Départ') + '</small>' + mpSeg([['zero', T('🌱 À zéro')], ['prog', T('⭐ Avec nos progrès')]], prog ? 'prog' : 'zero', 'start-')
+    + '<p class="fine mp-tip' + (prog && mode !== 'coop' ? ' warn' : '') + '">' + tip + '</p></div>'
+    + '<div class="mp-setr">' + (typeof chalLobbyHTML === 'function' ? chalLobbyHTML(true) : '') + mapPickHTML()
+    + '<button class="btn" type="button" data-a="set-ok">' + T('OK') + '</button></div>';
+  const cv = b.querySelector('.mp-prev');
+  if (cv) { const pt = miniPortrait(), W = pt ? 84 : 128, H = Math.round(pt ? W * 13 / 9 : W * 9 / 14); cv.style.width = W + 'px'; cv.style.height = H + 'px'; drawMapMini(prepMini(cv, W, H), DUEL.lobbyMap, W, H, mode === 'coop' ? diff : 'infini'); }
+}
+function mpSetOpen() { mpSetRender(); $('#mpSet').hidden = false; }
+// Retour d'Android / Échap : ferme la fenêtre (sauf si les piments sont ouverts par-dessus)
+window.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#mpSet').hidden && $('#chalPop').hidden) { $('#mpSet').hidden = true; e.stopImmediatePropagation(); e.preventDefault(); } }, true);
 function rulesHTML() {
   if (DUEL.lobbyMode === 'coop') return T('<details class="mp-manual"><summary>Règles de la coop</summary><ul class="tips">')
-    + T('<li>Tout le monde défend la même carte et repart de zéro, comme en duel : Braise et Ondine, 0 éclat. Ta progression solo n’est pas touchée.</li>')
+    + (DUEL.lobbyStart === 'prog' ? T('<li>Tout le monde défend la même carte, avec ses progrès : chacun garde son Atelier, ses tours et ses fusions. Les ennemis sont renforcés selon les éclats investis (pas en Infini). Ta progression solo n’est pas touchée.</li>')
+      : T('<li>Tout le monde défend la même carte et repart de zéro, comme en duel : Braise et Ondine, 0 éclat. Ta progression solo n’est pas touchée.</li>'))
     + T('<li>Les éclats gagnés à chaque vague servent dans l’Atelier (bouton violet), qui ne met pas le jeu en pause. Chaque tour porte un anneau de la couleur de son joueur : seul son propriétaire peut l’améliorer ou la fusionner.</li>')
     + T('<li>Les vies sont communes. Les ennemis ont plus de PV et sont plus nombreux selon le nombre de joueurs, et leur or est partagé à parts égales.</li>')
     + T('<li>Touche un coéquipier dans le bandeau du haut pour lui donner 50 or. Appui long sur la carte : un ping visible par tous.</li>')
     + T('<li>Seul l’hôte peut accélérer ou mettre en pause.</li></ul></details>');
   return T('<details class="mp-manual"><summary>Règles du duel</summary><ul class="tips">')
-    + T('<li>Mode infini, tout le monde repart de zéro : Braise et Ondine, 200 or, 0 éclat. Ta progression solo n’est pas touchée.</li>')
+    + (DUEL.lobbyStart === 'prog' ? T('<li>Mode infini, avec vos progrès : chacun garde son Atelier, ses tours et ses fusions, et part de 200 or (plus ses bonus). Le joueur le plus avancé a l’avantage. Ta progression solo n’est pas touchée.</li>')
+      : T('<li>Mode infini, tout le monde repart de zéro : Braise et Ondine, 200 or, 0 éclat. Ta progression solo n’est pas touchée.</li>'))
     + T('<li>Une vague part toutes les 25 s pour tout le monde. Pas de pause ni d’accélération.</li>')
     + T('<li>Onglet « Envoyer » : dépense de l’or pour envoyer des ennemis à ta cible. Chaque envoi augmente ton revenu, versé à chaque vague. À 3 ou 4 joueurs, le mode « À tous » envoie l’ennemi à chaque adversaire, avec 20 % de réduction.</li>')
     + T('<li>Les éclats gagnés à chaque vague servent dans l’Atelier (bouton violet), qui ne met pas le jeu en pause.</li>')
@@ -173,12 +202,12 @@ function renderMP() {
     h += '<p class="mp-busy">' + esc(MP.busyText || T('Un instant…')) + T('</p><button class="btn alt" type="button" data-a="cancel">Annuler</button>');
   } else if (S === 'host') {
     const full = Net.players.length >= NET_MAX;
-    h += (Net.online ? T('<h3 class="mp-h">Salon en ligne · ') : T('<h3 class="mp-h">Salon · ')) + Net.players.length + '/' + NET_MAX + T(' joueurs</h3>') + rosterHTML()
+    // Deux colonnes en paysage (joueurs | partie) ; en portrait, une seule, dans l'ordre fixé par css/style.css
+    h += '<div class="mp-cols"><div class="mp-col">' + (Net.online ? T('<h3 class="mp-h">Salon en ligne · ') : T('<h3 class="mp-h">Salon · ')) + Net.players.length + '/' + NET_MAX + T(' joueurs</h3>') + rosterHTML()
       + (full ? T('<p class="fine">La partie est complète.</p>') : Net.online ? '<div class="mp-online"><span class="mp-label">' + T('Inviter un ami en ligne') + '</span><div id="onlFriends"></div></div>' : T('<button class="btn green" type="button" data-a="invite">Inviter un joueur</button>'))
-      + modePickHTML(true) + mapPickHTML(true)
+      + T('<button class="btn pink" type="button" data-a="leave">Fermer la partie</button>') + '</div><div class="mp-col">' + recapHTML(true)
       + '<button class="btn" type="button" data-a="launch"' + (Net.players.length < 2 ? ' disabled' : '') + '>' + (Net.players.length < 2 ? T('Invite au moins 1 joueur') : T('Lancer la partie !')) + '</button>'
-      + rulesHTML()
-      + T('<button class="btn pink" type="button" data-a="leave">Fermer la partie</button>');
+      + rulesHTML() + '</div></div>';
   } else if (S === 'invite' && MP.lan) {
     // Hôte dans l'app : un seul QR, valable pour tous les invités (navigateur ou app)
     h += '<canvas class="mp-qr" id="mpQr"></canvas>'
@@ -204,12 +233,12 @@ function renderMP() {
       + manualHTML(MP.code) + T('<button class="btn alt" type="button" data-a="cancel">Annuler</button>');
   } else if (S === 'lobby') {
     const hp = Net.players.find(p => p.host);
-    h += T('<h3 class="mp-h">Connecté ! · ') + Net.players.length + '/' + NET_MAX + T(' joueurs</h3>') + rosterHTML()
-      + modePickHTML(false) + mapPickHTML(false)
-      + T('<p class="mp-busy">En attente que ') + esc(hp ? hp.name : T('l’hôte')) + T(' lance la partie…</p>') + rulesHTML()
-      + T('<button class="btn pink" type="button" data-a="leave">Quitter la partie</button>');
+    h += '<div class="mp-cols"><div class="mp-col">' + T('<h3 class="mp-h">Connecté ! · ') + Net.players.length + '/' + NET_MAX + T(' joueurs</h3>') + rosterHTML()
+      + T('<button class="btn pink" type="button" data-a="leave">Quitter la partie</button>') + '</div><div class="mp-col">' + recapHTML(false)
+      + T('<p class="mp-busy">En attente que ') + esc(hp ? hp.name : T('l’hôte')) + T(' lance la partie…</p>') + rulesHTML() + '</div></div>';
   }
   b.innerHTML = h;
+  if (S !== 'host') $('#mpSet').hidden = true; else if (!$('#mpSet').hidden) mpSetRender();
   b.querySelectorAll('canvas.mp-yg').forEach(cv => drawYglou(prepMini(cv, 34, 34), 17, 19, 30, 'happy', 0, { crest: ['#ff4f81', '#3fa9ff', '#4fd36a', '#ffb03d'][+cv.dataset.i % 4], noShadow: true }));
   if (S === 'host' && Net.online && typeof paintOnlineFriends === 'function') paintOnlineFriends();
   const qr = $('#mpQr'); if (qr && MP.code) { try { drawQR(qr, MP.code); } catch (e) { MP.err = T('Impossible de dessiner le QR code.'); } }
@@ -270,7 +299,7 @@ function mpCancel() {
   else Net.reset();
   mpGo('home');
 }
-$('#mpBody').addEventListener('click', ev => {
+const mpClick = ev => {
   const el = ev.target.closest('[data-a], #mpCopy, #mpPaste'); if (!el) return;
   Snd.init();
   if (el.id === 'mpCopy') {
@@ -300,8 +329,13 @@ $('#mpBody').addEventListener('click', ev => {
   else if (a.startsWith('mode-')) { DUEL.lobbyMode = a.slice(5); sendLobby(); renderMP(); }
   else if (a.startsWith('diff-')) { DUEL.lobbyDiff = a.slice(5); sendLobby(); renderMP(); }
   else if (a === 'chal') { if (typeof chalLobbyOpen === 'function') chalLobbyOpen(); }
-  else if (a === 'launch') { if (DUEL.lobbyMode === 'coop') coopHostStart(); else duelHostStart(); }
-});
+  else if (a.startsWith('start-')) { DUEL.lobbyStart = a.slice(6); sendLobby(); renderMP(); }
+  else if (a === 'settings') mpSetOpen();
+  else if (a === 'set-ok') $('#mpSet').hidden = true;
+  else if (a === 'launch') { $('#mpSet').hidden = true; if (DUEL.lobbyMode === 'coop') coopHostStart(); else duelHostStart(); }
+};
+$('#mpBody').addEventListener('click', mpClick);
+$('#mpSetBody').addEventListener('click', mpClick);
 // Garde le panneau de saisie manuelle ouvert d'un affichage à l'autre
 $('#mpBody').addEventListener('toggle', ev => { if (ev.target.classList && ev.target.classList.contains('mp-manual')) MP.manual = ev.target.open; }, true);
 

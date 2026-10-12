@@ -6,6 +6,10 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  127: [
+    ['⭐', 'Multijoueur : nouveau départ « Avec nos progrès », où chacun garde son Atelier, ses tours et ses fusions. En coop, les monstres sont renforcés selon vos progrès.'],
+    ['⚙️', 'Multijoueur : un salon plus simple (les joueurs et un récap), et la fenêtre ⚙️ Paramètres avec un aperçu de la carte.'],
+  ],
   126: [
     ['💚', 'Les monstres ont un peu moins de PV (−5 %) : les parties sont un peu plus faciles.'],
   ],

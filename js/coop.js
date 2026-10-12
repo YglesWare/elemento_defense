@@ -1,10 +1,11 @@
 // Élémento Defense : coop multijoueur (2 à 4 joueurs sur la même carte).
 // L'hôte simule la partie et fait foi ; les invités envoient leurs actions et affichent l'état reçu ~8 fois par seconde.
-// Comme en duel, tout le monde repart de zéro (Atelier vierge, progression solo intacte) ; l'or des ennemis est partagé à parts égales.
+// Comme en duel, tout le monde repart de zéro (Atelier vierge), ou « Avec nos progrès » (son Atelier solo, ennemis renforcés selon les éclats investis, sauf en Infini) ;
+// la progression solo n'est jamais touchée, et l'or des ennemis est partagé à parts égales.
 // Chacun achète ses propres améliorations pendant la partie : les tours suivent l'Atelier (temporaire) de leur propriétaire.
 'use strict';
 
-const COOP = { on: false, ids: [], names: {}, lvs: {}, gold: {}, frac: {}, actor: null, gone: new Set(), snapT: 0, lastSnap: 0, towerSig: '', pingHold: null, pings: [] };
+const COOP = { on: false, ids: [], names: {}, lvs: {}, lobbyLv: {}, gold: {}, frac: {}, actor: null, gone: new Set(), snapT: 0, lastSnap: 0, towerSig: '', pingHold: null, pings: [] };
 const COOP_COLORS = ['#ff4f81', '#3fa9ff', '#4fd36a', '#ffb03d'];
 const coopMe = () => (Net.me && Net.me.id) || 'solo';
 const coopActor = () => COOP.actor || coopMe();
@@ -41,7 +42,10 @@ function coopHostStart() {
   if (Net.role !== 'host') return;
   if (Net.players.length < 2) { MP.err = T('Il faut au moins 2 joueurs pour lancer la partie.'); renderMP(); return; }
   const rm = MAPS[DUEL.lobbyMap] && MAPS[DUEL.lobbyMap].random ? { size: DUEL.lobbySize || 'moyenne', seed: newSeed() } : null;
-  const msg = { k: 'cstart', map: DUEL.lobbyMap, rnd: rm, diff: DUEL.lobbyDiff || 'moyen', ids: Net.players.map(p => p.id), names: Object.fromEntries(Net.players.map(p => [p.id, p.name])), chal: DUEL.lobbyChal || null };
+  const diff = DUEL.lobbyDiff || 'moyen', ids = Net.players.map(p => p.id), prog = DUEL.lobbyStart === 'prog';
+  // Avec nos progrès : PV selon les éclats investis en moyenne (un invité d'une ancienne version joue à zéro et compte pour 0)
+  const hpx = prog && diff !== 'infini' ? +progHp(ids.reduce((n, id) => n + lvSpent(id === coopMe() ? meta.lv : COOP.lobbyLv[id]), 0) / ids.length).toFixed(3) : 1;
+  const msg = { k: 'cstart', map: DUEL.lobbyMap, rnd: rm, diff, ids, names: Object.fromEntries(Net.players.map(p => [p.id, p.name])), chal: DUEL.lobbyChal || null, prog, hpx };
   Net.send('all', msg); COOP.startMsg = msg;
   beginCoop(msg);
 }
@@ -50,9 +54,10 @@ function beginCoop(msg) {
   Object.assign(COOP, { on: true, ids: msg.ids, names: msg.names, gold: {}, frac: {}, gone: new Set(), snapT: 0, lastSnap: performance.now(), towerSig: '', pings: [] });
   if (msg.rnd) msg.map = makeRandom(msg.rnd.size, msg.rnd.seed);
   const host = Net.role === 'host';
-  enterDuelMeta(); COOP.lvs = {}; COOP.lvSent = '{}';
+  enterDuelMeta(!!msg.prog); COOP.prog = !!msg.prog; COOP.lvs = {}; COOP.lvSent = '{}';
   newGame(msg.map, null, msg.diff);
   Object.assign(G, { hpd: DIFFS[G.diff].coopHp || DIFFS[G.diff].hp, coop: true, coopGuest: !host, coopN: msg.ids.length, coopHp: 1 + 0.5 * (msg.ids.length - 1), speed: 1 });
+  G.hpd *= msg.hpx || 1;
   if (typeof chalStart === 'function') chalStart(msg.chal, true);
   if (host) {
     for (const id of msg.ids) if (id !== coopMe()) COOP.gold[id] = Math.round(DIFFS[G.diff].gold * (G.chal ? chalGold() : 1));
@@ -62,7 +67,7 @@ function beginCoop(msg) {
   $('#stage').classList.add('duel'); resize();
   renderCoopBar();
   banner('COOP !', COOP.ids.length + T(' joueurs · ') + MAPS[G.map].name + ' · ' + DIFFS[G.diff].name);
-  hint(T('Tout le monde repart de zéro. Vos tours ont un anneau de votre couleur et l’or des ennemis est partagé. Touche un coéquipier en haut pour lui donner 50 or. Appui long sur la carte : ping.'), 6500);
+  hint((COOP.prog ? T('Chacun joue avec ses progrès. ') : T('Tout le monde repart de zéro. ')) + T('Vos tours ont un anneau de votre couleur et l’or des ennemis est partagé. Touche un coéquipier en haut pour lui donner 50 or. Appui long sur la carte : ping.'), 6500);
 }
 const hostOf = () => { const h = Net.players.find(p => p.host); return h ? h.id : 'host'; };
 
@@ -278,7 +283,7 @@ function coopFinish(win, text, quit) {
     $('#oWord').textContent = quit ? 'ABANDON' : win ? T('VICTOIRE !!') : 'K.O. !';
     $('#oText').textContent = text || (win ? T('Toute l’équipe a tenu : bravo !') : quit ? T('Tu as quitté la partie coop.') : T('La maison est tombée. Retentez votre chance ensemble !'));
     $('#oBank').textContent = '—'; $('#oShards').textContent = '—';
-    $('#oBankDetail').textContent = T('Partie coop : tout le monde repart de zéro, ta cagnotte et ton Atelier solo ne changent pas.');
+    $('#oBankDetail').textContent = COOP.prog ? T('Partie coop : ta cagnotte, tes éclats et ton Atelier solo ne changent pas.') : T('Partie coop : tout le monde repart de zéro, ta cagnotte et ton Atelier solo ne changent pas.');
     $('#oGainDetail').textContent = T('Les éclats gagnés pendant la partie ne servaient qu’à cette partie.');
     $('#oMenu').textContent = T('Retour au salon');
   }, win ? 300 : 1100);
@@ -332,6 +337,8 @@ Net.on('msg', ({ from, data }) => {
   if (!data || !data.k || data.k[0] !== 'c') return;
   switch (data.k) {
     case 'clv': if (Net.role === 'host') {
+      // Dans le salon : l'Atelier solo de l'invité (ps : sa version connaît « Avec nos progrès »)
+      if (!COOP.on) COOP.lobbyLv[from] = data.ps ? data.lv || {} : {};
       const old = coopLv(from); COOP.lvs[from] = data.lv || {};
       if (isHostCoop()) {
         for (const t of G.towers) if (t.own === from) { t.s = towerStats(t); healTower(t); }
@@ -355,6 +362,6 @@ Net.on('msg', ({ from, data }) => {
 Net.on('leave', id => { if (COOP.on) playerGone(id); });
 Net.on('closed', () => { if (COOP.on && G && G.coopGuest && !G.over) coopFinish(false, T('La connexion avec l’hôte est perdue. La partie s’arrête (règles du K.O.).')); });
 // Un invité envoie ses améliorations à l'hôte dès qu'il voit le mode coop dans le salon
-Net.on('msg', ({ data }) => { if (data && data.k === 'lobby' && data.mode === 'coop' && Net.role !== 'host') Net.send(hostOf(), { k: 'clv', lv: meta.lv }); });
+Net.on('msg', ({ data }) => { if (data && data.k === 'lobby' && data.mode === 'coop' && Net.role !== 'host') Net.send(hostOf(), { k: 'clv', lv: meta.lv, ps: 1 }); });
 // Un coéquipier revient après avoir fermé l'appli : on lui renvoie toute la partie (carte, puis tours et état au prochain envoi)
 Net.on('rejoin', id => { if (COOP.on && Net.role === 'host' && COOP.startMsg && G && G.coop && !G.over) { Net.send(id, COOP.startMsg); COOP.towerSig = ''; } });

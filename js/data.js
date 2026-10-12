@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 126;
+const BUILD = 127;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -741,6 +741,16 @@ const UNLOCK = { terre: 15, vent: 20, glace: 30, foudre: 40 };
 for (const t in UNLOCK) UNLOCK[t] = Math.round(UNLOCK[t] * ECO.unlock);
 for (const k in FUSIONS) FUSIONS[k].unlock = Math.round(FUSIONS[k].unlock * ECO.unlock);
 const unlocked = type => !UNLOCK[type] || M('u_' + type) > 0;
+// Éclats investis dans un Atelier d'après ses niveaux (tours et fusions débloquées + paliers achetés)
+function lvSpent(lv) {
+  lv = lv || {}; let n = 0;
+  for (const t in UNLOCK) if (lv['u_' + t] > 0) n += UNLOCK[t];
+  for (const k in FUSIONS) if (lv['f_' + k] > 0) n += FUSIONS[k].unlock;
+  for (const u of UPGRADES) for (let l = 0; l < (lv[u.id] || 0); l++) n += upPriceAt(u, l);
+  return n;
+}
+// Coop « Avec nos progrès » : PV des ennemis selon les éclats investis en moyenne par les joueurs (calibré au bot : ×2 vers 1 200 éclats)
+const progHp = s => 1 + 0.022 * Math.pow(Math.max(0, s), 0.55);
 // Tour disponible pour ses améliorations d'Atelier : débloquée, ou fusion débloquée
 const towerReady = type => TOWERS[type] && TOWERS[type].fusion ? fusionUnlocked(type) : unlocked(type);
 function canBuyAnything() {

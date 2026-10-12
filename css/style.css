@@ -447,10 +447,31 @@ button:disabled{cursor:default}
 .sbt:disabled{opacity:.55}
 .sbt:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
 .mp-map{display:flex;align-items:center;gap:8px}
-.mp-mapn{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;background:var(--mist);border:2.5px solid var(--ink);border-radius:12px;padding:6px}
-.mp-mapn small{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
-.mp-mapn b{font-family:var(--display);font-weight:400;font-size:20px;letter-spacing:.5px;line-height:1.1}
-.mp-mapn span{font-size:12px;font-weight:700;color:var(--muted)}
+.mp-mapn{flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:var(--mist);border:2.5px solid var(--ink);border-radius:12px;padding:6px 8px}
+.mp-prev{flex:none;display:block;border:2px solid var(--ink);border-radius:8px}
+.mp-dice{flex:none;font-size:40px;line-height:1}
+.mp-mapt{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;text-align:center;line-height:1.2}
+.mp-mapt b{font-family:var(--display);font-weight:400;font-size:20px;letter-spacing:.5px;line-height:1.1}
+.mp-mapt span{font-size:12px;font-weight:700;color:var(--muted)}
+/* Salon : joueurs, récap de la partie (pastilles) ; en portrait une colonne dans cet ordre, en paysage deux colonnes indépendantes */
+#mpBody .mp-cols,#mpBody .mp-col{display:contents}
+#mpBody .mp-col>.mp-h{order:1}#mpBody .mp-col>.mp-list{order:2}#mpBody .mp-col>.mp-recap{order:3}#mpBody .mp-col>.mp-busy{order:4}
+#mpBody .mp-col>:is([data-a=invite],.mp-online,.fine){order:5}#mpBody .mp-col>[data-a=launch]{order:6}#mpBody .mp-col>.mp-manual{order:7}#mpBody .mp-col>[data-a=leave]{order:8}
+.mp-recap{display:flex;flex-direction:column;gap:6px;background:var(--mist);border:2.5px solid var(--ink);border-radius:14px;padding:8px 10px;text-align:left}
+.mp-recap .rh{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:30px}
+.mp-recap .rh small{font-size:12px;font-weight:800;color:var(--muted)}
+.mp-recap .rh .sbtn{flex:none;background:var(--sun);padding:6px 10px;font-size:15px}
+.mp-recap .rg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px}
+.mp-recap .rg span{display:flex;align-items:center;gap:6px;min-width:0;background:var(--paper);border:2px solid var(--ink);border-radius:10px;padding:5px 8px;font-weight:800;font-size:13.5px;line-height:1.15}
+.mp-recap .rg i{font-style:normal;font-size:16px;flex:none}
+/* Fenêtre ⚙️ Paramètres du salon */
+#mpSet .intro-card{align-items:stretch;text-align:left;gap:8px;max-height:100%;overflow-y:auto;scrollbar-width:none}
+#mpSet h2{text-align:center;font-size:26px}
+.mpset,.mp-setr{display:flex;flex-direction:column;gap:8px}
+.mpset .mp-chal{margin-top:0;row-gap:2px}
+.mpset .mp-chal small{font-size:12px;color:var(--muted)}
+.mpset .mp-tip{text-align:left;margin:0;font-size:12.5px;line-height:1.3}
+.mpset .mp-tip.warn{color:#c4183c}
 .mp-rank{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
 .mp-rank li{display:flex;align-items:center;gap:10px;background:var(--mist);border:2.5px solid var(--ink);border-radius:12px;padding:6px 10px;font-weight:800}
 .mp-rank li b{font-family:var(--display);font-weight:400;font-size:22px;width:24px;text-align:center}
@@ -1459,9 +1480,13 @@ html.miniportrait .mapc canvas{aspect-ratio:9/13}
   #mpBody .btn{padding:7px 12px;font-size:18px}
   #mpBody .fine{font-size:11px}
   /* Salon : les joueurs, Inviter et Quitter à gauche ; le mode, les piments, la carte et Lancer à droite */
-  #mpBody:has(.mp-mode){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-auto-flow:row dense;column-gap:16px;row-gap:6px;align-content:start;align-items:start}
-  #mpBody:has(.mp-mode)>*{grid-column:1;margin:0}
-  #mpBody:has(.mp-mode)>:is(.mp-mode,.mp-chal,.mp-map,.mp-manual,[data-a=launch]){grid-column:2}
+  #mpBody .mp-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:16px;align-items:start}
+  #mpBody .mp-col{display:flex;flex-direction:column;gap:6px;min-width:0}
+  #mpBody .mp-col>*{margin:0}
+  #mpSet .intro-card{width:min(760px,100%)}
+  .mpset{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:16px;align-items:start}
+  .mpset .mp-mapt b{font-size:17px}
+  #mpSet .btn{padding:7px 12px;font-size:18px}
   #mpBody .mp-h{font-size:20px}
   #mpBody .mpempty{padding:12px 10px}
   /* Dégager (colonne de droite) et bestiaire */
