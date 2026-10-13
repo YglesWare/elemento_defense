@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 139;
+const BUILD = 140;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -65,7 +65,7 @@ document.addEventListener('visibilitychange', () => { if (document.visibilitySta
 const fr = n => (IS_EN ? String(n) : String(n).replace('.', ','));
 // Part de l'or restant mise en cagnotte, en texte (aide, conseils, fin de partie)
 const pct = v => Math.round(v * 100) + (IS_EN ? '%' : ' %');
-const bankShares = () => IS_EN ? pct(ECO.bankWin) + ' of the remaining gold if you win, ' + pct(ECO.bankKo) + ' if you get K.O.’d' : pct(ECO.bankWin) + ' de l’or restant en cas de victoire, ' + pct(ECO.bankKo) + ' en cas de K.O.';
+const bankShares = () => IS_EN ? pct(ECO.bankWin) + ' of the remaining gold if you win, ' + pct(ECO.bankKo) + ' if you get K.O.’d (a fixed bonus instead once the map is won at this difficulty)' : pct(ECO.bankWin) + ' de l’or restant en cas de victoire, ' + pct(ECO.bankKo) + ' en cas de K.O. (une prime fixe à la place une fois la carte gagnée dans cette difficulté)';
 
 // ================= Économie =================
 // Tous les réglages de progression au même endroit (calibrés avec tools/balance.html) :

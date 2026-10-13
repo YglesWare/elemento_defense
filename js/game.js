@@ -177,6 +177,8 @@ function newGame(mi, save, diff) {
   const m = MAPS[mi]; useGrid(m);
   G = baseState(mi, save, diff);
   if (inStory) { G.story = storyRun; storyRun.launch = false; }
+  // Carte déjà gagnée dans cette difficulté (avant cette partie) : la cagnotte recevra une prime fixe (bankPrime)
+  G.wonBefore = !!(((store.get(BEST2) || {})[recId(m)] || {})[G.diff] || {}).won;
   // Défis (js/challenge.js) : le réglage de la carte en solo, ou celui de la sauvegarde ; le multijoueur pose le sien ensuite
   // Piment de la semaine (lancé par weekPlay) et piment imposé de la carte du jour, en plus du réglage de chaque carte
   G.chal = null;
@@ -236,12 +238,30 @@ function recordBest() {
   rec[G.diff] = cur; store.set(BEST2, b);
   return cur;
 }
-// Or envoyé dans la cagnotte en fin de partie : ECO.bankWin en cas de victoire, ECO.bankKo en cas de K.O., rien en cas d'abandon
+// Or envoyé dans la cagnotte en fin de partie : ECO.bankWin en cas de victoire, ECO.bankKo en cas de K.O., rien en cas d'abandon.
+// Première victoire d'une carte dans une difficulté (et carte du jour) : une part de l'or restant. Sinon (carte déjà gagnée,
+// carte aléatoire, mode infini) : une prime fixe, sinon on « farmerait » la cagnotte en refaisant une carte facile avec une tour.
 function bankGold(rate = 1) {
-  const left = Math.max(0, G.gold - (G.banked || 0)), gain = Math.floor(left * rate);
+  const left = Math.max(0, G.gold - (G.banked || 0)), fixed = bankFixed();
+  const gain = fixed ? Math.round(bankPrime() * rate) : Math.floor(left * rate);
   G.banked = Math.max(G.banked || 0, G.gold);
   meta.bank = (meta.bank || 0) + gain; saveMeta();
-  return { gain, lost: left - gain, rate, total: meta.bank };
+  return { gain, lost: fixed ? 0 : left - gain, rate, total: meta.bank, fixed, prime: fixed ? bankPrime() : 0 };
+}
+// Pourquoi une prime fixe : 'won' carte déjà gagnée (ou partie qui continue en vagues infinies après la victoire),
+// 'random' carte aléatoire, 'endless' difficulté Infini ; null : part de l'or restant
+function bankFixed() {
+  const m = MAPS[G.map];
+  if (m.daily) return null;
+  if (m.random) return 'random';
+  if (G.diff === 'infini') return 'endless';
+  return G.wonBefore || G.winBanked ? 'won' : null;
+}
+// Prime fixe : 60 or + 20 par carte de l'aventure (événements comme la carte 5, cartes aléatoires selon leur taille),
+// × 1,5 en Moyen et en Infini, × 2 en Difficile ; arrondie à la dizaine
+function bankPrime() {
+  const m = MAPS[G.map], idx = m.random ? { petite: 1, moyenne: 3, grande: 5 }[m.rnd.size] || 3 : m.season ? 4 : G.map;
+  return Math.round((60 + 20 * idx) * ({ moyen: 1.5, difficile: 2, infini: 1.5 }[G.diff] || 1) / 10) * 10;
 }
 
 // ---------- Tours ----------
@@ -610,7 +630,7 @@ function victory() {
   if (G.coop) { coopEnd(true); return; }
   if (G.story) { storyWin(); return; }
   G.paused = true; G.won = true; G.endless = true; Snd.play('win');
-  const best = recordBest(), award = awardShards(), bank = bankGold(ECO.bankWin); G.shardsWon = G.shardsPaid; G.atWin = true; store.del(SAVE); store.flush(); stats.wins++; saveStats();
+  const best = recordBest(), award = awardShards(), bank = bankGold(ECO.bankWin); G.winBanked = true; G.shardsWon = G.shardsPaid; G.atWin = true; store.del(SAVE); store.flush(); stats.wins++; saveStats();
   G.starRes = starsAward(); // 1 à 3 étoiles selon les vies gardées (+5 éclats par nouvelle étoile)
   if (typeof logGame === 'function') logGame('won', award);
   if (typeof questEvent === 'function') { const d = { diff: G.diff, daily: !!MAPS[G.map].daily, types: [...new Set(G.towers.map(t => t.type))], lostLife: !!G.lostLife }; questEvent('win', d); questEvent('end', d); }
@@ -618,6 +638,8 @@ function victory() {
   showOver(true, best, award, bank);
 }
 function gameOver() {
+  // Une seule fois : après le K.O., les monstres restants peuvent encore atteindre la maison (ils ne relancent plus la fin)
+  if (!G || G.over) return;
   if (G.duel) { duelDead('ko'); return; }
   if (G.coop) { if (!G.coopGuest) coopEnd(false); return; }
   if (G.story) { storyLose(); return; }
@@ -762,7 +784,7 @@ function updateEnemy(e, dt) {
   setPos(e);
 }
 function reachBase(e) {
-  if (G.demo || G.coopGuest) { e.dead = true; return; }
+  if (G.demo || G.coopGuest || G.over) { e.dead = true; return; }
   const B = PP(e).base;
   // Chipeur vole de l'or, Pillécla des éclats gagnés dans la partie ; ils repartent du portail tant qu'ils ne sont pas vaincus
   // (ce qui est volé est perdu, même s'ils tombent ensuite)
@@ -784,7 +806,7 @@ function reachBase(e) {
     if (ETYPES[e.type].boss) ono(T('ENCORE UN TOUR !'), e.x, e.y, '#ff4f6e', 0.6, 0.2, 1.3); else ono('↺', e.x, e.y, '#ff4f6e', 0.4, 0.1, 0.8);
   }
   if (G.lives <= 0) {
-    if (G.koAsk) return;
+    if (G.koAsk || G.over) return;
     if (M('revive') && !G.reviveUsed) { G.reviveUsed = true; reviveFx(B); }
     else if (typeof adCanRevive === 'function' && adCanRevive()) adKoAsk(B); // seconde chance contre une pub (js/ads.js)
     else gameOver();
@@ -796,6 +818,18 @@ function reviveFx(B) {
   G.fx.push({ kind: 'ring', gx: B[0], gy: B[1], r0: 0.2, r1: 4, t: 0, dur: 0.7, color: '#ffd23f' });
   burst(B[0], B[1], 0.5, 30, ['#ffd23f', '#ffffff', '#ff4f81'], 4, 0.12, 2, 0.8, 'star');
   banner('SECONDE CHANCE !', T('5 vies retrouvées'), false); Snd.play('win');
+}
+// Seconde chance par pub (js/ads.js) : 10 vies, tous les ennemis disparaissent et la vague en cours recommence depuis le début
+// (sinon les monstres déjà devant la maison font reperdre tout de suite)
+function adReviveFx(B, lives) {
+  for (const e of G.enemies) if (!e.dead) { const D = ETYPES[e.type]; burst(e.x, e.y, (e.flying ? FLY : 0) + 0.25, 8, [D.color, D.light, '#ffffff'], 2.4, 0.09, 4, 0.6); }
+  G.enemies = []; G.eprojs = []; G.tors = []; G.spawnQ = [];
+  G.lives = lives; G.revives = (G.revives || 0) + 1;
+  const w = makeWave(G.wave);
+  G.curPortals = w.portals; G.spawnQ.push(...w.list); G.spawnT = 2; G.waveActive = true; G.autoT = 0; G.chronoT = null; G.chronoArmed = true;
+  G.fx.push({ kind: 'ring', gx: B[0], gy: B[1], r0: 0.2, r1: 6, t: 0, dur: 0.8, color: '#ffd23f' });
+  burst(B[0], B[1], 0.5, 30, ['#ffd23f', '#ffffff', '#ff4f81'], 4, 0.12, 2, 0.8, 'star');
+  banner('SECONDE CHANCE !', lives + T(' vies · la vague ') + G.wave + T(' recommence'), false); Snd.play('win');
 }
 // Efficacité de la tour selon la cible : au sol ou en vol, et en plus contre les Kaiju
 function vsMul(s, e) {

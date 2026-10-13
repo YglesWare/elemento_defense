@@ -1,13 +1,13 @@
 // Élémento Defense : vidéos à récompense, jamais imposées. Le joueur touche un bouton, confirme, regarde, et gagne
 // de l'or ou des éclats. Quatre endroits : fin de partie (doubler les éclats), écran des cartes (coup de pouce pour la
-// carte suivante), défis du jour (2e coffre), K.O. (continuer avec 5 vies). 10 pubs par jour au plus (réglable dans admin.html).
+// carte suivante), défis du jour (2e coffre), K.O. (continuer avec 10 vies, la vague recommence). 10 pubs par jour au plus (réglable dans admin.html).
 // Rien ne s'affiche si l'espace parents les coupe (js/parents.js), dans l'histoire, en multijoueur, ni sur le site,
 // ni tant que la fonction en bêta « ads » n'est pas ouverte dans admin.html (js/cloud.js, flagOn).
 // Vraies vidéos AdMob dans l'appli Google Play ; vidéos de test de Google dans l'appli Dev (pour ne jamais cliquer sur ses
 // propres vraies pubs) ; une « pub d'essai » de 3 secondes sur l'ordinateur (localhost). Jamais de pub sur le site.
 'use strict';
 
-const ADS_KEY = 'elemento.ads', ADS_CHEST = 100, ADS_REVIVE = 5;
+const ADS_KEY = 'elemento.ads', ADS_CHEST = 100, ADS_REVIVE = 10;
 // Maximums par jour : changés depuis admin.html (réglages du jeu), sinon 10 en tout et 3 sur l'écran des cartes
 const adsMax = () => typeof setting === 'function' ? setting('ads_max', 10) : 10;
 const adsMapMax = () => typeof setting === 'function' ? setting('ads_map_max', 3) : 3;
@@ -69,6 +69,8 @@ $('#adGo').addEventListener('click', async () => {
   if (!ok) { hint(err ? T('Pas de vidéo disponible pour l’instant : réessaie un peu plus tard.') : T('Pas de récompense cette fois : la pub n’a pas été vue jusqu’au bout.'), 2600); if (o.cancel) o.cancel(); return; }
   adCount(o.kind); o.give(); Snd.play('win');
   adPaintAll();
+  // L'appli revient de la vidéo : on remontre le message de récompense un peu plus tard, et plus longtemps
+  const msg = $('#hint').textContent; if (msg) setTimeout(() => hint(msg, 3500), 600);
 });
 
 // Pub d'essai : 3 secondes, on peut la fermer avant (sans récompense)
@@ -158,7 +160,7 @@ function adQuestPaint() {
   } });
 }
 
-// ---------- D · K.O. : continuer avec 5 vies (une fois par jour, pas si la seconde chance de l'Atelier a servi) ----------
+// ---------- D · K.O. : continuer avec 10 vies ; les ennemis disparaissent et la vague en cours recommence (js/game.js, adReviveFx) ----------
 // Pas sur la carte du jour ni avec des piments : leurs classements entre amis doivent rester justes
 // Une seconde chance par pub par partie (dans la limite des pubs du jour), même après la Seconde chance gratuite de
 // l'Atelier (G.reviveUsed). Proposée une seule fois : refusée, elle ne revient pas dans la même partie
@@ -166,9 +168,9 @@ function adCanRevive() { return adSolo() && !G.adRevived && !G.chal && !MAPS[G.m
 function adKoAsk(B) {
   G.paused = true; G.koAsk = true; G.adRevived = true;
   adSeen('revive');
-  adOffer({ kind: 'revive', amount: ADS_REVIVE, unit: 'lives', title: T('K.O. ! Une seconde chance ?'), reward: '♥ ' + ADS_REVIVE + T(' vies'), no: T('Abandonner'),
+  adOffer({ kind: 'revive', amount: ADS_REVIVE, unit: 'lives', title: T('K.O. ! Une seconde chance ?'), reward: '♥ ' + ADS_REVIVE + T(' vies · la vague recommence'), no: T('Abandonner'),
     cancel: () => { if (!G) return; G.koAsk = false; gameOver(); },
-    give: () => { if (!G) return; G.koAsk = false; G.paused = false; reviveFx(B); } });
+    give: () => { if (!G) return; G.koAsk = false; G.paused = false; adReviveFx(B, ADS_REVIVE); } });
 }
 
 function adPaintAll() {

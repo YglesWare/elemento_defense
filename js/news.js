@@ -6,6 +6,12 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  140: [
+    ['❤️', 'K.O. : la vidéo de seconde chance donne maintenant 10 vies, fait disparaître tous les monstres et recommence la vague.'],
+    ['🔧', 'Après un K.O., l’Atelier ne se referme plus tout seul.'],
+    ['🔧', 'Acheter une carte ne fait plus remonter l’écran tout en haut.'],
+    ['🐷', 'Cagnotte : la première victoire sur une carte (dans chaque difficulté) garde tout ton or restant ; ensuite, la carte rapporte une prime fixe, comme les cartes aléatoires et le mode Infini.'],
+  ],
   139: [
     ['✨', 'Accueil : le monstre arrive tantôt par la gauche, tantôt par la droite, et ce sont les gardiens de ce côté qui tirent.'],
   ],

@@ -414,7 +414,10 @@ function showOver(win, best, award, bank, quit, lostShards) {
   const bk = bank || { gain: 0, total: meta.bank || 0 };
   $('#oBank').textContent = '+' + bk.gain;
   const nextMap = MAPS.findIndex((mm, i) => !mapOwned(i));
-  const why = quit ? T('Abandon : ton or restant (') + (bk.lost || 0) + T(') est perdu.') : !win ? T('K.O. : seulement ') + pct(bk.rate) + T(' de ton or restant rejoint la cagnotte (') + (bk.lost || 0) + T(' or perdus).') : pct(bk.rate) + T(' de ton or restant rejoint la cagnotte.');
+  const fixedWhy = { won: T('Carte déjà gagnée dans cette difficulté'), random: T('Carte aléatoire'), endless: T('Mode Infini') }[bk.fixed];
+  const why = quit ? T('Abandon : ton or restant (') + (bk.lost || 0) + T(') est perdu.')
+    : fixedWhy ? fixedWhy + T(' : prime fixe de ') + bk.prime + T(' or') + (!win ? ' (' + pct(bk.rate) + T(' après un K.O.)') : '') + '.'
+    : !win ? T('K.O. : seulement ') + pct(bk.rate) + T(' de ton or restant rejoint la cagnotte (') + (bk.lost || 0) + T(' or perdus).') : pct(bk.rate) + T(' de ton or restant rejoint la cagnotte.');
   $('#oBankDetail').textContent = why + T(' Cagnotte : ') + bk.total + T(' or, pour acheter des cartes.') + (nextMap >= 0 ? T(' Prochaine carte : ') + MAPS[nextMap].name + ', ' + MAPS[nextMap].price + T(' or') + (mapReqOk(nextMap) ? (win && !quit && G.diff !== 'infini' && nextMap === G.map + 1 ? T('. Elle est maintenant achetable !') : '.') : T(', après avoir réussi ') + MAPS[nextMap - 1].name + T(' en Facile.')) : '');
   $('#oWord').textContent = quit ? 'ABANDON' : win ? T('VICTOIRE !!') : 'K.O. !';
   $('#oWord').classList.toggle('win', win);
@@ -701,6 +704,8 @@ function drawMapMini2(c, mi, w, h, diff) {
   }
 }
 function renderMaps(boughtId) {
+  // La liste est refaite en entier : on garde l'endroit où l'on était (après un achat, une pub…), sinon l'écran remonte en haut
+  const keepY = screens.maps.scrollTop;
   $('#mBank').textContent = meta.bank || 0;
   resumePaint();
   $('#mTest').hidden = !testAll();
@@ -718,6 +723,7 @@ function renderMaps(boughtId) {
   const order = MAPS.map((m, i) => i).filter(i => !MAPS[i].random && !!MAPS[i].season === (tab === 'evt') && (tab !== 'evt' || inSeason(MAPS[i]))).sort((a, b) => rank(a) - rank(b) || a - b);
   if (tab === 'evt') box.appendChild(upcomingCard(order.length));
   order.forEach(i => box.appendChild(MAPS[i].season ? seasonRow(i, best[recId(MAPS[i])] || {}) : mapRow(i, best[MAPS[i].id] || {}, boughtId === MAPS[i].id)));
+  screens.maps.scrollTop = keepY;
 }
 $('#mInfo').addEventListener('click', () => { const p = $('#mInfoTxt'); p.hidden = !p.hidden; $('#mInfo').setAttribute('aria-expanded', !p.hidden); });
 // Progression d'une carte : un rond par difficulté (Facile, Moyen, Difficile, Infini), rempli une fois réussie
