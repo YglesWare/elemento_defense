@@ -418,6 +418,7 @@ function makeWave(w) {
   const pool = ['gloop', 'gloop'];
   if (typeof mobElites === 'function') pool.push(...mobElites(w)); // élites des cartes 8 à 10 (js/bestiary.js)
   if (w >= 3) pool.push('zip'); if (w >= 4) pool.push('flappy'); if (w >= 6) pool.push('tonk'); if (w >= 8) pool.push('magma'); if (w >= 7) pool.push('gresil'); if (w >= 9) pool.push('crachou');
+  if (w >= 8) pool.push('eponjo'); if (w >= 9) pool.push('caoutchou'); if (w >= 11) pool.push('gargouille'); // résistants (js/bestiary.js : cartes 4, 6, 7 en Facile)
   // Monstre propre à chaque événement, et sa vague spéciale (15, 25, 35…)
   const ev = evt(), EV = ev && EVMOB[ev], fe = EV && G && G.chal ? chalLv('f_' + ev) : 0;
   if (EV && (w >= EV.from || fe)) pool.push(EV.type, EV.type);
@@ -766,7 +767,7 @@ function updateEnemy(e, dt) {
     }
   }
   if (e.flash > 0) e.flash -= dt;
-  if (e.wet > 0) e.wet -= dt;
+  if (e.wet > 0) e.wet = ETYPES[e.type].dry ? 0 : e.wet - dt; // Éponjo boit l'eau : jamais mouillé
   if (e.slowT > 0) { e.slowT -= dt; if (e.slowT <= 0) e.slowA = 0; }
   if (e.frozen > 0) e.frozen -= dt;
   if (e.stun > 0) e.stun -= dt;
@@ -841,9 +842,10 @@ function hurt(e, dmg, elem, s) {
   if (e.dead || e.ghost > 0) return 0;
   if (G.coopGuest) { e.flash = 0.12; return 0; } // invité coop : simple effet visuel, l'hôte calcule les dégâts
   const D = ETYPES[e.type], up = (e.flying ? FLY : 0) + 0.7;
-  if (D.immune === elem) { ono(T('IMMUNISÉ'), e.x, e.y, '#ffffff', 0.34, 0.9, up); return 0; }
   let m = 1;
-  if (elem === 'foudre' && e.wet > 0) { m = 2; ono('ZAP x2!', e.x, e.y, '#ffe34d', 0.6, 0.25, up); }
+  // Monstres résistants : 60 % de dégâts en moins de l'élément de leur tour (pas des bonus de la cagnotte, sans s)
+  if (s && D.resist === elem) { m = 0.4; if (Math.random() < 0.12) ono(T('RÉSISTE'), e.x, e.y, '#ffffff', 0.34, 0.9, up); }
+  if (elem === 'foudre' && e.wet > 0 && !D.dry) { m = 2; ono('ZAP x2!', e.x, e.y, '#ffe34d', 0.6, 0.25, up); }
   if (elem === 'terre' && e.frozen > 0) {
     m = 2; e.frozen = 0; ono('CRACK x2!', e.x, e.y, '#bff3ff', 0.6, 0.25, up);
     burst(e.x, e.y, 0.3, 10, ['#ffffff', '#bff3ff', '#7fd6ff'], 2.8, 0.09, 4, 0.5, 'star');
@@ -885,8 +887,9 @@ function kill(e) {
   else { if (Math.random() < 0.18) ono(pick(['POP!', 'PAF!', 'BLOP!', 'SPLOTCH!']), e.x, e.y, '#ffffff', 0.45, 0.35, up + 0.4); Snd.play('pop'); }
 }
 function slowE(e, a, t) { const f = ETYPES[e.type].boss ? 0.6 : 1; e.slowA = Math.max(e.slowA, a * f); e.slowT = Math.max(e.slowT, t); }
-function ignite(e, dps, t) { if (e.dead || ETYPES[e.type].immune === 'feu') return; e.burn = Math.max(e.burn, dps); e.burnT = Math.max(e.burnT, t); }
+function ignite(e, dps, t) { if (e.dead) return; if (ETYPES[e.type].resist === 'feu') dps *= 0.4; e.burn = Math.max(e.burn, dps); e.burnT = Math.max(e.burnT, t); }
 function knock(e, k, s) {
+  if (ETYPES[e.type].heavy) return; // Gargouillou : trop lourd pour être repoussé
   const D = ETYPES[e.type], f = D.boss ? (s && s.bossLv >= 2 ? 0.5 : 0.15) : e.type === 'tonk' ? 0.45 : 1;
   e.d = Math.max(PP(e).d0, e.d - k * f); setPos(e);
 }
@@ -1006,7 +1009,7 @@ function updateZones(dt) {
     for (const e of G.enemies) {
       if (e.dead || e.flying || (e.x - z.gx) ** 2 + (e.y - z.gy) ** 2 > z.r * z.r) continue;
       if (G.coopGuest) { if (z.kind !== 'lava') slowE(e, z.slow, 0.3); continue; }
-      if (z.kind === 'lava') { if (ETYPES[e.type].immune === 'feu') continue; e.hp -= z.dps * dt; }
+      if (z.kind === 'lava') e.hp -= z.dps * dt * (ETYPES[e.type].resist === 'feu' ? 0.4 : 1);
       else { e.hp -= z.dps * dt; slowE(e, z.slow, 0.3); }
       if (e.hp <= 0) kill(e);
     }
@@ -1033,7 +1036,7 @@ function pulse(t, s, list) {
   t.pulses++; const frz = t.pulses % s.every === 0, cx = t.x, cy = t.y;
   for (const e of list) {
     hurt(e, s.dmg * (e.flying && s.airBonus ? s.airBonus : 1), 'glace', s); if (e.dead) continue;
-    if (ETYPES[e.type].immune === 'glace') continue; // Givron : ni ralenti ni gelé
+    if (ETYPES[e.type].noFreeze) continue; // Givron : ni ralenti ni gelé
     slowE(e, s.slow, 1.6);
     if (frz) e.frozen = Math.max(e.frozen, s.freeze * (ETYPES[e.type].boss && !(s.bossLv >= 2) ? 0.35 : 1));
   }
@@ -1046,6 +1049,7 @@ function chain(t, s, tg) {
   const hit = [tg]; let cur = tg;
   for (let i = 1; i < s.chain; i++) {
     let best = null, bd = 3.2;
+    if (ETYPES[cur.type].insul) break; // Caoutchou : l'éclair ne rebondit pas sur lui
     for (const e of G.enemies) { if (e.dead || e.ghost > 0 || hit.includes(e)) continue; const d2 = (e.x - cur.x) ** 2 + (e.y - cur.y) ** 2; if (d2 < bd) { bd = d2; best = e; } }
     if (!best) break; hit.push(best); cur = best;
   }

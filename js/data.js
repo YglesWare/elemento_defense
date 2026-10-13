@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 141;
+const BUILD = 142;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -533,10 +533,15 @@ const ETYPES = {
   zip: { name: 'Zippy', hp: 16, speed: 2.0, reward: 2, size: 0.18, color: '#ff7eb6', light: '#ffd0e5', mood: 'open', desc: T('Minuscule et très rapide.') },
   flappy: { name: 'Flappy', hp: 24, speed: 1.3, reward: 3, size: 0.2, color: '#7a69e0', light: '#b9adff', mood: 'fang', flying: true, desc: T('Vole : Rocaille ne l’atteint pas.') },
   tonk: { name: 'Tonk', hp: 110, speed: 0.6, reward: 6, size: 0.31, color: '#7fa4c9', light: '#cfe0f2', mood: 'grr', angry: true, armor: 3, lifeCost: 2, desc: T('Casqué : encaisse chaque coup.') },
-  magma: { name: 'Magmo', hp: 60, speed: 0.9, reward: 5, size: 0.26, color: '#ff6a3d', light: '#ffc08a', mood: 'grr', angry: true, immune: 'feu', desc: T('Immunisé au feu.') },
+  magma: { name: 'Magmo', hp: 60, speed: 0.9, reward: 5, size: 0.26, color: '#ff6a3d', light: '#ffc08a', mood: 'grr', angry: true, resist: 'feu', desc: T('Résiste au feu.') },
   gresil: { name: T('Grésillon'), hp: 40, speed: 1.1, reward: 4, size: 0.22, color: '#c6e84a', light: '#eeffa8', mood: 'open', desc: T('Paralyse les tours proches quelques secondes.') },
   crachou: { name: T('Crachou'), hp: 70, speed: 0.8, reward: 6, size: 0.27, color: '#ff8a5c', light: '#ffc6a8', mood: 'grr', angry: true, armor: 1, desc: T('Crache sur les tours et leur fait perdre des PV.') },
   malefik: { name: T('Maléfik'), hp: 150, speed: 0.7, reward: 12, size: 0.28, color: '#7a4fb8', light: '#c9a8f0', mood: 'grr', angry: true, armor: 2, desc: T('Pervertit une tour : elle attaque les autres tours un moment.') },
+  // Monstres résistants : 60 % de dégâts en moins de l'élément d'une tour (resist), avec leur particularité (js/game.js hurt)
+  // keep : même allure sur toutes les cartes (pas de déguisement de zone)
+  eponjo: { name: T('Éponjo'), hp: 70, speed: 0.9, reward: 6, size: 0.26, color: '#ffd84a', light: '#fff3a8', mood: 'happy', resist: 'eau', dry: true, keep: true, desc: T('Une éponge : résiste à l’eau et n’est jamais mouillée.') },
+  caoutchou: { name: T('Caoutchou'), hp: 75, speed: 1.0, reward: 6, size: 0.25, color: '#ff6f91', light: '#ffc2d1', mood: 'open', resist: 'foudre', insul: true, keep: true, desc: T('Une balle en caoutchouc : résiste à l’éclair, qui ne rebondit pas sur elle.') },
+  gargouille: { name: T('Gargouillou'), hp: 65, speed: 1.1, reward: 6, size: 0.23, color: '#9aa3b5', light: '#d6dbe6', mood: 'grr', angry: true, flying: true, resist: 'vent', heavy: true, keep: true, desc: T('Une gargouille de pierre qui vole : résiste au vent, qui ne la repousse pas.') },
   boss: { name: 'Kaiju', hp: 650, speed: 0.42, reward: 45, size: 0.42, color: '#ff4f6e', light: '#ffa3b3', mood: 'grr', angry: true, armor: 5, lifeCost: 10, boss: true, desc: T('Boss des vagues 10, 20, 30. Ses coups de patte abîment les tours.') + T(' En Difficile et en Infini, s’il atteint la maison, il refait le tour jusqu’à être abattu.') },
   // Élites des cartes 8 à 10 (js/bestiary.js) : soigne ses voisins, protégé par une bulle, se divise en trois Gloops
   soignou: { name: 'Soignou', hp: 90, speed: 0.85, reward: 8, size: 0.26, color: '#5fd38a', light: '#c8f5d6', mood: 'happy', elite: true, desc: T('Soigne les slimes autour de lui.') },
@@ -545,7 +550,7 @@ const ETYPES = {
   taupe: { name: 'Taupi', hp: 75, speed: 0.95, reward: 7, size: 0.27, color: '#9b7a5a', light: '#d8bf9f', mood: 'grr', angry: true, elite: true, desc: T('Creuse sous terre : intouchable un moment.') },
   voleur: { name: 'Chipeur', hp: 38, speed: 1.5, reward: 8, size: 0.24, color: '#4b4f6b', light: '#a8acc8', mood: 'open', elite: true, lifeCost: 0, desc: T('Vole de l’or à la maison, puis repart.') },
   aimant: { name: 'Aimanto', hp: 120, speed: 0.75, reward: 9, size: 0.28, color: '#e8505b', light: '#ffb3b8', mood: 'grr', angry: true, armor: 1, elite: true, desc: T('Attire les tirs des tours proches.') },
-  givre: { name: 'Givron', hp: 95, speed: 0.9, reward: 8, size: 0.26, color: '#8fdcff', light: '#e6f8ff', mood: 'open', immune: 'glace', elite: true, desc: T('Immunisé au froid, il ralentit les tours proches.') },
+  givre: { name: 'Givron', hp: 95, speed: 0.9, reward: 8, size: 0.26, color: '#8fdcff', light: '#e6f8ff', mood: 'open', resist: 'glace', noFreeze: true, elite: true, desc: T('Résiste au froid (ni ralenti, ni gelé), il ralentit les tours proches.') },
   pilleur: { name: 'Pillécla', hp: 48, speed: 1.45, reward: 10, size: 0.24, color: '#7a4fd1', light: '#d6c2ff', mood: 'grr', angry: true, elite: true, lifeCost: 0, desc: T('Vole des éclats de la partie, puis repart.') },
   scindo: { name: 'Scindo', hp: 130, speed: 0.7, reward: 9, size: 0.3, color: '#ffae3d', light: '#ffe0a8', mood: 'grr', angry: true, elite: true, desc: T('Se divise en trois Gloops quand il tombe.') },
   spectre: { name: 'Spectre', hp: 50, speed: 1.15, reward: 5, size: 0.24, color: '#e6e0ff', light: '#ffffff', mood: 'open', season: 'halloween', desc: T('Halloween : devient intangible par moments, aucune attaque ne le touche alors.') },
@@ -634,7 +639,7 @@ const zoneOf = () => (ZONE_SKINS && G && !G.demo && MAPS[G.map] && !MAPS[G.map].
 const ZCACHE = {};
 // Déguisement de carte d'un type de monstre (les monstres d'événement n'en ont pas)
 function zoneSkin(k) {
-  if (ETYPES[k] && ETYPES[k].elite) return null; // les élites gardent leur nom et leur allure partout
+  if (ETYPES[k] && (ETYPES[k].elite || ETYPES[k].keep)) return null; // les élites (et les résistants) gardent leur nom et leur allure partout
   const Z = zoneOf(), D = ETYPES[k]; if (!Z || !D || D.season) return null;
   const key = (MAPS[G.map].wid || MAPS[G.map].id) + k;
   if (!ZCACHE[key]) ZCACHE[key] = k === 'boss' ? { ...Z.boss, zone: Z }

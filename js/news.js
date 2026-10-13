@@ -6,6 +6,10 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  142: [
+    ['🛡️', 'Monstres résistants : chacun prend 60 % de dégâts en moins d’une tour (un petit bouclier le montre). Magmo et Givron ne sont plus immunisés, seulement résistants.'],
+    ['🆕', 'Trois nouveaux monstres : Éponjo (carte 4) résiste à Ondine, Caoutchou (carte 6) à Voltie, Gargouillou (carte 7) à Zéphyr.'],
+  ],
   141: [
     ['🔧', 'Atelier : le prix affiché des fusions est maintenant le vrai prix (il affichait un prix trop bas, et l’achat ne marchait pas).'],
   ],

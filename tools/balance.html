@@ -26,9 +26,10 @@ function loadGame(eco) {
     const f = document.createElement('iframe');
     f.src = '../index.html?eco=' + encodeURIComponent(JSON.stringify(eco || {}));
     document.body.appendChild(f);
+    // Pas d'eval : la règle de sécurité du jeu (CSP, index.html) l'interdit
     const wait = () => {
       const w = f.contentWindow;
-      if (!w || !w.document || w.document.readyState !== 'complete' || typeof w.eval !== 'function' || w.eval('typeof mascotTick') !== 'function') return setTimeout(wait, 100);
+      if (!w || !w.document || w.document.readyState !== 'complete' || typeof w.mascotTick !== 'function') return setTimeout(wait, 100);
       w.requestAnimationFrame = () => 0;
       const s = w.document.createElement('script'); s.src = '../tools/bot.js?' + Date.now(); s.onload = () => ok({ frame: f, win: w }); w.document.body.appendChild(s);
     };

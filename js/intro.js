@@ -9,7 +9,10 @@ const MOB_TIPS = {
   zip: T('Minuscule et très rapide : il file entre les tirs. Les ralentissements d’Ondine et de Givrette l’arrêtent net.'),
   flappy: T('Il vole au-dessus du chemin : Rocaille ne peut pas l’atteindre. Zéphyr lui fait 2,5 fois plus de dégâts.'),
   tonk: T('Casqué : son armure retire des dégâts à chaque coup. Les gros coups (Rocaille, tours améliorées) marchent mieux que les tirs rapides.'),
-  magma: T('Immunisé au feu : Braise ne lui fait rien. Mise sur l’eau, la terre, l’éclair ou la glace.'),
+  magma: T('Il résiste au feu : Braise lui fait 60 % de dégâts en moins, et ses brûlures aussi. Mise sur l’eau, la terre, l’éclair ou la glace.'),
+  eponjo: T('Une éponge qui boit l’eau : Ondine lui fait 60 % de dégâts en moins, et il n’est jamais mouillé (pas de « ZAP x2 » de Voltie sur lui). Mise sur Braise, Rocaille ou Voltie.'),
+  caoutchou: T('Une balle en caoutchouc : Voltie lui fait 60 % de dégâts en moins, et l’éclair s’arrête sur lui au lieu de rebondir sur les slimes suivants. Mise sur Braise, Ondine ou Rocaille.'),
+  gargouille: T('Une petite gargouille de pierre qui vole : Zéphyr lui fait 60 % de dégâts en moins sans la repousser, et Rocaille ne peut pas l’atteindre. Mise sur Braise, Ondine, Voltie ou Givrette.'),
   gresil: T('Il paralyse les tours proches quelques secondes. Élimine-le vite, avant qu’il n’atteigne tes défenses.'),
   crachou: T('Il crache sur les tours et leur fait perdre des PV. Une tour abîmée tire toujours, mais à 0 PV elle tombe.'),
   malefik: T('Il pervertit une tour : pendant un moment, elle attaque tes autres tours. Garde des tours loin les unes des autres.'),
@@ -20,7 +23,7 @@ const MOB_TIPS = {
   taupe: T('Toutes les 4 secondes, il creuse sous terre : pendant 1,5 seconde, aucune tour ne peut le toucher et il avance plus vite. Place des tours tout le long du chemin.'),
   voleur: T('Rapide et fragile. À la maison, il ne prend pas de vie : il vole 10 % de ton or, puis repart du portail et recommence tant qu’il n’est pas vaincu. L’or volé ne revient pas !'),
   aimant: T('Les tours à cible unique qui l’ont à portée tirent sur lui en priorité : il protège les slimes qui le suivent. Les tours de zone (Ondine, Rocaille, Givrette) touchent tout le monde.'),
-  givre: T('Le froid ne lui fait rien (ni ralenti, ni gelé), et les tours à moins de 2 cases de lui tirent 30 % moins vite. Mise sur Braise et Voltie, un peu en retrait.'),
+  givre: T('Il résiste au froid : Givrette lui fait 60 % de dégâts en moins, sans le ralentir ni le geler. Les tours à moins de 2 cases de lui tirent 30 % moins vite. Mise sur Braise et Voltie, un peu en retrait.'),
   pilleur: T('Comme Chipeur, mais il vole des éclats gagnés pendant la partie, puis repart du portail et recommence tant qu’il n’est pas vaincu. Les éclats volés ne reviennent pas !'),
 };
 const introSeen = () => store.get(INTRO_KEY) || {};

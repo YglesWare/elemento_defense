@@ -1040,7 +1040,7 @@ setInterval(() => { if (curScreen === 'tree' && upT) { if (!G || !G.towers.inclu
 const TINFO = {
   feu: { what: T('Braise crache une boule de feu sur un seul ennemi. La cible prend feu et perd des PV chaque seconde pendant quelques instants, même quand elle sort du cercle de portée.'),
     good: [T('Tous les ennemis, au sol comme en vol'), T('Les groupes, quand Zéphyr propage les flammes')],
-    bad: [T('Magmo est immunisé au feu'), T('Portée courte, une seule cible à la fois')] },
+    bad: [T('Magmo résiste au feu'), T('Portée courte, une seule cible à la fois')] },
   eau: { what: T('Ondine lance une bulle qui éclate en zone. Tous les ennemis éclaboussés sont ralentis et restent mouillés pendant 3,5 secondes.'),
     good: [T('Freiner les Zippy très rapides'), T('Préparer le combo avec Voltie')],
     bad: [T('Dégâts faibles'), T('Le casque de Tonk absorbe ses petits coups')] },

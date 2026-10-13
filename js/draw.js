@@ -696,6 +696,17 @@ function wingSprite(r, lw, fr, wc, col) {
   }
   return sp;
 }
+const RESIST_ICON = { feu: '🔥', eau: '💧', vent: '🌪️', foudre: '⚡', glace: '❄️', terre: '🪨' }, RESIST_CACHE = {};
+function resistBadge(elem, br) {
+  const n = Math.max(12, Math.round(br * 2.4 * Math.min(3, (window.devicePixelRatio || 1) * 1.5))), key = elem + n;
+  if (RESIST_CACHE[key]) return RESIST_CACHE[key];
+  const cv = document.createElement('canvas'); cv.width = cv.height = n; const c = cv.getContext('2d'), b = n / 2.4, x = n / 2, y = n / 2;
+  c.beginPath(); c.moveTo(x, y - b); c.quadraticCurveTo(x + b, y - b * 0.9, x + b * 0.95, y - b * 0.1); c.quadraticCurveTo(x + b * 0.8, y + b * 0.75, x, y + b * 1.05);
+  c.quadraticCurveTo(x - b * 0.8, y + b * 0.75, x - b * 0.95, y - b * 0.1); c.quadraticCurveTo(x - b, y - b * 0.9, x, y - b); c.closePath();
+  c.fillStyle = '#ffffff'; c.fill(); c.lineWidth = Math.max(1.5, b * 0.16); c.strokeStyle = TOWERS[elem].color; c.stroke();
+  c.font = Math.round(b * 1.15) + 'px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(RESIST_ICON[elem] || '', x, y + b * 0.05);
+  return (RESIST_CACHE[key] = cv);
+}
 function drawEnemy(c, type, x, y, s, t, e) {
   const D = ETYPES[type], r = s * D.size, lw = Math.max(1.4, s * 0.045), ev = evt(), SK = skinOf(type), HS = ev === 'halloween' ? SK : null, XS = SK && !HS ? ev : null;
   const ZS = SK || D.elite ? null : zoneSkin(type), ZA = ZS && ZS.acc; // les élites gardent toujours leur allure
@@ -743,6 +754,11 @@ function drawEnemy(c, type, x, y, s, t, e) {
     const px = -sdy, py = sdx; c.lineWidth = lw; c.strokeStyle = INK;
     for (const k of [-0.45, 0, 0.45]) { const x0 = -sdx * r * 1.25 + px * k * r, y0 = -sdy * r * 1.25 + py * k * r; c.beginPath(); c.moveTo(x0, y0); c.lineTo(x0 - sdx * r * (0.7 + Math.abs(k)), y0 - sdy * r * (0.7 + Math.abs(k))); c.stroke(); }
   }
+  // Gargouillou : ailes de pierre qui battent derrière le corps
+  if (type === 'gargouille') {
+    const fl = Math.sin(t * 12 + id) * 0.25;
+    for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(sg * r * 0.5, -r * 0.3); c.lineTo(sg * r * 1.55, -r * (0.95 + fl)); c.lineTo(sg * r * 1.35, -r * 0.35); c.lineTo(sg * r * 1.6, -r * 0.05); c.lineTo(sg * r * 1.2, 0); c.lineTo(sg * r * 1.3, r * 0.3); c.lineTo(sg * r * 0.55, r * 0.15); c.closePath(); fs(c, '#7d869a', lw); }
+  }
   if (XS || type === 'lapin') evBehind(c, XS, type, r, lw, t, col);
   if (ZA) zoneBehind(c, ZA, r, lw, t, col, id);
   if (HS && type === 'zip') for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(sg * r * 0.25, -r * 0.95); c.lineTo(sg * r * 0.75, -r * 1.45); c.lineTo(sg * r * 0.85, -r * 0.6); c.closePath(); fs(c, col, lw); }
@@ -782,6 +798,17 @@ function drawEnemy(c, type, x, y, s, t, e) {
     c.lineWidth = lw * 0.7; c.strokeStyle = '#ffffff';
     for (const [fx, fy, fr] of [[-r * 0.62, -r * 0.82, r * 0.16], [r * 0.6, -r * 0.7, r * 0.13], [0, -r * 1.12, r * 0.15]]) for (let i = 0; i < 3; i++) { const a2 = i * Math.PI / 3; c.beginPath(); c.moveTo(fx - Math.cos(a2) * fr, fy - Math.sin(a2) * fr); c.lineTo(fx + Math.cos(a2) * fr, fy + Math.sin(a2) * fr); c.stroke(); }
   }
+  // Résistants : face verte et trous d'éponge, pois de balle en caoutchouc, cornes et fissures de pierre
+  if (type === 'eponjo') {
+    c.beginPath(); c.moveTo(-r * 0.78, -r * 0.62); c.quadraticCurveTo(-r * 0.7, -r * 1.12, 0, -r * 1.16); c.quadraticCurveTo(r * 0.7, -r * 1.12, r * 0.78, -r * 0.62); c.quadraticCurveTo(0, -r * 0.82, -r * 0.78, -r * 0.62); c.closePath(); fs(c, '#5fc46a', lw);
+    c.fillStyle = '#e3b72a'; for (const [hx, hy, hr] of [[-0.55, 0.1, 0.11], [0.6, 0.0, 0.09], [-0.3, 0.55, 0.08], [0.42, 0.5, 0.1], [0.75, 0.35, 0.06]]) { c.beginPath(); c.ellipse(hx * r, hy * r, hr * r, hr * r * 0.8, 0, 0, TAU); c.fill(); }
+  } else if (type === 'caoutchou') {
+    for (const [px, py, pr, pc] of [[-0.4, -0.85, 0.13, '#ffd23f'], [0.15, -1.0, 0.11, '#5fd3c4'], [0.55, -0.7, 0.1, '#ffd23f'], [-0.75, -0.2, 0.1, '#5fd3c4'], [0.78, 0.05, 0.1, '#5fd3c4'], [-0.55, 0.45, 0.11, '#ffd23f'], [0.45, 0.5, 0.1, '#ffd23f']]) { c.beginPath(); c.arc(px * r, py * r, pr * r, 0, TAU); c.fillStyle = pc; c.fill(); }
+    c.beginPath(); c.arc(-r * 0.15, -r * 0.92, r * 0.08, 0, TAU); c.fillStyle = 'rgba(255,255,255,.9)'; c.fill();
+  } else if (type === 'gargouille') {
+    for (const sg of [-1, 1]) { c.beginPath(); c.moveTo(sg * r * 0.35, -r * 0.92); c.lineTo(sg * r * 0.55, -r * 1.45); c.lineTo(sg * r * 0.62, -r * 0.82); c.closePath(); fs(c, '#d6dbe6', lw * 0.8); }
+    c.lineWidth = lw * 0.7; c.strokeStyle = 'rgba(42,27,61,.55)'; c.beginPath(); c.moveTo(r * 0.5, -r * 0.55); c.lineTo(r * 0.3, -r * 0.3); c.lineTo(r * 0.45, -r * 0.1); c.moveTo(-r * 0.6, r * 0.2); c.lineTo(-r * 0.4, r * 0.35); c.stroke();
+  }
   if (type === 'bulle' && (!e || e.shield > 0)) {
     const k = e && e.shieldMax ? 0.45 + 0.55 * e.shield / e.shieldMax : 1;
     c.beginPath(); c.arc(0, -r * 0.1, r * 1.32, 0, TAU); c.fillStyle = 'rgba(190,226,255,' + (0.3 * k) + ')'; c.fill();
@@ -813,6 +840,8 @@ function drawEnemy(c, type, x, y, s, t, e) {
       for (let i = 0; i < 3; i++) { const a = t * 5 + i * TAU / 3; star(c, Math.cos(a) * r * 0.8, -r * 1.25 + Math.sin(a) * r * 0.25, r * 0.2, r * 0.09); fs(c, '#ffd23f', lw * 0.5); }
     }
   }
+  // Résistants : un petit bouclier blanc bordé de la couleur de la tour, avec son élément (image mise en cache)
+  if (D.resist) { const br = Math.max(6, r * 0.42), B = resistBadge(D.resist, br); c.drawImage(B, r * 0.95 - br * 1.2, -r * 1.05 - br * 1.2, br * 2.4, br * 2.4); }
   c.restore();
   c.restore();
   if (e && e.hp < e.maxHp) {

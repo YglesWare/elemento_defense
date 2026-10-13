@@ -8,15 +8,21 @@
 const MOB_ORDER = ['', 'flappy', 'tonk', 'magma', 'gresil', 'crachou', 'malefik', 'soignou', 'bulle', 'scindo', 'taupe', 'voleur', 'aimant', 'givre', 'pilleur'];
 // Les élites (cartes 8 à 10) et les monstres du chapitre 2 (cartes 11 à 15) n'existent qu'à partir de leur carte de l'aventure, dès la vague 5
 const ELITES = { soignou: 7, bulle: 8, scindo: 9, taupe: 10, voleur: 11, aimant: 12, givre: 13, pilleur: 14 };
+// Les monstres résistants arrivent en plus du monstre de leur carte (index de l'aventure : cartes 4, 6 et 7)
+const MOB_EXTRA = { eponjo: 3, caoutchou: 5, gargouille: 6 };
+const mobMap = t => Object.hasOwn(MOB_EXTRA, t) ? MOB_EXTRA[t] : MOB_ORDER.indexOf(t);
 const MOB_FRESH_WAVE = 5;
 // Première vague où chaque monstre peut sortir (js/game.js makeWave)
-const MOB_FIRST = { zip: 3, flappy: 4, tonk: 6, gresil: 7, magma: 8, crachou: 9, boss: 10, malefik: 12, soignou: 5, bulle: 5, scindo: 5, taupe: 5, voleur: 5, aimant: 5, givre: 5, pilleur: 5 };
+const MOB_FIRST = { zip: 3, flappy: 4, tonk: 6, gresil: 7, magma: 8, crachou: 9, eponjo: 8, caoutchou: 9, gargouille: 11, boss: 10, malefik: 12, soignou: 5, bulle: 5, scindo: 5, taupe: 5, voleur: 5, aimant: 5, givre: 5, pilleur: 5 };
 const MOB_SHORT = {
   gloop: T('Le slime de base, lent et sans pouvoir.'),
   zip: T('Minuscule et très rapide : Ondine le ralentit.'),
   flappy: T('Il vole : Braise et Ondine le touchent, Rocaille non.'),
   tonk: T('Casqué : vise-le avec des tours améliorées en Dégâts.'),
-  magma: T('Immunisé au feu : Braise ne lui fait rien.'),
+  magma: T('Il résiste au feu : Braise lui fait 60 % de dégâts en moins.'),
+  eponjo: T('Une éponge : Ondine lui fait 60 % de dégâts en moins, et il n’est jamais mouillé.'),
+  caoutchou: T('En caoutchouc : Voltie lui fait 60 % de dégâts en moins, et l’éclair ne rebondit pas sur lui.'),
+  gargouille: T('En pierre, et il vole : Zéphyr lui fait 60 % de dégâts en moins sans le repousser, et Rocaille ne l’atteint pas.'),
   gresil: T('Il paralyse les tours proches : élimine-le vite.'),
   crachou: T('Il crache sur les tours et les abîme.'),
   malefik: T('Il retourne une tour contre les autres un moment.'),
@@ -27,7 +33,7 @@ const MOB_SHORT = {
   taupe: T('Il creuse sous terre : place des tours tout le long du chemin.'),
   voleur: T('Il vole de l’or à la maison puis repart : ralentis-le et abats-le vite.'),
   aimant: T('Il attire les tirs : les tours de zone touchent quand même les autres.'),
-  givre: T('Le froid ne lui fait rien, et il ralentit les tours proches : mise sur Braise.'),
+  givre: T('Il résiste au froid (ni ralenti, ni gelé) et ralentit les tours proches : mise sur Braise.'),
   pilleur: T('Il vole des éclats de la partie : une chaîne de tours près de la maison.'),
 };
 // Élites possibles sur la carte en cours (pour le tirage des vagues, js/game.js makeWave)
@@ -46,19 +52,19 @@ function mobLimit() {
   if (G.mobLim !== undefined) return G.mobLim;
   const a = ADV_MAPS.indexOf(G.map);
   let lim;
-  if (a >= 0) lim = a >= MOB_ORDER.length ? null : { lv: a, fresh: MOB_ORDER[a] || null };
+  if (a >= 0) lim = a >= MOB_ORDER.length ? null : { lv: a, fresh: [MOB_ORDER[a], ...Object.keys(MOB_EXTRA).filter(k => MOB_EXTRA[k] === a)].filter(Boolean) };
   else {
     // Carte du jour, aléatoire, événement : selon la meilleure carte de l'aventure réussie, plus une
     const best = store.get(BEST2) || {};
     let won = -1; ADV_MAPS.forEach((mi, k) => { const r = best[MAPS[mi].id] || {}; if (Object.values(r).some(x => x && x.won)) won = k; });
-    const lv = won + 1; lim = lv >= MOB_ORDER.length ? null : { lv, fresh: null };
+    const lv = won + 1; lim = lv >= MOB_ORDER.length ? null : { lv, fresh: [] };
   }
   return (G.mobLim = lim);
 }
 // Ce monstre peut-il sortir à la vague w ?
 function mobOk(type, w) {
   const lim = mobLimit(); if (!lim) return true;
-  const k = MOB_ORDER.indexOf(type); if (k <= 0) return true; // Gloop, Zippy, Kaiju, monstres d'événement
+  const k = mobMap(type); if (k <= 0) return true; // Gloop, Zippy, Kaiju, monstres d'événement
   if (k < lim.lv) return true;
   return k === lim.lv && w >= MOB_FRESH_WAVE;
 }
@@ -67,15 +73,16 @@ function mobOk(type, w) {
 function mobFilter(list, pool, w) {
   const lim = mobLimit(); if (!lim) return list;
   const known = [...new Set(pool)].filter(t => t !== 'boss' && mobOk(t, w));
-  const fresh = lim.fresh && w >= MOB_FRESH_WAVE ? lim.fresh : null;
-  if (fresh && !known.includes(fresh)) known.push(fresh);
+  const fresh = w >= MOB_FRESH_WAVE ? lim.fresh : [];
+  for (const f of fresh) if (!known.includes(f)) known.push(f);
   const alt = known.length ? known : ['gloop'];
   for (const it of list) if (it.type !== 'boss' && !mobOk(it.type, w)) {
     it.type = alt[Math.floor(Math.random() * alt.length)];
   }
-  if (fresh && w === MOB_FRESH_WAVE && !list.some(it => it.type === fresh)) {
+  // Vague 5 : chaque nouveau monstre de la carte s'y montre (3 places, partagées s'ils sont deux)
+  if (w === MOB_FRESH_WAVE && fresh.length) {
     const idx = list.map((it, i) => it.type === 'boss' ? -1 : i).filter(i => i >= 0);
-    for (let n = 0; n < Math.min(3, idx.length); n++) list[idx[Math.floor((n + 1) * idx.length / 4)]].type = fresh;
+    fresh.forEach((f, j) => { if (list.some(it => it.type === f)) return; for (let n = 0; n < Math.min(3, idx.length); n++) { const p = idx[Math.floor((n + 1) * idx.length / 4)]; if (n % fresh.length === j) list[p].type = f; } });
   }
   return list;
 }
@@ -86,15 +93,15 @@ function mobStartList() {
   const lim = mobLimit();
   if (lim) {
     if (G.map === ADV_MAPS[0]) return null; // carte 1 : le coup de pouce, et Gloop et Zippy se présentent tout seuls
-    if (lim.fresh) return mobSeen(lim.fresh) ? null : { kind: 'fresh', list: [lim.fresh] };
-    const l = MOB_ORDER.filter((t, k) => t && k < lim.lv && !mobSeen(t));
+    if (lim.fresh.length) { const f = lim.fresh.filter(t => !mobSeen(t)); return f.length ? { kind: 'fresh', list: f } : null; }
+    const l = [...MOB_ORDER, ...Object.keys(MOB_EXTRA)].filter(t => t && mobMap(t) < lim.lv && !mobSeen(t));
     return l.length ? { kind: 'new', list: l } : null;
   }
   if (G.diff === 'facile') return null;
-  const l = ['zip', 'flappy', 'tonk', 'gresil', 'magma', 'crachou', 'boss', 'malefik'].concat(mobElites(99)).filter(t => !mobSeen(t));
+  const l = ['zip', 'flappy', 'tonk', 'gresil', 'magma', 'eponjo', 'crachou', 'caoutchou', 'gargouille', 'boss', 'malefik'].concat(mobElites(99)).filter(t => !mobSeen(t));
   return l.length ? { kind: 'unknown', list: l } : null;
 }
-const mobWave = t => { const lim = mobLimit(); return lim && lim.fresh === t ? MOB_FRESH_WAVE : MOB_FIRST[t] || 1; };
+const mobWave = t => { const lim = mobLimit(); return lim && lim.fresh.includes(t) ? MOB_FRESH_WAVE : MOB_FIRST[t] || 1; };
 function mobStart() {
   const s = mobStartList(); if (!s) return;
   const pop = $('#mobPop'), one = s.list.length === 1;
@@ -145,7 +152,7 @@ function mobWarn() {
 // silhouette, avec un indice pour les trouver. Chaque nouveau monstre rapporte 2 éclats (js/intro.js introMob).
 screens.best = $('#sBest');
 const BEST_GROUPS = [
-  [T('L’aventure'), ['gloop', 'zip', 'flappy', 'tonk', 'magma', 'gresil', 'crachou', 'malefik', 'boss']],
+  [T('L’aventure'), ['gloop', 'zip', 'flappy', 'tonk', 'magma', 'eponjo', 'gresil', 'crachou', 'caoutchou', 'malefik', 'gargouille', 'boss']],
   [T('Les élites'), ['soignou', 'bulle', 'scindo']],
   [T('Le chapitre 2'), ['taupe', 'voleur', 'aimant', 'givre', 'pilleur']],
   [T('Les événements'), ['spectre', 'potiron', 'cadeau', 'lapin', 'calinou', 'hongbao']],
@@ -155,7 +162,7 @@ const BEST_ALL = BEST_GROUPS.flatMap(g => g[1]);
 function bestHint(k) {
   const D = ETYPES[k];
   if (D.season && SEASONS[D.season]) return SEASONS[D.season].icon + ' ' + (MAPS.find(m => m.season === D.season) || {}).name;
-  const n = k === 'gloop' || k === 'zip' || k === 'boss' ? 0 : MOB_ORDER.indexOf(k);
+  const n = k === 'gloop' || k === 'zip' || k === 'boss' ? 0 : mobMap(k);
   return n >= 0 ? T('Carte ') + (n + 1) : '';
 }
 const bestSeen = k => mobSeen(k) || admOn('best'); // option admin « Tout le bestiaire »
@@ -180,7 +187,7 @@ function bestOpen(k) {
   const chips = [['❤️', D.hp + T(' PV')], ['💨', sp]];
   if (D.flying) chips.push(['🪽', T('Vole')]);
   if (D.armor) chips.push(['🪖', T('Armure')]);
-  if (D.immune) chips.push(['🚫', T('Immunisé au feu')]);
+  if (D.resist) chips.push(['🛡️', T('Résiste à ') + TOWERS[D.resist].name + ' (−60 %)']);
   if (D.lifeCost > 1) chips.push(['💔', '−' + D.lifeCost + T(' vies')]);
   $('#bpChips').innerHTML = seen ? chips.map(([i, t]) => '<span>' + i + ' ' + t + '</span>').join('') : '';
   const kills = (stats.killsBy || {})[k] || 0;
