@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  141: [
+    ['🔧', 'Atelier : le prix affiché des fusions est maintenant le vrai prix (il affichait un prix trop bas, et l’achat ne marchait pas).'],
+  ],
   140: [
     ['❤️', 'K.O. : la vidéo de seconde chance donne maintenant 10 vies, fait disparaître tous les monstres et recommence la vague.'],
     ['🔧', 'Après un K.O., l’Atelier ne se referme plus tout seul.'],

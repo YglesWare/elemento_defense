@@ -3,7 +3,7 @@
 // ================= Constantes & outils =================
 const TAU = Math.PI * 2, INK = '#2a1b3d';
 // Numéro de build affiché sur l'écran titre : à augmenter avec CACHE dans sw.js à chaque mise en ligne
-const BUILD = 140;
+const BUILD = 141;
 // Taille de la grille : 21 × 13 pour les cartes fixes ; les cartes aléatoires ont leur propre taille (useGrid / withGrid)
 let COLS = 21, ROWS = 13;
 const FLY = 0.42, MAXW = 30, GRIDV = 21;
@@ -739,7 +739,8 @@ const upFull = u => !u.inf && upLv(u) >= u.max;                 // plus rien à 
 const upEff = (u, l) => lvOf({ [u.id]: l }, u.id);                // niveau effectif après l paliers (pour les textes)
 const UNLOCK = { terre: 15, vent: 20, glace: 30, foudre: 40 };
 for (const t in UNLOCK) UNLOCK[t] = Math.round(UNLOCK[t] * ECO.unlock);
-for (const k in FUSIONS) FUSIONS[k].unlock = Math.round(FUSIONS[k].unlock * ECO.unlock);
+// TOWERS[k] est une copie de la fusion faite plus haut : on lui donne aussi le vrai prix (l'Atelier affiche celui de TOWERS)
+for (const k in FUSIONS) TOWERS[k].unlock = FUSIONS[k].unlock = Math.round(FUSIONS[k].unlock * ECO.unlock);
 const unlocked = type => !UNLOCK[type] || M('u_' + type) > 0;
 // Éclats investis dans un Atelier d'après ses niveaux (tours et fusions débloquées + paliers achetés)
 function lvSpent(lv) {
