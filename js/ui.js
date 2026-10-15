@@ -378,8 +378,9 @@ $('#tHelp').addEventListener('click', () => { helpFrom = curScreen === 'profile'
 $('#hBack').addEventListener('click', () => show(helpFrom));
 $('#pQuit').addEventListener('click', () => { if (G && G.story && typeof storyAbort === 'function') { storyAbort(); return; } G = null; show('title'); });
 $('#oMenu').addEventListener('click', () => { G = null; show('title'); });
-// Rejouer une carte aléatoire en génère une nouvelle de même taille (l'ancienne a disparu avec la partie)
-$('#oRetry').addEventListener('click', () => { if (G && G.week && typeof weekPlay === 'function') weekPlay(); else if (G && MAPS[G.map].random) newGame(makeRandom(MAPS[G.map].rnd.size, newSeed()), null, G.diff); else if (G) newGame(G.map, null, G.diff); else newGame(0, null, 'facile'); });
+// Rejouer une carte aléatoire en génère une nouvelle de même taille (l'ancienne a disparu avec la partie) ; la carte du jour,
+// elle, reste la même : on la refait à partir de sa graine du jour
+$('#oRetry').addEventListener('click', () => { if (G && G.week && typeof weekPlay === 'function') weekPlay(); else if (G && MAPS[G.map].daily && typeof dailyRnd === 'function') { const r = dailyRnd(); newGame(makeRandom(r.size, r.seed, r.daily), null, G.diff); } else if (G && MAPS[G.map].random) newGame(makeRandom(MAPS[G.map].rnd.size, newSeed()), null, G.diff); else if (G) newGame(G.map, null, G.diff); else newGame(0, null, 'facile'); });
 $('#oEndless').addEventListener('click', () => { G.endless = true; G.paused = false; G.atWin = false; saveCheckpoint(); show('game'); banner('MODE INFINI', T('Jusqu’où iras-tu ?')); if (opts.auto) G.autoT = 3; });
 // La partie en cours : reprise depuis l'écran des cartes (encadré « ⏸ Partie en cours »)
 // Une partie gagnée n'est gardée que si le joueur a choisi le mode infini (inf) ; les anciennes sauvegardes d'écran de victoire sont oubliées

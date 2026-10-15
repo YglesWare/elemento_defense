@@ -6,6 +6,9 @@
 const NEWS_KEY = 'elemento.lastBuild';
 // Version → nouveautés : [icône, texte]. Les plus récentes en premier.
 const NEWS = {
+  143: [
+    ['🔧', 'Carte du jour : « Rejouer » relance bien la même carte (elle en tirait une autre).'],
+  ],
   142: [
     ['🛡️', 'Monstres résistants : chacun prend 60 % de dégâts en moins d’une tour (un petit bouclier le montre). Magmo et Givron ne sont plus immunisés, seulement résistants.'],
     ['🆕', 'Trois nouveaux monstres : Éponjo (carte 4) résiste à Ondine, Caoutchou (carte 6) à Voltie, Gargouillou (carte 7) à Zéphyr.'],

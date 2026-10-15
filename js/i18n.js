@@ -1887,6 +1887,7 @@ const EN = {
 "Maîtrise · ": "Mastery · ",
 "Longue-vue · ": "Spyglass · ",
 "Débloque la fusion d’abord": "Unlock the fusion first",
+"Carte du jour : « Rejouer » relance bien la même carte (elle en tirait une autre).": "Daily map: “Play again” now replays the same map (it used to draw another one).",
 "Monstres résistants : chacun prend 60 % de dégâts en moins d’une tour (un petit bouclier le montre). Magmo et Givron ne sont plus immunisés, seulement résistants.": "Resistant monsters: each one takes 60% less damage from one tower (a small shield shows it). Magmo and Givron are no longer immune, only resistant.",
 "Trois nouveaux monstres : Éponjo (carte 4) résiste à Ondine, Caoutchou (carte 6) à Voltie, Gargouillou (carte 7) à Zéphyr.": "Three new monsters: Spongo (map 4) resists Undine, Rubbo (map 6) resists Volty, Gargoylo (map 7) resists Zephyr.",
 "Éponjo": "Spongo",
